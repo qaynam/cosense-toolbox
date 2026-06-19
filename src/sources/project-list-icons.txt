@@ -1,0 +1,32 @@
+(function () {
+  if (window.innerWidth < 768) {
+    return;
+  }
+  const globalMenuForUser = document.querySelector(".navbar ul.global-menu-for-user");
+  const globalMenuForUserAnchorItems = globalMenuForUser.querySelectorAll("li a");
+  const filteredAnchorItems = [];
+
+  globalMenuForUserAnchorItems.forEach((item) => {
+    if (!item.href) {
+      return;
+    }
+    const { pathname } = new URL(item.href);
+    if (pathname.split("/").filter(Boolean).length === 1) {
+      filteredAnchorItems.push(item);
+    }
+  });
+
+  const cosenseBase64Icon = `data:image/png;base64,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`;
+  filteredAnchorItems.forEach((item) => {
+    const img = document.createElement("img");
+    const projectName = new URL(item.href).pathname.split("/").filter(Boolean)[0];
+    img.src = `https://scrapbox.io/api/pages/${projectName}/favicon/icon`;
+    img.style.width = "24px";
+    img.style.height = "24px";
+    img.style.marginRight = "4px";
+    img.onerror = () => {
+      img.src = cosenseBase64Icon;
+    };
+    item.prepend(img);
+  });
+})();

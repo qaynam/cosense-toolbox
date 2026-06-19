@@ -1,49 +1,37 @@
-# Starlight Starter Kit: Basics
+# Cosense Toolbox
 
-[![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
+Cosense (旧Scrapbox) のUIをカスタマイズする **userscript / userCSS** を、**好きなものを選んでコピペで使えるギャラリー / ツールボックス**です。テーマ着せ替えから、サイドバー追加・コマンドパレット・地図表示といったアプリ級の改造まで、カテゴリ別に収録しています。
 
-```
-npm create astro@latest -- --template starlight
-```
+> 気に入ったものをカード（🧰 ツールボックス）に積んで、最後に **import を1つにまとめてコピー** → 自分のCosenseの設定ページに貼るだけ。
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## カテゴリ
 
-## 🚀 Project Structure
+- **テーマ変更系** — 行番号 / セクション番号 / グリッド線 / カバー画像など見た目の調整
+- **便利ツール系** — CMD+Kコマンドパレット / vim風ショートカット / 自動リンク / Markdownコピーなど
+- **改造系** — サイドバー / チャット風エディタ / 仮想タブ / Mermaidズームなど大型の改造
+- **その他の面白い使い方** — 本文の緯度経度を地図表示する mapfeel、ネイティブアプリ起動など
+- **基盤・共通モジュール** — toast / modal / insert-text など他スクリプトから再利用される共通部品
 
-Inside of your Astro + Starlight project, you'll see the following folders and files:
+## 開発
 
-```
-.
-├── public/
-├── src/
-│   ├── assets/
-│   ├── content/
-│   │   └── docs/
-│   └── content.config.ts
-├── astro.config.mjs
-├── package.json
-└── tsconfig.json
-```
+[Astro](https://astro.build)（素のAstro / Starlightなし）製。パッケージマネージャは **Bun**。
 
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
+| コマンド          | 内容                                       |
+| :---------------- | :----------------------------------------- |
+| `bun install`     | 依存をインストール                         |
+| `bun run dev`     | 開発サーバー起動（http://localhost:4321）  |
+| `bun run build`   | 本番ビルド（`./dist/` に出力）             |
+| `bun run preview` | ビルド結果をローカルでプレビュー           |
 
-Images can be added to `src/assets/` and embedded in Markdown with a relative link.
+### 構成
 
-Static assets, like favicons, can be placed in the `public/` directory.
+- `src/content/scripts/*.md` — スクリプト1本 = 1ファイル（カード・詳細ページの元データ）。frontmatter にカテゴリ・ステータス・install スニペット等
+- `src/pages/index.astro` — ギャラリー本体（カードグリッド＋フィルタ＋検索）
+- `src/pages/s/[...slug].astro` — 各スクリプトの詳細ページ（ライブデモ / コピー）
+- `src/components/CosenseCssDemo.astro` — テーマ系の「着せ替えライブデモ」（iframe内の疑似Cosenseページに userCSS をトグル適用）
+- `src/layouts/Base.astro` — 共通レイアウト（ツールボックス／テーマ切替／View Transitions）
+- `src/styles/global.css` — Cosense寄りのダーク/ライトテーマ
 
-## 🧞 Commands
+## コントリビュート
 
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).
+OSSです。新しい userscript の提案・改善PR・要望の Discussion を歓迎します。スクリプトを追加するには `src/content/scripts/` に1ファイル足すだけです。

@@ -1,0 +1,37 @@
+(() => {
+  const TEXT_CONTENT = "Markdownリンクをコピー";
+  window.cosense.on("layout:changed", handler);
+
+  function handler() {
+    if (window.cosense.Layout !== "page") {
+      return;
+    }
+    if (hasCopyAsMarkDownLinkInPageMenu()) {
+      return;
+    }
+    const pageMenuDvider = document.querySelector(
+      ".page-menu > div:nth-child(2).dropdown .divider",
+    );
+    if (!pageMenuDvider) return;
+    const pageMenuDviderParent = pageMenuDvider.parentElement;
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.textContent = TEXT_CONTENT;
+    a.onclick = async () => {
+      await navigator.clipboard.writeText(`[${cosense.Page.title}](${location.href})`);
+    };
+    li.append(a);
+
+    pageMenuDviderParent.insertBefore(li, pageMenuDvider);
+  }
+
+  function hasCopyAsMarkDownLinkInPageMenu() {
+    let has = false;
+    document.querySelectorAll(".page-menu > div.dropdown:nth-of-type(2) ul li").forEach((n) => {
+      has = n.textContent === TEXT_CONTENT;
+    });
+    return has;
+  }
+
+  handler();
+})();

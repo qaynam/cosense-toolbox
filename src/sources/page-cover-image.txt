@@ -1,0 +1,60 @@
+(async () => {
+  const div = document.createElement("div");
+  const img = document.createElement("img");
+  const images = await getCoverImageCollection();
+  const isMobile = window.innerWidth < 780;
+  img.src = images[0];
+  img.setAttribute("width", "100%");
+  img.setAttribute("height", "100%");
+  img.style.objectFit = "cover";
+  img.style.filter = "brightness(0.5) grayscale(1)";
+  div.append(img);
+  div.setAttribute("data-cover-image", "true");
+  div.style.height = isMobile ? "80px" : "150px";
+  const maxRandomNum = images.length;
+  cosense.on("page:changed", function () {
+    applyConverImage();
+    img.setAttribute("src", images[Math.floor(Math.random() * maxRandomNum)]);
+  });
+
+  function applyConverImage() {
+    if (cosense.Layout !== "page") {
+      return;
+    }
+    if (document.querySelector("[data-cover-image]")) {
+      return;
+    }
+    const container = document.querySelector("#app-container .container");
+    if (!container) {
+      return;
+    }
+    container.insertAdjacentElement("beforebegin", div);
+  }
+  applyConverImage();
+
+  function getCoverImageCollection() {
+    // https://gyazo.com/api/internal/boards/ebefb0830d2738220d80f790e28a2c53/images?page=1&per=40&order=desc
+    return [
+      "https://i.gyazo.com/3aa98012dcbffe00cf80139c851dac5b.jpg",
+      "https://i.gyazo.com/abf2bbb9bb1db36febf2d07ace7eed29.jpg",
+      "https://i.gyazo.com/e75d3742be561b5115d8629bbdc6503b.jpg",
+      "https://i.gyazo.com/cf625a1a947cefbd1a1d02846dafde8e.jpg",
+      "https://i.gyazo.com/4b80a676f5b12105fc50029d852bd4d7.jpg",
+      "https://i.gyazo.com/6b563fe2a9af0be95be5342643217898.jpg",
+      "https://i.gyazo.com/72bc9c51e3ced877e167e598f685a249.jpg",
+      "https://i.gyazo.com/9937bc937a664259f262a697bffb023c.jpg",
+      "https://i.gyazo.com/6295b25c582bfa2a6ac3911ca55d0483.jpg",
+      "https://i.gyazo.com/9b08f2fe1f46a94ddf2223fa8d5d9f5c.jpg",
+      "https://i.gyazo.com/cef45db3a573cd5cfad4144a91304fe0.jpg",
+      "https://i.gyazo.com/d8ef53fbb237820fae6d13407606e790.jpg",
+      "https://i.gyazo.com/72bb875cb71241f930cd13876d537bab.jpg",
+      "https://i.gyazo.com/b035fd7c4cb33e05fca4f97acd339b67.jpg",
+      "https://i.gyazo.com/89cf537bce8e86eb3fea26f7e24d3325.jpg",
+      "https://i.gyazo.com/609796bd136fbee5f4ecb9c34d8d0e0d.jpg",
+      "https://i.gyazo.com/dd47c90f3ffa5dfae25a7b9782aa3527.jpg",
+      "https://i.gyazo.com/c6b9ff30851979c3ed4fa74864a385e9.jpg",
+      "https://i.gyazo.com/32653a3e4fbbd03e6415669cbac8774d.jpg",
+      "https://i.gyazo.com/11c1c8f4e7b29b15c2beaa926ff56873.jpg",
+    ];
+  }
+})();

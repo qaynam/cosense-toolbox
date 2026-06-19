@@ -1,0 +1,277 @@
+//import { loadAlpine } from '/api/code/cosense-toolbox/alpine-js-for-user-script/module.js';
+import Alpine from "/api/code/cosense-toolbox/alpine-js-for-user-script-esm/module.js";
+await (async () => {
+  const ALPINE_NAME_SPACE = "CosenseCommand";
+
+  const html = await getHtml();
+  document.body.append(html);
+  const style = await getStyle();
+  document.head.append(style);
+
+  if (!window.Alpine) {
+    window.Alpine = Alpine;
+  }
+  setupAlpineData();
+  Alpine.initTree(document.querySelector("[data-cosense-command]"));
+
+  async function getHtml() {
+    const res = await fetch(`/api/code/${cosense.Project.name}/cosense-command/template.html`);
+    const htmlString = await res.text();
+    const domItems = new DOMParser().parseFromString(htmlString, "text/html").body.childNodes;
+    const fragment = new DocumentFragment();
+    domItems.forEach((node) => fragment.append(node));
+    return fragment;
+  }
+
+  async function getStyle() {
+    const res = await fetch(`/api/code/${cosense.Project.name}/cosense-command/style.css`);
+    const htmlString = await res.text();
+    const domItems = new DOMParser().parseFromString(
+      `<style data-name="cosense-command">${htmlString}</style>`,
+      "text/html",
+    ).head.childNodes;
+    const fragment = new DocumentFragment();
+    domItems.forEach((node) => fragment.append(node));
+    return fragment;
+  }
+
+  function setupAlpineData() {
+    Alpine.data(ALPINE_NAME_SPACE, () => ({
+      query: "",
+      results: [],
+      loading: false,
+      focusedIndex: 0,
+      composing: false,
+      commandMode: false,
+      projectName: window.cosense.Project.name,
+      filteredCommands: [],
+      commands: {
+        "Open Spotify": {
+          icon: "https://gyazo.com/e8de29d41922a460843ffe9c9f7471cf.png",
+          action: () => {
+            window.open("spotify://track/4uLU6hMCjMI75M1A2tKUQC");
+          },
+        },
+        Gyazo: {
+          icon: "https://i.gyazo.com/a8a60492aefa9fb2947acbfa794c75f0.png",
+          action: async () => {
+            window.open("gyazo://capture");
+          },
+        },
+        "Toggle Translate Mode": {
+          icon: "https://gyazo.com/443b57ca81b29636224111ca0951383a.png",
+          action: () => {
+            const translateButton = document.querySelector(
+              '[aria-labelledby="translation-menu"] a[tabindex="0"]',
+            );
+            translateButton.click();
+            document.dispatchEvent(new CustomEvent("cosenseCommand:close"));
+          },
+        },
+        "Create Github Starts Badge": {
+          icon: "https://gyazo.com/409c6e6ba617d86fbd18a2100f6969ba/thumb/100#.png",
+          action: async () => {
+            try {
+              const clipboardText = await navigator.clipboard.readText();
+              let url = null;
+
+              if (URL.canParse(clipboardText)) {
+                url = new URL(clipboardText);
+
+                if (url.hostname !== "github.com") {
+                  alert("clipboard url is not github origin");
+                  return;
+                }
+
+                const [, userName, repoName] = url.pathname.split("/");
+                if (!userName || !repoName) {
+                  alert(
+                    "url username or reponame not correct: " +
+                      "(userName: " +
+                      userName +
+                      ")" +
+                      "(repoName: " +
+                      repoName +
+                      ")" +
+                      url.pathname,
+                  );
+                  return;
+                }
+              }
+
+              await navigator.clipboard.writeText(
+                `https://img.shields.io/github/stars${url.pathname}#.svg`,
+              );
+              window.showToast("📋 urlをクリップボードにコピーしました！", {
+                position: "bottom-center",
+              });
+              document.dispatchEvent(new CustomEvent("cosenseCommand:close"));
+            } catch (e) {
+              alert(e);
+            }
+          },
+        },
+      },
+      init() {
+        this.filteredCommands = Object.entries(this.commands);
+
+        document.addEventListener("keydown", (e) => {
+          if (e.metaKey && e.key === "k") {
+            e.preventDefault();
+            this.toggleDialog();
+          }
+        });
+        document.addEventListener("cosenseCommand:close", (e) => {
+          this.closeDialog();
+        });
+      },
+
+      openDialog() {
+        this.$refs.dialog.showModal();
+        this.$nextTick(() => this.$refs.searchInput.focus());
+      },
+
+      closeDialog() {
+        this.$refs.dialog.close();
+        this.focusedIndex = 0;
+        this.query = "";
+        this.commandMode = false;
+        this.results = [];
+        this.filteredCommands = Object.entries(this.commands);
+      },
+
+      toggleDialog() {
+        this.$refs.dialog.open ? this.closeDialog() : this.openDialog();
+      },
+
+      handleEscape(e) {
+        if (this.composing) {
+          e.stopImmediatePropagation();
+          this.composing = false;
+          return;
+        }
+
+        if (!this.composing) {
+          e.preventDefault();
+          this.closeDialog();
+        }
+      },
+
+      async search() {
+        if (!this.query.trim()) {
+          this.results = [];
+          if (this.commandMode) {
+            this.filteredCommands = Object.entries(this.commands);
+          }
+          return;
+        }
+
+        if (this.commandMode) {
+          this.searchCommand();
+          return;
+        }
+
+        this.loading = true;
+        try {
+          const res = await fetch(
+            `/api/pages/${this.projectName}/search/query?q=${encodeURIComponent(this.query)}&field=title`,
+          );
+          if (!res.ok) throw new Error("Search failed");
+          const data = await res.json();
+          this.results = data.pages || [];
+          this.focusedIndex = 0;
+        } catch (err) {
+          console.error("Search error:", err);
+          this.results = [];
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      searchCommand() {
+        const searchTerm = this.query.toLowerCase().trim();
+        this.filteredCommands = Object.entries(this.commands).filter(([name]) =>
+          name.toLowerCase().includes(searchTerm),
+        );
+        this.focusedIndex = 0;
+      },
+
+      highlightQuery(title) {
+        if (!this.query.trim()) return title;
+        const regex = new RegExp(`(${this.escapeRegex(this.query)})`, "gi");
+        return title.replace(regex, '<span class="highlight">$1</span>');
+      },
+
+      escapeRegex(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      },
+
+      focusNext() {
+        const maxLength = this.commandMode
+          ? this.filteredCommands.length - 1
+          : this.results.length - 1;
+
+        if (maxLength < 0) return;
+        this.focusedIndex = Math.min(this.focusedIndex + 1, maxLength);
+      },
+
+      focusPrevious() {
+        const maxLength = this.commandMode
+          ? this.filteredCommands.length - 1
+          : this.results.length - 1;
+
+        if (maxLength < 0) return;
+        this.focusedIndex = Math.max(this.focusedIndex - 1, 0);
+      },
+
+      switchToCommandMode(e) {
+        if (!e.target.value.trim()) {
+          this.commandMode = true;
+          this.filteredCommands = Object.entries(this.commands);
+          this.focusedIndex = 0;
+        }
+      },
+
+      handleBackspace(e) {
+        if (!e.target.value.trim()) {
+          this.commandMode = false;
+          this.results = [];
+          this.focusedIndex = 0;
+        }
+      },
+
+      async navigateToFocused() {
+        if (this.commandMode) {
+          if (this.filteredCommands.length > 0) {
+            const [, commandObj] = this.filteredCommands[this.focusedIndex];
+            this.closeDialog();
+            commandObj.action();
+          }
+          return;
+        }
+
+        if (this.results.length > 0) {
+          const page = this.results[this.focusedIndex];
+          this.closeDialog();
+          await cosense.Page.show(encodeURI(page.title));
+        } else if (this.query.trim()) {
+          await cosense.Page.show(this.query.trim());
+          this.closeDialog();
+        }
+      },
+
+      scrollIntoView(el) {
+        const container = this.$refs.resultsContainer;
+        if (!container || !el) return;
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+
+        if (elRect.top < containerRect.top) {
+          el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        } else if (elRect.bottom > containerRect.bottom) {
+          el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      },
+    }));
+  }
+})();

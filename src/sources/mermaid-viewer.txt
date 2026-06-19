@@ -1,0 +1,295 @@
+import Alpine from "/api/code/cosense-toolbox/alpine-js-for-user-script-esm/module.js";
+(async () => {
+  if (!window.Alpine) window.Alpine = Alpine;
+
+  const sheet = await import(`/api/code/${cosense.Project.name}/cosense-mermaid-viewer/style.css`, {
+    with: { type: "css" },
+  });
+  // sheet は CSSStyleSheet オブジェクトを持つ
+  document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet.default];
+  const html = await getHtml();
+  document.body.append(html);
+  // SVGビューアーモーダルを開く関数
+  window.openSVGViewer = function (svgElement) {
+    const event = new CustomEvent("open-svg-viewer", {
+      detail: { svgElement },
+    });
+    window.dispatchEvent(event);
+  };
+
+  Alpine.data("svgViewer", () => ({
+    scale: 1,
+    posX: 0,
+    posY: 0,
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    svgContent: "",
+    lastTouchDistance: 0,
+
+    init() {
+      window.addEventListener("open-svg-viewer", (e) => {
+        this.open(e.detail.svgElement);
+      });
+    },
+
+    open(svgElement) {
+      const clonedSVG = svgElement.cloneNode(true);
+      this.svgContent = clonedSVG.outerHTML;
+
+      this.reset();
+      this.$refs.dialog.showModal();
+
+      this.$nextTick(() => {
+        this.$refs.container.addEventListener("wheel", this.handleWheel.bind(this), {
+          passive: false,
+        });
+        this.$refs.container.addEventListener("touchstart", this.handleTouchStart.bind(this), {
+          passive: false,
+        });
+        this.$refs.container.addEventListener("touchmove", this.handleTouchMove.bind(this), {
+          passive: false,
+        });
+        this.$refs.container.addEventListener("touchend", this.handleTouchEnd.bind(this), {
+          passive: false,
+        });
+        this.fitToContainer();
+      });
+    },
+
+    handleWheel(e) {
+      e.preventDefault();
+
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      const newScale = Math.max(0.1, Math.min(10, this.scale + delta));
+
+      const rect = this.$refs.container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const scaleRatio = newScale / this.scale;
+      this.posX = mouseX - (mouseX - this.posX) * scaleRatio;
+      this.posY = mouseY - (mouseY - this.posY) * scaleRatio;
+
+      this.scale = newScale;
+    },
+
+    handleTouchStart(e) {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        this.lastTouchDistance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY,
+        );
+      }
+    },
+
+    handleTouchMove(e) {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentDistance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY,
+        );
+
+        if (this.lastTouchDistance > 0) {
+          // 距離の変化率を計算（比率ベース）
+          const distanceRatio = currentDistance / this.lastTouchDistance;
+
+          // 変化率から対数的にスケール変化を計算
+          // Math.logを使うことで、大きなSVGでも小さなSVGでも同じ感覚でズームできる
+          const scaleChange = (distanceRatio - 1) * 0.5; // 0.5が感度（0.3〜0.8で調整可能）
+
+          const newScale = Math.max(0.1, Math.min(10, this.scale * (1 + scaleChange)));
+
+          // ピンチの中心点を計算
+          const rect = this.$refs.container.getBoundingClientRect();
+          const centerX = (touch1.clientX + touch2.clientX) / 2 - rect.left;
+          const centerY = (touch1.clientY + touch2.clientY) / 2 - rect.top;
+
+          // 中心点を基準にズーム
+          const scaleRatio = newScale / this.scale;
+          this.posX = centerX - (centerX - this.posX) * scaleRatio;
+          this.posY = centerY - (centerY - this.posY) * scaleRatio;
+
+          this.scale = newScale;
+        }
+
+        this.lastTouchDistance = currentDistance;
+      }
+    },
+
+    // 新しいメソッドを追加
+    zoomIn() {
+      const newScale = Math.min(10, this.scale + 0.1);
+
+      const rect = this.$refs.container.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      const scaleRatio = newScale / this.scale;
+      this.posX = centerX - (centerX - this.posX) * scaleRatio;
+      this.posY = centerY - (centerY - this.posY) * scaleRatio;
+
+      this.scale = newScale;
+    },
+
+    zoomOut() {
+      const newScale = Math.max(0.1, this.scale - 0.1);
+
+      const rect = this.$refs.container.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      const scaleRatio = newScale / this.scale;
+      this.posX = centerX - (centerX - this.posX) * scaleRatio;
+      this.posY = centerY - (centerY - this.posY) * scaleRatio;
+
+      this.scale = newScale;
+    },
+
+    handleTouchEnd(e) {
+      if (e.touches.length < 2) {
+        this.lastTouchDistance = 0;
+      }
+    },
+
+    startDrag(e) {
+      if (e.button !== 0) return;
+      this.isDragging = true;
+      this.startX = e.clientX - this.posX;
+      this.startY = e.clientY - this.posY;
+      this.$refs.container.style.cursor = "grabbing";
+    },
+
+    drag(e) {
+      if (!this.isDragging) return;
+      e.preventDefault();
+      this.posX = e.clientX - this.startX;
+      this.posY = e.clientY - this.startY;
+    },
+
+    endDrag() {
+      this.isDragging = false;
+      this.$refs.container.style.cursor = "grab";
+    },
+
+    close() {
+      this.$refs.dialog.close();
+    },
+
+    reset() {
+      this.scale = 1;
+      this.posX = 0;
+      this.posY = 0;
+      this.isDragging = false;
+      this.lastTouchDistance = 0;
+
+      this.$nextTick(() => {
+        this.fitToContainer();
+      });
+    },
+
+    fitToContainer() {
+      const container = this.$refs.container;
+      const svg = container?.querySelector("svg");
+
+      if (!container || !svg) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const svgRect = svg.getBoundingClientRect();
+
+      const scaleX = (containerRect.width * 0.9) / svgRect.width;
+      const scaleY = (containerRect.height * 0.9) / svgRect.height;
+
+      this.scale = Math.min(scaleX, scaleY, 1);
+
+      const scaledWidth = svgRect.width * this.scale;
+      const scaledHeight = svgRect.height * this.scale;
+
+      this.posX = (containerRect.width - scaledWidth) / 2;
+      this.posY = (containerRect.height - scaledHeight) / 2;
+    },
+
+    get transform() {
+      return `translate(${this.posX}px, ${this.posY}px) scale(${this.scale})`;
+    },
+  }));
+
+  Alpine.start();
+  applyViewerToMermaid();
+  cosense.on("page:changed", () => {
+    applyViewerToMermaid();
+  });
+  cosense.on("lines:changed", () => {
+    applyViewerToMermaid();
+  });
+  async function getHtml() {
+    const res = await fetch(
+      `/api/code/${cosense.Project.name}/cosense-mermaid-viewer/template.html`,
+    );
+    const htmlString = await res.text();
+    const domItems = new DOMParser().parseFromString(htmlString, "text/html").body.childNodes;
+    const fragment = new DocumentFragment();
+    domItems.forEach((node) => fragment.append(node));
+    return fragment;
+  }
+
+  async function applyViewerToMermaid() {
+    document.querySelectorAll(".mermaid-preview").forEach((node) => {
+      if (node.getAttribute("data-mermaid-viewer") === "true") {
+        return;
+      }
+
+      autoRemoveListener(
+        node,
+        "click",
+        (e) => {
+          const svg = node.querySelector("svg");
+          window.openSVGViewer(svg);
+        },
+        node.parentElement,
+      );
+
+      node.setAttribute("data-mermaid-viewer", "true");
+    });
+  }
+
+  /**
+   * 対象DOMにイベントを登録し、要素が削除されたら自動でremoveEventListenerする。
+   * @param {Element} el - 対象DOM
+   * @param {string} type - イベントタイプ (例: 'click')
+   * @param {Function} handler - イベントハンドラ
+   * @param {Element} [root=document.body] - 監視範囲 (できるだけ絞る)
+   * @returns {Function} cleanup関数（手動で解除したいとき用）
+   */
+  function autoRemoveListener(el, type, handler, root = document.body) {
+    if (!el || !root.contains(el)) return () => {};
+
+    el.addEventListener(type, handler);
+
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const removed of m.removedNodes) {
+          if (removed === el || (removed.contains && removed.contains(el))) {
+            el.removeEventListener(type, handler);
+            observer.disconnect();
+            return;
+          }
+        }
+      }
+    });
+
+    observer.observe(root, { childList: true, subtree: true });
+
+    return () => {
+      el.removeEventListener(type, handler);
+      observer.disconnect();
+    };
+  }
+})();

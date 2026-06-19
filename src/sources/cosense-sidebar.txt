@@ -1,0 +1,496 @@
+import Alpine from "/api/code/cosense-toolbox/alpine-js-for-user-script-esm/module.js";
+const TAG_STORE_PAGES = window.TAG_STORE_PAGES || ["sidebar-tags"];
+(async () => {
+  if (window.innerWidth < 786) return;
+
+  const SIDEBAR_ID = "cosense-sidebar";
+  const SIDEBAR_ALPINE_NAME_SPACE = "CosenseSidebar";
+  const SIDEBAR_STYLE_NAME = "sidebar-style";
+  const SIDEBAR_DEFULAT_WIDTH = 320;
+
+  const appContainer = applyStyleToAppContainerDiv();
+  const sidebarRoot = createSideBarRootEl();
+  const sidebarDomString = await createSidebarDOMString();
+  const sidebarStyle = createSidebarStyle();
+
+  document.head.append(sidebarStyle);
+  sidebarRoot.innerHTML = sidebarDomString;
+  appContainer.insertAdjacentElement("beforebegin", sidebarRoot);
+  createTeleportElForSidebarToggleButton();
+  registerSidebarResizeEvent();
+  setupAlpine();
+
+  window.Alpine = Alpine;
+  Alpine.initTree(sidebarRoot);
+
+  function createSidebarStyle() {
+    const style = document.createElement("style");
+    style.setAttribute("data-name", SIDEBAR_STYLE_NAME);
+    style.innerHTML = `
+				#${SIDEBAR_ID} {
+					--text-color: #b4b4b4;
+					
+					background-color: #222;
+					border-right: 1px solid #333;
+					position: relative;
+					color: var(--text-color);
+					z-index: 15;
+					
+					
+					#main {
+						position: sticky;
+						top: 0px;
+						padding: 1.5rem;
+						min-width: ${SIDEBAR_DEFULAT_WIDTH}px;
+													max-width: calc(100vw * 0.7);
+						height: 100vh;
+						display: flex;
+												flex-direction: column;
+					}
+					
+					ol {
+						list-style: none;
+						padding-left: 1.5rem;
+						
+						.list-item {
+							margin-bottom: 1.75rem; 
+							position: relative;
+						}
+					}
+					hr {
+						border-top: 1px solid hsl(0deg 0% 25.29%);
+						width: 100%;
+					}
+					
+					h3 {
+						margin: 0;
+					}
+					a {
+						color: var(--text-color);
+					}
+					button {
+												all: unset;
+												cursor: pointer;
+										}
+					
+					.header {
+						display: flex;
+													flex-direction: row;
+													align-items: center;
+													justify-content: space-between;
+													i {
+														font-size: 18px;
+													}
+													h3 i {
+														font-size: 24px;
+													}
+					}
+					
+					.root-list {
+								padding-left: 0px;
+								max-height: 100%;
+								padding-bottom: 2rem;
+								overflow-y: auto;
+								scrollbar-gutter: stable;
+													scrollbar-color: #555 #333333;
+							}
+							.tag-wrapper {
+								background-color: #333;
+													padding: .25rem .75rem;
+													border-radius: .75rem;
+													margin-bottom: 1rem;
+													color: var(--text-color);
+													
+													display: flex;
+													flex-direction: row;
+													align-items: center;
+													justify-content: space-between;
+													
+													position: sticky;
+													top: 0px;
+													z-index: 2;
+							}
+							
+							.tag, 
+							.related-page-link,
+							.external-page-link {
+								font-size: 1.75rem;
+							}
+							
+							.tag {
+								font-weight: 500;
+							}
+							
+							.related-page,
+							.external-page {
+								margin-bottom: .5rem;
+								
+								.related-page-link,
+								.external-page-link {
+									text-tecoration: underline;
+								}
+							}
+							
+							li.external-page::marker {
+								color: #00ff00;
+							}
+							li.external-page {
+								list-style: disc;
+							}
+							
+							.toggle-on-sidebar-button {
+								padding: 1rem;
+								position: sticky;
+								top: 0;
+								margin-right: 1rem;
+							}
+							.loading-image-wrapper {
+								display: flex;
+												flex-direction: row;
+												align-items: center;
+												justify-content: center;
+							}
+							.tools-wrapper {
+								font-size: 1.75rem;
+								display: flex;
+												flex-direction: row;
+												align-items: center;
+												justify-content: space-between;
+							}
+							
+							.tool-button-wrapper { 
+								display: flex;
+													flex-direction: row;
+													align-items: center;
+													gap: 1rem;
+													
+													position: relative;
+													.dropdown-trigger {
+														
+													}
+													.dropdown {
+														position: absolute;
+														min-width: 150px;
+														display: flex;
+														flex-direction: column;
+														gap: 5px;
+														right: 0;
+															top: 3.5rem;
+															z-index: 99999;
+															background: black;
+															padding: 1rem;
+															box-shadow: 0 4px 10px 0px #757373;
+															border-radius: 1rem;
+									border: 1px solid #636363;
+									font-size: 1.5rem;
+													}
+							}
+							
+							
+							.icon-button{
+								padding: 0 .75rem;
+								background-color: #333;
+								border: 1px solid #444;
+								border-radius: .75rem;
+								&:hover {
+									background-color: #444;
+								}
+							}
+							i.fas {
+						font-size: 14px;
+					}
+							.tags-store-page {
+								text-decoration: underline;
+								font-size: 1.75rem;
+							}
+							.page-icon {
+								max-width: 1.75rem;
+							}
+							.pagelist {
+								list-style: none;
+													padding-left: 3.5rem;
+													position: relative;
+													&::before {
+																	content: '';
+																	position: absolute;
+																	top: 0;
+																	bottom: 0;
+																	width: 1px;
+																	background: #555;
+																	left: 1.75rem;
+																	z-index: 1;
+													}
+													.related-page {
+														position: relative;
+														&::before {
+																	content: '';
+																	position: absolute;
+																	left: -1.75rem;
+																	top: 50%;
+																	height: 1px;
+																	width: 1.25rem;
+																	background: #555;
+																}
+													}
+							}
+							.resiable-col.resizing {
+								background-color: #888;
+							}
+							.resizable-col {
+								position: absolute;
+													top: 0;
+													bottom: 0;
+													width: 2px;
+													background-color: #444;
+													right: 0;
+													cursor: col-resize;
+													
+													&:hover {
+														background-color: #888;
+													}
+							}
+				}
+				#SidebarToggleButtonWrapper {
+							margin-right: 1rem;
+						}
+				#${SIDEBAR_ID} > * {
+					font-family:"Roboto",Helvetica,Arial,"Hiragino Sans","Noto Color Emoji",sans-serif;
+				}
+			`;
+    return style;
+  }
+
+  async function createSidebarDOMString() {
+    const res = await fetch(`/api/code/${cosense.Project.name}/cosense-sidebar/template.html`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "text/html",
+      },
+    });
+    return await res.text();
+  }
+  function setupAlpine() {
+    Alpine.data(SIDEBAR_ALPINE_NAME_SPACE, () => ({
+      isFetchingTags: true,
+      /**
+       * type Data = {
+       *  [StorePageTitle: string]: Array<{
+       *				tagName: string; relatedPages: Array<any>
+       *			}>
+       * }
+       **/
+      data: {},
+      foldedTags: [],
+      sidebarShowing: getDefaultValueFromLocalStorage("sidebarShowing", true),
+      imageShowing: getDefaultValueFromLocalStorage("imageShowing", false),
+      sidebarWidth: SIDEBAR_DEFULAT_WIDTH, // 初期幅
+      isResizing: false,
+      tagStorePages: TAG_STORE_PAGES,
+      selectedTagStorePage: TAG_STORE_PAGES[0],
+      fillContentViewEnabled: getDefaultValueFromLocalStorage("fillContentViewEnabled", false),
+      showToolsDropdown: false,
+      getFillContentViewStyle: () => `
+									:root {
+										--screen-width: ${window.innerWidth}px;
+									}
+										#app-container {
+											.app {
+												.container {
+													max-width: none !important;
+													@media (767px < width) {
+																				.page-column {
+																						grid-template-columns: minmax(200px, var(--screen-width)) min-content;
+																				}
+																	}
+												}
+											}
+										.related-page-list.has-literate-database {
+														position: sticky;
+											}
+											.iframe-video-player iframe {
+												width: auto !important;
+												aspect-ratio: 16 / 9;	
+											}
+											.gyazo.landscape iframe {
+												width: revert-layer !important;
+											}
+						}
+									`,
+      init() {
+        // ローカルストレージから幅を復元
+        const savedWidth = localStorage.getItem("sidebarWidth");
+        if (savedWidth) {
+          this.sidebarWidth = parseInt(savedWidth);
+        }
+
+        return this.$nextTick(async () => {
+          await this.fetchData(this.selectedTagStorePage);
+          this.dispatchSidebarResizedEvent();
+        });
+      },
+      toggleFolding(tagName) {
+        if (this.foldedTags.includes(tagName)) {
+          this.foldedTags = [...this.foldedTags.filter((tag) => tag !== tagName)];
+        } else {
+          this.foldedTags.push(tagName);
+        }
+      },
+      toggleSidebar() {
+        this.sidebarShowing = !this.sidebarShowing;
+        localStorage.setItem("sidebarShowing", this.sidebarShowing);
+        this.$nextTick(() => this.dispatchSidebarResizedEvent());
+      },
+      toggleImageVisibility() {
+        this.imageShowing = !this.imageShowing;
+        localStorage.setItem("imageShowing", this.imageShowing);
+      },
+      toggleFillContentView() {
+        this.fillContentViewEnabled = !this.fillContentViewEnabled;
+        localStorage.setItem("fillContentViewEnabled", this.fillContentViewEnabled);
+      },
+      toggleToolsDropdown() {
+        this.showToolsDropdown = !this.showToolsDropdown;
+      },
+      async fetchData(storePageTitle) {
+        if (this.data[storePageTitle]) {
+          return;
+        }
+        const tags = await fetchTagListFromTagsPage(storePageTitle);
+        this.data[storePageTitle] = tags;
+        this.isFetchingTags = false;
+      },
+      async refresh() {
+        this.isFetchingTags = true;
+        if (this.data[this.selectedTagStorePage]) {
+          delete this.data[this.selectedTagStorePage];
+        }
+        await this.fetchData(this.selectedTagStorePage);
+      },
+      async tagStorePageChanged() {
+        await this.fetchData(this.selectedTagStorePage);
+      },
+      // リサイズ機能
+      startResize(e) {
+        e.preventDefault(); // デフォルト動作を防止
+        this.isResizing = true;
+        const startX = e.clientX;
+        const startWidth = this.sidebarWidth;
+
+        // テキスト選択を無効化
+        document.body.style.userSelect = "none";
+        document.body.style.cursor = "ew-resize";
+
+        const onMouseMove = (e) => {
+          if (!this.isResizing) return;
+
+          const deltaX = e.clientX - startX;
+          const newWidth = startWidth + deltaX;
+
+          // 最小幅と最大幅を設定
+          if (newWidth >= 200 && newWidth <= 800) {
+            this.sidebarWidth = newWidth;
+          }
+        };
+
+        const onMouseUp = () => {
+          this.isResizing = false;
+          // テキスト選択を再有効化
+          document.body.style.userSelect = "";
+          document.body.style.cursor = "";
+          // 幅をローカルストレージに保存
+          localStorage.setItem("sidebarWidth", this.sidebarWidth);
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onMouseUp);
+          this.$nextTick(() => this.dispatchSidebarResizedEvent());
+        };
+
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+      },
+      async dispatchSidebarResizedEvent() {
+        await this.$nextTick();
+        const event = new CustomEvent("sidebar-width-changed", {
+          detail: { width: this.sidebarShowing ? this.sidebarWidth : 0 },
+        });
+        document.querySelector("#app-container .navbar").dispatchEvent(event);
+        document.querySelector(".footer").dispatchEvent(event);
+      },
+    }));
+  }
+
+  function getDefaultValueFromLocalStorage(key, defaultValue) {
+    const val = localStorage.getItem(key);
+    return val != null ? JSON.parse(val) : defaultValue != null ? defaultValue : true;
+  }
+
+  async function fetchTagListFromTagsPage(pageTitle) {
+    const res = await fetch(`/api/pages/${cosense.Project.name}/${pageTitle}`);
+    if (!res.ok) {
+      window.showToast("タグ取得に失敗しました😢");
+      return;
+    }
+    const pageData = await res.json();
+    const response = [];
+    for (let tag of pageData.links) {
+      const { relatedPages, externalPages } = await fetchTagRelatedPages(tag);
+      const obj = {
+        tagName: tag,
+        relatedPages,
+        externalPages,
+      };
+      response.push(obj);
+    }
+    return response;
+  }
+
+  async function fetchTagRelatedPages(pageTitle) {
+    const res = await fetch("/api/pages/" + cosense.Project.name + "/" + pageTitle, {
+      mode: "cors",
+      credentials: "include",
+    });
+    const body = await res.json();
+    return {
+      relatedPages: body.relatedPages.links1hop.filter(
+        (page) => page.title !== pageTitle && !TAG_STORE_PAGES.includes(page.title),
+      ),
+      externalPages: body.relatedPages.projectLinks1hop ?? [],
+    };
+  }
+
+  function applyStyleToAppContainerDiv() {
+    const appContainer = document.querySelector("#app-container");
+    appContainer.style.width = "100%";
+    document.body.style.display = "flex";
+    document.body.style.marginBottom = "0px";
+    return appContainer;
+  }
+
+  function registerSidebarResizeEvent() {
+    // 外部でイベントをリッスン
+    document
+      .querySelector("#app-container .navbar")
+      .addEventListener("sidebar-width-changed", (e) => {
+        e.target.style.cssText = `width: calc(100% - ${e.detail.width}px);`;
+      });
+
+    document.querySelector(".footer").addEventListener("sidebar-width-changed", (e) => {
+      e.target.style.cssText = `width: calc(100% - ${e.detail.width}px);`;
+    });
+  }
+
+  function createSideBarRootEl() {
+    const div = document.createElement("div");
+    div.id = SIDEBAR_ID;
+    div.setAttribute("x-data", SIDEBAR_ALPINE_NAME_SPACE);
+    return div;
+  }
+
+  function createTeleportElForSidebarToggleButton() {
+    const div = document.createElement("div");
+    div.id = "SidebarToggleButtonWrapper";
+    document
+      .querySelector("#app-container .navbar.navbar-default .left")
+      .insertAdjacentElement("afterbegin", div);
+    return div;
+  }
+})();

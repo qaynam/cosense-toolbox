@@ -1,0 +1,99 @@
+import { insertText } from "/api/code/cosense-toolbox/insert-text/module.js";
+
+const lambdaIcon = `<svg  xmlns="http://www.w3.org/2000/svg"  width="24" height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-lambda"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 20l6.5 -9" /><path d="M19 20c-6 0 -6 -16 -12 -16" /></svg>`;
+
+function createEmebedButton() {
+  const div = document.createElement("div");
+  const button = document.createElement("button");
+  div.style.cssText = `
+		display: flex;
+		justify-content: flex-end;
+		padding-right: 1rem;
+		padding-bottom: 1rem;
+	`;
+  button.innerHTML = lambdaIcon;
+  button.style.cssText = `
+		border-radius: 50px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding: 5px 5px;
+	`;
+  div.append(button);
+  button.onclick = callApi;
+  return div;
+}
+function insertFooter(node) {
+  document
+    .querySelector(".footer")
+    .insertBefore(node, document.querySelector(".footer .status-bar"));
+}
+
+async function callApi() {
+  const url = await readUrlFromClipboard();
+  const path =
+    url.startsWith("https://x.com") ||
+    url.startsWith("https://www.x.com") ||
+    url.startsWith("https://twitter.com") ||
+    url.startsWith("https://www.twitter.com")
+      ? "twitter"
+      : "url";
+  const res = await fetch(`/api/embed-text/${path}?url=${encodeURIComponent(url)}`, {
+    method: "POST",
+    credentials: "same-origin",
+    body: '{"timeout":3000}',
+    headers: {
+      "X-CSRF-TOKEN": window._csrf,
+    },
+  });
+  if (!res.ok) {
+    alert("cant embed this url");
+    return;
+  }
+  const body = await res.json();
+  if (path === "twitter") {
+    insertText(
+      `> [@${body.screenName} ${url}] ${body.description}\n> ${body.images.map((img) => `[${img}]`)}`,
+    );
+    return;
+  }
+  insertText(`[${body.title} ${url}]`);
+}
+
+async function readUrlFromClipboard() {
+  try {
+    const permission = await navigator.permissions.query({
+      name: "clipboard-read",
+    });
+    if (permission.state === "denied") {
+      alert("Not allowed to read clipboard.");
+      // throw new Error("Not allowed to read clipboard.");
+    }
+    const clipText = await navigator.clipboard.readText();
+    if (!clipText) {
+      alert("not text in clipboard");
+      throw new Error("not text in clipboard");
+    }
+
+    if (!clipText.startsWith("https://")) {
+      alert("no url found in clipboard");
+      throw new Error("no url found in clipboard");
+    }
+
+    return clipText;
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
+function applyPaseEmbedButtonToBody() {
+  // if(window.innerWidth > 1000) {
+  // return;
+  //}
+  const btn = createEmebedButton();
+  insertFooter(btn);
+}
+
+if (window.innerWidth < 768) {
+  applyPaseEmbedButtonToBody();
+}

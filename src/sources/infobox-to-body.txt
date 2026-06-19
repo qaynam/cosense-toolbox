@@ -1,0 +1,35 @@
+import { insertText } from "/api/code/cosense-toolbox/insert-text/module.js";
+
+function insertToEditor() {
+  const infoboxs = document.querySelectorAll(".page-sidebar .infobox");
+  if (infoboxs.length === 0) {
+    alert("theres no infobox of this page");
+    return;
+  }
+
+  let insertTextAry = [];
+  infoboxs.forEach((infobox) => {
+    infobox.querySelectorAll("dt.definition-term").forEach((term) => {
+      insertTextAry.push(term.textContent);
+    });
+  });
+
+  if (insertTextAry.length === 0) {
+    alert("infobox did'nt set any terms");
+    return;
+  }
+
+  const answer = confirm("以下の内容を挿入しますか？\n - " + insertTextAry.join("\n - "));
+
+  if (answer) {
+    insertText(`\ncode:property.txt
+	${insertTextAry.join(": \n ")}: 
+`);
+  }
+}
+
+scrapbox.PageMenu.addMenu({
+  title: "inser infobox data",
+  onClick: insertToEditor,
+  image: "https://gyazo.com/dda5fc480c3020ed240d70f7e4adaaaf.png",
+});

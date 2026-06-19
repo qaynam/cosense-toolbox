@@ -1,0 +1,75 @@
+export function applyGridLine() {
+  exec();
+  window.cosense.on("layout:changed", exec);
+}
+
+function exec() {
+  // topページじゃないとき
+  if (cosense.Layout !== "list") {
+    return;
+  }
+  const container = document.querySelector(".page-list ul.grid");
+
+  if (!container) {
+    throw new Error("Error: .page-list ul.grid element not found. Please check the DOM structure.");
+  }
+
+  try {
+    // グリッドの設定を取得
+    const computedStyle = getComputedStyle(container);
+    const cardCount = container.querySelectorAll("li.page-list-item.grid-style-item").length;
+    const columnTemplate = computedStyle.gridTemplateColumns;
+
+    // 列数を計算 (repeat(auto-fill, minmax(147px, 1fr)) のような形式から)
+    const minWidth = 147; // minmaxから固定値取得 (app.cssから)
+    const containerWidth = container.clientWidth;
+    const gapStr = computedStyle.gap || "clamp(8px,1.5svw,16px)";
+    const gap = parseFloat(window.getComputedStyle(container).gap) || 16; // clampはcomputedで数値取得
+
+    // 列数推定: auto-fillなのでコンテナ幅から計算
+    let columnCount = Math.floor((containerWidth + gap) / (minWidth + gap));
+    columnCount = Math.min(columnCount, cardCount); // カード数を超えない
+    const rowCount = Math.ceil(cardCount / columnCount) || 1;
+
+    console.log(
+      `Grid info: Columns: ${columnCount}, Rows: ${rowCount}, Gap: ${gap}px, Card count: ${cardCount}`,
+    );
+
+    // 水平線の追加 (行間)
+    for (let i = 1; i < rowCount; i++) {
+      const line = document.createElement("div");
+      line.className = "grid-line horizontal";
+      line.style.position = "absolute";
+      line.style.left = "0";
+      line.style.right = "0";
+      line.style.height = "1px";
+      line.style.background = "#606060";
+      line.style.zIndex = "0";
+      // 行の高さは動的計算 (仮定: 各行の高さが均等)
+      const rowHeight = container.clientHeight / rowCount;
+      line.style.top = `${i * rowHeight + gap / 2}px`;
+      container.appendChild(line);
+    }
+
+    // 垂直線の追加 (列間)
+    for (let i = 1; i < columnCount; i++) {
+      const line = document.createElement("div");
+      line.className = "grid-line vertical";
+      line.style.position = "absolute";
+      line.style.top = "0";
+      line.style.bottom = "0";
+      line.style.width = "1px";
+      line.style.background = "#606060";
+      line.style.zIndex = "0";
+      // 列幅はminmaxなのでコンテナ幅から計算
+      const columnWidth = (containerWidth + gap) / columnCount - gap;
+      line.style.left = `${i * (columnWidth + gap) - gap / 2}px`;
+      container.appendChild(line);
+    }
+
+    // コンテナに position: relative を追加 (スタイル変更)
+    container.style.position = "relative";
+  } catch (error) {
+    console.error("Error while adding grid lines:", error);
+  }
+}

@@ -1,0 +1,700 @@
+/**
+ * CSVテーブルモーダル表示クラス
+ * 指定したURLからCSVデータを取得し、ダークモードのテーブルをモーダルで表示
+ */
+export class CSVTableModal {
+  constructor() {
+    this.modal = null;
+    this.tableContainer = null;
+    this.csvData = [];
+    this.headers = [];
+    this.filteredData = [];
+    this.searchInput = null;
+    this.searchTimeout = null;
+    this.lastSearchTime = 0;
+    this.throttleDelay = 100;
+    this.debounceDelay = 500;
+    this.pinnedColumns = new Set();
+  }
+
+  /**
+   * 指定したURLからCSVデータを取得してテーブルを表示
+   * @param {string} url - CSV取得用のURL
+   */
+  async displayTable(url) {
+    try {
+      // CSVデータを取得
+      await this.fetchCSVData(url);
+
+      // モーダルを作成・表示
+      this.createModal();
+      this.setupSearchListener();
+      this.renderTable();
+      this.showModal();
+    } catch (error) {
+      console.error("テーブル表示エラー:", error);
+      this.showError("データの取得に失敗しました: " + error.message);
+    }
+  }
+
+  /**
+   * 指定したURLからCSVデータを取得
+   * @param {string} url - CSV取得用のURL
+   */
+  async fetchCSVData(url) {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const csvText = await response.text();
+    this.parseCSV(csvText);
+  }
+
+  /**
+   * CSV文字列をパースして配列に変換
+   * @param {string} csvText - CSV文字列
+   */
+  parseCSV(csvText) {
+    const lines = csvText.trim().split("\n");
+
+    if (lines.length === 0) {
+      throw new Error("CSVデータが空です");
+    }
+
+    // ヘッダー行を取得
+    this.headers = this.parseCSVLine(lines[0]);
+
+    // データ行を取得
+    this.csvData = lines.slice(1).map((line) => this.parseCSVLine(line));
+    this.filteredData = [...this.csvData];
+  }
+
+  /**
+   * CSV行をパースして配列に変換（カンマ区切り、クォート対応）
+   * @param {string} line - CSV行
+   * @returns {Array<string>} パースされた値の配列
+   */
+  parseCSVLine(line) {
+    const result = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          // エスケープされたクォート
+          current += '"';
+          i++; // 次の文字をスキップ
+        } else {
+          // クォートの開始/終了
+          inQuotes = !inQuotes;
+        }
+      } else if (char === "," && !inQuotes) {
+        // 区切り文字（クォート外）
+        result.push(current.trim());
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+
+    result.push(current.trim());
+    return result;
+  }
+
+  /**
+   * モーダルのDOM要素を作成
+   */
+  createModal() {
+    // 既存のモーダルを削除
+    if (this.modal) {
+      this.modal.remove();
+    }
+
+    // モーダルオーバーレイを作成
+    this.modal = document.createElement("div");
+    this.modal.className = "csv-modal-overlay";
+    this.modal.style.cssText = `
+								position: fixed;
+								top: 0;
+								left: 0;
+								width: 100vw;
+								height: 100vh;
+								background-color: rgba(0, 0, 0, 0.8);
+								display: flex;
+								justify-content: center;
+								align-items: center;
+								z-index: 10000;
+								backdrop-filter: blur(4px);
+						`;
+
+    // モーダルコンテナを作成
+    const modalContainer = document.createElement("div");
+    modalContainer.className = "csv-modal-container";
+    modalContainer.style.cssText = `
+								width: 95vw;
+								height: 95vh;
+								background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+								border-radius: 16px;
+								box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+								display: flex;
+								flex-direction: column;
+								overflow: hidden;
+								border: 1px solid #475569;
+						`;
+
+    // ヘッダー部分を作成
+    const header = this.createModalHeader();
+    modalContainer.appendChild(header);
+
+    // テーブルコンテナを作成
+    this.tableContainer = document.createElement("div");
+    this.tableContainer.className = "csv-table-container";
+    this.tableContainer.style.cssText = `
+								flex: 1;
+								overflow: auto;
+								padding: 0;
+								background: #0f172a;
+								position: relative;
+						`;
+
+    modalContainer.appendChild(this.tableContainer);
+    this.modal.appendChild(modalContainer);
+
+    // 閉じるボタンのイベントリスナー
+    this.modal.addEventListener("click", (e) => {
+      if (e.target === this.modal) {
+        this.closeModal();
+      }
+    });
+
+    // ESCキーで閉じる
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && this.modal) {
+        this.closeModal();
+      }
+    });
+  }
+
+  /**
+   * モーダルヘッダーを作成
+   * @returns {HTMLElement} ヘッダー要素
+   */
+  createModalHeader() {
+    const header = document.createElement("div");
+    header.className = "csv-modal-header";
+    header.style.cssText = `
+								padding: 20px 24px;
+								background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+								border-bottom: 1px solid #6b7280;
+								display: flex;
+								justify-content: space-between;
+								align-items: center;
+						`;
+
+    // タイトルと検索コンテナ
+    const leftSection = document.createElement("div");
+    leftSection.style.cssText = `
+								display: flex;
+								align-items: center;
+								gap: 20px;
+						`;
+
+    // タイトル
+    const title = document.createElement("h2");
+    title.textContent = "CSV Data Table";
+    title.style.cssText = `
+								color: #f8fafc;
+								font-size: 20px;
+								font-weight: 600;
+								margin: 0;
+								text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+						`;
+
+    // 検索入力フィールド
+    this.searchInput = document.createElement("input");
+    this.searchInput.type = "text";
+    this.searchInput.placeholder = "Search...";
+    this.searchInput.style.cssText = `
+								padding: 8px 12px;
+								border: 1px solid #475569;
+								border-radius: 6px;
+								background: #1e293b;
+								color: #f1f5f9;
+								font-size: 14px;
+								width: 200px;
+								outline: none;
+								transition: all 0.2s ease;
+						`;
+
+    this.searchInput.addEventListener("focus", () => {
+      this.searchInput.style.borderColor = "#3b82f6";
+      this.searchInput.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.1)";
+    });
+
+    this.searchInput.addEventListener("blur", () => {
+      this.searchInput.style.borderColor = "#475569";
+      this.searchInput.style.boxShadow = "none";
+    });
+
+    leftSection.appendChild(title);
+    leftSection.appendChild(this.searchInput);
+
+    // 閉じるボタン
+    const closeBtn = document.createElement("button");
+    closeBtn.innerHTML = "×";
+    closeBtn.className = "csv-modal-close";
+    closeBtn.style.cssText = `
+								background: none;
+								border: none;
+								color: #cbd5e1;
+								font-size: 28px;
+								cursor: pointer;
+								padding: 0;
+								width: 32px;
+								height: 32px;
+								border-radius: 50%;
+								display: flex;
+								align-items: center;
+								justify-content: center;
+								transition: all 0.2s ease;
+						`;
+
+    closeBtn.addEventListener("mouseenter", () => {
+      closeBtn.style.background = "#ef4444";
+      closeBtn.style.color = "white";
+    });
+
+    closeBtn.addEventListener("mouseleave", () => {
+      closeBtn.style.background = "none";
+      closeBtn.style.color = "#cbd5e1";
+    });
+
+    closeBtn.addEventListener("click", () => this.closeModal());
+
+    header.appendChild(leftSection);
+    header.appendChild(closeBtn);
+
+    return header;
+  }
+
+  /**
+   * 検索機能のイベントリスナーを設定
+   */
+  setupSearchListener() {
+    if (!this.searchInput) return;
+
+    this.searchInput.addEventListener("input", (e) => {
+      const searchTerm = e.target.value;
+      this.throttledSearch(searchTerm);
+    });
+  }
+
+  /**
+   * スロットリング付きの検索処理
+   * @param {string} searchTerm - 検索キーワード
+   */
+  throttledSearch(searchTerm) {
+    const now = Date.now();
+
+    if (now - this.lastSearchTime < this.throttleDelay) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = setTimeout(() => {
+        this.performSearch(searchTerm);
+      }, this.debounceDelay);
+      return;
+    }
+
+    this.lastSearchTime = now;
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => {
+      this.performSearch(searchTerm);
+    }, this.debounceDelay);
+  }
+
+  /**
+   * 実際の検索処理
+   * @param {string} searchTerm - 検索キーワード
+   */
+  performSearch(searchTerm) {
+    if (!searchTerm.trim()) {
+      this.filteredData = [...this.csvData];
+    } else {
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      this.filteredData = this.csvData.filter((row) =>
+        row.some((cell) => cell.toLowerCase().includes(lowerSearchTerm)),
+      );
+    }
+    this.renderTable();
+  }
+
+  /**
+   * テキスト内のキーワードをハイライト
+   * @param {string} text - 対象テキスト
+   * @param {string} searchTerm - ハイライトするキーワード
+   * @returns {string} HTMLハイライト済みテキスト
+   */
+  highlightSearchTerm(text, searchTerm) {
+    if (!searchTerm.trim()) return text;
+
+    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+    return text.replace(
+      regex,
+      '<mark style="background-color: #fbbf24; color: #000; padding: 2px 4px; border-radius: 2px;">$1</mark>',
+    );
+  }
+
+  /**
+   * カラムの固定状態を切り替え
+   * @param {number} columnIndex - カラムのインデックス
+   */
+  toggleColumnPin(columnIndex) {
+    if (this.pinnedColumns.has(columnIndex)) {
+      this.pinnedColumns.delete(columnIndex);
+    } else {
+      this.pinnedColumns.add(columnIndex);
+    }
+    this.renderTable();
+  }
+
+  /**
+   * テーブルをレンダリング
+   */
+  renderTable() {
+    if (!this.tableContainer) return;
+
+    // 既存のテーブルを削除
+    this.tableContainer.innerHTML = "";
+
+    // テーブル要素を作成
+    const table = document.createElement("table");
+    table.className = "csv-data-table";
+    table.style.cssText = `
+								width: 100%;
+								border-collapse: collapse;
+								background: #0f172a;
+								font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+								font-size: 14px;
+								position: relative;
+						`;
+
+    // ヘッダーを作成
+    const thead = this.createTableHeader();
+    table.appendChild(thead);
+
+    // ボディを作成
+    const tbody = this.createTableBody();
+    table.appendChild(tbody);
+
+    // テーブルコンテナにスタイルを適用
+    this.tableContainer.style.cssText += `
+								scrollbar-width: thin;
+								scrollbar-color: #475569 #1e293b;
+						`;
+
+    // Webkitスクロールバーのスタイル
+    const style = document.createElement("style");
+    style.textContent = `
+								.csv-table-container::-webkit-scrollbar {
+										width: 8px;
+										height: 8px;
+								}
+								.csv-table-container::-webkit-scrollbar-track {
+										background: #1e293b;
+										border-radius: 4px;
+								}
+								.csv-table-container::-webkit-scrollbar-thumb {
+										background: #475569;
+										border-radius: 4px;
+								}
+								.csv-table-container::-webkit-scrollbar-thumb:hover {
+										background: #64748b;
+								}
+						`;
+
+    if (!document.querySelector("#csv-modal-styles")) {
+      style.id = "csv-modal-styles";
+      document.head.appendChild(style);
+    }
+
+    this.tableContainer.appendChild(table);
+  }
+
+  /**
+   * テーブルヘッダーを作成
+   * @returns {HTMLElement} thead要素
+   */
+  createTableHeader() {
+    const thead = document.createElement("thead");
+    thead.style.cssText = `
+								position: sticky;
+								top: 0;
+								z-index: 100;
+								background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+								box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+						`;
+
+    const tr = document.createElement("tr");
+
+    this.headers.forEach((header, index) => {
+      const th = document.createElement("th");
+
+      // ヘッダーコンテナ
+      const headerContainer = document.createElement("div");
+      headerContainer.style.cssText = `
+										display: flex;
+										align-items: center;
+										gap: 8px;
+										justify-content: space-between;
+								`;
+
+      // ヘッダーテキスト
+      const headerText = document.createElement("span");
+      headerText.textContent = header;
+
+      // ピン留めアイコン
+      const pinIcon = document.createElement("div");
+      pinIcon.style.cssText = `
+										cursor: pointer;
+										opacity: 0.7;
+										transition: opacity 0.2s ease;
+										flex-shrink: 0;
+										width: 16px;
+										height: 16px;
+										display: flex;
+										align-items: center;
+										justify-content: center;
+								`;
+
+      const isPinned = this.pinnedColumns.has(index);
+
+      if (isPinned) {
+        pinIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-pin">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+												<path d="M15.113 3.21l.094 .083l5.5 5.5a1 1 0 0 1 -1.175 1.59l-3.172 3.171l-1.424 3.797a1 1 0 0 1 -.158 .277l-.07 .08l-1.5 1.5a1 1 0 0 1 -1.32 .082l-.095 -.083l-2.793 -2.792l-3.793 3.792a1 1 0 0 1 -1.497 -1.32l.083 -.094l3.792 -3.793l-2.792 -2.793a1 1 0 0 1 -.083 -1.32l.083 -.094l1.5 -1.5a1 1 0 0 1 .258 -.187l.098 -.042l3.796 -1.425l3.171 -3.17a1 1 0 0 1 1.497 -1.26z" />
+										</svg>`;
+      } else {
+        pinIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-pin">
+												<path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+												<path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4" />
+												<path d="M9 15l-4.5 4.5" />
+												<path d="M14.5 4l5.5 5.5" />
+										</svg>`;
+      }
+
+      pinIcon.addEventListener("mouseenter", () => {
+        pinIcon.style.opacity = "1";
+      });
+
+      pinIcon.addEventListener("mouseleave", () => {
+        pinIcon.style.opacity = "0.7";
+      });
+
+      pinIcon.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.toggleColumnPin(index);
+      });
+
+      headerContainer.appendChild(headerText);
+      headerContainer.appendChild(pinIcon);
+      th.appendChild(headerContainer);
+
+      const isColumnPinned = this.pinnedColumns.has(index);
+      const sortedPinnedColumns = Array.from(this.pinnedColumns).sort((a, b) => a - b);
+      const pinnedPosition = isColumnPinned ? sortedPinnedColumns.indexOf(index) : -1;
+
+      th.style.cssText = `
+										padding: 16px 12px;
+										text-align: left;
+										font-weight: 600;
+										color: #f1f5f9;
+										background: inherit;
+										border-bottom: 2px solid #475569;
+										border-right: 1px solid #374151;
+										white-space: nowrap;
+										min-width: 120px;
+										text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+										position: sticky;
+										top: 0;
+										z-index: ${isColumnPinned ? 200 + pinnedPosition : 100};
+										${isColumnPinned ? `left: ${pinnedPosition * 144}px; background: linear-gradient(135deg, #1e293b 0%, #334155 100%);` : ""}
+								`;
+
+      if (index === this.headers.length - 1) {
+        th.style.borderRight = "none";
+      }
+
+      tr.appendChild(th);
+    });
+
+    thead.appendChild(tr);
+    return thead;
+  }
+
+  /**
+   * テーブルボディを作成
+   * @returns {HTMLElement} tbody要素
+   */
+  createTableBody() {
+    const tbody = document.createElement("tbody");
+    const searchTerm = this.searchInput ? this.searchInput.value : "";
+
+    this.filteredData.forEach((row, rowIndex) => {
+      const tr = document.createElement("tr");
+      tr.style.cssText = `
+										transition: background-color 0.2s ease;
+										${rowIndex % 2 === 0 ? "background: #0f172a;" : "background: #1e293b;"}
+								`;
+
+      // ホバー効果
+      tr.addEventListener("mouseenter", () => {
+        tr.style.background = "#2563eb";
+        tr.style.transform = "scale(1.001)";
+        // 固定カラムのホバー背景色も更新
+        Array.from(tr.children).forEach((td, index) => {
+          if (this.pinnedColumns.has(index)) {
+            td.style.background = "#2563eb";
+          }
+        });
+      });
+
+      tr.addEventListener("mouseleave", () => {
+        tr.style.background = rowIndex % 2 === 0 ? "#0f172a" : "#1e293b";
+        tr.style.transform = "scale(1)";
+        // 固定カラムの背景色を元に戻す
+        Array.from(tr.children).forEach((td, index) => {
+          if (this.pinnedColumns.has(index)) {
+            td.style.background = rowIndex % 2 === 0 ? "#0f172a" : "#1e293b";
+          }
+        });
+      });
+
+      row.forEach((cell, cellIndex) => {
+        const td = document.createElement("td");
+
+        if (searchTerm.trim()) {
+          td.innerHTML = this.highlightSearchTerm(cell, searchTerm);
+        } else {
+          td.textContent = cell;
+        }
+
+        const isColumnPinned = this.pinnedColumns.has(cellIndex);
+        const sortedPinnedColumns = Array.from(this.pinnedColumns).sort((a, b) => a - b);
+        const pinnedPosition = isColumnPinned ? sortedPinnedColumns.indexOf(cellIndex) : -1;
+
+        td.style.cssText = `
+												padding: 12px;
+												color: #e2e8f0;
+												border-bottom: 1px solid #334155;
+												border-right: 1px solid #374151;
+												white-space: nowrap;
+												min-width: 120px;
+												${isColumnPinned ? `position: sticky; left: ${pinnedPosition * 144}px; z-index: ${150 + pinnedPosition}; background: ${rowIndex % 2 === 0 ? "#0f172a" : "#1e293b"};` : ""}
+										`;
+
+        if (cellIndex === row.length - 1) {
+          td.style.borderRight = "none";
+        }
+
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+
+    return tbody;
+  }
+
+  /**
+   * モーダルを表示
+   */
+  showModal() {
+    if (this.modal) {
+      document.body.appendChild(this.modal);
+
+      // アニメーション効果
+      this.modal.style.opacity = "0";
+      this.modal.style.transform = "scale(0.9)";
+
+      requestAnimationFrame(() => {
+        this.modal.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+        this.modal.style.opacity = "1";
+        this.modal.style.transform = "scale(1)";
+      });
+    }
+  }
+
+  /**
+   * モーダルを閉じる
+   */
+  closeModal() {
+    if (this.modal) {
+      this.modal.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+      this.modal.style.opacity = "0";
+      this.modal.style.transform = "scale(0.9)";
+
+      setTimeout(() => {
+        if (this.modal && this.modal.parentNode) {
+          this.modal.parentNode.removeChild(this.modal);
+        }
+        this.modal = null;
+      }, 300);
+    }
+  }
+
+  /**
+   * エラーメッセージを表示
+   * @param {string} message - エラーメッセージ
+   */
+  showError(message) {
+    const errorModal = document.createElement("div");
+    errorModal.style.cssText = `
+								position: fixed;
+								top: 0;
+								left: 0;
+								width: 100vw;
+								height: 100vh;
+								background-color: rgba(0, 0, 0, 0.8);
+								display: flex;
+								justify-content: center;
+								align-items: center;
+								z-index: 10001;
+						`;
+
+    const errorContent = document.createElement("div");
+    errorContent.style.cssText = `
+								background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+								color: white;
+								padding: 24px;
+								border-radius: 12px;
+								box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+								text-align: center;
+								max-width: 400px;
+								border: 1px solid #ef4444;
+						`;
+
+    errorContent.innerHTML = `
+								<h3 style="margin: 0 0 12px 0; font-size: 18px;">エラー</h3>
+								<p style="margin: 0 0 20px 0; font-size: 14px;">${message}</p>
+								<button onclick="this.parentElement.parentElement.remove()"
+																style="background: #fef2f2; color: #dc2626; border: none; padding: 8px 16px;
+																							border-radius: 6px; cursor: pointer; font-weight: 500;">
+										閉じる
+								</button>
+						`;
+
+    errorModal.appendChild(errorContent);
+    document.body.appendChild(errorModal);
+
+    // 3秒後に自動で閉じる
+    setTimeout(() => {
+      if (errorModal.parentNode) {
+        errorModal.parentNode.removeChild(errorModal);
+      }
+    }, 3000);
+  }
+}

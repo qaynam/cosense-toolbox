@@ -1,0 +1,657 @@
+(function () {
+  const SUGAR_HIGH_BASE = `/api/code/cosense-toolbox/suger-high-es`;
+
+  // 言語 → プリセットのマッピング
+  const PRESET_MAP = {
+    css: `${SUGAR_HIGH_BASE}/preset-css.js`,
+    scss: `${SUGAR_HIGH_BASE}/preset-css.js`,
+    rust: `${SUGAR_HIGH_BASE}/preset-rust.js`,
+    rs: `${SUGAR_HIGH_BASE}/preset-rust.js`,
+    go: `${SUGAR_HIGH_BASE}/preset-go.js`,
+    golang: `${SUGAR_HIGH_BASE}/preset-go.js`,
+    javascript: `${SUGAR_HIGH_BASE}/preset-javascript.js`,
+    js: `${SUGAR_HIGH_BASE}/preset-javascript.js`,
+    jsx: `${SUGAR_HIGH_BASE}/preset-javascript.js`,
+    typescript: `${SUGAR_HIGH_BASE}/preset-typescript.js`,
+    ts: `${SUGAR_HIGH_BASE}/preset-typescript.js`,
+    tsx: `${SUGAR_HIGH_BASE}/preset-typescript.js`,
+  };
+
+  // プリセットキャッシュ
+  /** @type {Map<string, object>} */
+  const presetCache = new Map();
+
+  // ── MarkdownPreviewDrawer クラス ──
+  class MarkdownPreviewDrawer {
+    static #instance = null;
+
+    /** @type {ShadowRoot} */
+    #shadow = null;
+    /** @type {HTMLElement} */
+    #host = null;
+    #mounted = false;
+    /** @type {((e: KeyboardEvent) => void) | null} */
+    #onKeydown = null;
+
+    /** 現在プレビュー中のhref */
+    #currentHref = null;
+    /** debounce用タイマー */
+    #syncTimer = null;
+    /** markedロード済みか */
+    #markedReady = false;
+    /** sugar-high highlight関数 */
+    #highlight = null;
+
+    /** パネル幅 (px) */
+    #width = 520;
+    /** リサイズ中か */
+    #resizing = false;
+
+    constructor() {
+      if (MarkdownPreviewDrawer.#instance) {
+        return MarkdownPreviewDrawer.#instance;
+      }
+      MarkdownPreviewDrawer.#instance = this;
+    }
+
+    // ── public API ──
+
+    async load(href) {
+      this.#ensureMount();
+      this.#currentHref = href;
+      this.#show();
+      await this.#render(href);
+    }
+
+    // ── DOM 構築 (遅延) ──
+
+    #ensureMount() {
+      if (this.#mounted) return;
+
+      const savedWidth = localStorage.getItem("mdPreviewWidth");
+      if (savedWidth) this.#width = parseInt(savedWidth, 10);
+
+      document.body.style.display = "flex";
+
+      this.#host = document.createElement("div");
+      this.#host.dataset.mdPreviewPanel = "";
+      Object.assign(this.#host.style, {
+        width: "0px",
+        flexShrink: "0",
+        transition: "width 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+      });
+
+      this.#shadow = this.#host.attachShadow({ mode: "open" });
+      this.#shadow.innerHTML = this.#template();
+
+      this.#shadow.querySelector(".close-btn").addEventListener("click", () => this.#hide());
+
+      this.#onKeydown = (e) => {
+        if (e.key === "Escape" && this.#host.style.width !== "0px") {
+          e.preventDefault();
+          e.stopPropagation();
+          this.#hide();
+        }
+      };
+      document.addEventListener("keydown", this.#onKeydown, true);
+
+      this.#setupResize();
+
+      document.body.appendChild(this.#host);
+      this.#mounted = true;
+
+      cosense.on("lines:changed", () => {
+        if (!this.#currentHref || this.#host.style.width === "0px") return;
+        clearTimeout(this.#syncTimer);
+        this.#syncTimer = setTimeout(() => {
+          this.#render(this.#currentHref);
+        }, 400);
+      });
+    }
+
+    // ── レンダリング ──
+
+    /**
+     * front matter (---..._---) をパースして meta と body に分離
+     * @param {string} text
+     * @returns {{ meta: Array<{key: string, value: string}> | null, body: string }}
+     */
+    #parseFrontMatter(text) {
+      const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+      if (!match) return { meta: null, body: text };
+
+      const yamlBlock = match[1];
+      const body = match[2];
+
+      const meta = [];
+      for (const line of yamlBlock.split("\n")) {
+        const m = line.match(/^\s*([^:]+?)\s*:\s*(.+?)\s*$/);
+        if (m) meta.push({ key: m[1], value: m[2] });
+      }
+
+      return { meta: meta.length ? meta : null, body };
+    }
+
+    /**
+     * meta 情報を Notion 風の property テーブルに変換
+     * @param {Array<{key: string, value: string}>} meta
+     * @returns {string}
+     */
+    #renderMetaHtml(meta) {
+      const rows = meta
+        .map(({ key, value }) => {
+          return `<div class="fm-row">
+										<span class="fm-key">${this.#escapeHtml(key)}</span>
+										<span class="fm-value">${this.#escapeHtml(value)}</span>
+								</div>`;
+        })
+        .join("");
+      return `<div class="front-matter">${rows}</div>`;
+    }
+
+    #escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    async #render(href) {
+      const contentEl = this.#shadow.querySelector(".content");
+
+      if (!this.#markedReady) {
+        contentEl.innerHTML = `<div class="loading"><div class="spinner"></div>Loading…</div>`;
+      }
+
+      try {
+        await this.#ensureMarked();
+        await this.#ensureSugarHigh();
+
+        const response = await fetch(href);
+        const text = await response.text();
+
+        // front matter を分離
+        const { meta, body } = this.#parseFrontMatter(text);
+        const html = window.marked.parse(body);
+
+        const scrollTop = contentEl.scrollTop;
+
+        // meta があれば h1 の直後に挿入
+        if (meta) {
+          const metaHtml = this.#renderMetaHtml(meta);
+          // h1 があればその後に、なければ先頭に
+          const h1End = html.match(/<\/h1>/);
+          if (h1End) {
+            const idx = h1End.index + h1End[0].length;
+            contentEl.innerHTML = html.slice(0, idx) + metaHtml + html.slice(idx);
+          } else {
+            contentEl.innerHTML = metaHtml + html;
+          }
+        } else {
+          contentEl.innerHTML = html;
+        }
+
+        contentEl.scrollTop = scrollTop;
+
+        // テーブルをスクロール可能にラップ
+        contentEl.querySelectorAll("table").forEach((table) => {
+          if (table.parentElement.classList.contains("table-wrap")) return;
+          const wrapper = document.createElement("div");
+          wrapper.className = "table-wrap";
+          table.parentNode.insertBefore(wrapper, table);
+          wrapper.appendChild(table);
+        });
+
+        // sugar-high でコードハイライト
+        await this.#highlightCode(contentEl);
+      } catch (err) {
+        console.error("Markdown preview error:", err);
+        contentEl.innerHTML = `<div class="loading" style="color:#f87171;">Failed to load markdown.</div>`;
+      }
+    }
+
+    async #ensureMarked() {
+      if (this.#markedReady) return;
+      const { load: loadMarked } = await import(
+        "/api/code/cosense-toolbox/marked-for-user-script-esm/module.js"
+      );
+      loadMarked();
+      window.marked.setOptions({ headerIds: false, mangle: false });
+      this.#markedReady = true;
+    }
+
+    async #ensureSugarHigh() {
+      if (this.#highlight) return;
+      const mod = await import(`${SUGAR_HIGH_BASE}/main.js`);
+      this.#highlight = mod.highlight;
+    }
+
+    /**
+     * プリセットを取得 (キャッシュ付き)
+     * @param {string} lang
+     * @returns {Promise<object|null>}
+     */
+    async #getPreset(lang) {
+      const path = PRESET_MAP[lang];
+      if (!path) return null;
+
+      if (presetCache.has(path)) return presetCache.get(path);
+
+      try {
+        const mod = await import(path);
+        // { keywords, onCommentStart, onCommentEnd, typeKeywords?, onQuote? }
+        const preset = {};
+        if (mod.keywords) preset.keywords = mod.keywords;
+        if (mod.typeKeywords) preset.typeKeywords = mod.typeKeywords;
+        if (mod.onCommentStart) preset.onCommentStart = mod.onCommentStart;
+        if (mod.onCommentEnd) preset.onCommentEnd = mod.onCommentEnd;
+        if (mod.onQuote) preset.onQuote = mod.onQuote;
+        presetCache.set(path, preset);
+        return preset;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    /**
+     * sugar-high でコードブロックをハイライト
+     * @param {HTMLElement} root
+     */
+    async #highlightCode(root) {
+      if (!this.#highlight) return;
+
+      const blocks = root.querySelectorAll("pre code");
+      const tasks = [...blocks].map(async (block) => {
+        const langClass = [...block.classList].find((c) => c.startsWith("language-"));
+        const lang = langClass ? langClass.replace("language-", "") : null;
+
+        const preset = lang ? await this.#getPreset(lang) : null;
+        const code = block.textContent || "";
+        try {
+          block.innerHTML = this.#highlight(code, preset ?? undefined);
+        } catch (_) {}
+      });
+
+      await Promise.all(tasks);
+    }
+
+    // ── リサイズ ──
+
+    #setupResize() {
+      const handle = this.#shadow.querySelector(".resize-handle");
+      const panel = this.#shadow.querySelector(".panel");
+
+      handle.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        this.#resizing = true;
+        const startX = e.clientX;
+        const startWidth = this.#width;
+
+        this.#host.style.transition = "none";
+
+        document.body.style.userSelect = "none";
+        document.body.style.cursor = "col-resize";
+        handle.classList.add("active");
+
+        const onMouseMove = (e) => {
+          if (!this.#resizing) return;
+          const delta = startX - e.clientX;
+          const newWidth = Math.max(320, Math.min(startWidth + delta, window.innerWidth * 0.7));
+          this.#width = newWidth;
+          this.#host.style.width = `${newWidth}px`;
+          panel.style.width = `${newWidth}px`;
+        };
+
+        const onMouseUp = () => {
+          this.#resizing = false;
+          this.#host.style.transition = "width 0.35s cubic-bezier(0.4, 0, 0.2, 1)";
+          document.body.style.userSelect = "";
+          document.body.style.cursor = "";
+          handle.classList.remove("active");
+          localStorage.setItem("mdPreviewWidth", this.#width);
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onMouseUp);
+        };
+
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+      });
+    }
+
+    // ── 表示 / 非表示 ──
+
+    #show() {
+      const panel = this.#shadow.querySelector(".panel");
+      panel.style.width = `${this.#width}px`;
+      requestAnimationFrame(() => {
+        this.#host.style.width = `${this.#width}px`;
+      });
+    }
+
+    #hide() {
+      this.#host.style.width = "0px";
+      this.#currentHref = null;
+      clearTimeout(this.#syncTimer);
+    }
+
+    // ── テンプレート ──
+
+    #template() {
+      return /* html */ `
+								<style>
+										:host {
+												display: block;
+
+												/* ── sugar-high カラーテーマ (dark) ── */
+												--sh-class:       #b5cea8;
+												--sh-identifier:  #d4d4d4;
+												--sh-sign:        #8996a3;
+												--sh-property:    #9cdcfe;
+												--sh-entity:      #4ec9b0;
+												--sh-jsxliterals: #9a86fd;
+												--sh-string:      #ce9178;
+												--sh-keyword:     #569cd6;
+												--sh-comment:     #6a9955;
+										}
+
+										.panel {
+												width: ${this.#width}px;
+												height: calc(100vh - 40px);
+												position: sticky;
+												top: 40px;
+												background: #1e1e1e;
+												color: #d4d4d4;
+												display: flex;
+												flex-direction: column;
+												border-left: 1px solid #333;
+												box-sizing: border-box;
+										}
+
+										/* ── Resize Handle ── */
+										.resize-handle {
+												position: absolute;
+												top: 0; bottom: 0; left: 0;
+												width: 4px;
+												cursor: col-resize;
+												background: transparent;
+												z-index: 10;
+												transition: background 0.15s;
+										}
+										.resize-handle:hover,
+										.resize-handle.active {
+												background: rgba(100, 160, 255, 0.5);
+										}
+
+										/* ── Header ── */
+										.header {
+												display: flex;
+												align-items: center;
+												justify-content: space-between;
+												padding: 10px 16px;
+												border-bottom: 1px solid #333;
+												flex-shrink: 0;
+										}
+										.header-title {
+												font-size: 13px;
+												font-weight: 600;
+												color: #e0e0e0;
+												display: flex;
+												align-items: center;
+												gap: 6px;
+												font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+										}
+										.header-title svg {
+												width: 16px; height: 16px;
+												fill: currentColor;
+										}
+										.close-btn {
+												background: none;
+												border: 1px solid #444;
+												border-radius: 6px;
+												color: #aaa;
+												cursor: pointer;
+												padding: 3px 8px;
+												font-size: 11px;
+												font-family: monospace;
+												transition: background 0.15s, color 0.15s;
+										}
+										.close-btn:hover {
+												background: #333;
+												color: #fff;
+										}
+
+										/* ── Content ── */
+										.content {
+												flex: 1;
+												overflow-y: auto;
+												padding: 20px 24px 48px;
+												line-height: 1.7;
+												font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+												font-size: 15px;
+										}
+
+										/* ── Markdown Styles ── */
+										.content h1 {
+												font-size: 1.8em; font-weight: 700;
+												margin: 1.2em 0 0.6em;
+												padding-bottom: 0.3em;
+												border-bottom: 1px solid #333;
+												color: #fff;
+										}
+										.content h2 {
+												font-size: 1.4em; font-weight: 600;
+												margin: 1.1em 0 0.5em;
+												padding-bottom: 0.25em;
+												border-bottom: 1px solid #2a2a2a;
+												color: #f0f0f0;
+										}
+										.content h3 {
+												font-size: 1.15em; font-weight: 600;
+												margin: 1em 0 0.4em;
+												color: #e8e8e8;
+										}
+										.content h4, .content h5, .content h6 {
+												font-size: 1em; font-weight: 600;
+												margin: 0.8em 0 0.3em;
+												color: #ddd;
+										}
+										.content p { margin: 0.6em 0; }
+										.content a { color: #6ca4f7; text-decoration: none; }
+										.content a:hover { text-decoration: underline; }
+
+										/* ── Code ── */
+										.content code {
+												background: #2d2d2d;
+												padding: 2px 6px;
+												border-radius: 4px;
+												font-family: "SF Mono", "Fira Code", Consolas, monospace;
+												font-size: 0.9em;
+												color: #ce9178;
+												line-height: 0 !important;
+										}
+										.content pre {
+												background: #1a1a1a;
+												border: 1px solid #333;
+												border-radius: 8px;
+												padding: 16px;
+												overflow-x: auto;
+												margin: 1em 0;
+										}
+										.content pre code {
+												background: none;
+												padding: 0;
+												color: #d4d4d4;
+												font-size: 13px;
+										}
+
+										/* ── sugar-high 行・トークン ── */
+										.content .sh__line {
+												display: block;
+										}
+
+										/* ── Front Matter (Notion風) ── */
+										.content .front-matter {
+												margin: 0.8em 0 1.5em;
+												border: 1px solid #333;
+												border-radius: 8px;
+												overflow: hidden;
+										}
+										.content .fm-row {
+												display: flex;
+												border-bottom: 1px solid #2a2a2a;
+												font-size: 13px;
+										}
+										.content .fm-row:last-child {
+												border-bottom: none;
+										}
+										.content .fm-key {
+												width: 140px;
+												flex-shrink: 0;
+												padding: 8px 12px;
+												color: #888;
+												background: rgba(255, 255, 255, 0.03);
+												font-weight: 500;
+										}
+										.content .fm-value {
+												flex: 1;
+												padding: 8px 12px;
+												color: #d4d4d4;
+										}
+
+										/* ── Blockquote ── */
+										.content blockquote {
+												border-left: 3px solid #555;
+												margin: 1em 0;
+												padding: 0.4em 0 0.4em 16px;
+												color: #999;
+										}
+
+										/* ── Lists ── */
+										.content ul, .content ol { padding-left: 1.8em; margin: 0.5em 0; }
+										.content li { margin: 0.25em 0; }
+
+										/* ── Table (横スクロール対応) ── */
+										.content .table-wrap {
+												overflow-x: auto;
+												margin: 1em 0;
+												-webkit-overflow-scrolling: touch;
+										}
+										.content table {
+												border-collapse: collapse;
+												min-width: 100%;
+												white-space: nowrap;
+										}
+										.content th, .content td {
+												border: 1px solid #444;
+												padding: 8px 12px;
+												text-align: left;
+										}
+										.content th {
+												background: #2a2a2a;
+												font-weight: 600;
+												color: #e0e0e0;
+										}
+										.content tr:nth-child(even) { background: #252525; }
+
+										/* ── Misc ── */
+										.content hr { border: none; border-top: 1px solid #333; margin: 1.5em 0; }
+										.content img { max-width: 100%; border-radius: 6px; margin: 0.5em 0; }
+
+										/* ── Scrollbar ── */
+										.content::-webkit-scrollbar { width: 6px; }
+										.content::-webkit-scrollbar-track { background: transparent; }
+										.content::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+										.content::-webkit-scrollbar-thumb:hover { background: #555; }
+
+										/* ── Loading ── */
+										.loading {
+												display: flex;
+												align-items: center;
+												justify-content: center;
+												height: 100%;
+												color: #888;
+												font-size: 14px;
+												gap: 8px;
+										}
+										.spinner {
+												width: 18px; height: 18px;
+												border: 2px solid #555;
+												border-top-color: #aaa;
+												border-radius: 50%;
+												animation: spin 0.6s linear infinite;
+										}
+										@keyframes spin { to { transform: rotate(360deg); } }
+								</style>
+
+								<div class="panel">
+										<div class="resize-handle"></div>
+										<div class="header">
+												<span class="header-title">
+														<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+																<path d="M20.56 18H3.44C2.65 18 2 17.37 2 16.59V7.41C2 6.63 2.65 6 3.44 6h17.12C21.35 6 22 6.63 22 7.41v9.18c0 .78-.65 1.41-1.44 1.41zM6.81 15.19h2.58l1.36-3.81h.05l1.36 3.81h2.58l2.45-6.38h-2.36l-1.31 4.04h-.05L12.2 8.81h-2.4L8.53 12.85h-.05L7.17 8.81H4.81l2 6.38z"/>
+														</svg>
+														Markdown Preview
+												</span>
+												<button class="close-btn">✕ Esc</button>
+										</div>
+										<div class="content"></div>
+								</div>
+						`;
+    }
+  }
+
+  // ── ボタン生成 ──
+  function createMDPreviewButton(href) {
+    const button = document.createElement("span");
+    button.className = "button markdown-viewer-button";
+    button.style.marginRight = ".25rem";
+    button.style.cursor = "pointer";
+    button.style.color = "white";
+    button.innerHTML = `<i class="fab fa-markdown"></i>`;
+
+    const openModal = () => {
+      new MarkdownPreviewDrawer().load(href);
+    };
+
+    button.addEventListener("click", openModal);
+    onDestroy(button, () => button.removeEventListener("click", openModal));
+    return button;
+  }
+
+  // ── 全 markdown コードブロックにボタン追加 ──
+  function addMDPreviewButtonToAllTableLinks() {
+    const mdAnchors = document.querySelectorAll(
+      '.code-block-start:has([title="markdown"]):not(:has(.markdown-viewer-button)), .code-block-start:has([title="Markdown"]):not(:has(.markdown-viewer-button))',
+    );
+    mdAnchors.forEach((node) => {
+      const anchorNode = node.querySelector("a");
+      if (!anchorNode) return;
+      URL.canParse(anchorNode.href) &&
+        insertBeforeSelf(anchorNode, createMDPreviewButton(new URL(anchorNode.href).pathname));
+    });
+  }
+
+  // ── ユーティリティ ──
+  function onDestroy(element, callback) {
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const removed of mutation.removedNodes) {
+          if (removed === element || removed.contains(element)) {
+            observer.disconnect();
+            callback();
+          }
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function insertBeforeSelf(referenceNode, newNode) {
+    referenceNode.parentNode?.insertBefore(newNode, referenceNode);
+  }
+
+  // ── 初期化 & イベント登録 ──
+  addMDPreviewButtonToAllTableLinks();
+  cosense.on("lines:changed", () => addMDPreviewButtonToAllTableLinks());
+  cosense.on("page:changed", () => {
+    if (cosense.Layout !== "page") return;
+    addMDPreviewButtonToAllTableLinks();
+  });
+})();

@@ -1,0 +1,45 @@
+(() => {
+  createLinkToMenu(1);
+  createLinkToMenu(2);
+  function createLinkToMenu(type = 1) {
+    const TEXT_CONTENT = `📋 Copy ${type} Hope Lins to Clipboard`;
+    window.cosense.on("layout:changed", handler);
+
+    function handler() {
+      if (window.cosense.Layout !== "page") {
+        return;
+      }
+      if (hasElementInserted()) {
+        return;
+      }
+      let pageMenuLastDvider = document.querySelectorAll(
+        ".page-menu > div.dropdown:nth-of-type(2) ul li.divider",
+      );
+      if (!pageMenuLastDvider[2]) return;
+      pageMenuLastDvider = pageMenuLastDvider[2];
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.textContent = TEXT_CONTENT;
+      a.onclick = async () => {
+        window.showToastAsync("取得中...", { position: "bottom-center" });
+        const res = await fetch(
+          `/api/smart-context/export-${type}hop-links/${cosense.Project.name}.txt?title=${cosense.Page.title}`,
+        );
+        await navigator.clipboard.writeText(await res.text());
+        window.toastDone("コピーしました！");
+      };
+
+      li.append(a);
+      pageMenuLastDvider.insertAdjacentElement("beforebegin", li);
+    }
+
+    function hasElementInserted() {
+      let has = false;
+      document.querySelectorAll(".page-menu > div.dropdown:nth-of-type(2) ul li").forEach((n) => {
+        has = n.textContent === TEXT_CONTENT;
+      });
+      return has;
+    }
+    handler();
+  }
+})();

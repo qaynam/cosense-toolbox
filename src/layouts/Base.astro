@@ -1,0 +1,374 @@
+---
+import '../styles/global.css';
+import { getCollection } from 'astro:content';
+import { SITE } from '../lib/site';
+
+interface Props {
+	title?: string;
+	description?: string;
+	/** アプリ風表示（コンテナ無し・全幅・フッター無し・ページスクロール無し）。テーマビルダー用 */
+	app?: boolean;
+}
+const {
+	title = 'Cosense Toolbox',
+	description = 'Cosense (旧Scrapbox) のUIをカスタマイズする userscript / userCSS を、好きなものを選んでコピペで使えるツールボックス',
+	app = false,
+} = Astro.props;
+const fullTitle = title === 'Cosense Toolbox' ? title : `${title} — Cosense Toolbox`;
+
+const all = await getCollection('scripts');
+const registry = all.map((e) => ({
+	slug: e.id,
+	title: e.data.title,
+	kind: e.data.install.kind,
+	code: e.data.install.code.trim(),
+}));
+---
+
+<!doctype html>
+<html lang="ja" data-theme="dark">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content={description} />
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap"
+			rel="stylesheet"
+		/>
+		<title>{fullTitle}</title>
+		<script is:inline>
+			// 描画前にテーマを確定（チラつき防止）
+			(function () {
+				try {
+					var t = localStorage.getItem('cosense-toolbox-theme');
+					if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+					document.documentElement.setAttribute('data-theme', t);
+				} catch (e) {}
+			})();
+		</script>
+	</head>
+	<body class={app ? 'is-app' : undefined}>
+		<header class="site-header">
+			<div class="wrap">
+				<a class="brand" href="/">
+					<span class="logo">🧰</span>
+					<span>Cosense Toolbox</span>
+				</a>
+				<div class="header-actions">
+					<nav>
+						<a href="/">ギャラリー</a>
+						<a href="/builder/">テーマ作成</a>
+						<a href="/guide/">使い方</a>
+						<a href={SITE.github} target="_blank" rel="noopener">GitHub ↗</a>
+					</nav>
+					<button class="icon-btn" data-theme-toggle aria-label="テーマ切替" type="button">☀</button>
+					<button class="tb-fab" data-tb-open data-empty="true" type="button">
+						🧰 <span class="tb-count" data-tb-count>0</span>
+					</button>
+				</div>
+			</div>
+		</header>
+
+		<main class={app ? 'main-app' : 'wrap'}>
+			<slot />
+		</main>
+
+		{
+			!app && (
+				<footer class="site-footer">
+					<div class="wrap">
+						<p>Cosense Toolbox — Cosense の userscript / userCSS をコピペで積めるツールボックス</p>
+						<p class="foot-links">
+							<a href={SITE.github} target="_blank" rel="noopener">GitHub ↗</a>
+						</p>
+					</div>
+				</footer>
+			)
+		}
+
+		<!-- カード→詳細をギャラリーの上にかぶせるモーダルの差し込み先 -->
+		<div id="modal-root"></div>
+
+		<!-- ツールボックス（カート）ドロワー -->
+		<div class="tb-drawer" id="tb-drawer" data-open="false">
+			<div class="tb-backdrop" data-tb-close></div>
+			<aside class="tb-panel" aria-label="マイ・ツールボックス">
+				<div class="tb-head">
+					<h2>🧰 マイ・ツールボックス</h2>
+					<button class="icon-btn" data-tb-close aria-label="閉じる" type="button">×</button>
+				</div>
+				<ul class="tb-list" id="tb-list"></ul>
+				<div class="tb-foot">
+					<p class="tb-hint">積んだ import を1つにまとめてコピー → 自分の設定ページ（ユーザー名ページ）に貼るだけ。</p>
+					<button class="btn primary" data-tb-copyall type="button"><span class="label">📋 まとめてコピー</span></button>
+					<button class="btn ghost" data-tb-clear type="button">全部消す</button>
+				</div>
+			</aside>
+		</div>
+
+		<script type="application/json" id="tb-registry" is:inline set:html={JSON.stringify(registry)}></script>
+
+		<script>
+			const CART_KEY = 'cosense-toolbox-cart';
+			const THEME_KEY = 'cosense-toolbox-theme';
+
+			function readRegistry(): { slug: string; title: string; kind: string; code: string }[] {
+				const el = document.getElementById('tb-registry');
+				try {
+					return el ? JSON.parse(el.textContent || '[]') : [];
+				} catch {
+					return [];
+				}
+			}
+			let REGISTRY = readRegistry();
+			const byId = () => new Map(REGISTRY.map((r) => [r.slug, r]));
+
+			function getCart(): Set<string> {
+				try {
+					return new Set(JSON.parse(localStorage.getItem(CART_KEY) || '[]'));
+				} catch {
+					return new Set();
+				}
+			}
+			function saveCart(set: Set<string>) {
+				try {
+					localStorage.setItem(CART_KEY, JSON.stringify([...set]));
+				} catch {}
+			}
+
+			function esc(s: string) {
+				return String(s).replace(
+					/[&<>"]/g,
+					(c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] || c,
+				);
+			}
+
+			async function clip(text: string, btn?: HTMLElement | null) {
+				try {
+					await navigator.clipboard.writeText(text);
+					if (btn) {
+						const l = (btn.querySelector('.label') as HTMLElement) || btn;
+						const prev = l.textContent;
+						btn.classList.add('copied');
+						l.textContent = 'コピー済み ✓';
+						setTimeout(() => {
+							btn.classList.remove('copied');
+							l.textContent = prev;
+						}, 1400);
+					}
+				} catch {}
+			}
+
+			function buildSnippet(slugs: string[]) {
+				const map = byId();
+				const items = slugs.map((s) => map.get(s)).filter(Boolean) as typeof REGISTRY;
+				const js = items.filter((i) => i.kind !== 'css');
+				const css = items.filter((i) => i.kind === 'css');
+				const out: string[] = [];
+				if (js.length) {
+					out.push('code:script.js');
+					js.forEach((i) => out.push('\t' + i.code));
+				}
+				if (css.length) {
+					if (out.length) out.push('');
+					out.push('code:style.css');
+					css.forEach((i) => out.push('\t' + i.code));
+				}
+				return out.join('\n');
+			}
+
+			function render() {
+				const cart = getCart();
+				const map = byId();
+				const items = [...cart].map((s) => map.get(s)).filter(Boolean) as typeof REGISTRY;
+				document.querySelectorAll('[data-tb-count]').forEach((e) => (e.textContent = String(items.length)));
+				document.querySelectorAll('.tb-fab').forEach((e) => e.setAttribute('data-empty', String(items.length === 0)));
+				const list = document.getElementById('tb-list');
+				if (list) {
+					list.innerHTML = items.length
+						? items
+								.map(
+									(i) =>
+										`<li><span class="tb-name">${esc(i.title)}</span><button class="tb-rm" data-tb-remove="${esc(i.slug)}" aria-label="削除">×</button></li>`,
+								)
+								.join('')
+						: '<li class="tb-empty">まだ何も積んでいません。<br>カードの「＋」で積めます。</li>';
+				}
+				document.querySelectorAll<HTMLElement>('[data-toolbox-add]').forEach((btn) => {
+					const on = cart.has(btn.getAttribute('data-toolbox-add') || '');
+					btn.classList.toggle('added', on);
+					btn.setAttribute('aria-pressed', String(on));
+					const l = btn.querySelector('.label');
+					if (l) l.textContent = on ? '✓ 追加済み' : '＋ ツールボックスに追加';
+				});
+			}
+
+			function setDrawer(open: boolean) {
+				document.getElementById('tb-drawer')?.setAttribute('data-open', String(open));
+			}
+
+			function syncTheme() {
+				const dark = document.documentElement.getAttribute('data-theme') !== 'light';
+				document.querySelectorAll('[data-theme-toggle]').forEach((b) => {
+					b.textContent = dark ? '☀' : '🌙';
+					b.setAttribute('aria-label', dark ? 'ライトモードに切替' : 'ダークモードに切替');
+				});
+			}
+
+			/* ---------- モーダル（ギャラリーの上にかぶせる） ---------- */
+			function modalRoot() {
+				return document.getElementById('modal-root');
+			}
+			function isOverlayOpen() {
+				const r = modalRoot();
+				return !!(r && r.children.length);
+			}
+			function clearOverlay() {
+				modalRoot()?.replaceChildren();
+				document.documentElement.classList.remove('modal-open');
+			}
+			async function openModal(href: string, push = true) {
+				let html: string;
+				try {
+					const res = await fetch(href);
+					if (!res.ok) throw new Error();
+					html = await res.text();
+				} catch {
+					location.href = href;
+					return;
+				}
+				const doc = new DOMParser().parseFromString(html, 'text/html');
+				const scrim = doc.querySelector('[data-modal-scrim]');
+				const root = modalRoot();
+				if (!scrim || !root) {
+					location.href = href;
+					return;
+				}
+				root.replaceChildren(document.importNode(scrim, true));
+				document.documentElement.classList.add('modal-open');
+				root.querySelector<HTMLElement>('.modal-card')?.scrollTo(0, 0);
+				if (push) history.pushState({ csModal: href }, '', href);
+				render();
+				syncTheme();
+			}
+			function requestClose() {
+				if (isOverlayOpen()) history.back();
+				else location.href = '/';
+			}
+			window.addEventListener('popstate', () => {
+				const st = history.state as { csModal?: string } | null;
+				if (st && st.csModal) {
+					if (!isOverlayOpen()) openModal(st.csModal, false);
+				} else if (isOverlayOpen()) {
+					clearOverlay();
+				}
+			});
+
+			/* ---------- クリック委譲 ---------- */
+			document.addEventListener('click', async (e) => {
+				const t = e.target as HTMLElement;
+
+				// カード → モーダルを開く（背景のギャラリーはそのまま残す）
+				const cardLink = t.closest<HTMLAnchorElement>('.card-link');
+				if (cardLink && !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) && (e as MouseEvent).button === 0) {
+					e.preventDefault();
+					openModal(cardLink.getAttribute('href') || '/');
+					return;
+				}
+
+				// モーダルを閉じる（×ボタン / 背景クリック）
+				if (t.closest('[data-modal-close]')) {
+					e.preventDefault();
+					requestClose();
+					return;
+				}
+				const scrim = t.closest('[data-modal-scrim]');
+				if (scrim && !t.closest('.modal-card')) {
+					e.preventDefault();
+					requestClose();
+					return;
+				}
+
+				// ライブデモ(userCSS)のトグル
+				const demoToggle = t.closest<HTMLElement>('[data-css-demo-toggle]');
+				if (demoToggle) {
+					const demo = demoToggle.closest<HTMLElement>('.css-demo');
+					const iframe = demo?.querySelector('iframe');
+					if (demo && iframe) {
+						const on = demo.dataset.on !== 'true';
+						demo.dataset.on = String(on);
+						demoToggle.setAttribute('aria-pressed', String(on));
+						demoToggle.textContent = on ? 'userCSS を解除 ■' : 'userCSS を適用 ▶';
+						iframe.contentWindow?.postMessage({ type: 'toggle', on }, '*');
+					}
+					return;
+				}
+
+				// コピー
+				const copyBtn = t.closest<HTMLElement>('[data-copy]');
+				if (copyBtn) {
+					clip(copyBtn.getAttribute('data-copy') || '', copyBtn);
+					return;
+				}
+				// ツールボックスに積む/外す
+				const addBtn = t.closest<HTMLElement>('[data-toolbox-add]');
+				if (addBtn) {
+					const slug = addBtn.getAttribute('data-toolbox-add') || '';
+					const cart = getCart();
+					cart.has(slug) ? cart.delete(slug) : cart.add(slug);
+					saveCart(cart);
+					render();
+					return;
+				}
+				// テーマ
+				const themeBtn = t.closest<HTMLElement>('[data-theme-toggle]');
+				if (themeBtn) {
+					const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+					document.documentElement.setAttribute('data-theme', next);
+					try {
+						localStorage.setItem(THEME_KEY, next);
+					} catch {}
+					syncTheme();
+					return;
+				}
+				// ツールボックス・ドロワー
+				if (t.closest('[data-tb-open]')) return setDrawer(true);
+				if (t.closest('[data-tb-close]')) return setDrawer(false);
+				const rm = t.closest<HTMLElement>('[data-tb-remove]');
+				if (rm) {
+					const cart = getCart();
+					cart.delete(rm.getAttribute('data-tb-remove') || '');
+					saveCart(cart);
+					render();
+					return;
+				}
+				const copyAll = t.closest<HTMLElement>('[data-tb-copyall]');
+				if (copyAll) {
+					const text = buildSnippet([...getCart()]);
+					if (text) await clip(text, copyAll);
+					return;
+				}
+				if (t.closest('[data-tb-clear]')) {
+					saveCart(new Set());
+					render();
+					return;
+				}
+			});
+
+			document.addEventListener('keydown', (e) => {
+				if (e.key !== 'Escape') return;
+				if (document.querySelector('[data-modal-scrim]')) {
+					requestClose();
+				} else {
+					setDrawer(false);
+				}
+			});
+
+			render();
+			syncTheme();
+		</script>
+	</body>
+</html>

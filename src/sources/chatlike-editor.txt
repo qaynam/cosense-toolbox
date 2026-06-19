@@ -1,0 +1,749 @@
+await (async () => {
+  const THEME = "dark"; // 'dark' | 'light'
+
+  const THEMES = {
+    dark: {
+      backdrop: "rgba(0,0,0,0.70)",
+      ctx_bg: "rgba(22,22,22,0.99)",
+      ctx_border: "rgba(255,255,255,0.06)",
+      input_bg: "rgba(12,12,12,0.99)",
+      input_border: "rgba(255,255,255,0.09)",
+      ta_text: "#efefef",
+      ta_ph: "#3e3e3e",
+      ta_caret: "#e0e0e0",
+      ta_sel_bg: "rgba(100,140,255,0.45)",
+      ta_sel_text: "#fff",
+      tb_border: "rgba(255,255,255,0.07)",
+      btn_col: "#666",
+      btn_act: "rgba(255,255,255,0.12)",
+      send_bg: "#4f46e5",
+      send_act: "#4338ca",
+      tog_bg: "rgba(18,18,18,0.92)",
+      tog_border: "rgba(255,255,255,0.12)",
+      tog_col: "#777",
+      tog_act_bg: "#4f46e5",
+      tog_act_col: "#fff",
+      banner_bg: "rgba(60,50,0,0.92)",
+      banner_col: "#ffd740",
+      banner_btn_bg: "rgba(255,215,64,0.15)",
+      del_bg: "rgba(80,10,10,0.92)",
+      del_col: "#ff6b6b",
+      del_btn_bg: "rgba(255,80,80,0.15)",
+      sb_track: "rgba(255,255,255,0.03)",
+      sb_thumb: "rgba(255,255,255,0.12)",
+      pending_op: "0.45",
+    },
+    light: {
+      backdrop: "rgba(0,0,0,0.40)",
+      ctx_bg: "rgba(248,248,248,0.99)",
+      ctx_border: "rgba(0,0,0,0.07)",
+      input_bg: "rgba(255,255,255,0.99)",
+      input_border: "rgba(0,0,0,0.09)",
+      ta_text: "#1a1a1a",
+      ta_ph: "#c0c0c0",
+      ta_caret: "#1a1a1a",
+      ta_sel_bg: "rgba(79,70,229,0.25)",
+      ta_sel_text: "#000",
+      tb_border: "rgba(0,0,0,0.07)",
+      btn_col: "#555",
+      btn_act: "rgba(0,0,0,0.10)",
+      send_bg: "#4f46e5",
+      send_act: "#4338ca",
+      tog_bg: "rgba(248,248,248,0.94)",
+      tog_border: "rgba(0,0,0,0.12)",
+      tog_col: "#555",
+      tog_act_bg: "#4f46e5",
+      tog_act_col: "#fff",
+      banner_bg: "rgba(255,248,180,0.97)",
+      banner_col: "#7a5800",
+      banner_btn_bg: "rgba(120,85,0,0.10)",
+      del_bg: "rgba(255,230,230,0.97)",
+      del_col: "#c0392b",
+      del_btn_bg: "rgba(192,57,43,0.10)",
+      sb_track: "rgba(0,0,0,0.04)",
+      sb_thumb: "rgba(0,0,0,0.13)",
+      pending_op: "0.50",
+    },
+  };
+
+  const T = THEMES[THEME] ?? THEMES.dark;
+  const LS_ON = "cle:on";
+  const CTX_MAX = 5;
+
+  function isMobile() {
+    return window.innerWidth <= 768 || "ontouchstart" in window;
+  }
+  if (!isMobile()) return;
+
+  const api = window.cosense ?? window.scrapbox;
+
+  function draftKey(i) {
+    return `cle:d:${api?.Project?.name ?? ""}:${api?.Page?.title ?? ""}:${i}`;
+  }
+  function draftSave(i, t) {
+    if (i >= 0)
+      try {
+        localStorage.setItem(draftKey(i), t);
+      } catch (_) {}
+  }
+  function draftLoad(i) {
+    try {
+      return localStorage.getItem(draftKey(i));
+    } catch (_) {
+      return null;
+    }
+  }
+  function draftClear(i) {
+    try {
+      localStorage.removeItem(draftKey(i));
+    } catch (_) {}
+  }
+
+  let scrollY2 = 0;
+  function lockScroll() {
+    scrollY2 = window.scrollY;
+    const s = document.body.style;
+    s.overflow = "hidden";
+    s.position = "fixed";
+    s.top = `-${scrollY2}px`;
+    s.width = "100%";
+  }
+  function unlockScroll() {
+    const s = document.body.style;
+    s.overflow = s.position = s.top = s.width = "";
+    window.scrollTo(0, scrollY2);
+  }
+
+  document.head.appendChild(
+    Object.assign(document.createElement("style"), {
+      textContent: `
+		#cle-tog{position:fixed;bottom:22px;left:14px;z-index:9500;display:flex;align-items:center;gap:5px;
+				padding:7px 13px 7px 10px;background:${T.tog_bg};border:1px solid ${T.tog_border};border-radius:999px;
+				cursor:pointer;font-size:12px;font-weight:500;color:${T.tog_col};
+				box-shadow:0 2px 14px rgba(0,0,0,.22);transition:background .2s,color .2s;
+				user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+		#cle-tog.on{background:${T.tog_act_bg};color:${T.tog_act_col};border-color:transparent;
+				box-shadow:0 2px 16px rgba(79,70,229,.38)}
+		#cle-tog .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5;flex-shrink:0}
+		#cle-tog.on .dot{opacity:1}
+		#cle-ov{display:none;position:fixed;inset:0;z-index:9600;flex-direction:column;
+				justify-content:flex-end;pointer-events:none}
+		#cle-ov.on{display:flex}
+		#cle-bd{position:absolute;inset:0;z-index:0;background:${T.backdrop};
+				pointer-events:auto;touch-action:none;cursor:default}
+		#cle-panel{position:relative;z-index:1;display:flex;flex-direction:column;pointer-events:auto;
+				animation:cle-up .22s cubic-bezier(.22,1,.36,1) both}
+		@keyframes cle-up{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
+		#cle-ctx{max-height:36vh;overflow-y:auto;
+				background:${T.ctx_bg};border-bottom:1px solid ${T.ctx_border}}
+		#cle-ctx .editor{padding:10px 16px 8px}
+		#cle-ctx .line{pointer-events:none !important}
+		#cle-ctx .cle-ptxt{font-size:15px;line-height:28px;
+				font-family:"Roboto",Helvetica,Arial,"Hiragino Sans",sans-serif;
+				color:var(--page-text-color,#4a4a4a);
+				white-space:pre-wrap;word-break:break-all;padding:0 16px;
+				opacity:${T.pending_op}}
+		#cle-ctx::-webkit-scrollbar{width:3px}
+		#cle-ctx::-webkit-scrollbar-track{background:${T.sb_track}}
+		#cle-ctx::-webkit-scrollbar-thumb{background:${T.sb_thumb};border-radius:3px}
+		.cle-bn{display:none;align-items:center;gap:10px;padding:8px 14px;font-size:12px;font-weight:500}
+		.cle-bn.on{display:flex}
+		.cle-bn span{flex:1}
+		#cle-dbn{background:${T.banner_bg};color:${T.banner_col}}
+		#cle-xbn{background:${T.del_bg};color:${T.del_col}}
+		.cle-bb{padding:4px 10px;border-radius:6px;border:1px solid currentColor;
+				background:transparent;color:inherit;font-size:12px;cursor:pointer;
+				touch-action:manipulation;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+		#cle-dbn .cle-bb{background:${T.banner_btn_bg}}
+		#cle-xbn .cle-bb{background:${T.del_btn_bg}}
+		#cle-inp{background:${T.input_bg};border-top:1px solid ${T.input_border};
+				padding:8px 14px calc(6px + env(safe-area-inset-bottom,0px))}
+		#cle-inp-hd{display:flex;justify-content:flex-end;margin-bottom:2px}
+		#cle-exp{display:flex;align-items:center;justify-content:center;
+				width:28px;height:28px;border-radius:6px;border:none;
+				background:transparent;color:${T.btn_col};cursor:pointer;
+				touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:background .12s,color .12s}
+		#cle-exp:active{background:${T.btn_act}}
+		#cle-exp.on{color:${T.send_bg}}
+		#cle-exp svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+		#cle-ta{display:block;width:100%;background:transparent;border:none;outline:none;resize:none;
+				font-size:16px;color:${T.ta_text};line-height:1.6;
+				max-height:calc(1.6em * 4 + 4px);overflow-y:auto;
+				font-family:inherit;box-sizing:border-box;caret-color:${T.ta_caret};transition:max-height .2s,min-height .2s}
+		#cle-ta.exp{max-height:calc(1.6em * 15 + 4px);min-height:calc(1.6em * 8)}
+		#cle-ta::placeholder{color:${T.ta_ph}}
+		#cle-ta::selection{background:${T.ta_sel_bg};color:${T.ta_sel_text}}
+		#cle-ta::-webkit-scrollbar{width:3px}
+		#cle-ta::-webkit-scrollbar-track{background:${T.sb_track}}
+		#cle-ta::-webkit-scrollbar-thumb{background:${T.sb_thumb};border-radius:3px}
+		#cle-tb{display:flex;align-items:center;
+				padding-top:5px;border-top:1px solid ${T.tb_border};margin-top:5px;gap:2px;overflow:hidden}
+		#cle-ig{display:flex;gap:1px;flex:0 0 auto;
+				border-right:1px solid ${T.tb_border};padding-right:6px;margin-right:2px}
+		#cle-tbscroll{display:flex;gap:1px;flex:1;overflow-x:auto;overflow-y:hidden;
+				-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-right:2px}
+		#cle-tbscroll::-webkit-scrollbar{display:none}
+		.cle-btn{display:flex;align-items:center;justify-content:center;
+				min-width:36px;height:38px;padding:0 6px;border-radius:8px;border:none;
+				background:transparent;color:${T.btn_col};cursor:pointer;flex-shrink:0;
+				touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:background .12s}
+		.cle-btn:active{background:${T.btn_act}}
+		.cle-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+		.cle-lbl{font-size:14px;font-weight:700;line-height:1;user-select:none;white-space:nowrap}
+		#cle-send{width:38px;height:38px;border-radius:50%;border:none;
+				background:${T.send_bg};color:#fff;cursor:pointer;
+				display:flex;align-items:center;justify-content:center;flex-shrink:0;
+				touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+				transition:background .15s,transform .1s;box-shadow:0 2px 10px rgba(79,70,229,.4)}
+		#cle-send:active{background:${T.send_act};transform:scale(.92)}
+		#cle-send svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+		`,
+    }),
+  );
+
+  const tog = Object.assign(document.createElement("div"), {
+    id: "cle-tog",
+    innerHTML: '<span class="dot"></span>Chat UI',
+  });
+  let enabled = localStorage.getItem(LS_ON) === "1";
+  if (enabled) tog.classList.add("on");
+  document.body.appendChild(tog);
+  tog.addEventListener("click", (e) => {
+    e.stopPropagation();
+    enabled = !enabled;
+    localStorage.setItem(LS_ON, enabled ? "1" : "0");
+    tog.classList.toggle("on", enabled);
+  });
+
+  const ov = document.createElement("div");
+  ov.id = "cle-ov";
+  ov.innerHTML = `
+				<div id="cle-bd"></div>
+				<div id="cle-panel">
+						<div id="cle-dbn" class="cle-bn">
+								<span>📝 前回の下書きがあります</span>
+								<button class="cle-bb" id="cle-da">適用</button>
+								<button class="cle-bb" id="cle-dd">破棄</button>
+						</div>
+						<div id="cle-xbn" class="cle-bn">
+								<span>🗑 この行を削除しますか？</span>
+								<button class="cle-bb" id="cle-xok">削除</button>
+								<button class="cle-bb" id="cle-xno">キャンセル</button>
+						</div>
+						<div id="cle-ctx"></div>
+						<div id="cle-inp">
+								<div id="cle-inp-hd">
+										<button id="cle-exp">
+												<svg id="cle-ei1" viewBox="0 0 24 24"><polyline points="5 15 12 8 19 15"/></svg>
+												<svg id="cle-ei2" viewBox="0 0 24 24" style="display:none"><polyline points="5 9 12 16 19 9"/></svg>
+										</button>
+								</div>
+								<textarea id="cle-ta" rows="1" placeholder="行を編集..."></textarea>
+								<div id="cle-tb">
+										<div id="cle-ig">
+												<button class="cle-btn" id="cle-io"><span class="cle-lbl">⇤</span></button>
+												<button class="cle-btn" id="cle-ii"><span class="cle-lbl">⇥</span></button>
+										</div>
+										<div id="cle-tbscroll">
+												<button class="cle-btn" id="cle-lnk" title="リンク">
+														<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+												</button>
+												<button class="cle-btn" id="cle-mnt" title="アイコン">
+														<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M12 14c-5 0-8 2.24-8 4v1h16v-1c0-1.76-3-4-8-4z"/></svg>
+												</button>
+												<button class="cle-btn" id="cle-bold" title="強調 [* ]"><span class="cle-lbl">B</span></button>
+												<button class="cle-btn" id="cle-italic" title="イタリック [/ ]"><span class="cle-lbl"><i>I</i></span></button>
+												<button class="cle-btn" id="cle-head" title="見出し [| ]"><span class="cle-lbl">H</span></button>
+												<button class="cle-btn" id="cle-under" title="下線 [_ ]"><span class="cle-lbl" style="text-decoration:underline">U</span></button>
+												<button class="cle-btn" id="cle-strike" title="消し線 [- ]"><span class="cle-lbl" style="text-decoration:line-through">S</span></button>
+												<button class="cle-btn" id="cle-code" title="コード \`"><span class="cle-lbl" style="font-family:monospace">&lt;/&gt;</span></button>
+										</div>
+										<button id="cle-send">
+												<svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+										</button>
+								</div>
+						</div>
+				</div>`;
+  document.body.appendChild(ov);
+
+  const bd = document.getElementById("cle-bd");
+  const ctx = document.getElementById("cle-ctx");
+  const dbn = document.getElementById("cle-dbn");
+  const xbn = document.getElementById("cle-xbn");
+  const ta = document.getElementById("cle-ta");
+  const send = document.getElementById("cle-send");
+  const lnk = document.getElementById("cle-lnk");
+  const mnt = document.getElementById("cle-mnt");
+  const iIn = document.getElementById("cle-ii");
+  const iOut = document.getElementById("cle-io");
+  const expB = document.getElementById("cle-exp");
+  const ei1 = document.getElementById("cle-ei1");
+  const ei2 = document.getElementById("cle-ei2");
+  const daB = document.getElementById("cle-da");
+  const ddB = document.getElementById("cle-dd");
+  const xokB = document.getElementById("cle-xok");
+  const xnoB = document.getElementById("cle-xno");
+
+  let lineIdx = -1;
+  let baseIdx = -1;
+  let originalEdited = false;
+  let expanded = false;
+  let pendingDraft = null;
+  let vCtx = [];
+
+  // ── helpers ──────────────────────────────────────────
+
+  function cloneLine(el) {
+    const cl = el.cloneNode(true);
+    cl.querySelectorAll("a,button,input").forEach((n) => {
+      n.setAttribute("tabindex", "-1");
+      n.style.pointerEvents = "none";
+    });
+    return cl;
+  }
+
+  function entryText(item) {
+    return item.kind === "text" ? item.text : (api?.Page?.lines?.[item.apiIdx]?.text ?? "");
+  }
+
+  function renderCtx() {
+    const s = Math.max(0, vCtx.length - CTX_MAX);
+    const frag = document.createDocumentFragment();
+    let edWrap = null;
+    function flushWrap() {
+      if (edWrap && edWrap.hasChildNodes()) {
+        frag.appendChild(edWrap);
+        edWrap = null;
+      }
+    }
+    for (let i = s; i < vCtx.length; i++) {
+      const item = vCtx[i];
+      if (item.kind === "dom") {
+        if (!edWrap) {
+          edWrap = document.createElement("div");
+          edWrap.className = "editor";
+        }
+        edWrap.appendChild(cloneLine(item.el));
+      } else {
+        flushWrap();
+        const d = document.createElement("div");
+        d.className = "cle-ptxt";
+        d.textContent = item.text;
+        frag.appendChild(d);
+      }
+    }
+    flushWrap();
+    ctx.innerHTML = "";
+    ctx.appendChild(frag);
+    ctx.scrollTop = ctx.scrollHeight;
+  }
+
+  api?.on?.("lines:changed", () => {
+    if (lineIdx < 0) return;
+    const allLines = document.querySelectorAll(".lines .line");
+    let changed = false;
+    for (let i = 0; i < vCtx.length; i++) {
+      if (vCtx[i].kind !== "text") continue;
+      const el = allLines[vCtx[i].apiIdx];
+      if (!el) continue;
+      vCtx[i] = { kind: "dom", el, apiIdx: vCtx[i].apiIdx };
+      changed = true;
+    }
+    if (changed) renderCtx();
+  });
+
+  function initVCtx(upToIdx) {
+    const allLines = document.querySelectorAll(".lines .line");
+    vCtx = [];
+    const s = Math.max(0, upToIdx - CTX_MAX);
+    for (let i = s; i < upToIdx; i++) {
+      if (allLines[i]) vCtx.push({ kind: "dom", el: allLines[i], apiIdx: i });
+    }
+  }
+
+  function refocusTa() {
+    ta.focus();
+    ta.selectionStart = ta.selectionEnd = ta.value.length;
+  }
+
+  function resize() {
+    ta.style.height = "auto";
+    const lh = parseFloat(getComputedStyle(ta).lineHeight) || 26;
+    const minH = expanded ? lh * 8 : 0;
+    const maxH = lh * (expanded ? 15 : 4) + 4;
+    ta.style.height = Math.max(minH, Math.min(ta.scrollHeight, maxH)) + "px";
+  }
+
+  // scroll textarea so cursor is always visible
+  function scrollToCursor() {
+    const lh = parseFloat(getComputedStyle(ta).lineHeight) || 26;
+    const linesBefore = ta.value.slice(0, ta.selectionStart).split("\n").length - 1;
+    const cursorTop = linesBefore * lh;
+    if (cursorTop < ta.scrollTop) {
+      ta.scrollTop = cursorTop;
+    } else if (cursorTop + lh > ta.scrollTop + ta.clientHeight) {
+      ta.scrollTop = cursorTop + lh - ta.clientHeight;
+    }
+  }
+
+  // ── open / close ──────────────────────────────────────
+
+  function open(lineEl) {
+    const all = Array.from(document.querySelectorAll(".lines .line"));
+    const idx = all.indexOf(lineEl);
+    if (idx <= 0) return;
+    const wasOpen = ov.classList.contains("on");
+    lineIdx = idx;
+    baseIdx = idx;
+    originalEdited = false;
+    pendingDraft = null;
+    dbn.classList.remove("on");
+    xbn.classList.remove("on");
+    initVCtx(idx);
+    renderCtx();
+    const lines = api?.Page?.lines;
+    const cur = lines && lines[idx] ? lines[idx].text : "";
+    const saved = draftLoad(idx);
+    if (saved !== null && saved !== cur) {
+      ta.value = cur;
+      pendingDraft = saved;
+      dbn.classList.add("on");
+    } else {
+      ta.value = saved !== null ? saved : cur;
+    }
+    ov.classList.add("on");
+    if (!wasOpen) lockScroll();
+    resize();
+    requestAnimationFrame(() => {
+      setTimeout(refocusTa, 60);
+    });
+  }
+
+  function close() {
+    ov.classList.remove("on");
+    unlockScroll();
+    lineIdx = -1;
+    baseIdx = -1;
+    originalEdited = false;
+    ta.value = "";
+    ctx.innerHTML = "";
+    ta.style.height = "auto";
+    vCtx = [];
+    dbn.classList.remove("on");
+    xbn.classList.remove("on");
+    pendingDraft = null;
+  }
+
+  // ── submit / delete ───────────────────────────────────
+
+  async function submit() {
+    if (lineIdx < 0) return;
+    const rows = ta.value.split("\n");
+    const idx = lineIdx;
+    draftClear(idx);
+    for (let i = 0; i < rows.length; i++) {
+      vCtx.push({ kind: "text", text: rows[i], apiIdx: idx + i });
+    }
+    if (vCtx.length > CTX_MAX * 4) vCtx = vCtx.slice(-CTX_MAX * 4);
+    renderCtx();
+    lineIdx = idx + rows.length;
+    ta.value = "";
+    resize();
+    refocusTa();
+    try {
+      if (!originalEdited) {
+        originalEdited = true;
+        await api.Page.updateLine(rows[0], idx);
+        for (let i = 1; i < rows.length; i++) await api.Page.insertLine(rows[i], idx + i);
+      } else {
+        for (let i = 0; i < rows.length; i++) await api.Page.insertLine(rows[i], idx + i);
+      }
+    } catch (e) {
+      console.error("[cle]", e);
+    }
+  }
+
+  async function deleteLine() {
+    if (vCtx.length === 0 || lineIdx <= 1) return;
+    const last = vCtx.pop();
+    lineIdx = Math.max(1, lineIdx - 1);
+    ta.value = entryText(last);
+    resize();
+    refocusTa();
+    if (last.kind === "dom") {
+      const delIdx = last.apiIdx;
+      if (delIdx <= 0) {
+        renderCtx();
+        return;
+      }
+      renderCtx();
+      try {
+        await api.Page.updateLine("", delIdx);
+        await api.Page.waitForSave();
+        const allLines = document.querySelectorAll(".lines .line");
+        const target = allLines[delIdx];
+        if (target) {
+          target.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+          target.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, cancelable: true }));
+          target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+          await new Promise((r) => setTimeout(r, 80));
+        }
+        const ti = document.getElementById("text-input");
+        if (ti) {
+          ti.dispatchEvent(
+            new KeyboardEvent("keydown", {
+              isTrusted: true,
+              key: "Backspace",
+              code: "Backspace",
+              keyCode: 8,
+              which: 8,
+              bubbles: true,
+              cancelable: true,
+              composed: true,
+            }),
+          );
+        }
+        if (delIdx <= baseIdx) originalEdited = false;
+      } catch (e) {
+        console.error("[cle]", e);
+      }
+      setTimeout(refocusTa, 350);
+    } else {
+      renderCtx();
+    }
+  }
+
+  // ── expand button ─────────────────────────────────────
+
+  expB.addEventListener("click", () => {
+    expanded = !expanded;
+    expB.classList.toggle("on", expanded);
+    ta.classList.toggle("exp", expanded);
+    ei1.style.display = expanded ? "none" : "";
+    ei2.style.display = expanded ? "" : "none";
+    resize();
+    ta.focus();
+  });
+
+  // ── textarea events ───────────────────────────────────
+
+  ta.addEventListener("input", () => {
+    resize();
+    draftSave(lineIdx, ta.value);
+  });
+
+  ta.addEventListener("keydown", (e) => {
+    const pos = ta.selectionStart,
+      val = ta.value;
+
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const ls = val.lastIndexOf("\n", pos - 1) + 1;
+      const lead = val.slice(ls, pos).match(/^(\t*)/)[1];
+      ta.value = val.slice(0, pos) + "\n" + lead + val.slice(pos);
+      ta.selectionStart = ta.selectionEnd = pos + 1 + lead.length;
+      resize();
+      // scroll textarea so new line is visible
+      requestAnimationFrame(() => {
+        ta.scrollTop = ta.scrollHeight;
+      });
+      draftSave(lineIdx, ta.value);
+      return;
+    }
+
+    if (e.key === "Escape") {
+      e.preventDefault();
+      const ls = val.lastIndexOf("\n", pos - 1) + 1;
+      if (val[ls] === "\t") {
+        ta.value = val.slice(0, ls) + val.slice(ls + 1);
+        ta.selectionStart = ta.selectionEnd = Math.max(pos - 1, ls);
+        resize();
+        draftSave(lineIdx, ta.value);
+      } else {
+        close();
+      }
+      return;
+    }
+
+    if (e.key === "Backspace" && ta.selectionStart === ta.selectionEnd) {
+      if (val.length === 0) {
+        e.preventDefault();
+        xbn.classList.add("on");
+        dbn.classList.remove("on");
+        return;
+      }
+      const ls = val.lastIndexOf("\n", pos - 1) + 1;
+      const pre = val.slice(ls, pos);
+      if (/^\t+$/.test(pre)) {
+        e.preventDefault();
+        ta.value = val.slice(0, pos - 1) + val.slice(pos);
+        ta.selectionStart = ta.selectionEnd = pos - 1;
+        resize();
+        draftSave(lineIdx, ta.value);
+      }
+    }
+  });
+
+  // ── banner buttons ────────────────────────────────────
+
+  daB.addEventListener("click", () => {
+    if (pendingDraft !== null) {
+      ta.value = pendingDraft;
+      resize();
+      refocusTa();
+    }
+    dbn.classList.remove("on");
+    pendingDraft = null;
+  });
+  ddB.addEventListener("click", () => {
+    draftClear(lineIdx);
+    dbn.classList.remove("on");
+    pendingDraft = null;
+    ta.focus();
+  });
+  xokB.addEventListener("click", () => {
+    xbn.classList.remove("on");
+    deleteLine();
+  });
+  xnoB.addEventListener("click", () => {
+    xbn.classList.remove("on");
+    ta.focus();
+  });
+
+  // ── indent (all lines in textarea) ───────────────────
+
+  function indent(add) {
+    const pos = ta.selectionStart,
+      val = ta.value;
+    const ls = val.lastIndexOf("\n", pos - 1) + 1;
+    if (!add && val[ls] !== "\t") return;
+    ta.value = add ? val.slice(0, ls) + "\t" + val.slice(ls) : val.slice(0, ls) + val.slice(ls + 1);
+    ta.selectionStart = ta.selectionEnd = add ? pos + 1 : Math.max(pos - 1, ls);
+    ta.focus();
+    resize();
+    draftSave(lineIdx, ta.value);
+  }
+
+  iIn.addEventListener("click", () => indent(true));
+  iOut.addEventListener("click", () => indent(false));
+  send.addEventListener("click", submit);
+
+  // ── syntax wrap helper ────────────────────────────────
+
+  function wrap(open, close) {
+    const s = ta.selectionStart,
+      e = ta.selectionEnd,
+      v = ta.value;
+    const sel = v.slice(s, e);
+    if (sel) {
+      ta.value = v.slice(0, s) + open + sel + close + v.slice(e);
+      ta.selectionStart = s + open.length;
+      ta.selectionEnd = s + open.length + sel.length;
+    } else {
+      ta.value = v.slice(0, s) + open + close + v.slice(s);
+      ta.selectionStart = ta.selectionEnd = s + open.length;
+    }
+    ta.focus();
+    resize();
+    draftSave(lineIdx, ta.value);
+  }
+
+  lnk.addEventListener("click", () => wrap("[", "]"));
+  mnt.addEventListener("click", () => {
+    const s = ta.selectionStart,
+      v = ta.value;
+    const ph = "ユーザー名",
+      ins = `[${ph}.icon]`;
+    ta.value = v.slice(0, s) + ins + v.slice(s);
+    ta.selectionStart = s + 1;
+    ta.selectionEnd = s + 1 + ph.length;
+    ta.focus();
+    resize();
+    draftSave(lineIdx, ta.value);
+  });
+  // Cosense notation: [DECO text] — prefix-only, no closing decorator
+  document.getElementById("cle-bold").addEventListener("click", () => wrap("[* ", "]"));
+  document.getElementById("cle-italic").addEventListener("click", () => wrap("[/ ", "]"));
+  document.getElementById("cle-head").addEventListener("click", () => wrap("[* ", "]")); // heading via bold level
+  document.getElementById("cle-under").addEventListener("click", () => wrap("[_ ", "]"));
+  document.getElementById("cle-strike").addEventListener("click", () => wrap("[- ", "]"));
+  document.getElementById("cle-code").addEventListener("click", () => wrap("`", "`"));
+
+  // ── backdrop: preventDefault to stop click-through ───
+
+  bd.addEventListener(
+    "touchstart",
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    },
+    { passive: false },
+  );
+  bd.addEventListener(
+    "touchend",
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      close();
+    },
+    { passive: false },
+  );
+  bd.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  bd.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    close();
+  });
+
+  // ── tap to open ───────────────────────────────────────
+
+  const TAP_T = 8;
+  let ts = null;
+
+  document.addEventListener(
+    "touchstart",
+    (e) => {
+      ts = { x: e.touches[0].clientX, y: e.touches[0].clientY, moved: false };
+    },
+    { passive: true },
+  );
+
+  document.addEventListener(
+    "touchmove",
+    () => {
+      if (ts) ts.moved = true;
+    },
+    { passive: true },
+  );
+
+  document.addEventListener(
+    "touchend",
+    (e) => {
+      if (!enabled || !ts || ts.moved || ov.classList.contains("on")) return;
+      const t = e.changedTouches[0];
+      if (Math.abs(t.clientX - ts.x) > TAP_T || Math.abs(t.clientY - ts.y) > TAP_T) return;
+      const el = document.elementFromPoint(t.clientX, t.clientY);
+      if (!el) return;
+      const lineEl = el.closest(".lines .line");
+      if (!lineEl) return;
+      const all = Array.from(document.querySelectorAll(".lines .line"));
+      const idx = all.indexOf(lineEl);
+      if (idx <= 0) return;
+      e.preventDefault();
+      open(lineEl);
+    },
+    { passive: false },
+  );
+
+  api?.on?.("layout:changed", () => {
+    tog.style.display = isMobile() ? "" : "none";
+    if (!isMobile() && ov.classList.contains("on")) close();
+  });
+
+  api?.on?.("page:changed", () => {
+    if (ov.classList.contains("on")) close();
+  });
+})();

@@ -1,0 +1,26 @@
+.app {
+  counter-reset: section;
+}
+.app:not(.presentation) .line.section-title:not(.line-title) {
+  position: relative;
+}
+.app:not(.presentation) .line.section-title:not(.line-title):after {
+  z-index: 1000;
+  counter-increment: section;
+  content: counter(section);
+  display: inline-block;
+  width: 1.6em;
+  height: 1.6em;
+  position: absolute;
+  top: -10px;
+  left: -55px;
+  background-color: #52ba68;
+  border-radius: 50%;
+  color: #fff;
+  font:
+    600 normal 90%/1.6 "Century Gothic",
+    Arial,
+    sans-serif;
+  text-align: center;
+  white-space: nowrap;
+}

@@ -1,0 +1,146 @@
+export class Modal {
+  isOpen = false;
+  constructor({
+    onClose = async () => {},
+    onConfirm = async () => {},
+    title = "modal",
+    body = document.createElement("div"),
+    footer = null,
+    header = null,
+    modalStyle = null,
+    backdropClose = true,
+  } = {}) {
+    this.onClose = onClose;
+    this.onConfirm = onConfirm;
+    this.titleText = title;
+    this.body = body;
+    this.footer = footer;
+    this.header = header;
+    this.modalStyle = modalStyle;
+    this.backdropClose = backdropClose;
+  }
+
+  open() {
+    this.createElements();
+    this.addEvents();
+    document.body.appendChild(this.backdrop);
+    this.isOpen = true;
+  }
+
+  createElements() {
+    // create backdrop
+    this.backdrop = document.createElement("div");
+    Object.assign(this.backdrop.style, {
+      position: "fixed",
+      inset: 0,
+      backgroundColor: "rgba(0, 0, 0, 0.6)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 999,
+    });
+
+    // modal container
+    const modal = document.createElement("div");
+    Object.assign(modal.style, {
+      width: "80vw",
+      maxHeight: "80vh",
+      height: "100%",
+      backgroundColor: "#1e1e1e",
+      color: "#eee",
+      borderRadius: "12px",
+      display: "flex",
+      flexDirection: "column",
+      padding: "20px",
+      boxShadow: "0 0 20px rgba(0,0,0,0.5)",
+      overflow: "hidden",
+      ...(this.modalStyle ?? {}),
+    });
+
+    // header
+    if (!this.header) {
+      this.header = document.createElement("div");
+      Object.assign(this.header.style, {
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        marginBottom: "16px",
+      });
+    }
+
+    const title = document.createElement("div");
+    title.textContent = this.titleText;
+
+    this.header.appendChild(title);
+
+    if (!this.footer) {
+      // footer
+      this.footer = document.createElement("div");
+      Object.assign(this.footer.style, {
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: "8px",
+        marginTop: "16px",
+      });
+
+      const closeBtn = document.createElement("button");
+      closeBtn.textContent = "閉じる";
+      Object.assign(closeBtn.style, this.buttonStyle());
+      closeBtn.addEventListener("click", () => this.close());
+
+      const confirmBtn = document.createElement("button");
+      confirmBtn.textContent = "確定";
+      Object.assign(confirmBtn.style, this.buttonStyle());
+      confirmBtn.addEventListener("click", async () => {
+        const reuslt = await this.onConfirm();
+        if (reuslt) {
+          this.close();
+        }
+      });
+
+      this.footer.appendChild(closeBtn);
+      this.footer.appendChild(confirmBtn);
+    }
+
+    modal.appendChild(this.header);
+    modal.appendChild(this.body);
+    modal.appendChild(this.footer);
+    this.backdrop.appendChild(modal);
+  }
+
+  buttonStyle() {
+    return {
+      backgroundColor: "#333",
+      color: "#eee",
+      border: "none",
+      padding: "8px 16px",
+      borderRadius: "6px",
+      fontSize: "0.95rem",
+      cursor: "pointer",
+    };
+  }
+
+  addEvents() {
+    if (this.backdropClose) {
+      this.backdrop.addEventListener("click", (e) => {
+        if (e.target === this.backdrop) {
+          this.close();
+        }
+      });
+    }
+  }
+
+  close() {
+    this.backdrop.remove();
+    this.onClose();
+    this.isOpen = false;
+  }
+
+  toggle() {
+    if (this.isOpen) {
+      this.close();
+    } else {
+      this.open();
+    }
+  }
+}

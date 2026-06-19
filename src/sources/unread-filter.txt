@@ -1,0 +1,61 @@
+(() => {
+  const TEXT_CONTENT = '<i class="fas fa-inbox"></i>未読だけ表示';
+  window.cosense.on("layout:changed", handler);
+
+  function handler() {
+    if (window.cosense.Layout !== "list") {
+      return;
+    }
+    if (isAppended()) {
+      return;
+    }
+    const ul = document.querySelector(
+      ".quick-launch .page-sort-menu ul.dropdown-menu.dropdown-menu-right",
+    );
+    if (!ul) return;
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.innerHTML = TEXT_CONTENT;
+    a.onclick = (e) => {
+      const filterEl = document.querySelector(".quick-launch .page-filter-menu");
+      if (!filterEl || !filterEl.textContent.includes("with")) {
+        alert("先にフィルターしてください");
+        return;
+      }
+      const all = document.querySelectorAll(".grid li.page-list-item .content .header");
+
+      Array.from(all).forEach((el) => {
+        const style = getComputedStyle(el);
+        const borderColor = style.borderColor;
+        // CSS変数の値と実際のborderColorが一致しない → 未適用
+        const isReaded = borderColor !== "rgb(137, 163, 255)";
+        if (isReaded) {
+          el.parentElement.parentElement.parentElement.remove();
+        }
+      });
+      e.target.className = "selected";
+      document.querySelector(".quick-launch").style.cssText = `
+										position: sticky;
+										top: 0px;
+										background-color: #ffffff47;
+										z-index: 10;
+										backdrop-filter: blur(10px);
+							`;
+    };
+
+    li.append(a);
+    ul.append(li);
+  }
+
+  function isAppended() {
+    let has = false;
+    document
+      .querySelectorAll(".quick-launch .page-sort-menu ul.dropdown-menu.dropdown-menu-right li")
+      .forEach((n) => {
+        has = n.innerHTML === TEXT_CONTENT;
+      });
+    return has;
+  }
+
+  handler();
+})();

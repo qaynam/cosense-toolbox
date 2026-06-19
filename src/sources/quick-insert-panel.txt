@@ -1,0 +1,8 @@
+import { insertText } from "/api/code/cosense-toolbox/insert-text/module.js";
+
+(function () {
+  try {
+  } catch (e) {
+    console.log(e);
+  }
+})();

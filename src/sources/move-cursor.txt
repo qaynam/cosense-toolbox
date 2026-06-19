@@ -1,0 +1,19 @@
+export function moveCursorToLeft(step = 1) {
+  for (let i = 0; i < step; i++) {
+    const ctrlBEvent = new KeyboardEvent("keydown", {
+      isTrusted: true,
+      bubbles: true,
+      cancelable: true,
+      charCode: 0,
+      code: "keyB",
+      composed: true,
+      ctrlKey: true,
+      currentTarget: $("div#app-container"),
+      defaultPrevented: true,
+      key: "b",
+      keyCode: 66,
+      which: 66,
+    });
+    document.querySelector("#text-input").dispatchEvent(ctrlBEvent);
+  }
+}

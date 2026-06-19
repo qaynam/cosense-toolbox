@@ -1,0 +1,714 @@
+// Enhanced Virtual Tab System with Split Body Layout
+export class VirtualTab {
+  constructor() {
+    this.modal = null;
+    this.toast = null;
+    this.iframe = null;
+    this.escapePressCount = 0;
+    this.escapeTimer = null;
+    this.url = "";
+    this.splitMode = null;
+    this.keydownListener = this.handleKeydown.bind(this);
+    this.ensureFontAwesome();
+  }
+
+  ensureFontAwesome() {
+    if (!document.querySelector('link[href*="font-awesome"]')) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css";
+      document.head.appendChild(link);
+    }
+  }
+
+  open(url, splitMode = null) {
+    if (this.modal) {
+      this.close();
+    }
+
+    this.url = url;
+    this.splitMode = splitMode;
+    this.escapePressCount = 0;
+
+    this.createModal();
+    this.setupEventListeners();
+  }
+
+  createModal() {
+    this.modal = document.createElement("div");
+    this.modal.className = "virtual-tab-modal";
+    this.applyModalStyles();
+
+    const content = document.createElement("div");
+    content.className = "virtual-tab-content";
+    this.applyContentStyles(content);
+
+    const header = this.createHeader();
+    this.iframe = this.createIframe();
+    this.toast = this.createToast();
+
+    content.appendChild(header);
+    content.appendChild(this.iframe);
+    this.modal.appendChild(content);
+    this.modal.appendChild(this.toast);
+    document.body.appendChild(this.modal);
+  }
+
+  applyModalStyles() {
+    const styles = {
+      position: "fixed",
+      top: "0",
+      left: "0",
+      width: "100vw",
+      height: "100vh",
+      backgroundColor: this.splitMode ? "transparent" : "rgba(0, 0, 0, 0.8)",
+      display: "flex",
+      justifyContent: this.splitMode ? "flex-start" : "center",
+      alignItems: this.splitMode ? "flex-start" : "center",
+      zIndex: "9999",
+    };
+
+    Object.assign(this.modal.style, styles);
+  }
+
+  applyContentStyles(content) {
+    const styles = {
+      width: "100%",
+      height: "100%",
+      backgroundColor: "#1e1e1e",
+      borderRadius: this.splitMode ? "0" : "8px",
+      overflow: "hidden",
+      display: "flex",
+      flexDirection: "column",
+      boxShadow: this.splitMode ? "none" : "0 4px 20px rgba(0, 0, 0, 0.5)",
+      border: this.splitMode ? "1px solid #444" : "none",
+    };
+
+    if (!this.splitMode) {
+      styles.width = "90%";
+      styles.height = "90%";
+    }
+
+    Object.assign(content.style, styles);
+  }
+
+  createHeader() {
+    const header = document.createElement("div");
+    header.className = "virtual-tab-header";
+    Object.assign(header.style, {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "8px 10px",
+      backgroundColor: "#333",
+      color: "#fff",
+      fontSize: "12px",
+      borderBottom: "1px solid #444",
+      minHeight: "32px",
+    });
+
+    const navControls = this.createNavigationControls();
+    const urlText = this.createUrlDisplay();
+    const actionIcons = this.createActionIcons();
+
+    header.appendChild(navControls);
+    header.appendChild(urlText);
+    header.appendChild(actionIcons);
+
+    return header;
+  }
+
+  createNavigationControls() {
+    const navControls = document.createElement("div");
+    navControls.className = "virtual-tab-nav";
+    Object.assign(navControls.style, {
+      display: "flex",
+      gap: "6px",
+    });
+
+    const backIcon = this.createNavIcon("fas fa-arrow-left", () => {
+      if (this.iframe && this.iframe.contentWindow) {
+        this.iframe.contentWindow.history.back();
+      }
+    });
+
+    const forwardIcon = this.createNavIcon("fas fa-arrow-right", () => {
+      if (this.iframe && this.iframe.contentWindow) {
+        this.iframe.contentWindow.history.forward();
+      }
+    });
+
+    const refreshIcon = this.createNavIcon("fas fa-redo", () => {
+      if (this.iframe) {
+        this.iframe.src = this.iframe.src;
+      }
+    });
+
+    navControls.appendChild(backIcon);
+    navControls.appendChild(forwardIcon);
+    navControls.appendChild(refreshIcon);
+
+    return navControls;
+  }
+
+  createNavIcon(className, onClick) {
+    const icon = document.createElement("i");
+    icon.className = className;
+    Object.assign(icon.style, {
+      cursor: "pointer",
+      color: "#fff",
+      padding: "3px",
+      borderRadius: "2px",
+      transition: "background-color 0.2s",
+      fontSize: "11px",
+    });
+
+    icon.addEventListener("click", onClick);
+    icon.addEventListener("mouseenter", () => {
+      icon.style.backgroundColor = "#555";
+    });
+    icon.addEventListener("mouseleave", () => {
+      icon.style.backgroundColor = "transparent";
+    });
+
+    return icon;
+  }
+
+  createUrlDisplay() {
+    const urlContainer = document.createElement("div");
+    urlContainer.style.flex = "1";
+    urlContainer.style.display = "flex";
+    urlContainer.style.alignItems = "center";
+    urlContainer.style.marginLeft = "8px";
+    urlContainer.style.marginRight = "8px";
+
+    const urlText = document.createElement("span");
+
+    // Display only pathname, decoded
+    try {
+      const urlObj = new URL(this.url);
+      const decodedPath = decodeURIComponent(urlObj.pathname);
+      urlText.textContent = decodedPath === "/" ? urlObj.hostname : decodedPath;
+    } catch (e) {
+      urlText.textContent = this.url;
+    }
+
+    Object.assign(urlText.style, {
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+      fontSize: "11px",
+    });
+
+    urlContainer.appendChild(urlText);
+    return urlContainer;
+  }
+
+  createActionIcons() {
+    const actionIcons = document.createElement("div");
+    actionIcons.className = "virtual-tab-actions";
+    Object.assign(actionIcons.style, {
+      display: "flex",
+      gap: "6px",
+    });
+
+    // Copy URL icon
+    const copyIcon = this.createNavIcon("fas fa-copy", () => {
+      navigator.clipboard.writeText(this.url).then(() => {
+        this.showCopyToast();
+      });
+    });
+    copyIcon.title = "Copy full URL";
+
+    // Open in new tab icon
+    const openIcon = this.createNavIcon("fas fa-external-link-alt", () => {
+      window.open(this.url, "_blank");
+    });
+    openIcon.title = "Open in new tab";
+
+    // Close icon
+    const closeIcon = this.createNavIcon("fas fa-times", () => {
+      this.close();
+    });
+    closeIcon.title = "Close";
+
+    actionIcons.appendChild(copyIcon);
+    actionIcons.appendChild(openIcon);
+    actionIcons.appendChild(closeIcon);
+
+    return actionIcons;
+  }
+
+  createIframe() {
+    const iframe = document.createElement("iframe");
+    iframe.src = this.url;
+    Object.assign(iframe.style, {
+      flex: "1",
+      width: "100%",
+      border: "none",
+      backgroundColor: "#fff",
+    });
+
+    return iframe;
+  }
+
+  createToast() {
+    const toast = document.createElement("div");
+    toast.className = "virtual-tab-toast";
+    toast.textContent = "Escape pressed once. Press again to close.";
+    Object.assign(toast.style, {
+      position: "absolute",
+      top: "20px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      backgroundColor: "#444",
+      color: "#fff",
+      padding: "8px 16px",
+      borderRadius: "4px",
+      boxShadow: "0 2px 10px rgba(0, 0, 0, 0.3)",
+      display: "none",
+      zIndex: "10000",
+      fontSize: "12px",
+    });
+
+    return toast;
+  }
+
+  showCopyToast() {
+    if (this.toast) {
+      this.toast.textContent = "URL copied to clipboard!";
+      this.toast.style.display = "block";
+      setTimeout(() => {
+        this.hideToast();
+      }, 2000);
+    }
+  }
+
+  setupEventListeners() {
+    document.addEventListener("keydown", this.keydownListener);
+  }
+
+  handleKeydown(event) {
+    if (event.key === "Escape") {
+      this.escapePressCount++;
+      if (this.escapePressCount === 1) {
+        this.showToast();
+        this.escapeTimer = setTimeout(() => {
+          this.escapePressCount = 0;
+          this.hideToast();
+        }, 2000);
+      } else if (this.escapePressCount === 2) {
+        clearTimeout(this.escapeTimer);
+        this.close();
+      }
+    }
+  }
+
+  showToast() {
+    if (this.toast) {
+      this.toast.style.display = "block";
+    }
+  }
+
+  hideToast() {
+    if (this.toast) {
+      this.toast.style.display = "none";
+    }
+  }
+
+  close() {
+    if (this.modal) {
+      document.removeEventListener("keydown", this.keydownListener);
+      this.modal.remove();
+      this.modal = null;
+      this.toast = null;
+      this.iframe = null;
+      this.escapePressCount = 0;
+      this.splitMode = null;
+      clearTimeout(this.escapeTimer);
+    }
+  }
+}
+
+// Body Layout Manager - handles body resizing and split positioning
+export class BodyLayoutManager {
+  constructor() {
+    this.originalBodyStyle = null;
+    this.splitContainer = null;
+    this.activeTabs = [];
+    this.maxTabs = 3;
+  }
+
+  initSplitLayout() {
+    if (this.splitContainer) return;
+
+    // Store original body style
+    this.originalBodyStyle = {
+      overflow: document.body.style.overflow,
+      height: document.body.style.height,
+      position: document.body.style.position,
+    };
+
+    // Create split container
+    this.splitContainer = document.createElement("div");
+    this.splitContainer.className = "virtual-tab-split-container";
+    Object.assign(this.splitContainer.style, {
+      position: "fixed",
+      top: "0",
+      right: "0",
+      width: "50vw",
+      height: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      zIndex: "9998",
+      backgroundColor: "#000",
+    });
+
+    document.body.appendChild(this.splitContainer);
+
+    // Resize body to make room
+    Object.assign(document.body.style, {
+      width: "50vw",
+      overflow: "hidden",
+      transition: "width 0.3s ease-in-out",
+    });
+  }
+
+  addTab(virtualTab) {
+    if (this.activeTabs.length >= this.maxTabs) {
+      // Remove oldest tab
+      const oldestTab = this.activeTabs.shift();
+      oldestTab.close();
+    }
+
+    if (!this.splitContainer) {
+      this.initSplitLayout();
+    }
+
+    // Calculate height for each tab
+    const tabCount = this.activeTabs.length + 1;
+    const height = `${100 / tabCount}%`;
+
+    // Resize existing tabs
+    this.activeTabs.forEach((tab) => {
+      if (tab.modal) {
+        tab.modal.style.height = height;
+      }
+    });
+
+    // Configure new tab
+    virtualTab.modal.style.position = "relative";
+    virtualTab.modal.style.width = "100%";
+    virtualTab.modal.style.height = height;
+    virtualTab.modal.style.top = "auto";
+    virtualTab.modal.style.left = "auto";
+    virtualTab.modal.style.right = "auto";
+    virtualTab.modal.style.bottom = "auto";
+
+    // Remove from document.body and add to split container
+    if (virtualTab.modal.parentNode === document.body) {
+      document.body.removeChild(virtualTab.modal);
+    }
+    this.splitContainer.appendChild(virtualTab.modal);
+
+    this.activeTabs.push(virtualTab);
+
+    // Override close method
+    const originalClose = virtualTab.close.bind(virtualTab);
+    virtualTab.close = () => {
+      this.removeTab(virtualTab);
+      originalClose();
+    };
+
+    return virtualTab;
+  }
+
+  removeTab(virtualTab) {
+    const index = this.activeTabs.indexOf(virtualTab);
+    if (index > -1) {
+      this.activeTabs.splice(index, 1);
+
+      if (this.activeTabs.length === 0) {
+        this.restoreLayout();
+      } else {
+        // Recalculate heights for remaining tabs
+        const height = `${100 / this.activeTabs.length}%`;
+        this.activeTabs.forEach((tab) => {
+          if (tab.modal) {
+            tab.modal.style.height = height;
+          }
+        });
+      }
+    }
+  }
+
+  restoreLayout() {
+    if (this.splitContainer) {
+      this.splitContainer.remove();
+      this.splitContainer = null;
+    }
+
+    if (this.originalBodyStyle) {
+      Object.assign(document.body.style, {
+        width: "",
+        ...this.originalBodyStyle,
+      });
+      this.originalBodyStyle = null;
+    }
+
+    this.activeTabs = [];
+  }
+
+  getActiveTabCount() {
+    return this.activeTabs.length;
+  }
+}
+
+// Drag and Drop Manager
+export class DragDropManager {
+  constructor(options = {}) {
+    this.options = {
+      pageListSelector: ".page-list .grid li.page-list-item a",
+      onDrop: null,
+      ...options,
+    };
+
+    this.draggedLink = null;
+    this.dropZones = [];
+    this.isDestroyed = false;
+    this.init();
+  }
+
+  init() {
+    this.createDropZones();
+    this.setupPageListListeners();
+  }
+
+  createDropZones() {
+    const zones = [
+      {
+        id: "drop-zone-right",
+        position: "split",
+        style: { right: "0", top: "0", width: "50vw", height: "100vh" },
+      },
+    ];
+
+    zones.forEach((zone) => {
+      const element = document.createElement("div");
+      element.id = zone.id;
+      element.className = "virtual-tab-drop-zone";
+
+      Object.assign(element.style, {
+        position: "fixed",
+        backgroundColor: "rgba(0, 123, 255, 0.2)",
+        border: "2px dashed #007bff",
+        display: "none",
+        zIndex: "10001",
+        pointerEvents: "none",
+        ...zone.style,
+      });
+
+      // Add label
+      const label = document.createElement("div");
+      label.textContent = "Drop here to split view";
+      Object.assign(label.style, {
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        color: "#007bff",
+        fontSize: "18px",
+        fontWeight: "bold",
+        pointerEvents: "none",
+      });
+
+      element.appendChild(label);
+      element.dataset.position = zone.position;
+      document.body.appendChild(element);
+      this.dropZones.push(element);
+    });
+  }
+
+  setupPageListListeners() {
+    const observer = new MutationObserver(() => {
+      this.attachLinkListeners();
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    this.attachLinkListeners();
+  }
+
+  attachLinkListeners() {
+    if (this.isDestroyed) return;
+
+    const links = document.querySelectorAll(this.options.pageListSelector);
+
+    links.forEach((link) => {
+      if (link.dataset.virtualTabListener) return;
+
+      link.dataset.virtualTabListener = "true";
+      link.draggable = true;
+
+      link.addEventListener("dragstart", (e) => {
+        this.draggedLink = link;
+        this.showDropZones();
+        e.dataTransfer.effectAllowed = "copy";
+        e.dataTransfer.setData("text/uri-list", link.href);
+      });
+
+      link.addEventListener("dragend", () => {
+        this.hideDropZones();
+        this.draggedLink = null;
+      });
+    });
+  }
+
+  showDropZones() {
+    this.dropZones.forEach((zone) => {
+      zone.style.display = "block";
+    });
+
+    document.addEventListener("dragover", this.handleDragOver.bind(this));
+    document.addEventListener("drop", this.handleDrop.bind(this));
+  }
+
+  hideDropZones() {
+    this.dropZones.forEach((zone) => {
+      zone.style.display = "none";
+    });
+
+    document.removeEventListener("dragover", this.handleDragOver.bind(this));
+    document.removeEventListener("drop", this.handleDrop.bind(this));
+  }
+
+  handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+
+    // Highlight drop zone
+    const zone = this.dropZones.find(
+      (z) =>
+        e.clientX >= z.offsetLeft &&
+        e.clientX <= z.offsetLeft + z.offsetWidth &&
+        e.clientY >= z.offsetTop &&
+        e.clientY <= z.offsetTop + z.offsetHeight,
+    );
+
+    this.dropZones.forEach((z) => {
+      z.style.backgroundColor = z === zone ? "rgba(0, 123, 255, 0.4)" : "rgba(0, 123, 255, 0.2)";
+    });
+  }
+
+  handleDrop(e) {
+    e.preventDefault();
+
+    if (!this.draggedLink) return;
+
+    const position = this.getDropPosition(e.clientX, e.clientY);
+    if (position) {
+      if (this.options.onDrop) {
+        this.options.onDrop(this.draggedLink.href, position);
+      } else {
+        const virtualTab = new VirtualTab();
+        virtualTab.open(this.draggedLink.href, position);
+      }
+    }
+
+    this.hideDropZones();
+  }
+
+  getDropPosition(x, y) {
+    // Check if dropped in right half
+    if (x > window.innerWidth / 2) {
+      return "split";
+    }
+    return null;
+  }
+
+  destroy() {
+    this.isDestroyed = true;
+    this.hideDropZones();
+
+    this.dropZones.forEach((zone) => {
+      if (zone.parentNode) {
+        zone.parentNode.removeChild(zone);
+      }
+    });
+    this.dropZones = [];
+
+    const links = document.querySelectorAll(this.options.pageListSelector);
+    links.forEach((link) => {
+      link.draggable = false;
+      delete link.dataset.virtualTabListener;
+    });
+  }
+}
+
+// Main Virtual Tab System
+export class VirtualTabSystem {
+  constructor(options = {}) {
+    this.options = {
+      autoInitDragDrop: true,
+      pageListSelector: ".page-list .grid li.page-list-item a",
+      ...options,
+    };
+
+    this.dragDropManager = null;
+    this.bodyLayoutManager = new BodyLayoutManager();
+
+    if (this.options.autoInitDragDrop) {
+      this.initDragDrop();
+    }
+  }
+
+  initDragDrop() {
+    this.dragDropManager = new DragDropManager({
+      pageListSelector: this.options.pageListSelector,
+      onDrop: this.handleDrop.bind(this),
+    });
+  }
+
+  handleDrop(url, position) {
+    if (position === "split") {
+      this.openInSplit(url);
+    } else {
+      this.openModal(url);
+    }
+  }
+
+  openModal(url) {
+    const vt = new VirtualTab();
+    vt.open(url);
+    return vt;
+  }
+
+  openInSplit(url) {
+    const virtualTab = new VirtualTab();
+    virtualTab.open(url, "split");
+    return this.bodyLayoutManager.addTab(virtualTab);
+  }
+
+  closeAll() {
+    this.bodyLayoutManager.restoreLayout();
+  }
+
+  getActiveTabCount() {
+    return this.bodyLayoutManager.getActiveTabCount();
+  }
+
+  destroy() {
+    this.closeAll();
+    if (this.dragDropManager) {
+      this.dragDropManager.destroy();
+    }
+  }
+}
+
+// Simple initialization function
+export function initVirtualTabs(options = {}) {
+  return new VirtualTabSystem(options);
+}

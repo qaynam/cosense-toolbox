@@ -1,0 +1,111 @@
+let TextEditor;
+function getTextEditor() {
+  if (!TextEditor) {
+    TextEditor = document.querySelector("#text-input");
+  }
+  return TextEditor;
+}
+
+/**
+ * @param position {string} 👈️か👉のどっちかをいれる Left|Rgiht
+ **/
+function moveLineIndentTo(position) {
+  const ctrlBEvent = new KeyboardEvent("keydown", {
+    isTrusted: true,
+    altKey: true,
+    bubbles: true,
+    cancelable: true,
+    charCode: 0,
+    code: "Arrow" + position,
+    composed: true,
+    ctrlKey: false,
+    currentTarget: $("div#app-container"),
+    defaultPrevented: true,
+    key: "Arrow" + position,
+    keyCode: position === "Right" ? 39 : 37,
+    //which: 66
+  });
+  getTextEditor().dispatchEvent(ctrlBEvent);
+}
+
+function moveCursorToEndOfLineAndBreakLine() {
+  let ctrlBEvent = new KeyboardEvent("keydown", {
+    isTrusted: true,
+    altKey: false,
+    bubbles: true,
+    cancelable: true,
+    charCode: 0,
+    code: "KeyE",
+    composed: true,
+    ctrlKey: true,
+    currentTarget: $("div#app-container"),
+    defaultPrevented: true,
+    key: "e",
+    keyCode: 69,
+  });
+  getTextEditor().dispatchEvent(ctrlBEvent);
+  ctrlBEvent = new KeyboardEvent("keydown", {
+    isTrusted: true,
+    altKey: false,
+    bubbles: true,
+    cancelable: true,
+    charCode: 0,
+    code: "Enter",
+    composed: true,
+    ctrlKey: false,
+    currentTarget: $("div#app-container"),
+    defaultPrevented: true,
+    key: "Enter",
+    keyCode: 13,
+  });
+  getTextEditor().dispatchEvent(ctrlBEvent);
+}
+
+function moveCursorToEndOfPage() {
+  let ctrlBEvent = new KeyboardEvent("keydown", {
+    isTrusted: true,
+    altKey: false,
+    bubbles: true,
+    cancelable: true,
+    charCode: 0,
+    code: "ArrowDown",
+    composed: true,
+    ctrlKey: false,
+    currentTarget: $("div#app-container"),
+    defaultPrevented: true,
+    key: "ArrowDown",
+    metaKey: true,
+    keyCode: 40,
+  });
+  getTextEditor().dispatchEvent(ctrlBEvent);
+}
+
+function moveCursorToStartOfPage() {
+  let ctrlBEvent = new KeyboardEvent("keydown", {
+    isTrusted: true,
+    altKey: false,
+    bubbles: true,
+    cancelable: true,
+    charCode: 0,
+    code: "ArrowDown",
+    composed: true,
+    ctrlKey: false,
+    currentTarget: $("div#app-container"),
+    defaultPrevented: true,
+    key: "ArrowUp",
+    metaKey: true,
+    keyCode: 38,
+  });
+  getTextEditor().dispatchEvent(ctrlBEvent);
+}
+
+import { moveCursorToLeft } from "/api/code/cosense-toolbox/move-cursor/module.js";
+
+export {
+  getTextEditor,
+  moveCursorToLeft,
+  moveLineIndentTo,
+  moveCursorToEndOfLineAndBreakLine,
+  moveCursorToEndOfPage,
+  moveCursorToStartOfPage,
+};

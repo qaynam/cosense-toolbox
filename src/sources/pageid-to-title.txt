@@ -1,0 +1,68 @@
+const getPageIDFromQueryParam = () => {
+  const usp = new URLSearchParams(location.search);
+  const params = Object.fromEntries(usp.entries());
+  return params;
+};
+
+/** @see https://scrapbox.io/scrapboxlab/api%2Fpage-snapshots%2F:projectname%2F:pageid%2F:timestampid **/
+const getPageFromSnapshotByPageId = async (pageId) => {
+  const res = await fetch(`/api/page-snapshots/${scrapbox.Project.name}/${pageId}/latest`);
+  if (!res.ok) {
+    alert("リダイレクトするページは存在しません");
+    return;
+  }
+  const data = await res.json();
+  return data.page;
+};
+
+(async function () {
+  const params = getPageIDFromQueryParam();
+  if (!params.redirectPageId || !params.redirectPageId.trim()) {
+    return;
+  }
+  const { title } = await getPageFromSnapshotByPageId(params.redirectPageId);
+  if (!title) {
+    return;
+  }
+  const answer = confirm(`「${title}」に遷移しますか？`);
+  if (answer) {
+    location.href = `${location.origin}/${scrapbox.Project.name}/${title}`;
+  }
+})();
+
+const createModal = () => {
+  const dialog = document.createElement("dialog");
+  const button = document.createElement("button");
+  dialog.innerHTML = `
+		<form method="get" action="${location.href}">
+					<input type="text" name="redirectPageId">
+		</form>
+	`;
+  dialog.style.cssText = `
+		position: fixed;
+		inset: 0;
+		background: rgb(0,0,0,0.5);
+	`;
+  document.body.append(dialog);
+};
+
+scrapbox.PageMenu("CustomTools").addItem({
+  title: "pageIDから遷移する",
+  onClick: async function () {
+    window.location.href = location.href + "?redirectPageId=";
+  },
+});
+
+scrapbox.PageMenu("CustomTools").addItem({
+  title: "pageIDをコピーする",
+  onClick: async function () {
+    await navigator.clipboard.writeText(scrapbox.Page.id);
+  },
+});
+
+scrapbox.PageMenu("CustomTools").addItem({
+  title: "pageId付きのurlをコピーする",
+  onClick: async function () {
+    await navigator.clipboard.writeText(`${location.href}?redirectPageId=${scrapbox.Page.id}`);
+  },
+});

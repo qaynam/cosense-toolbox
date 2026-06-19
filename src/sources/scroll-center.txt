@@ -1,0 +1,23 @@
+export function scrollCursorLineToCenter() {
+  const cursorLine = document.querySelector(".line.cursor-line");
+  const { top, bottom } = cursorLine.getBoundingClientRect();
+  const windowCenterPosition = window.innerHeight / 2;
+  // カーソルが画面の中央からしたにある場合
+  if (windowCenterPosition < top) {
+    // したにスクロールして位置を調整する
+    window.scrollTo({
+      top: window.scrollY + (top - windowCenterPosition),
+      left: 0,
+      behavior: "smooth",
+    });
+  }
+  // カーソルが画面の中央から上にある場合
+  if (windowCenterPosition > top) {
+    // 上にスクロールして位置を調整する
+    window.scrollTo({
+      top: window.scrollY - (windowCenterPosition - top),
+      left: 0,
+      behavior: "smooth",
+    });
+  }
+}

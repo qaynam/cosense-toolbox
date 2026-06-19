@@ -1,0 +1,144 @@
+:root {
+  --code-bg: #0d1117;
+  --code-color: #c9d1d9;
+  --card-description-code-color: #c9d1d9;
+}
+
+.cursor {
+  width: 3px;
+  background-color: gray;
+}
+
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+}
+
+.hljs-comment,
+.hljs-punctuation {
+  color: #8b949e !important;
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-meta,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id {
+  color: #79c0ff !important;
+}
+
+.hljs-variable,
+.hljs-literal,
+.hljs-number,
+.hljs-doctag {
+  color: #ffa657 !important;
+}
+
+.hljs-params {
+  color: #c9d1d9 !important;
+}
+
+.hljs-function {
+  color: #d2a8ff !important;
+}
+
+.hljs-class,
+.hljs-tag,
+.hljs-title,
+.hljs-built_in {
+  color: #7ee787 !important;
+}
+
+.hljs-keyword,
+.hljs-type,
+.hljs-builtin-name,
+.hljs-meta-keyword,
+.hljs-template-tag,
+.hljs-template-variable {
+  color: #ff7b72 !important;
+}
+
+.hljs-string,
+.hljs-undefined {
+  color: #a5d6ff !important;
+}
+
+.hljs-regexp {
+  color: #a5d6ff !important;
+}
+
+.hljs-symbol {
+  color: #79c0ff !important;
+}
+
+.hljs-bullet {
+  color: #ffa657 !important;
+}
+
+.hljs-section {
+  color: #79c0ff !important;
+  font-weight: bold !important;
+}
+
+.hljs-quote,
+.hljs-name,
+.hljs-selector-tag,
+.hljs-selector-pseudo {
+  color: #7ee787 !important;
+}
+
+.hljs-emphasis {
+  color: #ffa657;
+  font-style: italic !important;
+}
+
+.hljs-strong {
+  color: #ffa657;
+  font-weight: bold !important;
+}
+
+.hljs-deletion {
+  color: #ffa198 !important;
+  background-color: #490202 !important;
+}
+
+.hljs-addition {
+  color: #7ee787 !important;
+  background-color: #04260f !important;
+}
+
+.hljs-link {
+  color: #a5d6ff !important;
+  font-style: underline !important;
+}
+
+.line span.code-block .code-block-start {
+  /** background-color: lightgray; */
+  background-color: #e6e6e630;
+  padding: 0.25rem 0.15rem 0.35rem 0.5rem;
+}
+.line span.code-block .code-block-start a {
+  /* color: #222; */
+  color: #e7e7e7;
+}
+.line span.code-block .tool-buttons {
+  /* color: #333; */
+  color: #e7e7e7;
+}
+.line .code-block span.char-index {
+  font-family: "Geist Mono", monospace;
+  font-weight: 500;
+}
+.line code {
+  font-size: 95%;
+}
+
+.code.highlight:has(.backquote) {
+  /* background-color: #e6e6e6; */
+  background-color: #e6e6e630;
+  /** color: #444; */
+  color: #e7e7e7;
+  padding: 0.15rem 0;
+}

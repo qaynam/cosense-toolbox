@@ -1,0 +1,13 @@
+/**
+ * @param keys { {[key: string]: () => void}[] }
+ */
+export function addShortcut(...keys) {
+  for (let key of keys) {
+    const handler = (e) => {
+      const k = Object.keys(key)[0];
+      const registerKeys = k.includes("-") ? k.split("-") : [k];
+      const callback = Object.values(key)[0];
+    };
+    window.addEventListener("keydown", handler);
+  }
+}

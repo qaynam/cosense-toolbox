@@ -1,0 +1,91 @@
+(function () {
+  function saveToPinList(pageId) {
+    const pinList = JSON.parse(localStorage.getItem("pinList") ?? "[]");
+    if (!pinList.includes(pageId)) {
+      //先頭に追加する
+      pinList.unshift(pageId);
+    }
+    localStorage.setItem("pinList", JSON.stringify(pinList));
+  }
+  function getFromPinList(pageId) {
+    const pinList = JSON.parse(localStorage.getItem("pinList") ?? "[]");
+    return pinList.find((pin) => pin === pageId);
+  }
+  function getAllPinList() {
+    return JSON.parse(localStorage.getItem("pinList") ?? "[]");
+  }
+  function removeFromPinList() {
+    const pinList = JSON.parse(localStorage.getItem("pinList") ?? "[]");
+    localStorage.setItem("pinList", JSON.stringify(pinList.filter((pin) => pin !== pageId)));
+  }
+  function getGirdItem(data) {
+    const dynamicContent = data.image
+      ? `<div class="icon"><img loading="lazy" src="${data.image}"></div>`
+      : `<div class="description">${data.descriptions.map((des) => `<p class="line">${des}</p><br>`)}</div>`;
+
+    return `<li class="page-list-item grid-style-item" data-page-title="${data.title}" data-page-links="${data.links.map((a) => `'${a}'`).join(" ")}" style="border: 1px solid #87ceeb94;"><a href="/${scrapbox.Project.name}/${data.title}" rel="route"><div class="hover"></div><div class="pin"></div><div class="content"><div class="header"><div class="title">${data.title}</div></div>${dynamicContent}</div></a></li>`;
+  }
+
+  async function insertPinListElementToHome() {
+    const pinList = getAllPinList();
+    if (pinList.length === 0) return;
+    const data = [];
+    for (let pageId of pinList) {
+      const res = await fetch(`/api/page-snapshots/${scrapbox.Project.name}/${pageId}/latest`);
+      if (!res.ok) {
+        continue;
+      }
+      const { page } = await res.json();
+      const result = await (
+        await fetch(`/api/pages/${scrapbox.Project.name}/${page.title}`)
+      ).json();
+      data.push({
+        image: result.image,
+        title: result.title,
+        descriptions: result.descriptions,
+        links: result.links,
+      });
+    }
+
+    if (location.href === `${location.origin}/${scrapbox.Project.name}/`) {
+      const pageListGrid = document.querySelector(".page-list ul.grid");
+      const fragment = document.createDocumentFragment();
+      data.forEach((item) => {
+        const div = document.createElement("div");
+        div.innerHTML = getGirdItem(item);
+        fragment.appendChild(div.firstChild);
+      });
+      console.log(fragment, ">>>>");
+      pageListGrid.prepend(fragment);
+    }
+  }
+
+  let menuItemParams = {
+    title: "ページをピン留めする",
+    onClick: function () {
+      if (getFromPinList(pageId)) {
+        alert("既にピン留めされています");
+        return;
+      }
+      saveToPinList(pageId);
+    },
+    image: "",
+    icon: "fas fa-thumbtack",
+  };
+  const pageId = cosense.Page.id;
+  if (getFromPinList(pageId)) {
+    menuItemParams = {
+      title: "ページをピン留めから外す",
+      onClick: function () {
+        if (confirm("本当にこのページをピン留めから外しますか？")) {
+          removeFromPinList(pageId);
+        }
+      },
+      icon: "fas fa-trash-alt",
+    };
+  }
+
+  scrapbox.PageMenu("CustomTools").addItem(menuItemParams);
+
+  insertPinListElementToHome();
+})();

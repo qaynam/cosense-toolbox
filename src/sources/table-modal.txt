@@ -1,0 +1,57 @@
+(function () {
+  function createTablePreviewButton(href) {
+    const button = document.createElement("span");
+    button.className = "button table-viewer-button";
+    button.style.marginRight = ".25rem";
+    button.style.cursor = "pointer";
+    button.innerHTML = `<i class="fas fa-search-plus"></i>`;
+    const openModal = async () => {
+      const { CSVTableModal } = await import(
+        "/api/code/cosense-toolbox/cosense-table-viewer/module.js"
+      );
+      const csvModal = new CSVTableModal();
+      await csvModal.displayTable(href);
+    };
+    button.addEventListener("click", openModal);
+    onDestroy(button, () => button.removeEventListener("click", openModal));
+    return button;
+  }
+
+  function addTablePreviewButtonToAllTableLinks() {
+    const tableAnchors = document.querySelectorAll(
+      ".table-block-start:not(:has(.table-viewer-button))",
+    );
+    tableAnchors.forEach((node) => {
+      const anchorNode = node.querySelector("a");
+      if (!anchorNode) return;
+      URL.canParse(anchorNode.href) &&
+        insertBeforeSelf(anchorNode, createTablePreviewButton(new URL(anchorNode.href).pathname));
+    });
+  }
+
+  function onDestroy(element, callback) {
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const removed of mutation.removedNodes) {
+          if (removed === element || removed.contains(element)) {
+            observer.disconnect();
+            callback();
+          }
+        }
+      }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function insertBeforeSelf(referenceNode, newNode) {
+    referenceNode.parentNode?.insertBefore(newNode, referenceNode);
+  }
+
+  addTablePreviewButtonToAllTableLinks();
+  cosense.on("lines:changed", () => addTablePreviewButtonToAllTableLinks());
+  cosense.on("page:changed", () => {
+    if (cosense.Layout !== "page") return;
+    addTablePreviewButtonToAllTableLinks();
+  });
+})();

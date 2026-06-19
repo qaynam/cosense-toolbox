@@ -1,0 +1,11 @@
+const getNewWindowUrl = () => {
+  const origin = location.origin;
+  const projectName = location.pathname.split("/")[1];
+  return origin + "/" + projectName + "/new";
+};
+
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.key === "t" && e.metaKey) {
+    window.open(getNewWindowUrl(), "_blank");
+  }
+});

@@ -1,0 +1,73 @@
+const hideInfoBoxStyle = `
+		@media (767px < width) {
+						.page-column:has(.page-sidebar) {
+										grid-template-columns: minmax(200px, 3fr) min-content;
+										grid-template-areas: "page menu";
+										position: relative;
+						}
+		}
+
+		.page-sidebar:has(.infox) {
+				display: none;
+				position: absolute;
+				right: 0;
+				top: 0;
+				width: 100%;
+		}
+	`;
+
+function applyHideInfoBoxStyle() {
+  const style = document.createElement("style");
+  style.innerHTML = hideInfoBoxStyle;
+  style.setAttribute("data-hide-infobox", "true");
+  document.head.append(style);
+  return style;
+}
+
+function toggleHideInfoBoxStyle() {
+  const styleEl = document.querySelector("style[data-hide-infobox]");
+  const badge = document.querySelector("div[data-infobox-hided-badge]");
+  if (styleEl && badge) {
+    styleEl.remove();
+    badge.remove();
+    return;
+  }
+  applyHideInfoBoxStyle();
+  document.querySelector(".page-column .page-sidebar").className += "r";
+  showFloatingInfoboxHidedBadge();
+}
+
+function showFloatingInfoboxHidedBadge() {
+  const Badge = document.createElement("div");
+  Badge.style.cssText = `
+		width: max-content;
+		color:white;
+		margin-left: auto;
+		background-color: lightgray;
+		padding: 4px;
+		margin-right: 1rem;
+		border-radius: 4px;
+		font-size: 1.25rem;
+		font-weight: bold;
+		cursor: pointer;
+	`;
+  Badge.setAttribute("data-infobox-hided-badge", "true");
+  Badge.innerText = "🥷";
+  Badge.onclick = () => {
+    toggleHideInfoBoxStyle();
+    Badge.remove();
+  };
+  document
+    .querySelector(".footer")
+    .insertBefore(Badge, document.querySelector(".footer .status-bar"));
+}
+
+toggleHideInfoBoxStyle();
+
+scrapbox.PageMenu.addMenu({
+  title: "hide infobox",
+  onClick: () => {
+    toggleHideInfoBoxStyle();
+  },
+  icon: "fas fa-caret-right",
+});

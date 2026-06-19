@@ -1,0 +1,43 @@
+(() => {
+  // lodash.escapeRegExpを参考にした
+  const reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
+  const reHasRegExpChar = RegExp(reRegExpChar.source);
+  function escapeRegExp(string) {
+    return reHasRegExpChar.test(string) ? string.replace(reRegExpChar, "\\$&") : string;
+  }
+  function autoLink(lines) {
+    const titles = cosense.Project.pages
+      .filter((page) => page.title.length > 2 || page.exists) // タイトル3文字以上もしくは存在するページだけが自動リンク対象
+      .map((page) => page.title)
+      .sort((a, b) => b.length - a.length);
+
+    const newLines = [];
+    const usedTitles = [];
+    for (const line of lines) {
+      if (/[\[\]#]/.test(line)) {
+        // 既にリンクがある行は処理しない
+        newLines.push(line);
+        continue;
+      }
+      let newLine = line;
+      for (const title of titles) {
+        const regexp = new RegExp(escapeRegExp(title), "i");
+        if (!regexp.test(newLine)) continue;
+        if (usedTitles.find((title) => regexp.test(title))) continue;
+        newLine = newLine.replace(regexp, (m) => `[${m}]`);
+        usedTitles.push(title);
+      }
+      newLines.push(newLine);
+    }
+    return newLines;
+  }
+  cosense.PopupMenu.addButton({
+    title: "🤝 自動リンク",
+    onClick: (text) => {
+      const lines = text.split(/[\r\n]/g);
+      const newLines = autoLink(lines);
+      console.log(newLines);
+      return newLines.join("\n");
+    },
+  });
+})();

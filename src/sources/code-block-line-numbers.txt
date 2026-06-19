@@ -1,0 +1,43 @@
+/* 色設定 */
+body *::before {
+  --code-number-color: #1c2b27;
+  --code-accent-color: #c9e6de;
+}
+/* コード記法の行番号を表示 -- ウィンドウ幅768px以上で適用 */
+@media screen and (min-width: 768px) {
+  .section-title {
+    counter-reset: codeline;
+  }
+  .code-block span.indent code.code-body {
+    counter-increment: codeline;
+    margin-left: -1.5em;
+    padding-left: 2.3em;
+  }
+  .code-block span.indent code.code-body::before {
+    content: counter(codeline, decimal-leading-zero);
+    position: absolute;
+    display: inline-block;
+    z-index: 10;
+    margin-left: -2.4em;
+    /* width: 2em;*/
+    padding-right: 0.2em;
+    text-align: right;
+    vertical-align: bottom;
+    border-right: solid 1px #fff;
+
+    /* ↓行番号の色の指定はここ */
+    color: var(--code-number-color);
+  }
+
+  /* カーソル行の行番号を濃く表示する */
+  .code-block span.indent code.code-body::before {
+    opacity: 0.5;
+  }
+  .cursor-line .code-block span.indent code.code-body::before {
+    opacity: 1;
+    font-weight: bolder;
+
+    /* ↓カーソル行の背景色の色はここ */
+    background-color: var(--code-accent-color);
+  }
+}

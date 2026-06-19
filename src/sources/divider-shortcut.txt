@@ -1,0 +1,5 @@
+document.addEventListener("keydown", function (e) {
+  if (e.ctrlKey && e.key === "r") {
+    document.execCommand("insertText", null, "[-.icon]\n");
+  }
+});

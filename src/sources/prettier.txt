@@ -1,0 +1,219 @@
+// メモリ効率的なモジュールローダー
+class ModuleManager {
+  constructor() {
+    this.loadedModules = new Map();
+    this.moduleCache = new Map();
+  }
+
+  async loadModule(cacheName, cacheKey, url) {
+    try {
+      // すでにロード済みの場合は再利用
+      if (this.loadedModules.has(cacheKey)) {
+        console.log(`${cacheKey} already loaded, reusing...`);
+        return this.loadedModules.get(cacheKey);
+      }
+
+      const cache = await caches.open(cacheName);
+      let response = await cache.match(cacheKey);
+
+      if (!response) {
+        console.log(`${cacheKey} not found in cache. Fetching...`);
+        response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${cacheKey}: ${response.status}`);
+        }
+
+        await cache.put(cacheKey, response.clone());
+        console.log(`${cacheKey} cached successfully`);
+      } else {
+        console.log(`${cacheKey} loaded from cache`);
+      }
+
+      const jsCode = await response.text();
+
+      // 分離されたスコープでモジュールを実行
+      const moduleResult = this.executeInIsolatedScope(jsCode, cacheKey);
+
+      // 結果をキャッシュ
+      this.loadedModules.set(cacheKey, moduleResult);
+      console.log(`${cacheKey} executed successfully`);
+
+      return moduleResult;
+    } catch (error) {
+      console.error(`Error loading ${cacheKey}:`, error);
+      throw error;
+    }
+  }
+
+  // 分離されたスコープでコードを実行
+  executeInIsolatedScope(jsCode, moduleName) {
+    // グローバル変数をキャプチャ
+    const globalsBefore = Object.keys(window);
+
+    try {
+      // 一時的なスコープでコードを実行
+      const moduleFunction = new Function(`
+								const globalsBefore = ${JSON.stringify(globalsBefore)};
+								return (function() {
+										${jsCode}
+										
+										// モジュールが作成したグローバル変数を収集
+										const moduleExports = {};
+										const globalsAfter = Object.keys(window);
+										
+										for (const key of globalsAfter) {
+												if (!globalsBefore.includes(key)) {
+														moduleExports[key] = window[key];
+												}
+										}
+										
+										return moduleExports;
+								})();
+						`);
+
+      const moduleExports = moduleFunction.call(null);
+
+      // グローバル変数をモジュール参照に移動
+      return {
+        exports: moduleExports,
+        cleanup: () => this.cleanupModule(moduleName, moduleExports),
+      };
+    } catch (error) {
+      console.error(`Error executing module ${moduleName}:`, error);
+      throw error;
+    }
+  }
+
+  // モジュールのクリーンアップ
+  cleanupModule(moduleName, moduleExports) {
+    // グローバル変数を削除
+    Object.keys(moduleExports).forEach((key) => {
+      if (window[key] === moduleExports[key]) {
+        delete window[key];
+      }
+    });
+
+    // キャッシュから削除
+    this.loadedModules.delete(moduleName);
+    console.log(`${moduleName} cleaned up`);
+  }
+
+  // 全モジュールのクリーンアップ
+  cleanupAll() {
+    this.loadedModules.forEach((module, name) => {
+      if (module.cleanup) {
+        module.cleanup();
+      }
+    });
+    this.loadedModules.clear();
+    console.log("All modules cleaned up");
+  }
+}
+
+// より効率的なPrettierローダー
+class PrettierLoader {
+  constructor() {
+    this.moduleManager = new ModuleManager();
+    this.prettier = null;
+    this.plugins = null;
+    this.isLoaded = false;
+  }
+
+  async load() {
+    if (this.isLoaded) {
+      return { prettier: this.prettier, plugins: this.plugins };
+    }
+
+    try {
+      // Prettierメインをロード
+      const prettierModule = await this.moduleManager.loadModule(
+        "prettier-modules",
+        "prettier-module",
+        "https://scrapbox.io/files/6863b347ae01a710c9e24f8c.2",
+      );
+
+      // Babelパーサーをロード
+      const babelModule = await this.moduleManager.loadModule(
+        "prettier-modules",
+        "prettier-parser-babel",
+        "https://scrapbox.io/files/6863b3425750cde42c4b70f9.2",
+      );
+
+      // Estreeパーサーをロード
+      const estreeModule = await this.moduleManager.loadModule(
+        "prettier-modules",
+        "prettier-estree",
+        "https://scrapbox.io/files/6863b3443f96998565ad42ad.2",
+      );
+
+      // モジュールのエクスポートから必要なオブジェクトを取得
+      this.prettier = prettierModule.exports.prettier || window.prettier;
+      this.plugins = babelModule.exports.prettierPlugins || window.prettierPlugins;
+
+      this.isLoaded = true;
+
+      return { prettier: this.prettier, plugins: this.plugins };
+    } catch (error) {
+      console.error("Failed to load Prettier:", error);
+      throw error;
+    }
+  }
+
+  async format(code, options = {}) {
+    if (!this.isLoaded) {
+      await this.load();
+    }
+
+    const defaultOptions = {
+      parser: "babel",
+      plugins: this.plugins,
+      semi: true,
+      singleQuote: true,
+      ...options,
+    };
+
+    return this.prettier.format(code, defaultOptions);
+  }
+
+  // Prettierのクリーンアップ
+  cleanup() {
+    this.moduleManager.cleanupAll();
+    this.prettier = null;
+    this.plugins = null;
+    this.isLoaded = false;
+
+    // 強制ガベージコレクション（開発環境でのみ）
+    if (typeof window.gc === "function") {
+      window.gc();
+    }
+  }
+}
+
+// 使用例
+export const prettierLoader = new PrettierLoader();
+
+// ページ離脱時にクリーンアップ
+window.addEventListener("beforeunload", () => {
+  prettierLoader.cleanup();
+});
+
+// 手動クリーンアップ用（開発時など）
+window.cleanupPrettier = () => {
+  prettierLoader.cleanup();
+  console.log("Prettier manually cleaned up");
+};
+
+// メモリ使用量監視（開発用）
+function monitorMemory() {
+  if (performance.memory) {
+    console.log("Memory usage:", {
+      used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + " MB",
+      total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024) + " MB",
+      limit: Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024) + " MB",
+    });
+  }
+}
+
+// 定期的なメモリ監視（開発時のみ）
+// setInterval(monitorMemory, 10000);

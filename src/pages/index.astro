@@ -1,0 +1,89 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import ScriptCard from '../components/ScriptCard.astro';
+import { GROUPS } from '../lib/categories';
+
+const scripts = (await getCollection('scripts')).sort(
+	(a, b) =>
+		Number(b.data.featured) - Number(a.data.featured) ||
+		a.data.order - b.data.order ||
+		a.data.title.localeCompare(b.data.title, 'ja'),
+);
+const total = scripts.length;
+---
+
+<Base>
+	<section class="hero">
+		<h1>Cosense の UI を<br /><span class="grad">好きなだけ作り変える</span></h1>
+		<p>
+			cosense-toolbox で育ててきた userscript / userCSS のツールボックス。気に入ったものを選んで、コピペで自分のCosenseに貼るだけ。
+		</p>
+		<div class="meta">
+			<span>{total} 個のスクリプト</span>
+			<a href="/guide/">→ 使い方（1行インストール）</a>
+		</div>
+	</section>
+
+	<div class="toolbar">
+		<div class="filters">
+			{
+				GROUPS.map((g, i) => (
+					<button class="filter" data-filter={g.id} aria-pressed={i === 0 ? 'true' : 'false'}>
+						{g.label}
+					</button>
+				))
+			}
+		</div>
+		<input id="search" class="search" type="search" placeholder="🔍 検索…" autocomplete="off" />
+	</div>
+
+	<div class="grid" id="grid">
+		{scripts.map((entry) => <ScriptCard entry={entry} />)}
+	</div>
+	<p class="empty" id="empty" hidden>該当するスクリプトがありません</p>
+
+	<script>
+	function initGallery() {
+		const grid = document.getElementById('grid');
+		if (!grid || grid.dataset.inited === '1') return;
+		grid.dataset.inited = '1';
+
+		const cards = Array.from(grid.querySelectorAll<HTMLElement>('.card'));
+		const filters = Array.from(document.querySelectorAll<HTMLButtonElement>('.filter'));
+		const search = document.getElementById('search') as HTMLInputElement | null;
+		const empty = document.getElementById('empty');
+
+		let activeGroup = 'all';
+		let query = '';
+
+		function apply() {
+			let visible = 0;
+			for (const card of cards) {
+				const groupOk = activeGroup === 'all' || card.dataset.group === activeGroup;
+				const searchOk = !query || (card.dataset.search ?? '').includes(query);
+				const show = groupOk && searchOk;
+				card.hidden = !show;
+				if (show) visible++;
+			}
+			if (empty) empty.hidden = visible !== 0;
+		}
+
+		filters.forEach((btn) => {
+			btn.addEventListener('click', () => {
+				activeGroup = btn.dataset.filter ?? 'all';
+				filters.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+				apply();
+			});
+		});
+
+		search?.addEventListener('input', () => {
+			query = search.value.trim().toLowerCase();
+			apply();
+		});
+	}
+
+	// 初回 + View Transitions のページ遷移ごとに初期化（DOM単位で冪等）
+	initGallery();
+	</script>
+</Base>

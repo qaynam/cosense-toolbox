@@ -1,0 +1,39 @@
+let zenModeEnabled = false;
+export function toggleZenMode(fullScreen = false) {
+  const pageMenu = document.querySelector(".page-column .page-menu");
+  const navbar = document.querySelector(".navbar.navbar-default");
+  const planBadge = document.querySelector(".footer > div.status-bar > div.plan-badge");
+  const planBadgeIcon = document.querySelector(".footer .status-bar .item");
+  const relatedPagesList = document.querySelector(".related-page-list");
+  const infoboxHideBadge = document.querySelector(".footer [data-infobox-hided-badge]");
+
+  const style = document.querySelector("[data-zenmode-style]") || document.createElement("style");
+  style.setAttribute("data-zenmode-style", "true");
+  style.innerHTML = `.line .telomere .telomere-border {display: none;} .page {border: none !important;}`;
+  if (!zenModeEnabled) {
+    document.head.append(style);
+  } else {
+    style.remove();
+  }
+  [infoboxHideBadge, pageMenu, navbar, planBadge, planBadgeIcon, relatedPagesList].forEach(
+    (node) => {
+      if (node) {
+        node.style.display = zenModeEnabled ? "initial" : "none";
+      }
+    },
+  );
+
+  zenModeEnabled = !zenModeEnabled;
+
+  if (fullScreen) {
+    toggleFullScreen();
+  }
+}
+
+function toggleFullScreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else if (document.exitFullscreen) {
+    document.exitFullscreen();
+  }
+}
