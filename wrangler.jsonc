@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cosense-toolbox",
+  "compatibility_date": "2026-06-19",
+  // 静的サイト(SSRなし)を Workers Static Assets として配信する。
+  // Worker スクリプト(main)は不要。astro build の出力(./dist)をそのまま配る。
+  "assets": {
+    "directory": "./dist",
+    // /s/slug → /s/slug/index.html を解決
+    "html_handling": "auto-trailing-slash",
+    // 見つからない時は dist/404.html を返す
+    "not_found_handling": "404-page"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

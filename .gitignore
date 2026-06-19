@@ -24,3 +24,7 @@ pnpm-debug.log*
 .claude/settings.local.json
 
 knowledge/
+
+# Cloudflare Wrangler
+.wrangler/
+.dev.vars
