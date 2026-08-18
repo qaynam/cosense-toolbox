@@ -23,12 +23,11 @@ const thumb = data.media ?? SITE.dummyThumb;
 const demoUrl = data.demo ?? SITE.dummyGyazoDemo;
 const lang = data.install.kind === 'css' ? 'css' : 'js';
 
-// ソースコード全文（src/sources/<slug>.txt があれば accordion で表示）
 const sources = import.meta.glob('../../sources/*.txt', { query: '?raw', import: 'default', eager: true });
 const sourceCode = sources[`../../sources/${entry.id}.txt`] as string | undefined;
 ---
 
-<Base title={data.title}>
+<Base title={data.title} description={data.summary} image={thumb}>
 	<div class="modal-scrim" data-modal-scrim>
 		<button class="modal-backdrop-close" data-modal-close type="button" aria-label="閉じる">✕</button>
 		<article class="modal-card">

@@ -9,7 +9,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "deploy": "astro build && wrangler deploy",
-    "preview:worker": "astro build && wrangler dev"
+    "preview:worker": "astro build && wrangler dev",
+    "gen": "bun scripts/build-preview.mjs && bun scripts/build-og.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",

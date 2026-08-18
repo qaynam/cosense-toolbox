@@ -3004,7 +3004,7 @@ pre code {
     padding: 0;
     font-size: inherit;
     color: inherit;
-    white-space: pre-wrap;
+    
     background-color: rgba(0,0,0,0);
     border-radius: 0
 }
@@ -8806,8 +8806,7 @@ body.modal-open {
 }
 
 .line .cli code .space {
-    white-space: pre
-}
+    }
 
 .line .cli .tool-buttons {
     display: none
@@ -8914,10 +8913,10 @@ body.modal-open {
     font-variant-ligatures: no-common-ligatures;
     line-height: inherit;
     cursor: text;
-    white-space: -moz-pre-wrap;
-    white-space: -pre-wrap;
-    white-space: -o-pre-wrap;
-    white-space: pre-wrap;
+    
+    
+    
+    
     word-wrap: break-word
 }
 
@@ -11011,7 +11010,7 @@ html[data-os*=mac] .grid li.page-list-item a .title,.grid li.page-list-item a .t
     line-height: 20px;
     padding: 0 12px;
     font-size: 12px;
-    white-space: pre-line;
+    
     column-count: 1;
     column-gap: 2em;
     column-width: 10em;
@@ -13813,8 +13812,7 @@ html[data-display-style*=touchclick] .selections .knob {
     padding: 1px 2px;
     font-size: .9em;
     background-color: #ffcfc6;
-    white-space: pre-wrap
-}
+    }
 
 .table-block .table-block-start a {
     color: #342d9c;
@@ -13826,8 +13824,7 @@ html[data-display-style*=touchclick] .selections .knob {
     padding: 0 2px 0 8px;
     box-sizing: content-box;
     display: inline-block;
-    white-space: pre
-}
+    }
 
 .table-block .cell:nth-child(even) {
     background-color: rgba(0,0,0,.06)
@@ -14180,16 +14177,16 @@ html[data-os*=ios] .personal-access-tokens-settings-form .account-list-item .act
     font-size: 90%;
     color: var(--code-color, #342d9c);
     background-color: var(--code-bg, rgba(0, 0, 0, 0.04));
-    white-space: -moz-pre-wrap;
-    white-space: -pre-wrap;
-    white-space: -o-pre-wrap;
-    white-space: pre-wrap;
+    
+    
+    
+    
     word-wrap: break-word;
     border-radius: 4px
 }
 
 .line code .backquote {
-    white-space: pre;
+    
     opacity: .1
 }
 

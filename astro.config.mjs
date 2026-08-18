@@ -1,7 +1,8 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
+import { defineConfig } from "astro/config";
 
-// https://astro.build/config
+const SITE_URL = process.env.SITE_URL;
+
 export default defineConfig({
-	// site: 'https://example.com', // デプロイ先が決まったら設定
+	site: SITE_URL,
 });
