@@ -199,7 +199,7 @@ parse(source, { extensions: [mentions] })
 - micromark の「位置つきノード + 記法ハンドラの登録制」と、markdown-it の
   「優先順位付きルールを先頭から試す」構造を参考にしている
 
-設計判断の記録は [PLAN.md](./PLAN.md)、開発時の規約は [CLAUDE.md](./CLAUDE.md) にある。
+開発時の規約は [CLAUDE.md](./CLAUDE.md) にある。
 
 ## 互換性の方針
 
