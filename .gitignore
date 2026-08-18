@@ -28,3 +28,6 @@ knowledge/
 # Cloudflare Wrangler
 .wrangler/
 .dev.vars
+
+# Turborepo
+.turbo/

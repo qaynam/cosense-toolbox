@@ -1,0 +1,352 @@
+{
+  "$comment": "このパーサーの記法仕様。expected は position を除いた構造。リリース前に全緑であることが必須 (CLAUDE.md §1)。",
+  "inline": [
+    {
+      "description": "記法が無ければテキストノード 1 つ",
+      "input": "ただの文章です",
+      "expected": [{ "type": "text", "value": "ただの文章です" }]
+    },
+    {
+      "description": "[title] は内部リンク",
+      "input": "[React Native]",
+      "expected": [{ "type": "internalLink", "label": "React Native", "target": "React Native" }]
+    },
+    {
+      "description": "内部リンクは前後のテキストと分かれる",
+      "input": "a [b] c",
+      "expected": [
+        { "type": "text", "value": "a " },
+        { "type": "internalLink", "label": "b", "target": "b" },
+        { "type": "text", "value": " c" }
+      ]
+    },
+    {
+      "description": "裸の URL は外部リンク",
+      "input": "https://a.test/x",
+      "expected": [
+        { "type": "externalLink", "label": "https://a.test/x", "target": "https://a.test/x" }
+      ]
+    },
+    {
+      "description": "大文字で始まる URL も外部リンク",
+      "input": "Https://a.test/x",
+      "expected": [
+        { "type": "externalLink", "label": "Https://a.test/x", "target": "Https://a.test/x" }
+      ]
+    },
+    {
+      "description": "[url label] はラベル付き外部リンク",
+      "input": "[https://example.com Example]",
+      "expected": [{ "type": "externalLink", "label": "Example", "target": "https://example.com" }]
+    },
+    {
+      "description": "[label url] も同じ結果になる",
+      "input": "[Example https://example.com]",
+      "expected": [{ "type": "externalLink", "label": "Example", "target": "https://example.com" }]
+    },
+    {
+      "description": "画像でない URL が 2 つなら 先頭がリンク先・2 番目が表示テキスト",
+      "input": "[https://a.com https://b.com]",
+      "expected": [{ "type": "externalLink", "label": "https://b.com", "target": "https://a.com" }]
+    },
+    {
+      "description": "[/project/title] はプロジェクトリンク",
+      "input": "[/help-jp/Cosense]",
+      "expected": [
+        {
+          "type": "projectLink",
+          "label": "/help-jp/Cosense",
+          "target": "/help-jp/Cosense",
+          "project": "help-jp",
+          "title": "Cosense"
+        }
+      ]
+    },
+    {
+      "description": "プロジェクトリンクのタイトルは / を含んでよい",
+      "input": "[/proj/a/b]",
+      "expected": [
+        {
+          "type": "projectLink",
+          "label": "/proj/a/b",
+          "target": "/proj/a/b",
+          "project": "proj",
+          "title": "a/b"
+        }
+      ]
+    },
+    {
+      "description": "#tag はハッシュタグ",
+      "input": "#tag",
+      "expected": [{ "type": "hashtag", "value": "tag" }]
+    },
+    {
+      "description": "単語の途中の # はハッシュタグにならない",
+      "input": "a#b",
+      "expected": [{ "type": "text", "value": "a#b" }]
+    },
+    {
+      "description": "バッククォートはインラインコード",
+      "input": "`code`",
+      "expected": [{ "type": "inlineCode", "value": "code" }]
+    },
+    {
+      "description": "閉じないバッククォートは素の文字",
+      "input": "`code",
+      "expected": [{ "type": "text", "value": "`code" }]
+    },
+    {
+      "description": "[$ ...] は数式",
+      "input": "[$ x^2]",
+      "expected": [{ "type": "formula", "value": "x^2" }]
+    },
+    {
+      "description": "[user.icon] はアイコン",
+      "input": "[takker.icon]",
+      "expected": [{ "type": "icon", "user": "takker", "count": 1 }]
+    },
+    {
+      "description": "[user.icon*N] は連打数を持つ",
+      "input": "[a.icon*3]",
+      "expected": [{ "type": "icon", "user": "a", "count": 3 }]
+    },
+    {
+      "description": "連打数の上限は 20",
+      "input": "[a.icon*999]",
+      "expected": [{ "type": "icon", "user": "a", "count": 20 }]
+    },
+    {
+      "description": "[* text] は太字",
+      "input": "[* 太字]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "太字",
+          "bold": true,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [{ "type": "text", "value": "太字" }]
+        }
+      ]
+    },
+    {
+      "description": "アスタリスクの数が見出しサイズになる",
+      "input": "[*** 見出し]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "見出し",
+          "bold": true,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 2,
+          "children": [{ "type": "text", "value": "見出し" }]
+        }
+      ]
+    },
+    {
+      "description": "見出しサイズの上限は 4",
+      "input": "[******** 特大]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "特大",
+          "bold": true,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 4,
+          "children": [{ "type": "text", "value": "特大" }]
+        }
+      ]
+    },
+    {
+      "description": "装飾記号は組み合わせられる",
+      "input": "[-/_ x]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "x",
+          "bold": false,
+          "italic": true,
+          "strike": true,
+          "underline": true,
+          "sizeLevel": 0,
+          "children": [{ "type": "text", "value": "x" }]
+        }
+      ]
+    },
+    {
+      "description": "[[text]] は太字",
+      "input": "[[太字]]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "太字",
+          "bold": true,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [{ "type": "text", "value": "太字" }]
+        }
+      ]
+    },
+    {
+      "description": "装飾の中のリンクは子ノードになる",
+      "input": "[* [リンク]です]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "[リンク]です",
+          "bold": true,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            { "type": "internalLink", "label": "リンク", "target": "リンク" },
+            { "type": "text", "value": "です" }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "装飾の中の装飾は装飾にならずリンクになる",
+      "input": "[* [* 太字]です]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "[* 太字]です",
+          "bold": true,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            { "type": "internalLink", "label": "* 太字", "target": "* 太字" },
+            { "type": "text", "value": "です" }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "空の角括弧は素の文字",
+      "input": "[]",
+      "expected": [{ "type": "text", "value": "[]" }]
+    },
+    {
+      "description": "閉じない角括弧は素の文字",
+      "input": "foo [ bar",
+      "expected": [{ "type": "text", "value": "foo [ bar" }]
+    },
+    {
+      "description": "外側が記法にならないときは先頭の [ だけ素の文字になる",
+      "input": "[[そうね] ですね]",
+      "expected": [
+        { "type": "text", "value": "[" },
+        { "type": "internalLink", "label": "そうね", "target": "そうね" },
+        { "type": "text", "value": " ですね]" }
+      ]
+    },
+    {
+      "description": "角括弧つきの画像 URL は画像",
+      "input": "[https://x.com/a.png]",
+      "expected": [{ "type": "image", "src": "https://x.com/a.png" }]
+    },
+    {
+      "description": "裸の画像 URL は画像にならない",
+      "input": "https://x.com/a.png",
+      "expected": [
+        { "type": "externalLink", "label": "https://x.com/a.png", "target": "https://x.com/a.png" }
+      ]
+    },
+    {
+      "description": "[[画像 URL]] は大きい画像",
+      "input": "[[https://x.com/a.png]]",
+      "expected": [{ "type": "image", "src": "https://x.com/a.png", "large": true }]
+    },
+    {
+      "description": "画像 URL とリンク URL が並ぶとリンク付き画像",
+      "input": "[https://google.com https://x.com/a.png]",
+      "expected": [{ "type": "image", "src": "https://x.com/a.png", "link": "https://google.com" }]
+    },
+    {
+      "description": "Gyazo のページ URL は i.gyazo.com の png に正規化される",
+      "input": "[https://gyazo.com/503a911fea542532aa5aba0a88eb7b60]",
+      "expected": [
+        { "type": "image", "src": "https://i.gyazo.com/503a911fea542532aa5aba0a88eb7b60.png" }
+      ]
+    },
+    {
+      "description": "#.svg を付けた拡張子なし URL は画像",
+      "input": "[https://x.dev/api/status?id=1#.svg]",
+      "expected": [{ "type": "image", "src": "https://x.dev/api/status?id=1#.svg" }]
+    },
+    {
+      "description": "拡張子だけの画像は画像",
+      "input": "[a.png]",
+      "expected": [{ "type": "image", "src": "a.png" }]
+    },
+    {
+      "description": "記法が連続しても間のテキストが失われない",
+      "input": "[a]b`c`d#e",
+      "expected": [
+        { "type": "internalLink", "label": "a", "target": "a" },
+        { "type": "text", "value": "b" },
+        { "type": "inlineCode", "value": "c" },
+        { "type": "text", "value": "d#e" }
+      ]
+    }
+  ],
+  "page": [
+    {
+      "description": "1 行目はタイトル",
+      "input": "タイトル\n本文",
+      "expected": ["title", "line"]
+    },
+    {
+      "description": "タイトル行の code: はブロックにならない",
+      "input": "code:main.ts\n本文",
+      "expected": ["title", "line"]
+    },
+    {
+      "description": "code: とその配下がひとつのブロックになる",
+      "input": "t\ncode:main.ts\n a\n b\nあと",
+      "expected": ["title", "codeBlock", "line"]
+    },
+    {
+      "description": "同じインデントに戻るとコードブロックが終わる",
+      "input": "t\ncode:main.ts\n a\nb",
+      "expected": ["title", "codeBlock", "line"]
+    },
+    {
+      "description": "空行でコードブロックが終わる",
+      "input": "t\ncode:main.ts\n a\n\n b",
+      "expected": ["title", "codeBlock", "line", "line"]
+    },
+    {
+      "description": "table: とその配下がひとつのブロックになる",
+      "input": "t\ntable:data\n a\tb\n c\td",
+      "expected": ["title", "table"]
+    },
+    {
+      "description": "コードブロックの中の table: はブロックにならない",
+      "input": "t\ncode:main.ts\n table:x",
+      "expected": ["title", "codeBlock"]
+    },
+    {
+      "description": "コードブロックの直後の table: はブロックになる",
+      "input": "t\ncode:main.ts\n a\ntable:x\n 1\t2",
+      "expected": ["title", "codeBlock", "table"]
+    },
+    {
+      "description": "空行も行ブロックになる",
+      "input": "t\n\n本文",
+      "expected": ["title", "line", "line"]
+    }
+  ]
+}
