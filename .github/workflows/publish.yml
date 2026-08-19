@@ -24,6 +24,12 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # 手動実行をリポジトリの持ち主だけに限る。
+    # write 権限があれば workflow_dispatch を叩けてしまうため。
+    if: github.actor == github.repository_owner
+    # NPM_TOKEN はこの environment に置く。
+    # 承認者を設定しておけば、publish ジョブ以外からは読めなくなる。
+    environment: npm
     permissions:
       contents: read
       # npm の OIDC 認証 (trusted publishing) に必要
@@ -77,22 +83,13 @@ jobs:
           bun run typecheck
           bun run test
 
-      - run: bun run build
-
       # npm は OIDC を自動で検出し、無ければ NODE_AUTH_TOKEN に落ちる。
       # trusted publishing を設定するまではトークンが使われる。
       # OIDC で publish した場合、provenance は指定しなくても自動で付く。
       - name: 公開する
-        working-directory: ${{ steps.target.outputs.dir }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           npm --version
-          # npm 11.17 は publishConfig.tag を読まないので、package.json から取り出して渡す
-          tag=$(jq -r '.publishConfig.tag // "latest"' package.json)
-          echo "dist-tag: $tag"
-          if [ '${{ inputs.dryRun }}' = 'true' ]; then
-            npm publish --tag "$tag" --dry-run
-          else
-            npm publish --tag "$tag"
-          fi
+          bun run npm:publish '${{ steps.target.outputs.package }}' \
+            ${{ inputs.dryRun == true && '--dry-run' || '' }}

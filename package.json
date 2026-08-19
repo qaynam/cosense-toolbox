@@ -10,7 +10,8 @@
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "lint": "biome check .",
-    "format": "biome format --write ."
+    "format": "biome format --write .",
+    "npm:publish": "bun scripts/publish.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
