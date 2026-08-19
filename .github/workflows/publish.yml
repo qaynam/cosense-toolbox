@@ -26,10 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      # npm の provenance (どのコミットから作られたかの証明) に必要
+      # npm の OIDC 認証 (trusted publishing) に必要
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: タグからパッケージとバージョンを取り出す
         id: target
@@ -60,11 +60,14 @@ jobs:
         with:
           bun-version: 1.3.13
 
-      # npm の認証情報を .npmrc に書くために使う。ビルドとテストは bun で動かす。
+      # trusted publishing は npm 11.5.1 以上と Node 22.14 以上を要求する。
+      # ビルドとテストは bun で動かし、npm は publish にだけ使う。
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
+          # リリースのビルドはキャッシュを使わない (npm の推奨)
+          package-manager-cache: false
 
       - run: bun install --frozen-lockfile
 
@@ -76,13 +79,20 @@ jobs:
 
       - run: bun run build
 
+      # npm は OIDC を自動で検出し、無ければ NODE_AUTH_TOKEN に落ちる。
+      # trusted publishing を設定するまではトークンが使われる。
+      # OIDC で publish した場合、provenance は指定しなくても自動で付く。
       - name: 公開する
         working-directory: ${{ steps.target.outputs.dir }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
+          npm --version
+          # npm 11.17 は publishConfig.tag を読まないので、package.json から取り出して渡す
+          tag=$(jq -r '.publishConfig.tag // "latest"' package.json)
+          echo "dist-tag: $tag"
           if [ '${{ inputs.dryRun }}' = 'true' ]; then
-            npm publish --provenance --dry-run
+            npm publish --tag "$tag" --dry-run
           else
-            npm publish --provenance
+            npm publish --tag "$tag"
           fi

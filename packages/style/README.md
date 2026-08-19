@@ -6,7 +6,7 @@
 CSS 1 枚だけのパッケージなので、スタイルが要らないなら入れなくてよい。
 
 ```sh
-npm i @cosense-toolbox/style
+npm i @cosense-toolbox/style@beta
 ```
 
 ```ts

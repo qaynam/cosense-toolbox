@@ -7,7 +7,7 @@ Cosense (旧 Scrapbox) 記法のパーサー。
 > 安定するまでは `^` ではなくバージョンを固定して使うほうが安全。
 
 ```sh
-npm i @cosense-toolbox/parser
+npm i @cosense-toolbox/parser@beta
 ```
 
 ```ts
