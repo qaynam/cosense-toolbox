@@ -1,56 +1,81 @@
 ---
 import Base from '../layouts/Base.astro';
+import { SITE } from '../lib/site';
 ---
 
 <Base title="使い方">
 	<section class="guide">
-		<a class="back" href="/">← ギャラリーへ戻る</a>
-		<h1>使い方（1行インストール）</h1>
+		<a class="back" href="/">← userscript 一覧へ戻る</a>
+		<h1>使い方</h1>
 		<p>
-			Cosense (旧Scrapbox) には <strong>userscript</strong> という仕組みがあり、自分のページに書いた JavaScript / CSS
-			を自分のブラウザでだけ実行できます。このツールボックスはその仕組みに乗っているので、拡張機能もビルドも不要です。
+			Cosense (旧Scrapbox) には <strong>userscript</strong> という仕組みがあります。自分のページに書いた
+			JavaScript / CSS を、自分のブラウザでだけ実行できるものです。ここのスクリプトはすべてその仕組みに乗っているので、
+			ブラウザ拡張もビルドも要りません。設定ページに1行足すだけで動きます。
 		</p>
 
 		<h2>1. 設定ページを開く</h2>
 		<p>
-			Cosense で<strong>自分のユーザー名と同じタイトルのページ</strong>（＝設定ページ）を開きます。無ければ作ってください。Cosense
-			はこのページの <code>code:script.js</code> をプロジェクトを開くたびに読み込みます。
+			Cosense で<strong>自分のユーザー名と同じタイトルのページ</strong>を開きます。これが設定ページです。無ければ作ってください。
+			Cosense はこのページの <code>code:script.js</code> を、プロジェクトを開くたびに読み込みます。
 		</p>
 
 		<h2>2. スニペットを貼る</h2>
-		<p>各カードの「📋 コピー」で取得した1行を、<code>code:script.js</code> ブロックに追加します。</p>
+		<p>
+			各スクリプトの詳細ページにある「📋 コピー」で1行が手に入ります。それを設定ページの
+			<code>code:script.js</code> ブロックに追加します。
+		</p>
 		<pre><code>{`code:script.js
- import "/api/code/cosense-toolbox/todo作れるuserScript/script.js";`}</code></pre>
-		<p>CSS（userCSS）のものは <code>code:style.css</code> ブロックで <code>@import</code> します。</p>
+ import "/api/code/${SITE.cosenseProject}/選択して自動リンクするuserScript/script.js";`}</code></pre>
+
+		<p>userCSS のものは <code>code:style.css</code> ブロックで <code>@import</code> します。</p>
 		<pre><code>{`code:style.css
- @import url('/api/code/cosense-toolbox/行番号表示するuserCSS/style.css');`}</code></pre>
+ @import url('/api/code/${SITE.cosenseProject}/コードブロックの行番号を表示するUserCSS/style.css');`}</code></pre>
 
 		<div class="note">
-			<code>/api/code/...</code> は scrapbox.io 内であれば<strong>別プロジェクトのコードも読み込めます</strong>。そのため、多くは
-			cosense-toolbox の実装を直接 import するだけで動きます（自分のプロジェクトにコードをコピーしてもOK）。
+			<strong>まとめて入れる場合</strong>は、一覧や詳細ページの <strong>＋</strong> ボタンで気に入ったものを積んでから、
+			ヘッダの 🧰 を開いて「まとめてコピー」を押します。JavaScript と CSS が
+			<code>code:script.js</code> と <code>code:style.css</code> に振り分けられた状態で1枚のスニペットになるので、
+			そのまま設定ページに貼れます。
 		</div>
 
 		<h2>3. 保存してリロード</h2>
-		<p>ページを保存して再読み込みすれば反映されます。気に入らなければ import の行を消すだけでアンインストールできます。</p>
+		<p>
+			ページを保存して再読み込みすれば反映されます。外したくなったら、その <code>import</code> の行を消すだけです。
+			ファイルも設定も残りません。
+		</p>
 
-		<h2>コードの取得とパスのルール</h2>
-		<p>各スクリプトの実体は、Cosenseページのコードブロックに入っています。中身は次のAPIで取得できます。</p>
+		<h2>コードはどこにあるか</h2>
+		<p>
+			スクリプトの実体は Cosense のページのコードブロックに置いてあります。中身は次の API で取得できます。
+		</p>
 		<pre><code>/api/code/&lt;プロジェクト名&gt;/&lt;ページタイトル&gt;/&lt;コードブロックのタイトル&gt;</code></pre>
-		<ul>
-			<li><code>code:script.js</code> と書いていれば <code>script.js</code>、<code>code:style.css</code> なら <code>style.css</code>、<code>code:module.js</code> なら <code>module.js</code>。</li>
-			<li>命名規約として、タイトルに <code>userScript</code> を含むものは <code>/script.js</code>、<code>userCss</code> を含むものは <code>/style.css</code> を末尾に付ける。</li>
-		</ul>
+		<p>
+			末尾はコードブロックに書いたタイトルがそのまま入ります。<code>code:script.js</code> と書いていれば
+			<code>script.js</code>、<code>code:style.css</code> なら <code>style.css</code> です。
+		</p>
 
-		<h2>できること・できないこと</h2>
+		<div class="note">
+			このパスは scrapbox.io の中であれば<strong>別プロジェクトのコードも読み込めます</strong>。
+			そのため、多くは {SITE.cosenseProject} の実装をそのまま import するだけで動きます。
+			自分のプロジェクトにコードをコピーして、そちらを指しても構いません。
+		</div>
+
+		<h2>できること、できないこと</h2>
 		<ul>
-			<li><strong>できる</strong>: CosenseのUIカスタマイズ、内部API・Clipboard・localStorage・CacheStorage の利用。</li>
-			<li><strong>できない</strong>: CSPにより外部へのネットワークリクエストは基本不可。すべて scrapbox.io 内で完結させる設計です。</li>
+			<li><strong>できる</strong>：Cosense の UI のカスタマイズ、内部 API、Clipboard、localStorage、CacheStorage の利用。</li>
+			<li>
+				<strong>できない</strong>：CSP により外部へのネットワークリクエストはほぼ通りません。
+				ここのスクリプトは scrapbox.io の中で完結するように書いてあります。
+			</li>
 		</ul>
 
 		<p style="margin-top:28px">
-			<a class="source-link" href="https://scrapbox.io/cosense-toolbox/userScript&userCss" target="_blank" rel="noopener">
-				配布元の一覧ページ（cosense-toolbox） ↗
-			</a>
+			<a
+				class="source-link"
+				href={`https://scrapbox.io/${SITE.cosenseProject}/userScript&userCss`}
+				target="_blank"
+				rel="noopener">配布元の一覧ページ（{SITE.cosenseProject}） ↗</a
+			>
 		</p>
 	</section>
 </Base>
