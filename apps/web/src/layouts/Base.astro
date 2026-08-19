@@ -17,7 +17,7 @@ const {
 } = Astro.props;
 const fullTitle = title === 'Cosense Toolbox' ? title : `${title} — Cosense Toolbox`;
 
-const siteUrl = Astro.site ?? new URL('https://cosense-toolbox.workers.dev');
+const siteUrl = Astro.site ?? process.env.SITE_URL ?? new URL('https://cosense-toolbox.workers.dev');
 const canonicalURL = new URL(Astro.url.pathname, siteUrl);
 const ogImageURL = new URL(image ?? '/og.png', siteUrl);
 
