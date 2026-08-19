@@ -1,0 +1,88 @@
+name: publish
+
+# `<パッケージ>-v<バージョン>` のタグを打つと、そのパッケージだけを npm に公開する。
+# 例: parser-v0.1.0-beta.0 → packages/parser
+#
+# 手で動かす場合は Actions から dry-run を選べる。実際には公開せず、
+# 中身と手順だけを確認できる。
+on:
+  push:
+    tags:
+      - '*-v*'
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'packages/ 配下のディレクトリ名'
+        required: true
+        type: choice
+        options: [parser, style]
+      dryRun:
+        description: '公開せず中身だけ確認する'
+        type: boolean
+        default: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # npm の provenance (どのコミットから作られたかの証明) に必要
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: タグからパッケージとバージョンを取り出す
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = 'workflow_dispatch' ]; then
+            package='${{ inputs.package }}'
+            version=$(jq -r .version "packages/$package/package.json")
+          else
+            tag='${{ github.ref_name }}'
+            package="${tag%%-v*}"
+            version="${tag#*-v}"
+          fi
+          echo "package=$package" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "dir=packages/$package" >> "$GITHUB_OUTPUT"
+
+      - name: package.json のバージョンとタグが一致するか確かめる
+        run: |
+          dir='${{ steps.target.outputs.dir }}'
+          expected='${{ steps.target.outputs.version }}'
+          actual=$(jq -r .version "$dir/package.json")
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::$dir は $actual だが、タグは $expected を指している"
+            exit 1
+          fi
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+
+      # npm の認証情報を .npmrc に書くために使う。ビルドとテストは bun で動かす。
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - run: bun install --frozen-lockfile
+
+      - name: 検査
+        run: |
+          bun run lint
+          bun run typecheck
+          bun run test
+
+      - run: bun run build
+
+      - name: 公開する
+        working-directory: ${{ steps.target.outputs.dir }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ '${{ inputs.dryRun }}' = 'true' ]; then
+            npm publish --provenance --dry-run
+          else
+            npm publish --provenance
+          fi
