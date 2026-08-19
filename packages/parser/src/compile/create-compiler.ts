@@ -1,17 +1,13 @@
 /**
  * create-compiler.ts — AST を任意の形式に変換する土台。
- *
- * ノード型ごとのハンドラを差し替えるだけで出力を変えられるので、
- * 一部のノードだけ出力を上書きしたい利用者は残りを fallback に任せられる。
+ * ハンドラの無いノード型は fallback に回るので、一部だけ差し替えれば済む。
  */
 import { childrenOf } from '../ast'
 import type { AnyNode, AnyNodeType, NodeOfType } from '../types'
 
 /** ハンドラの中から再帰的に変換するための入口。 */
 export interface CompileContext<Out> {
-  /** 1 ノードを変換する */
   readonly node: (node: AnyNode) => Out
-  /** 子ノードをまとめて変換する */
   readonly children: (node: AnyNode) => Out[]
 }
 

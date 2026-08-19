@@ -13,12 +13,16 @@
     "gen": "bun scripts/build-preview.mjs && bun scripts/build-og.mjs"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.9",
-    "astro": "^6.4.5",
+    "@astrojs/check": "0.9.10",
+    "@cosense-toolbox/parser": "workspace:*",
+    "@cosense-toolbox/style": "workspace:*",
+    "astro": "7.2.3",
     "sharp": "^0.34.5",
+    "shiki": "^3.0.0",
     "typescript": "^6.0.3"
   },
   "devDependencies": {
+    "shiki": "^4.4.3",
     "wrangler": "^4.20.0"
   },
   "private": true

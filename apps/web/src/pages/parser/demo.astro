@@ -1,0 +1,233 @@
+---
+import { parse } from "@cosense-toolbox/parser";
+import { toHtml, toPlainText } from "@cosense-toolbox/parser/compile";
+import { collect } from "@cosense-toolbox/parser/utils";
+import defaultStyle from "@cosense-toolbox/style/style.css?raw";
+import { createHighlighter } from "shiki";
+import ParserNav from "../../components/ParserNav.astro";
+import Base from "../../layouts/Base.astro";
+import { resolveIconSrc } from "../../lib/cosense-icon";
+
+const PROJECT = "help-jp";
+
+// 本家の「その他の書き方」ページの内容。記法をひととおり含んでいる。
+const source = [
+	"その他の書き方",
+	"基本的な[ブラケティング]の他にも、色々な[記法]があります",
+	"",
+	"外部リンク (一般のWebページへのリンク)",
+	" URLを書くとリンクになる",
+	"  https://yahoo.co.jp",
+	"	`[URL タイトル]`",
+	"	 [https://yahoo.com Yahoo!]",
+	" `[タイトル URL]`逆順でもok",
+	"  [Yahoo! https://yahoo.com]",
+	"",
+	"画像",
+	"	`[画像URL]`",
+	"  [https://i.gyazo.com/da78df293f9e83a74b5402411e2f2e01.png]",
+	" `[[画像URL]]`",
+	"  横幅いっぱい、高さ制限無しで大きな画像を表示",
+	"",
+	"リンク付き画像",
+	"	`[リンク先URL 画像URL]`",
+	"  [http://yahoo.co.jp https://i.gyazo.com/da78df293f9e83a74b5402411e2f2e01.png]",
+	"",
+	"別プロジェクトへのリンク",
+	" `/プロジェクト名/ページ名`",
+	" [/icons]",
+	" [/icons/すごい]",
+	"",
+	"アイコン",
+	" [rakusai.icon]",
+	" [/icons/炎上.icon]",
+	" [shokai.icon]",
+	"",
+	"[数式]",
+	" [$ \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}]",
+	"",
+	"[HashTag]",
+	" #HashTag",
+	"",
+	"引用",
+	" > 行頭に`>`を書くと引用になります",
+	"",
+	"コード",
+	" バッククオート`\\``で囲む",
+	"  `function() {  return \\`hello\\` }`",
+	"",
+	"[コードブロック]",
+	" code:hello.js",
+	"  function () {",
+	"    alert(document.location.href)",
+	'    console.log("hello")',
+	"    // コメントも書けるぞ",
+	"  }",
+	"",
+	"[テーブル]",
+	" `table:テーブル名` の後、インデントしてtab区切り",
+	" table:テーブルの例",
+	"  abc	def",
+	"  12345	6789",
+	"  長い長い文字列	短い文字列",
+	"",
+	"コマンドライン",
+	" 行頭に`$`もしくは`%`",
+	" $ git reset --hard HEAD^",
+	" % cp a.txt b.txt",
+	"",
+	"[[強調]]と[*** 大きな文字]",
+	"	`[[強調]]` ⇒ [[強調]]",
+	" `[* 強調]` ⇒ [* 強調]",
+	" `[**** もっと大きな文字]` => [**** もっと大きな文字]",
+	"",
+	"[/ 斜体]",
+	" `[/ 斜体文字]` ⇒ [/ 斜体文字]",
+	" `[/* 太字斜体文字]` => [/* 太字斜体文字]",
+	"",
+	"[- 打ち消し線]",
+	" `[- 打ち消し]` ⇒ [- 打ち消し]",
+].join("\n");
+
+const page = parse(source);
+
+const pageUrl = (title: string) =>
+	title.startsWith("/")
+		? `https://scrapbox.io${title.split("/").map(encodeURIComponent).join("/")}`
+		: `https://scrapbox.io/${PROJECT}/${encodeURIComponent(title)}`;
+
+// iconImageUrl は同期なので、AST からアイコンを集めて先に URL を解決しておく。
+// (本家の icon API は CORP で別オリジンから読めないため、ビルド時に Gyazo の直リンクへ変える)
+const iconUrlByUser = new Map(
+	await Promise.all(
+		collect(page, "icon").map(
+			async (icon) => [icon.user, await resolveIconSrc(PROJECT, icon.user)] as const,
+		),
+	),
+);
+
+const shiki = await createHighlighter({ themes: ["github-dark-default"], langs: ["js"] });
+
+const body = toHtml(page, {
+	// 記法に書かれたタイトルがそのまま渡るので、ノード型で分岐しなくてよい。
+	pageUrl,
+	iconImageUrl: (node) => iconUrlByUser.get(node.user) ?? null,
+	highlight: (code, language) =>
+		shiki.codeToHtml(code, {
+			lang: shiki.getLoadedLanguages().includes(language) ? language : "text",
+			theme: "github-dark-default",
+			structure: "inline",
+		}),
+});
+
+// iframe に入れて周りの CSS から切り離す。
+// style は <head> に一度だけ置けばよいので toHtml の style オプションは使わない。
+const document = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><style>${defaultStyle}</style></head><body>${body}</body></html>`;
+
+const tabs = [
+	{ id: "rendered", label: "表示" },
+	{ id: "source", label: "記法" },
+	{ id: "plain", label: "記法を外す" },
+];
+---
+
+<Base title="Parser のデモ">
+	<ParserNav />
+
+	<h1>デモ</h1>
+	<p class="lead">
+		本家の「その他の書き方」ページをそのまま <code>parse</code> して、<code>toHtml</code> で描画したもの。
+		ビルド時に生成しているので、この画面に実行時のパーサーは載っていない。
+		コードブロックの色付けは <a href="/parser/#highlight">highlight</a> に Shiki を挿している。
+	</p>
+
+	<div class="demo">
+		<div class="demo-tabs" role="tablist">
+			{
+				tabs.map((tab, index) => (
+					<button
+						type="button"
+						role="tab"
+						data-demo-tab={tab.id}
+						aria-selected={index === 0 ? "true" : "false"}
+					>
+						{tab.label}
+					</button>
+				))
+			}
+		</div>
+
+		<div data-demo-panel="rendered" class="demo-panel">
+			<iframe title="toHtml の出力" srcdoc={document}></iframe>
+		</div>
+		<pre data-demo-panel="source" class="demo-panel" hidden>{source}</pre>
+		<pre data-demo-panel="plain" class="demo-panel" hidden>{toPlainText(page)}</pre>
+	</div>
+</Base>
+
+<script>
+	const tabs = document.querySelectorAll<HTMLButtonElement>("[data-demo-tab]");
+	const panels = document.querySelectorAll<HTMLElement>("[data-demo-panel]");
+
+	for (const tab of tabs) {
+		tab.addEventListener("click", () => {
+			const name = tab.dataset.demoTab;
+			for (const other of tabs) other.setAttribute("aria-selected", String(other === tab));
+			for (const panel of panels) panel.hidden = panel.dataset.demoPanel !== name;
+		});
+	}
+</script>
+
+<style>
+	.lead {
+		max-width: 62ch;
+		color: var(--text-dim);
+	}
+
+	.demo-tabs {
+		display: flex;
+		gap: 4px;
+		margin: 28px 0 0;
+	}
+
+	.demo-tabs button {
+		padding: 8px 16px;
+		border: 1px solid var(--border);
+		border-bottom: 0;
+		border-radius: 8px 8px 0 0;
+		background: var(--bg-soft);
+		color: var(--text-dim);
+		font-size: 13.5px;
+		cursor: pointer;
+	}
+
+	.demo-tabs button[aria-selected="true"] {
+		background: var(--bg-elev);
+		color: var(--text);
+	}
+
+	.demo-panel {
+		margin: 0;
+		border: 1px solid var(--border);
+		border-radius: 0 var(--radius) var(--radius) var(--radius);
+		overflow: auto;
+	}
+
+	.demo-panel iframe {
+		display: block;
+		width: 100%;
+		height: 70vh;
+		border: 0;
+		background: #fefefe;
+	}
+
+	pre.demo-panel {
+		max-height: 70vh;
+		padding: 20px;
+		background: var(--code-bg);
+		font-family: var(--font-mono);
+		font-size: 13px;
+		line-height: 1.7;
+		white-space: pre-wrap;
+	}
+</style>

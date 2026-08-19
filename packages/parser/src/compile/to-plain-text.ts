@@ -39,7 +39,11 @@ const handlers: NodeHandlers<string> = {
   decoration: (node, ctx) => ctx.children(node).join(''),
 }
 
-const compile = createCompiler<string>({ handlers, fallback: () => '' })
+// ハンドラの無いノード (拡張が足した独自ノード) でも中身は落とさない。
+const compile = createCompiler<string>({
+  handlers,
+  fallback: (node, ctx) => ctx.children(node).join(''),
+})
 
 /** ページ (または任意のノード) を記法抜きのテキストにする。 */
 export const toPlainText = (node: AnyNode): string => compile(node)

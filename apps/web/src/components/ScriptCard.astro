@@ -1,7 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { CATEGORY_META, STATUS_META } from '../lib/categories';
-import { SITE } from '../lib/site';
 
 interface Props {
 	entry: CollectionEntry<'scripts'>;
@@ -11,22 +10,16 @@ const { data } = entry;
 const cat = CATEGORY_META[data.category];
 const status = STATUS_META[data.status];
 const href = `/s/${entry.id}/`;
-const thumb = data.media ?? SITE.dummyThumb;
 const searchText = [data.title, data.summary, data.tags.join(' '), cat.label].join(' ').toLowerCase();
 ---
 
 <article class="card" data-group={cat.group} data-status={data.status} data-search={searchText}>
 	<a class="card-link" href={href}>
-		<div class="card-media">
-			<img src={thumb} alt={data.title} loading="lazy" transition:name={`thumb-${entry.id}`} />
-			{data.demoTier && <span class="card-demo">▶ デモ</span>}
-		</div>
-		<div class="card-body">
-			<div class="card-cat">{cat.label}</div>
-			<h3 class="card-title">{data.title}</h3>
-			<p class="card-summary">{data.summary}</p>
-		</div>
+		<h3 class="card-title">
+			{data.title}
+			{data.status !== 'active' && <span class="card-status">{status.label}</span>}
+		</h3>
+		<p class="card-summary">{data.summary}</p>
 	</a>
-	{data.status !== 'active' && <span class="card-status">{status.label}</span>}
 	<button class="card-add" data-toolbox-add={entry.id} aria-label="ツールボックスに追加 / 削除" type="button"></button>
 </article>

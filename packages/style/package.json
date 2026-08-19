@@ -1,0 +1,26 @@
+{
+  "name": "@cosense-toolbox/style",
+  "version": "0.1.0-beta.0",
+  "description": "Default stylesheet for the HTML that @cosense-toolbox/parser renders.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": ["**/*.css"],
+  "style": "./style.css",
+  "exports": {
+    ".": "./style.css",
+    "./style.css": "./style.css",
+    "./package.json": "./package.json"
+  },
+  "files": ["style.css", "README.md", "LICENSE"],
+  "keywords": ["cosense", "scrapbox", "css", "stylesheet"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qaynam/cosense-toolbox.git",
+    "directory": "packages/style"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "beta",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

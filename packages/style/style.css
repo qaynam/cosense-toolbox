@@ -1,0 +1,326 @@
+/*!
+ * @cosense-toolbox/style — @cosense-toolbox/parser の toHtml 出力に当てる既定のスタイル。
+ *
+ * Cosense 本体の CSS ではない。本体の CSS はエディタの DOM (.line > .text > 1 文字ごとの
+ * .char-index) に当てたもので、toHtml が出す構造には当たらないため、
+ * 見た目を寄せた別実装として書き起こしている。寸法と色は本体の既定値に合わせてある。
+ *
+ * 色と寸法は 3 段の fallback で解決する:
+ *
+ *   var(--cosense-link, var(--page-link-color, #3d72f5))
+ *        ↑利用者の指定    ↑Cosense のテーマ変数   ↑何も無いときの既定
+ *
+ * 変数を自前でルート要素に定義していないのは、そうすると継承で降ってくる
+ * 利用者の指定を打ち消してしまうため。
+ *
+ * すべてのルールが .page の下にスコープされている。toHtml の既定の class 名は
+ * 接頭辞を持たず (.line / .title / .code / .table)、そのまま書くと同名の class を
+ * 持つページ側の要素まで巻き込むため。
+ */
+
+/* ---------------------------------------------------------------------------
+ * ルート
+ * ------------------------------------------------------------------------- */
+
+/*
+ * 本体のページ本文は 15px / 28px (body の 14px ではなくエディタ側の値)。
+ * em で書いた各所の寸法はこの基準に乗るので、ここを変えると全体が拡縮する。
+ * line-height は本体の 28px を比に直したもの (28 / 15)。
+ */
+.page {
+  /* 周りのページからフォントが降ってこないよう、ここで断ち切る。 */
+  font-family: var(--cosense-font, "Open Sans", Helvetica, Arial, "Hiragino Sans", sans-serif);
+  font-size: var(--cosense-font-size, 15px);
+  line-height: var(--cosense-line-height, 1.87);
+  color: var(--cosense-text, var(--page-text-color, #4a4a4a));
+  background: var(--cosense-bg, var(--page-bg, #fefefe));
+  text-align: left;
+  word-wrap: break-word;
+}
+
+/* 本体のタイトルは 25.95px / 42px。基準の 15px に対して 1.73 倍。 */
+.page .title {
+  margin: 0 0 0.77em;
+  font-size: 1.73em;
+  font-weight: 700;
+  line-height: 1.62;
+  color: var(--cosense-title, var(--line-title-color, var(--page-text-color, #4a4a4a)));
+}
+
+.page .line {
+  position: relative;
+  min-height: 1em;
+  /* 記法の記号が合字にならないように (本体と同じ)。 */
+  font-variant-ligatures: no-common-ligatures;
+}
+
+/* ---------------------------------------------------------------------------
+ * インデントと中点
+ * ------------------------------------------------------------------------- */
+
+/*
+ * インデントの深さ。data-indent の数値を calc に持ち込む手段 (attr() の type 指定) が
+ * まだ広く使えないので、段数ごとに変数を置いて以降の計算で使い回す。
+ * 11 段以上はインデントも中点も付かない。
+ */
+.page .line[data-indent="1"] {
+  --cosense-depth: 1;
+}
+.page .line[data-indent="2"] {
+  --cosense-depth: 2;
+}
+.page .line[data-indent="3"] {
+  --cosense-depth: 3;
+}
+.page .line[data-indent="4"] {
+  --cosense-depth: 4;
+}
+.page .line[data-indent="5"] {
+  --cosense-depth: 5;
+}
+.page .line[data-indent="6"] {
+  --cosense-depth: 6;
+}
+.page .line[data-indent="7"] {
+  --cosense-depth: 7;
+}
+.page .line[data-indent="8"] {
+  --cosense-depth: 8;
+}
+.page .line[data-indent="9"] {
+  --cosense-depth: 9;
+}
+.page .line[data-indent="10"] {
+  --cosense-depth: 10;
+}
+
+.page .line[data-indent] {
+  padding-left: calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0));
+}
+
+/*
+ * 本体と同じく、字下げの右端に中点を置く。
+ * toHtml の既定の出力には中点にあたる要素が無いので擬似要素で描く。
+ * showPads で .dot を出した場合は要素側に任せ、二重に描かないようにする。
+ */
+.page .line[data-indent]::before {
+  content: "";
+  position: absolute;
+  top: 0.7em;
+  left: calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0) - 1.05em);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cosense-text, var(--page-text-color, #555));
+}
+
+.page .line:has(> .indent-mark)::before {
+  content: none;
+}
+
+/* showPads: true のときだけ出る要素。余白の数がそのまま深さを表す。 */
+.page .indent-mark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 1em;
+  color: transparent;
+}
+
+.page .pad {
+  display: inline-block;
+  width: var(--cosense-indent, 1.5em);
+  height: 1em;
+  overflow: hidden;
+}
+
+.page .dot {
+  position: absolute;
+  right: 0.65em;
+  top: 0.7em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cosense-text, var(--page-text-color, #555));
+}
+
+/* ---------------------------------------------------------------------------
+ * リンク
+ * ------------------------------------------------------------------------- */
+
+.page .link,
+.page .hashtag {
+  color: var(--cosense-link, var(--page-link-color, #3d72f5));
+  text-decoration: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
+}
+
+.page .link:hover,
+.page .hashtag:hover {
+  color: var(--cosense-link-hover, var(--page-link-hover-color, #0d4ff3));
+}
+
+/* ---------------------------------------------------------------------------
+ * コード
+ * ------------------------------------------------------------------------- */
+
+.page .code,
+.page .code-start,
+.page .code-body,
+.page .monospace {
+  font-family: var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace);
+  color: var(--cosense-code-text, var(--code-color, #342d9c));
+}
+
+.page .code,
+.page .monospace {
+  padding: 0 0.2em;
+  border-radius: 4px;
+  font-size: 90%;
+  word-wrap: break-word;
+  background: var(--cosense-code-bg, var(--code-bg, rgba(0, 0, 0, 0.04)));
+}
+
+/*
+ * コードブロックは 1 行 = 1 要素なので、背景も行ごとに塗って隣り合う行でひと続きに見せる。
+ * 塗るのは行ではなく中の <code>。行の padding より内側から始めることで、
+ * ブロック全体がインデントの位置に揃う。
+ */
+.page .line.code-block > code {
+  display: block;
+  line-height: 1.7em;
+  tab-size: 4;
+  background: var(--cosense-code-bg, var(--code-bg, rgba(0, 0, 0, 0.04)));
+}
+
+/*
+ * 本体行はヘッダより 1 段深いが、ブロックの左端はヘッダに揃える (本家と同じ)。
+ * 1 段ぶん左に出してから同じだけ padding で戻すことで、文字の位置は保ったまま背景だけ広げる。
+ */
+.page .line.code-block > .code-body {
+  margin-left: calc(var(--cosense-indent, 1.5em) * -1);
+  padding-left: var(--cosense-indent, 1.5em);
+  /* 値に残っている深い字下げを保ちつつ、長い行は折り返す。 */
+  white-space: pre-wrap;
+}
+
+/* ファイル名は本家と同じ見出しバッジ。 */
+.page .code-block-start {
+  padding: 1px 2px;
+  font-size: 0.95em;
+  color: var(--cosense-badge-text, #342d9c);
+  background: var(--cosense-badge-bg, #ffcfc6);
+}
+
+/* 中点が付くのはヘッダ行だけ (本家では本体行に dot が無い)。 */
+.page .line.code-block:not(:has(> .code-start))::before {
+  content: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * 引用
+ * ------------------------------------------------------------------------- */
+
+.page .quote {
+  display: block;
+  margin: 0;
+  padding-left: 3px;
+  border-left: solid 1px #a0a0a0;
+  background: var(--cosense-quote-bg, var(--quote-bg-color, rgba(0, 0, 0, 0.05)));
+}
+
+/* ---------------------------------------------------------------------------
+ * テーブル
+ * ------------------------------------------------------------------------- */
+
+.page .table {
+  margin: 0;
+  border-collapse: collapse;
+  caption-side: top;
+}
+
+/* 表の名前もコードブロックのファイル名と同じ見出しバッジ。 */
+.page .table caption {
+  padding: 1px 2px;
+  text-align: center;
+  font-size: 0.9em;
+  color: var(--cosense-badge-text, #342d9c);
+  background: var(--cosense-badge-bg, #ffcfc6);
+}
+
+.page .table td {
+  padding: 0 2px 0 8px;
+  white-space: nowrap;
+}
+
+/* 本体は罫線ではなく列ごとの塗り分けでセルを区切る。 */
+.page .table td:nth-child(odd) {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.page .table td:nth-child(even) {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* ---------------------------------------------------------------------------
+ * 画像・アイコン・数式
+ * ------------------------------------------------------------------------- */
+
+.page .image {
+  display: inline-block;
+  max-width: 100%;
+  max-height: 300px;
+  vertical-align: bottom;
+}
+
+.page .image[data-large] {
+  margin: 3px 0;
+  max-width: 95%;
+  max-height: none;
+}
+
+/*
+ * アイコンは a.icon > img.icon の入れ子。iconImageUrl を渡していないときは img が無く、
+ * ユーザー名のテキストリンクとして出る (色は .link から継承する)。
+ */
+.page img.icon {
+  display: inline-block;
+  position: relative;
+  top: -0.3em;
+  height: 1.3em;
+  max-width: 100%;
+  vertical-align: baseline;
+}
+
+.page .formula {
+  margin: auto 6px;
+  font-family: var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-style: italic;
+}
+
+/* ---------------------------------------------------------------------------
+ * 装飾
+ * ------------------------------------------------------------------------- */
+
+/*
+ * 見出しの倍率は本体と同じ 1.2 の等比。data-size-level は星の数 - 1 なので、
+ * 星 1 つ (level 0) は太字のみでサイズを変えない。
+ */
+.page .decoration[data-size-level="1"] {
+  font-size: 1.2em;
+}
+.page .decoration[data-size-level="2"] {
+  font-size: 1.44em;
+}
+.page .decoration[data-size-level="3"] {
+  font-size: 1.73em;
+}
+.page .decoration[data-size-level="4"] {
+  font-size: 2.07em;
+}
+
+/* 本体は見出しごとに行間を固定していて、比に直すとどの段階もおよそ 1.6 になる。 */
+.page .decoration[data-size-level] {
+  display: inline-block;
+  line-height: 1.6;
+}

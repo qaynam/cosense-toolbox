@@ -275,11 +275,9 @@
       "expected": [{ "type": "image", "src": "https://x.com/a.png", "link": "https://google.com" }]
     },
     {
-      "description": "Gyazo のページ URL は i.gyazo.com の png に正規化される",
+      "description": "Gyazo のページ URL は画像になるが src はソースのまま",
       "input": "[https://gyazo.com/503a911fea542532aa5aba0a88eb7b60]",
-      "expected": [
-        { "type": "image", "src": "https://i.gyazo.com/503a911fea542532aa5aba0a88eb7b60.png" }
-      ]
+      "expected": [{ "type": "image", "src": "https://gyazo.com/503a911fea542532aa5aba0a88eb7b60" }]
     },
     {
       "description": "#.svg を付けた拡張子なし URL は画像",

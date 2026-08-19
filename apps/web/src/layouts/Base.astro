@@ -11,7 +11,7 @@ interface Props {
 }
 const {
 	title = 'Cosense Toolbox',
-	description = 'Cosense (旧Scrapbox) のUIをカスタマイズする userscript / userCSS を、好きなものを選んでコピペで使えるツールボックス',
+	description = 'Cosense (旧Scrapbox) をもっと面白く、もっと強力に使うためのツール群',
 	image,
 	app = false,
 } = Astro.props;
@@ -82,9 +82,10 @@ const registry = all.map((e) => ({
 				</a>
 				<div class="header-actions">
 					<nav>
-						<a href="/">ギャラリー</a>
+						<a href="/">userscript 一覧</a>
 						<a href="/builder/">テーマ作成</a>
 						<a href="/guide/">使い方</a>
+						<a href="/parser/">パーサー</a>
 						<a href={SITE.github} target="_blank" rel="noopener">GitHub ↗</a>
 					</nav>
 					<button class="icon-btn" data-theme-toggle aria-label="テーマ切替" type="button">☀</button>
@@ -103,7 +104,7 @@ const registry = all.map((e) => ({
 			!app && (
 				<footer class="site-footer">
 					<div class="wrap">
-						<p>Cosense Toolbox — Cosense の userscript / userCSS をコピペで積めるツールボックス</p>
+						<p>Cosense Toolbox / Cosense をもっと面白く、もっと強力に使うためのツール群</p>
 						<p class="foot-links">
 							<a href={SITE.github} target="_blank" rel="noopener">GitHub ↗</a>
 						</p>

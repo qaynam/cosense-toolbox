@@ -1,0 +1,16 @@
+---
+import { Content, getHeadings } from "../../../../../packages/parser/README.md";
+import DocToc from "../../components/DocToc.astro";
+import ParserNav from "../../components/ParserNav.astro";
+import Base from "../../layouts/Base.astro";
+---
+
+<Base title="Cosense Parser">
+	<ParserNav />
+	<div class="doc-layout">
+		<DocToc headings={getHeadings()} />
+		<article class="doc">
+			<Content />
+		</article>
+	</div>
+</Base>

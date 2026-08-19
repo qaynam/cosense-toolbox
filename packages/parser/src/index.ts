@@ -5,7 +5,7 @@
  * ここからは re-export しない。パースだけを使う利用者のバンドルに
  * それらが入らないようにするため。
  */
-export { asImageSrc } from './inline/image'
+export { asImageSrc, isImageUrl } from './core/image-url'
 export { tokenizeInline } from './inline/tokenize'
 export type { TokenizeInlineOptions } from './inline/tokenize'
 export type { Extension } from './inline/types'

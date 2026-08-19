@@ -66,7 +66,7 @@ export interface ParseLineOptions extends ParseOptions {
  * 1 行だけを通常行としてパースする。
  *
  * `code:` / `table:` はページの文脈があって初めてブロックになるので、
- * ここでは通常行として扱う。ブロック構造が必要なら `parse` を使うこと。
+ * ここでは通常行として扱う。
  */
 export const parseLine = (raw: string, options?: ParseLineOptions): LineBlock => {
   const rules = resolveExtensions(options?.extensions)

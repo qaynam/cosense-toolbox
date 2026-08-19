@@ -15,9 +15,9 @@ const total = scripts.length;
 
 <Base>
 	<section class="hero">
-		<h1>Cosense の UI を<br /><span class="grad">好きなだけ作り変える</span></h1>
+		<h1>Cosense をもっと面白く、<br /><span class="grad">もっと強力に</span></h1>
 		<p>
-			cosense-toolbox で育ててきた userscript / userCSS のツールボックス。気に入ったものを選んで、コピペで自分のCosenseに貼るだけ。
+			自分の Cosense に貼るだけの userscript / userCSS と、テーマを作る道具、記法パーサーを置いています。
 		</p>
 		<div class="meta">
 			<span>{total} 個のスクリプト</span>
@@ -42,6 +42,17 @@ const total = scripts.length;
 		{scripts.map((entry) => <ScriptCard entry={entry} />)}
 	</div>
 	<p class="empty" id="empty" hidden>該当するスクリプトがありません</p>
+
+	<section class="more">
+		<a class="more-card" href="/builder/">
+			<h2>テーマを作る</h2>
+			<p>色をポチポチ変えて、疑似 Cosense 画面で確かめながら userCSS を書き出す。</p>
+		</a>
+		<a class="more-card" href="/parser/">
+			<h2>記法パーサー</h2>
+			<p>Cosense 記法を位置情報つきの AST にする npm パッケージ。HTML にもできる。</p>
+		</a>
+	</section>
 
 	<script>
 	function initGallery() {

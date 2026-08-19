@@ -9,4 +9,20 @@ export type {
   NodeHandler,
   NodeHandlers,
 } from './create-compiler'
+export {
+  createHtmlHandlers,
+  defaultClassNames,
+  defaultPageUrl,
+  escapeHtml,
+  safeHref,
+  safeSrc,
+  toHtml,
+} from './to-html'
+export type {
+  Highlighter,
+  HtmlClassNames,
+  HtmlOptions,
+  HtmlRenderOptions,
+  PageRefNode,
+} from './to-html'
 export { toPlainText } from './to-plain-text'

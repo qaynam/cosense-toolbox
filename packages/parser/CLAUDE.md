@@ -13,12 +13,25 @@
 1. **パースは総関数**。`parse()` 系は例外を投げない・失敗しない。どんな入力でも必ず `Page` を返す。
    不正な記法は「記法として解釈しない（素のテキストになる）」であって、エラーではない。
 2. **I/O 禁止**。`fetch` / `fs` / タイマー / グローバル状態を一切使わない。純関数のみ。
-   URL の意味解決（YouTube 判定、oEmbed、Gyazo のメディア種別）は**このパッケージのスコープ外**。
-3. **自己完結**。ワークスペース内の他パッケージ（`@cosense/*`）を import しない。
+   URL の意味解決（YouTube 判定、oEmbed）は**このパッケージのスコープ外**。
+3. **AST はソースに書かれた文字列を保つ**。パースの過程で値を「使いやすい形」に書き換えない。
+   例: `[https://gyazo.com/{hash}]` の `src` はそのページ URL のままにする。
+   `<img>` に入る形（`https://i.gyazo.com/{hash}.png`）への変換は表示のための書き換えなので、
+   `core/image-url.ts` の `asImageSrc` に切り出し、`compile/`（既定の `toHtml`）で行う。
+   **どのノード型になるかの判定は構造なのでパーサーの仕事、値の書き換えは描画の仕事。**
+4. **自己完結**。ワークスペース内の他パッケージ（`@cosense/*`）を import しない。
    `tsconfig.json` も `extends` せず内容を直接持つ。ディレクトリを別リポにコピーしただけで
    `bun install && bun run build && bun run test` が通る状態を常に維持する。
-4. **runtime dependency は `effect` のみ**。他は増やさない。
+5. **runtime dependency は `effect` のみ**。他は増やさない。
    （`tsdown` / `vitest` / `typescript` / `fast-check` は devDependencies なので対象外。）
+6. **CSS をこのパッケージに置かない**。既定の見た目は `@cosense-toolbox/style`（別パッケージ）
+   の担当。JS のバンドルに CSS 文字列を持たせると、スタイルを使わない利用者まで太る。
+   `toHtml` の `style` オプションは**受け取った CSS を差し込むだけ**で、中身は持たない。
+7. **本家 Cosense の資産を持ち込まない**。CSS・画像・フォントを取り込んで再配布しない。
+   本家の CSS は Cosense のエディタ DOM（`.line > .text > 1 文字ごとの `.char-index``）に
+   当てたもので、`toHtml` が出す構造には**そもそも当たらない**。
+   見た目を寄せたいときは、本家のテーマ変数（`--page-text-color` 等）を
+   `var()` の fallback として**参照する**にとどめる。
 
 ---
 
@@ -76,14 +89,16 @@ core/      ← types のみ（位置計算・文字列走査のプリミティ�
 core ← inline/ ← block/ ← parse.ts ← index.ts
 schema.ts  → types のみ
 utils/     → types, ast のみ
-compile/   → types, ast のみ
+compile/   → types, ast, core/ のみ
 plugin/    → 型だけを再エクスポート（実装を持たない）
 ```
 
 - `utils/` / `compile/` は**パーサー本体（`parse.ts`、`inline/`、`block/`）を import してはいけない。**
   AST を受け取って処理するだけ。これにより `parse` だけ使う利用者のバンドルに
   compiler や visitor が入らない（§4 tree-shaking）。
-- `core/` は記法の知識を持たない（括弧の対応探索、タグ境界の判定、位置計算だけ）。
+- `core/` は記法の知識を持たない（括弧の対応探索、タグ境界の判定、位置計算、URL の判定だけ）。
+  `compile/` が `core/image-url.ts` を使うのは、画像 URL の扱いをパーサーとレンダラーで
+  二重に持たないため（依存は core への一方向なので循環しない）。
 - ルール（`inline/constructs/`、`inline/bracket-rules/`）から走査ループを直接 import しない。
   再帰が必要なら `InlineContext.tokenize` 経由で呼ぶ（循環 import を避けるため）。
 - **循環 import を作らない。** 迷ったら「型は types.ts へ、AST 操作は ast.ts へ、
@@ -93,11 +108,11 @@ plugin/    → 型だけを再エクスポート（実装を持たない）
 
 | レイヤー | 責務 | やらないこと |
 |---|---|---|
-| `core/` | 文字列走査のプリミティブ、Point/Position の生成 | 記法の知識を持たない |
+| `core/` | 文字列走査のプリミティブ、Point/Position の生成、URL の判定 | 記法の知識を持たない |
 | `inline/` | 1 行の中のインライン記法 → `InlineNode[]` | 複数行のことを知らない |
 | `block/` | 行の分類とブロック（code:/table:/title）のグルーピング | インライン記法の中身を知らない（`inline/` に委譲） |
 | `parse.ts` | ページ全文 → `Page`。extension の合成 | 記法そのものを実装しない |
-| `compile/` | AST → 何らかの出力 | パースしない |
+| `compile/` | AST → 何らかの出力。表示のための書き換えもここ | パースしない |
 | `utils/` | AST の走査・抽出 | パースしない |
 
 ---
@@ -115,18 +130,19 @@ src/
   core/
     position.ts         Origin と Point/Position の生成
     scan.ts             括弧の対応探索・タグ境界判定・行頭空白
+    image-url.ts        isImageUrl（構造の判定）/ asImageSrc（表示用の変換）
   inline/
     types.ts            InlineConstruct / BracketRule / InlineContext / Extension（型のみ）
     tokenize.ts         走査ループ。位置の付与はここだけが行う
     constructs/         1 construct = 1 ファイル + index.ts（配列の登録場所）
     bracket-rules/      1 rule = 1 ファイル + index.ts（配列の登録場所）
-    image.ts            asImageSrc / imageSrc
   block/
     classify.ts         行の役割判定（タグ付きユニオンを返す）
     build.ts            ブロックのグルーピング
   plugin/index.ts       プラグイン作者向けの型を再エクスポート（実装を持たない）
   compile/
     create-compiler.ts  ハンドラ機構
+    to-html.ts          公式の HTML コンパイラ（pageUrl / iconImageUrl / highlight / classNames / showPads / handlers）
     to-plain-text.ts    参照実装
   utils/                visit / links
   fixtures/             conformance.json（記法仕様）
@@ -165,6 +181,11 @@ src/
 - 重い層はサブパス export に分ける（`./schema` `./utils` `./plugin` `./compile`）。
   メインエントリ `index.ts` からは**それらを re-export しない**（したら opt-in の意味が消える）。
 - effect は必ず named import（`import { Option } from 'effect'`）。default import / `import * as` は使わない。
+- **`import { Array } from 'effect'` は使わない。** effect の `Array` モジュールはそれだけで
+  バンドルを約 6.6 KB 増やすのに対し、得られるのは素の配列メソッドとほぼ同じ操作でしかない
+  （`Arr.last` → `Option.fromNullable(xs[xs.length - 1])` で足りる）。
+  `Option` / `Match` / `Schema` のように**合成そのものが読みやすさを生む**場面では effect を使い、
+  単なる配列操作は素の `filter` / `reduce` で書く。
 
 ---
 
@@ -252,6 +273,7 @@ tsdown が後継として設定互換を保っている。**tsup に戻さない
 `package.json` の `exports` は条件ごとに `types` を持つ形（`import` / `require` の中に
 `types` と `default`）にしてある。**エントリを増やすときは
 `tsdown.config.ts` の `entry` と `exports` の両方を更新すること。**
+
 
 リポジトリルートの `biome.json` に従う（single quote / セミコロンなし / 100 桁 / 2 スペース）。
 **リポジトリルートの `biome.json` に依存しているので、単体で切り出す際は一緒に持っていくこと。**

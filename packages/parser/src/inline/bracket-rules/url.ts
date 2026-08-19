@@ -1,9 +1,19 @@
-import { Option } from 'effect'
+import { Option, pipe } from 'effect'
+import { isImageUrl } from '../../core/image-url'
 import type { InlineNodeInit } from '../../types'
-import { imageSrc } from '../image'
 import type { BracketRule } from '../types'
 
 const URLS_RE = /https?:\/\/[^\s\]]+/gi
+
+/** 画像 URL が複数あるとき最後のものを採るのは本家の挙動。 */
+const lastImage = (urls: readonly string[]): Option.Option<string> => {
+  const images = urls.filter(isImageUrl)
+  return Option.fromNullable(images[images.length - 1])
+}
+
+/** 画像に添える遷移先。画像自身とは別の URL を優先し、無ければ先頭を使う。 */
+const linkFor = (urls: readonly string[], src: string): Option.Option<string> =>
+  Option.fromNullable(urls.find((url) => url !== src) ?? urls[0])
 
 /**
  * 中身に URL を含む角括弧。本家の挙動に合わせて次の順で決める:
@@ -29,27 +39,36 @@ export const urlRule: BracketRule = (inner) => {
   }
 
   if (urls.length >= 2) {
-    const images = urls.filter((url) => Option.isSome(imageSrc(url)))
-    const shown = images[images.length - 1]
-    if (shown !== undefined) {
-      const src = Option.getOrElse(imageSrc(shown), () => shown)
-      const link = urls.find((url) => url !== shown) ?? urls[0]
-      const node: InlineNodeInit =
-        link === undefined ? { type: 'image', src } : { type: 'image', src, link }
-      return Option.some(node)
-    }
-    return Option.some({
-      type: 'externalLink',
-      label: urls[1] ?? urls[0] ?? '',
-      target: urls[0] ?? inner,
-    })
+    return Option.some(
+      pipe(
+        lastImage(urls),
+        Option.match({
+          onSome: (src): InlineNodeInit =>
+            pipe(
+              linkFor(urls, src),
+              Option.match({
+                onNone: (): InlineNodeInit => ({ type: 'image', src }),
+                onSome: (link): InlineNodeInit => ({ type: 'image', src, link }),
+              }),
+            ),
+          onNone: (): InlineNodeInit => ({
+            type: 'externalLink',
+            label: urls[1] ?? urls[0] ?? '',
+            target: urls[0] ?? inner,
+          }),
+        }),
+      ),
+    )
   }
 
   const only = urls[0] ?? inner
   return Option.some(
-    Option.match(imageSrc(only), {
-      onSome: (src): InlineNodeInit => ({ type: 'image', src }),
-      onNone: (): InlineNodeInit => ({ type: 'externalLink', label: only, target: only }),
-    }),
+    pipe(
+      Option.liftPredicate(only, isImageUrl),
+      Option.match({
+        onSome: (src): InlineNodeInit => ({ type: 'image', src }),
+        onNone: (): InlineNodeInit => ({ type: 'externalLink', label: only, target: only }),
+      }),
+    ),
   )
 }

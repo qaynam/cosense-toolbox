@@ -133,57 +133,78 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- grid + card (Cosense page-list 風に密に) ---------- */
 .grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-	gap: 14px;
 	margin-top: 24px;
+	border-top: 1px solid var(--border-soft);
 }
 .card {
 	position: relative;
-	background: var(--bg-card);
-	border: 1px solid var(--border);
-	border-radius: 10px;
-	overflow: hidden;
-	transition: border-color 0.15s ease, transform 0.15s ease;
+	display: flex;
+	align-items: baseline;
+	gap: 16px;
+	padding: 14px 44px 14px 2px;
+	border-bottom: 1px solid var(--border-soft);
+	transition: background-color 0.15s ease;
 }
-.card:hover { border-color: var(--text-faint); transform: translateY(-2px); }
+.card:hover { background: var(--bg-soft); }
 .card[hidden] { display: none; }
-.card-link { display: block; color: inherit; }
+.card-link { display: flex; align-items: baseline; gap: 16px; flex: 1; min-width: 0; color: inherit; }
 
-.card-media { position: relative; aspect-ratio: 16 / 10; background: var(--bg-elev); display: block; }
-.card-media img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.card-demo {
-	position: absolute; bottom: 7px; right: 7px; font-size: 10.5px; color: var(--text-dim);
-	background: color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter: blur(4px);
-	border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px;
+.card-title {
+	flex: 0 0 15rem;
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.5;
+	letter-spacing: -0.01em;
 }
-
-.card-body { padding: 10px 12px 12px; }
-.card-cat { font-size: 11px; color: var(--text-faint); letter-spacing: 0.02em; }
-.card-title { font-size: 14px; margin: 2px 0 4px; line-height: 1.4; font-weight: 600; letter-spacing: -0.01em; }
 .card:hover .card-title { color: var(--text); }
 .card-summary {
-	font-size: 12.5px; color: var(--text-dim); margin: 0; line-height: 1.55;
-	display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+	flex: 1;
+	min-width: 0;
+	margin: 0;
+	font-size: 12.5px;
+	line-height: 1.5;
+	color: var(--text-dim);
+}
+
+@media (max-width: 700px) {
+	.card-link { display: block; }
+	.card-title { margin-bottom: 3px; }
+}
+
+.card-status {
+	margin-left: 8px;
+	padding: 1px 7px;
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	font-size: 10.5px;
+	font-weight: 400;
+	color: var(--text-faint);
+	white-space: nowrap;
 }
 
 .card-add {
-	position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 8px;
-	border: 1px solid var(--border); background: color-mix(in srgb, var(--bg) 72%, transparent);
-	backdrop-filter: blur(4px); color: var(--text); cursor: pointer; font-size: 15px;
+	position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
+	width: 26px; height: 26px; border-radius: 8px;
+	border: 1px solid var(--border); background: transparent;
+	color: var(--text-dim); cursor: pointer; font-size: 14px;
 	display: grid; place-items: center; z-index: 2; transition: all 0.15s ease; line-height: 1;
 }
 .card-add::before { content: '＋'; }
-.card-add:hover { border-color: var(--text-faint); }
+.card-add:hover { border-color: var(--text-faint); color: var(--text); }
 .card-add.added { background: var(--text); color: var(--bg); border-color: var(--text); }
 .card-add.added::before { content: '✓'; }
-.card-status {
-	position: absolute; top: 8px; left: 8px; font-size: 10.5px; padding: 2px 8px; border-radius: 999px;
-	background: color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter: blur(4px);
-	border: 1px solid var(--border); color: var(--text-dim); z-index: 2;
-}
 
 .empty { text-align: center; color: var(--text-faint); padding: 60px 0; }
+
+.more { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 48px 0 8px; }
+.more-card {
+	display: block; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius);
+	background: var(--bg-card); color: inherit; transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.more-card:hover { border-color: var(--text-faint); background: var(--bg-soft); }
+.more-card h2 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
+.more-card p { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--text-dim); }
 
 /* ---------- buttons ---------- */
 .btn {
@@ -400,3 +421,47 @@ html.modal-open, html.modal-open body { overflow: hidden; }
 	.modal-card { width: 100%; border-radius: 14px 14px 0 0; }
 	.modal-body { padding: 18px 18px 26px; }
 }
+
+/* ---------------------------------------------------------------------------
+ * parser のドキュメント (/parser 配下)
+ * ------------------------------------------------------------------------- */
+
+.pkg-nav { display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; margin-bottom: 32px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.pkg-nav-name { font-family: var(--font-mono); font-size: 13px; color: var(--text-faint); }
+.pkg-nav ul { display: flex; gap: 18px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.pkg-nav a { color: var(--text-dim); text-decoration: none; }
+.pkg-nav a:hover { color: var(--text); }
+.pkg-nav a[aria-current='page'] { color: var(--text); border-bottom: 2px solid var(--text); padding-bottom: 10px; }
+
+.doc-layout { display: grid; grid-template-columns: minmax(0, 1fr) 15rem; gap: 48px; align-items: start; }
+@media (max-width: 860px) { .doc-layout { grid-template-columns: minmax(0, 1fr); } .doc-toc { display: none; } }
+
+.doc-toc { position: sticky; top: 78px; order: 1; max-height: calc(100vh - 100px); overflow-y: auto; font-size: 13px; }
+.doc-toc ul { margin: 0; padding: 0; list-style: none; border-left: 1px solid var(--border); }
+.doc-toc ul ul { border: 0; }
+.doc-toc a { display: block; padding: 5px 0 5px 14px; color: var(--text-dim); text-decoration: none; }
+.doc-toc a:hover { color: var(--text); }
+.doc-toc .toc-sub a { padding-left: 28px; font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); }
+.doc-toc .toc-sub a:hover { color: var(--text-dim); }
+.doc-toc .toc-sub-sub a { padding-left: 40px; }
+
+.doc { min-width: 0; line-height: 1.85; }
+.doc > :first-child { margin-top: 0; }
+.doc h1 { margin: 0 0 24px; font-size: 30px; font-family: var(--font-mono); }
+.doc h2 { margin: 56px 0 16px; padding-bottom: 8px; font-size: 22px; border-bottom: 1px solid var(--border); scroll-margin-top: 78px; }
+.doc h3 { margin: 40px 0 12px; font-size: 17px; font-family: var(--font-mono); scroll-margin-top: 78px; }
+.doc h4, .doc h5 { margin: 28px 0 10px; font-size: 15px; }
+.doc p, .doc ul, .doc ol { margin: 0 0 16px; }
+.doc ul, .doc ol { padding-left: 1.4em; }
+.doc li { margin-bottom: 4px; }
+.doc a { color: var(--text); text-underline-offset: 3px; }
+.doc code { padding: 2px 5px; border-radius: 4px; background: var(--code-bg); font-family: var(--font-mono); font-size: 0.88em; }
+.doc pre { margin: 0 0 20px; padding: 16px; border: 1px solid var(--border-soft); border-radius: var(--radius); overflow-x: auto; font-size: 13px; line-height: 1.65; }
+.doc pre code { padding: 0; background: none; font-size: inherit; }
+.doc table { display: block; margin: 0 0 20px; overflow-x: auto; border-collapse: collapse; font-size: 13.5px; }
+.doc th, .doc td { padding: 7px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+.doc th { background: var(--bg-soft); font-weight: 600; white-space: nowrap; }
+.doc td code { white-space: nowrap; }
+.doc blockquote { margin: 0 0 20px; padding: 12px 16px; border-left: 3px solid var(--text-faint); border-radius: 0 var(--radius) var(--radius) 0; background: var(--bg-soft); }
+.doc blockquote > :last-child { margin-bottom: 0; }
+.doc hr { margin: 40px 0; border: 0; border-top: 1px solid var(--border); }

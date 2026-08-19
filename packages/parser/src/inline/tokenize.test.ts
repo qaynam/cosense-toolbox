@@ -271,11 +271,13 @@ describe('画像', () => {
     })
   })
 
-  it('Gyazo のページ URL は i.gyazo.com の png に正規化される', () => {
+  it('Gyazo のページ URL は画像になるが src は書かれたまま', () => {
+    // 表示用 URL への変換 (i.gyazo.com/....png) はパーサーの仕事ではない。
+    // AST はソースに書かれた文字列を保ち、変換は asImageSrc / レンダラー側で行う。
     const hash = '503a911fea542532aa5aba0a88eb7b60'
     expect(first(`[https://gyazo.com/${hash}]`)).toEqual({
       type: 'image',
-      src: `https://i.gyazo.com/${hash}.png`,
+      src: `https://gyazo.com/${hash}`,
     })
     expect(first(`https://gyazo.com/${hash}`)).toMatchObject({ type: 'externalLink' })
   })

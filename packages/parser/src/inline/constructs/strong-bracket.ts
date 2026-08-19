@@ -1,7 +1,7 @@
 import { Option } from 'effect'
+import { isImageUrl } from '../../core/image-url'
 import { shiftOrigin } from '../../core/position'
 import type { InlineNodeInit } from '../../types'
-import { imageSrc } from '../image'
 import type { InlineConstruct } from '../types'
 
 /**
@@ -19,9 +19,8 @@ export const strongBracketConstruct: InlineConstruct = (source, index, ctx) => {
   const inner = source.slice(index + 2, end)
   const length = end + 2 - index
 
-  const image = imageSrc(inner)
-  if (Option.isSome(image)) {
-    const node: InlineNodeInit = { type: 'image', src: image.value, large: true }
+  if (isImageUrl(inner)) {
+    const node: InlineNodeInit = { type: 'image', src: inner, large: true }
     return Option.some({ node, length })
   }
 
