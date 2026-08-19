@@ -9,6 +9,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "deploy": "astro build && wrangler deploy",
+    "deploy:ci": "wrangler deploy",
     "preview:worker": "astro build && wrangler dev",
     "gen": "bun scripts/build-preview.mjs && bun scripts/build-og.mjs"
   },

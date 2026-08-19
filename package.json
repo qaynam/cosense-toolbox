@@ -6,6 +6,7 @@
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "build": "turbo run build",
+    "deploy": "bun run --filter '@cosense-toolbox/web' deploy:ci",
     "dev": "turbo run dev",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
