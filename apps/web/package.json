@@ -11,7 +11,7 @@
     "deploy": "astro build && wrangler deploy",
     "deploy:ci": "wrangler deploy",
     "preview:worker": "astro build && wrangler dev",
-    "gen": "bun scripts/build-preview.mjs && bun scripts/build-og.mjs"
+    "gen": "bun scripts/build-preview.mjs && bun scripts/build-icons.mjs && bun scripts/build-og.mjs"
   },
   "dependencies": {
     "@astrojs/check": "0.9.10",

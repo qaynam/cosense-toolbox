@@ -3,11 +3,38 @@ import Base from '../layouts/Base.astro';
 ---
 
 <Base title="404">
-	<section class="guide" style="text-align:center; padding-top:90px;">
-		<h1 style="font-size:48px; margin:0 0 8px;">404</h1>
+	<section class="notfound">
+		<img src="/beaver.png" alt="" width="140" height="140" />
+		<h1>404</h1>
 		<p>ページが見つかりませんでした。</p>
-		<p style="margin-top:18px;">
-			<a class="source-link" href="/">← userscript 一覧へ戻る</a>
-		</p>
+		<a class="source-link" href="/">← userscript 一覧へ戻る</a>
 	</section>
 </Base>
+
+<style>
+	.notfound {
+		display: grid;
+		justify-items: center;
+		gap: 8px;
+		padding: 80px 0 120px;
+		text-align: center;
+	}
+
+	.notfound img {
+		opacity: 0.85;
+	}
+
+	.notfound h1 {
+		margin: 0;
+		font-size: 48px;
+	}
+
+	.notfound p {
+		margin: 0;
+		color: var(--text-dim);
+	}
+
+	.notfound a {
+		margin-top: 12px;
+	}
+</style>

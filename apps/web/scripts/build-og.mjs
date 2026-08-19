@@ -49,7 +49,18 @@ const cards = {
 	}),
 };
 
+// 右側にマスコットを置く。余白を詰めてから縮小しないと小さく写る。
+// 見出しは 2 行目が短いので、その右下の空きに収める。
+const mascot = await sharp('public/beaver.png')
+	.trim()
+	.resize(224, 224, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+	.toBuffer();
+
 for (const [file, svg] of Object.entries(cards)) {
-	await sharp(Buffer.from(svg)).resize(1200, 630).png().toFile(file);
+	await sharp(Buffer.from(svg))
+		.resize(1200, 630)
+		.composite([{ input: mascot, top: 322, left: 918 }])
+		.png()
+		.toFile(file);
 	console.log(`wrote ${file}`);
 }
