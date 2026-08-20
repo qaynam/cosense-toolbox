@@ -1,6 +1,5 @@
 ---
 import { Code } from "astro:components";
-import defaultStyle from "@cosense-toolbox/style/style.css?raw";
 import Doc from "../../layouts/Doc.astro";
 import { html as basicHtml } from "../../lib/demo-basic";
 import { html as iconsHtml } from "../../lib/demo-icons";
@@ -11,21 +10,18 @@ const raw = import.meta.glob("../../lib/demo-*.ts", {
   eager: true,
 }) as Record<string, string>;
 
-const preview = (body: string) =>
-  `<!doctype html><html lang="ja"><head><meta charset="utf-8"><style>${defaultStyle}</style></head><body>${body}</body></html>`;
-
 const demos = [
   {
     id: "basic",
     heading: "そのまま変換する",
     code: raw["../../lib/demo-basic.ts"],
-    document: preview(basicHtml),
+    document: basicHtml,
   },
   {
     id: "icons",
     heading: "リンク先とアイコンを渡す",
     code: raw["../../lib/demo-icons.ts"],
-    document: preview(iconsHtml),
+    document: iconsHtml,
   },
 ];
 ---
@@ -41,7 +37,7 @@ const demos = [
     > を変換したものです。実装はそのまま動くコードで、この画面もそれで作っています。
   </p>
 
-  <h2 id="そのまま変換する">{demos[0].heading}</h2>
+  <h2 id="そのままHTMLに変換する">{demos[0].heading}</h2>
   <p class="lead">
     <code>parse</code> して <code>toHtml</code> に渡すだけの、いちばん短い書きかたです。
   </p>

@@ -1,6 +1,7 @@
 import { parse } from "@cosense-toolbox/parser";
 import { toHtml } from "@cosense-toolbox/parser/compile";
 import { collect } from "@cosense-toolbox/parser/utils";
+import style from "@cosense-toolbox/style/style.css?raw";
 
 const project = "help-jp";
 
@@ -43,10 +44,21 @@ const iconSrcByUser = new Map(
   ),
 );
 
-export const html = toHtml(page, {
+const body = toHtml(page, {
   pageUrl: (title) =>
     title.startsWith("/")
       ? `https://scrapbox.io${encodePath(title)}`
       : `https://scrapbox.io/${encodeURIComponent(project)}/${encodeURIComponent(title)}`,
   iconImageUrl: (icon) => iconSrcByUser.get(icon.user) ?? null,
 });
+
+export const html = `<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <style>${style}</style>
+  </head>
+  <body>
+    ${body}
+  </body>
+</html>`;
