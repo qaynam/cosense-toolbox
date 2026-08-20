@@ -58,7 +58,7 @@ function wrapInDocument(body: string): string {
 }
 
 /** リンクとアイコンだけを並べた短い例。オプションの効きめを見るために使う。 */
-const LINK_SOURCE = [
+export const LINK_SOURCE = [
   "リンクとアイコン",
   " 同じプロジェクトのページ",
   "  [ブラケティング]",
@@ -71,7 +71,7 @@ const LINK_SOURCE = [
 ].join("\n");
 
 /** 本家の「その他の書き方」ページの内容。記法をひととおり含んでいる。 */
-const SOURCE = [
+export const SOURCE = [
   "その他の書き方",
   "基本的な[ブラケティング]の他にも、色々な[記法]があります",
   "",

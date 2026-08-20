@@ -1,7 +1,7 @@
 ---
 import { Code } from "astro:components";
 import Doc from "../../layouts/Doc.astro";
-import { htmlDemo, htmlDemoWithResolvedLinks } from "../../lib/html-demo";
+import { htmlDemo, htmlDemoWithResolvedLinks, SOURCE } from "../../lib/html-demo";
 
 const htmlDemoCode = import.meta.glob("../../lib/html-demo.ts", {
   query: "?raw",
@@ -16,7 +16,7 @@ const htmlDemoCode = import.meta.glob("../../lib/html-demo.ts", {
 function pickFunction(code: string, name: string): string {
   const lines = code.split("\n");
   const declared = lines.findIndex((line) =>
-    line.includes(`function ${name}(`),
+    line.includes(`function ${name}(${SOURCE}`),
   );
   if (declared < 0) return code;
 
@@ -83,12 +83,7 @@ const demos = [
 
   <h2 id="リンクとアイコンを解決する">{demos[1].heading}</h2>
   <p class="lead">
-    <a href="/parser/html/#pageurl">pageUrl</a> と <a
-      href="/parser/html/#iconimageurl">iconImageUrl</a
-    > を渡すと、リンク先が本家のページに向き、アイコンが画像になります。 どちらも記法には書かれていない情報なので、外から渡して補います。
-    コードブロックに色を付けたい場合は、さらに <a href="/parser/html/#highlight"
-      >highlight</a
-    > にハイライタを挿します。
+    <a href="/parser/html/#pageurl">pageUrl</a> と <a href="/parser/html/#iconimageurl">iconImageUrl</a> を渡すと、リンク先が本家のページに向き、アイコンが画像になります。 どちらも記法には書かれていない情報なので、外から渡して補います。
   </p>
 
   <div class="demo">

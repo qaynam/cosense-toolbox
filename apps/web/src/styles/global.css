@@ -1286,6 +1286,9 @@ html.modal-open body {
   border-radius: 0;
   font-size: 13px;
   line-height: 1.7;
+  /* 描画のタブ (iframe) と高さを揃える */
+  max-height: 70vh;
+  overflow: auto;
 }
 
 @media (max-width: 640px) {
