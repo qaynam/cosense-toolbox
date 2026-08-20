@@ -47,7 +47,16 @@ body {
 	font-family: var(--font-sans);
 	line-height: 1.65;
 	-webkit-font-smoothing: antialiased;
-	transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* テーマの切り替え中だけ遷移を止める。
+ * hover 用の `transition: all` が色にも掛かるので、要素ごとに変わる速さがずれて
+ * 一部だけ遅れて切り替わったように見えてしまう。 */
+:root.is-theme-switching,
+:root.is-theme-switching *,
+:root.is-theme-switching *::before,
+:root.is-theme-switching *::after {
+	transition: none !important;
 }
 
 a { color: inherit; text-decoration: none; }

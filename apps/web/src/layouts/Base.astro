@@ -357,7 +357,14 @@ const registry = all.map((e) => ({
 				const themeBtn = t.closest<HTMLElement>('[data-theme-toggle]');
 				if (themeBtn) {
 					const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+					// 色が一斉に切り替わるよう、この 1 フレームだけ遷移を止める
+					document.documentElement.classList.add('is-theme-switching');
 					document.documentElement.setAttribute('data-theme', next);
+					requestAnimationFrame(() => {
+						requestAnimationFrame(() => {
+							document.documentElement.classList.remove('is-theme-switching');
+						});
+					});
 					try {
 						localStorage.setItem(THEME_KEY, next);
 					} catch {}
