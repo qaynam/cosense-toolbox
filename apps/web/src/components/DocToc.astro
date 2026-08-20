@@ -41,33 +41,36 @@ const sections = nest(
 );
 ---
 
-<nav class="doc-toc" aria-label="このページの内容">
-	<p class="doc-toc-head">このページの内容</p>
-	<ul>
-		{
-			sections.map((section) => (
-				<li>
-					<a href={`#${section.heading.slug}`}>{section.heading.text}</a>
-					{section.children.length > 0 && (
-						<ul class="toc-sub">
-							{section.children.map((child) => (
-								<li>
-									<a href={`#${child.heading.slug}`}>{child.heading.text}</a>
-									{child.children.length > 0 && (
-										<ul class="toc-sub-sub">
-											{child.children.map((grandchild) => (
-												<li>
-													<a href={`#${grandchild.heading.slug}`}>{grandchild.heading.text}</a>
-												</li>
-											))}
-										</ul>
-									)}
-								</li>
-							))}
-						</ul>
-					)}
-				</li>
-			))
-		}
-	</ul>
-</nav>
+{/* 見出しの無いページでは表題だけが残ってしまうので、丸ごと出さない */}
+{
+	sections.length > 0 && (
+		<nav class="doc-toc" aria-label="このページの内容">
+			<p class="doc-toc-head">このページの内容</p>
+			<ul>
+				{sections.map((section) => (
+					<li>
+						<a href={`#${section.heading.slug}`}>{section.heading.text}</a>
+						{section.children.length > 0 && (
+							<ul class="toc-sub">
+								{section.children.map((child) => (
+									<li>
+										<a href={`#${child.heading.slug}`}>{child.heading.text}</a>
+										{child.children.length > 0 && (
+											<ul class="toc-sub-sub">
+												{child.children.map((grandchild) => (
+													<li>
+														<a href={`#${grandchild.heading.slug}`}>{grandchild.heading.text}</a>
+													</li>
+												))}
+											</ul>
+										)}
+									</li>
+								))}
+							</ul>
+						)}
+					</li>
+				))}
+			</ul>
+		</nav>
+	)
+}

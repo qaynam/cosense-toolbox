@@ -1,10 +1,10 @@
 ---
 layout: ../../layouts/Doc.astro
-title: 独自の形式に変換する
+title: 独自形式への変換
 description: toPlainText と createCompiler
 ---
 
-# 独自の形式に変換する
+# 独自形式への変換
 
 前のページの `toHtml` は、これから説明する `createCompiler` の上に作られています。
 同じ仕組みで、HTML 以外の形式も出せます。

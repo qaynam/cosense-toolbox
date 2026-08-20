@@ -1,10 +1,10 @@
 ---
 layout: ../../layouts/Doc.astro
-title: パースする
+title: パース
 description: parse / parseLine / tokenizeInline / createParser の使い分け
 ---
 
-# パースする
+# パース
 
 ここからは、Cosense のテキストを AST に変換する関数を見ていきます。
 すべて `@cosense-toolbox/parser` から import します。
@@ -114,7 +114,7 @@ parser.parse(source)
 parser.parseLine(line)
 ```
 
-拡張そのものの書きかたは[記法を拡張する](/parser/extend/)で説明します。
+拡張そのものの書きかたは[記法の拡張](/parser/extend/)で説明します。
 
 ## asImageSrc
 

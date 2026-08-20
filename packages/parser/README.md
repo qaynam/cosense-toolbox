@@ -4,11 +4,11 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 **ドキュメント → <https://cosense-toolbox.qaynam.dev/parser/>**
 
-- 依存は `effect` だけ。DOM も Node の API も使わない
-- すべてのノードがソース上の位置を持つので、エディタのハイライトやキャレット連携に使える
-- AST は plain object。`JSON.stringify` で往復でき、worklet や postMessage を跨げる
-- 記法と出力の両方をプラグインで拡張できる
-- サブパスごとに export が分かれていて tree-shaking が効く (`parse` だけなら gzip 約 8 KB)
+- 依存は `effect` だけ。DOM も Node の API も使わないので、ブラウザでも Node でも Workers でも動く
+- どのノードも元のテキストの何行目の何文字目から始まるかを持つので、エディタの色付けやカーソル位置の判定に使える
+- AST はメソッドを持たないただのオブジェクト。`JSON.stringify` して保存しておき、あとで読み直せる
+- 記法そのものを増やせる。プロジェクト固有の書きかたも元からある記法と同じように扱える
+- パースだけなら gzip 約 8 KB。HTML 変換や走査は別の import 元なので、使わなければバンドルに入らない
 
 > **beta**：公開 API はまだ変わりうる。安定するまではバージョンを固定して使うほうが安全。
 
@@ -59,13 +59,13 @@ toHtml(page)       // → '<div class="page"><h1 class="title">今日のメモ</
 | ページ | 内容 |
 | :--- | :--- |
 | [概要](https://cosense-toolbox.qaynam.dev/parser/) | インストールと、どの API を使うかの早見表 |
-| [記法ギャラリー](https://cosense-toolbox.qaynam.dev/parser/demo/) | 記法をひととおり変換した結果 |
-| [パースする](https://cosense-toolbox.qaynam.dev/parser/parse/) | `parse` / `parseLine` / `tokenizeInline` / `createParser` |
+| [対応記法](https://cosense-toolbox.qaynam.dev/parser/demo/) | 記法をひととおり変換した結果 |
+| [パース](https://cosense-toolbox.qaynam.dev/parser/parse/) | `parse` / `parseLine` / `tokenizeInline` / `createParser` |
 | [AST と位置情報](https://cosense-toolbox.qaynam.dev/parser/ast/) | ノードの構造と `position` の意味 |
-| [AST を調べる](https://cosense-toolbox.qaynam.dev/parser/utils/) | `visit` / `find` / `collect` など |
-| [HTML に変換する](https://cosense-toolbox.qaynam.dev/parser/html/) | `toHtml` と 7 つのオプション |
-| [独自の形式に変換する](https://cosense-toolbox.qaynam.dev/parser/compile/) | `toPlainText` / `createCompiler` |
-| [記法を拡張する](https://cosense-toolbox.qaynam.dev/parser/extend/) | `Extension` と独自のノード型 |
+| [AST の走査](https://cosense-toolbox.qaynam.dev/parser/utils/) | `visit` / `find` / `collect` など |
+| [HTML への変換](https://cosense-toolbox.qaynam.dev/parser/html/) | `toHtml` と 7 つのオプション |
+| [独自形式への変換](https://cosense-toolbox.qaynam.dev/parser/compile/) | `toPlainText` / `createCompiler` |
+| [記法の拡張](https://cosense-toolbox.qaynam.dev/parser/extend/) | `Extension` と独自のノード型 |
 
 ## 互換性の方針
 

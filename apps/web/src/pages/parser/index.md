@@ -8,16 +8,20 @@ description: Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に
 
 Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換するライブラリです。
 
-- 依存は `effect` だけで、DOM も Node の API も使いません
-- すべてのノードがソース上の位置を持つので、エディタのハイライトやキャレット連携に使えます
-- AST は plain object です。`JSON.stringify` で往復でき、worklet や postMessage を跨げます
-- 記法と出力の両方をプラグインで拡張できます
-- サブパスごとに export が分かれていて tree-shaking が効きます (`parse` だけなら gzip 約 8 KB)
+- 依存は `effect` だけです。DOM も Node の API も使わないので、ブラウザでも Node でも Cloudflare Workers でも同じように動きます。
+- どのノードも、元のテキストの何行目の何文字目から始まるかを持っています。エディタで記法に色を付けたり、カーソルの下にあるリンクを判定したりできます。
+- AST はメソッドを持たない、ただのオブジェクトです。`JSON.stringify` した結果をそのまま保存しておいて、あとで読み直せます。Web Worker のような別スレッドへ送ることもできます。
+- 記法そのものを増やせます。プロジェクト固有の書きかたを足しても、元からある記法と同じように扱えます。
+- パースだけなら gzip 約 8 KB です。HTML への変換や AST の走査は別の import 元にしてあるので、使わなければバンドルに入りません。
 
 > **beta**：公開 API はまだ変わる可能性があります。
-> 安定するまではバージョンを固定して使うほうが安全です。
 
-## インストール
+> **注意**
+>
+> このパッケージは Cosense (Scrapbox) の記法を解釈する非公式の実装です。
+> 開発元である Helpfeel 社とは関係がなく、公認も受けていません。
+
+## インストールの仕方
 
 ```sh
 npm i @cosense-toolbox/parser@beta
@@ -29,7 +33,7 @@ bun add @cosense-toolbox/parser@beta
 
 既定の見た目が必要であれば、[`@cosense-toolbox/style`](https://github.com/qaynam/cosense-toolbox/tree/main/packages/style) を別途入れてください。
 
-## 使ってみる
+## 使い方
 
 ページに書かれたリンクを集めてみます。
 
@@ -75,7 +79,7 @@ Cosense のテキスト
 パーサーは AST を作るところまでを担当します。
 AST から先をどうするかは、用途ごとに別のサブパスへ分かれています。
 
-## どの API を使う？
+## API の選び方
 
 `import` 元がサブパスごとに分かれている点にご注意ください。
 
@@ -95,9 +99,9 @@ AST から先をどうするかは、用途ごとに別のサブパスへ分か�
 | 外から来た値が `Page` か検証する | [`decodePage`](/parser/extend/#スキーマで検証する) | `@cosense-toolbox/parser/schema` |
 
 この表の順番で、次のページから順に説明していきます。
-どの記法がどう変換されるかを先に見たい場合は、[記法ギャラリー](/parser/demo/)に一覧があります。
+どの記法がどう変換されるかを先に見たい場合は、[対応記法](/parser/demo/)にすべて並べてあります。
 
-## 互換性の方針
+## 互換性について
 
 | 変更 | バージョン |
 | :--- | :--- |
@@ -125,8 +129,3 @@ switch (node.type) {
 ## ライセンス
 
 MIT です。
-
-> **注意**
->
-> このパッケージは Cosense (Scrapbox) の記法を解釈する非公式の実装です。
-> 開発元である Helpfeel 社とは関係がなく、公認も受けていません。

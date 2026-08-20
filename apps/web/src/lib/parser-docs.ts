@@ -17,18 +17,18 @@ export const PARSER_DOCS: DocGroup[] = [
 		label: 'はじめに',
 		links: [
 			{ href: '/parser/', label: '概要' },
-			{ href: '/parser/demo/', label: '記法ギャラリー' },
+			{ href: '/parser/demo/', label: '対応記法' },
 		],
 	},
 	{
-		label: 'ガイド',
+		label: '使い方',
 		links: [
-			{ href: '/parser/parse/', label: 'パースする' },
+			{ href: '/parser/parse/', label: 'パース' },
 			{ href: '/parser/ast/', label: 'AST と位置情報' },
-			{ href: '/parser/utils/', label: 'AST を調べる' },
-			{ href: '/parser/html/', label: 'HTML に変換する' },
-			{ href: '/parser/compile/', label: '独自の形式に変換する' },
-			{ href: '/parser/extend/', label: '記法を拡張する' },
+			{ href: '/parser/utils/', label: 'AST の走査' },
+			{ href: '/parser/html/', label: 'HTML への変換' },
+			{ href: '/parser/compile/', label: '独自形式への変換' },
+			{ href: '/parser/extend/', label: '記法の拡張' },
 		],
 	},
 ];

@@ -1,10 +1,10 @@
 ---
 layout: ../../layouts/Doc.astro
-title: AST を調べる
+title: AST の走査
 description: visit / find / collect / collectLinks / firstImage / rawTextOf
 ---
 
-# AST を調べる
+# AST の走査
 
 AST の形が分かったので、そこから欲しいものを取り出します。
 このページの関数はすべて `@cosense-toolbox/parser/utils` から import します。

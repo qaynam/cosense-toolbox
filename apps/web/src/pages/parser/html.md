@@ -1,10 +1,10 @@
 ---
 layout: ../../layouts/Doc.astro
-title: HTML に変換する
+title: HTML への変換
 description: toHtml の出力と、pageUrl / iconImageUrl / highlight / classNames / showPads / handlers / style
 ---
 
-# HTML に変換する
+# HTML への変換
 
 前のページでは AST から必要な部分を取り出しました。
 このページでは、AST をまるごと HTML 文字列にします。

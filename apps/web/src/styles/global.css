@@ -11,6 +11,8 @@
 	--text-faint: #7c7c7c;
 	--accent: #cfcfcf;
 	--code-bg: #1b1b1b;
+	--warn: #e3b341;
+	--warn-bg: rgba(227, 179, 65, 0.1);
 	--font-sans: Roboto, 'Noto Sans JP', sans-serif;
 	--font-mono: 'Geist Mono', ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
 	--radius: 12px;
@@ -27,6 +29,8 @@
 	--border: #e3e3e0;
 	--border-soft: #ededec;
 	--text: #1d1d1d;
+	--warn: #8a6100;
+	--warn-bg: rgba(138, 97, 0, 0.1);
 	--text-dim: #5c5c5c;
 	--text-faint: #767676;
 	--accent: #333333;
@@ -555,6 +559,8 @@ html.modal-open, html.modal-open body { overflow: hidden; }
 .doc th, .doc td { padding: 7px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
 .doc th { background: var(--bg-soft); font-weight: 600; white-space: nowrap; }
 .doc td code { white-space: nowrap; }
-.doc blockquote { margin: 0 0 20px; padding: 12px 16px; border-left: 3px solid var(--text-faint); border-radius: 0 var(--radius) var(--radius) 0; background: var(--bg-soft); }
+/* ドキュメントの引用は注意書きにしか使っていないので、警告として見せる */
+.doc blockquote { margin: 0 0 20px; padding: 12px 16px; border-left: 3px solid var(--warn); border-radius: 0 var(--radius) var(--radius) 0; background: var(--warn-bg); }
+.doc blockquote strong { color: var(--warn); }
 .doc blockquote > :last-child { margin-bottom: 0; }
 .doc hr { margin: 40px 0; border: 0; border-top: 1px solid var(--border); }

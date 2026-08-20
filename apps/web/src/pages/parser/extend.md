@@ -1,10 +1,10 @@
 ---
 layout: ../../layouts/Doc.astro
-title: 記法を拡張する
+title: 記法の拡張
 description: Extension で記法を足し、declaration merging で独自のノード型を足す
 ---
 
-# 記法を拡張する
+# 記法の拡張
 
 ここまでは Cosense に元からある記法を扱ってきました。
 このページでは、パーサーが解釈する記法そのものを増やします。
