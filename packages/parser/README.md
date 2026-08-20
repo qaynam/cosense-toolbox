@@ -37,22 +37,15 @@ toHtml(page)       // → '<div class="page"><h1 class="title">今日のメモ</
 
 ## API
 
-`import` 元がサブパスごとに分かれている。
+モジュールごとに export が分かれている。使うものだけ import すればよい。
 
-| API | 何をするか | import 元 |
+| モジュール | 役割 | API |
 | :--- | :--- | :--- |
-| `parse` | ページ全文を `Page` にする | `@cosense-toolbox/parser` |
-| `parseLine` | 1 行だけをパースする | `@cosense-toolbox/parser` |
-| `tokenizeInline` | 行の中の記法だけを取る | `@cosense-toolbox/parser` |
-| `createParser` | 拡張を固定したパーサーを作る | `@cosense-toolbox/parser` |
-| `asImageSrc` | 画像 URL を `<img src>` の形にする | `@cosense-toolbox/parser` |
-| `visit` `find` `collect` | AST を辿る、探す、集める | `@cosense-toolbox/parser/utils` |
-| `collectLinks` `firstImage` `rawTextOf` | リンク、サムネイル、生テキスト | `@cosense-toolbox/parser/utils` |
-| `toHtml` | HTML にする | `@cosense-toolbox/parser/compile` |
-| `toPlainText` | 記法を外したテキストにする | `@cosense-toolbox/parser/compile` |
-| `createCompiler` | 独自の形式にする | `@cosense-toolbox/parser/compile` |
-| `Extension` `InlineConstruct` | 記法を足す (型のみ) | `@cosense-toolbox/parser/plugin` |
-| `decodePage` | 外から来た値が `Page` か検証する | `@cosense-toolbox/parser/schema` |
+| `@cosense-toolbox/parser` | テキストを AST にする | `parse` `parseLine` `tokenizeInline` `createParser` `asImageSrc` `normalizeLineEndings` |
+| `@cosense-toolbox/parser/utils` | AST から取り出す | `visit` `find` `collect` `collectLinks` `firstImage` `rawTextOf` |
+| `@cosense-toolbox/parser/compile` | AST を別の形式にする | `toHtml` `toPlainText` `createCompiler` |
+| `@cosense-toolbox/parser/plugin` | 記法を足す (型のみ) | `Extension` `InlineConstruct` `BracketRule` `NodeHandlers` |
+| `@cosense-toolbox/parser/schema` | 外から来た値を検証する | `decodePage` |
 
 各 API の詳細はドキュメントにある。
 
