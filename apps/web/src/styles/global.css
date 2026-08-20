@@ -554,8 +554,10 @@ html.modal-open, html.modal-open body { overflow: hidden; }
 
 /* 前後のページ */
 .doc-pager { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); }
-.doc-pager a { padding: 14px 18px; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); text-decoration: none; }
-.doc-pager a:hover { border-color: var(--text-faint); background: var(--bg-soft); }
+/* 本文のリンクは下線を引くが、これはカードなので引かない。
+   後ろにある `.doc a` と詳細度で並ぶため、`.doc` を足して勝たせる */
+.doc .doc-pager a { padding: 14px 18px; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); text-decoration: none; }
+.doc .doc-pager a:hover { border-color: var(--text-faint); background: var(--bg-soft); text-decoration: none; }
 .doc-pager a.is-next { grid-column: 2; text-align: right; }
 .doc-pager span { display: block; margin-bottom: 4px; font-size: 12px; color: var(--text-faint); }
 @media (max-width: 600px) { .doc-pager { grid-template-columns: 1fr; } .doc-pager a.is-next { grid-column: 1; } }
