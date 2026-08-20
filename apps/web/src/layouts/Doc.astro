@@ -1,0 +1,56 @@
+---
+import type { MarkdownHeading } from 'astro';
+import DocSidebar from '../components/DocSidebar.astro';
+import DocToc from '../components/DocToc.astro';
+import { adjacentDocs } from '../lib/parser-docs';
+import Base from './Base.astro';
+
+interface Frontmatter {
+	title: string;
+	description?: string;
+}
+
+interface Props {
+	/** Markdown ページから渡る。`.astro` ページは title / description を直接渡す */
+	frontmatter?: Frontmatter;
+	headings?: MarkdownHeading[];
+	title?: string;
+	description?: string;
+}
+
+const { frontmatter, headings = [], title, description } = Astro.props;
+const pageTitle = frontmatter?.title ?? title ?? '@cosense-toolbox/parser';
+const pageDescription =
+	frontmatter?.description ?? description ?? 'Cosense 記法を位置情報つきの AST に変換する npm パッケージ';
+const { prev, next } = adjacentDocs(Astro.url.pathname);
+---
+
+<Base title={pageTitle} description={pageDescription} image="/og-parser.png">
+	<div class="doc-shell">
+		<DocSidebar />
+		<article class="doc">
+			<slot />
+			{
+				(prev !== undefined || next !== undefined) && (
+					<nav class="doc-pager" aria-label="前後のページ">
+						{prev !== undefined ? (
+							<a href={prev.href} rel="prev">
+								<span>前へ</span>
+								{prev.label}
+							</a>
+						) : (
+							<span />
+						)}
+						{next !== undefined && (
+							<a class="is-next" href={next.href} rel="next">
+								<span>次へ</span>
+								{next.label}
+							</a>
+						)}
+					</nav>
+				)
+			}
+		</article>
+		<DocToc headings={headings} />
+	</div>
+</Base>

@@ -1,5 +1,5 @@
 /**
- * visit.ts — unist-util-visit 風の走査。外部依存を増やさないための自前実装。
+ * visit.ts — AST を深さ優先で走査する。外部依存を増やさないための自前実装。
  */
 import { childrenOf } from '../ast'
 import type { AnyNode, AnyNodeType, NodeOfType } from '../types'

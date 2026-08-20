@@ -41,8 +41,8 @@ const sections = nest(
 );
 ---
 
-<details class="doc-toc" aria-label="目次">
-	<summary>このページの内容</summary>
+<nav class="doc-toc" aria-label="このページの内容">
+	<p class="doc-toc-head">このページの内容</p>
 	<ul>
 		{
 			sections.map((section) => (
@@ -70,9 +70,4 @@ const sections = nest(
 			))
 		}
 	</ul>
-</details>
-
-<script>
-	const toc = document.querySelector<HTMLDetailsElement>('.doc-toc');
-	if (toc !== null) toc.open = window.matchMedia('(min-width: 861px)').matches;
-</script>
+</nav>

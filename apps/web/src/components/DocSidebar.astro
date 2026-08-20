@@ -1,0 +1,26 @@
+---
+import { PARSER_DOCS } from '../lib/parser-docs';
+
+const current = Astro.url.pathname;
+---
+
+<nav class="doc-nav" aria-label="ドキュメント">
+	<span class="doc-nav-name">@cosense-toolbox/parser</span>
+	{
+		PARSER_DOCS.map((group) => (
+			<section>
+				<h2>{group.label}</h2>
+				<ul>
+					{group.links.map((link) => (
+						<li>
+							<a href={link.href} aria-current={current === link.href ? 'page' : undefined}>
+								{link.label}
+							</a>
+						</li>
+					))}
+				</ul>
+			</section>
+		))
+	}
+	<a class="doc-nav-repo" href="https://github.com/qaynam/cosense-toolbox">GitHub</a>
+</nav>

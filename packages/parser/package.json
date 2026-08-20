@@ -1,7 +1,7 @@
 {
   "name": "@cosense-toolbox/parser",
   "version": "0.1.0-beta.0",
-  "description": "Cosense (Scrapbox) notation parser — position-aware, unist-style AST. Zero runtime deps except effect.",
+  "description": "Cosense (Scrapbox) notation parser — every node carries its source position. Zero runtime deps except effect.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -87,7 +87,7 @@
     "tag": "beta",
     "registry": "https://registry.npmjs.org/"
   },
-  "keywords": ["cosense", "scrapbox", "parser", "ast", "unist", "effect"],
+  "keywords": ["cosense", "scrapbox", "parser", "ast", "syntax", "effect"],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/qaynam/cosense-toolbox.git",

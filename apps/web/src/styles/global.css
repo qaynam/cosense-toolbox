@@ -424,23 +424,54 @@ html.modal-open, html.modal-open body { overflow: hidden; }
  * parser のドキュメント (/parser 配下)
  * ------------------------------------------------------------------------- */
 
-.pkg-nav { display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; margin-bottom: 32px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-.pkg-nav-name { font-family: var(--font-mono); font-size: 13px; color: var(--text-faint); }
-.pkg-nav ul { display: flex; gap: 18px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
-.pkg-nav a { color: var(--text-dim); text-decoration: none; }
-.pkg-nav a:hover { color: var(--text); }
-.pkg-nav a[aria-current='page'] { color: var(--text); border-bottom: 2px solid var(--text); padding-bottom: 10px; }
-
-.doc-layout { display: grid; grid-template-columns: minmax(0, 46rem) 15rem; justify-content: center; gap: 48px; align-items: start; }
-@media (max-width: 860px) {
-	.doc-layout { grid-template-columns: minmax(0, 1fr); }
-	.doc-toc { position: static; order: -1; max-height: none; margin-bottom: 24px; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius); }
-	.doc-toc summary { cursor: pointer; color: var(--text-dim); }
-	.doc-toc[open] summary { margin-bottom: 10px; }
+/* 3 カラム。左がサイト内の目次、右がページ内の目次。
+ * 1200px を切ると右の目次が本文の上へ落ちて畳まれる。 */
+.doc-shell {
+	display: grid;
+	grid-template-columns: 13rem minmax(0, 46rem) 14rem;
+	grid-template-areas: 'nav main toc';
+	justify-content: center;
+	gap: 0 40px;
+	align-items: start;
 }
-@media (min-width: 861px) { .doc-toc summary { display: none; } }
+.doc-nav { grid-area: nav; }
+.doc { grid-area: main; }
+.doc-toc { grid-area: toc; }
 
-.doc-toc { position: sticky; top: 78px; order: 1; max-height: calc(100vh - 100px); overflow-y: auto; font-size: 13px; }
+@media (max-width: 1199px) {
+	.doc-shell { grid-template-columns: 13rem minmax(0, 1fr); grid-template-areas: 'nav main'; }
+}
+@media (max-width: 860px) {
+	.doc-shell { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'nav' 'main'; }
+}
+
+/* サイト内の目次。JS を使わず、幅で見せかたを切り替える */
+.doc-nav { position: sticky; top: 78px; max-height: calc(100vh - 100px); overflow-y: auto; font-size: 14px; }
+.doc-nav-name { display: block; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); word-break: break-all; }
+.doc-nav section { margin-bottom: 22px; }
+.doc-nav h2 { margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+.doc-nav ul { margin: 0; padding: 0; list-style: none; }
+.doc-nav a { display: block; padding: 5px 10px; margin-left: -10px; border-radius: 5px; color: var(--text-dim); text-decoration: none; }
+.doc-nav a:hover { color: var(--text); background: var(--bg-soft); }
+.doc-nav a[aria-current='page'] { color: var(--text); background: var(--bg-soft); font-weight: 600; }
+.doc-nav-repo { display: inline-block; font-size: 13px; color: var(--text-faint); }
+
+@media (max-width: 1199px) {
+	.doc-nav { position: static; max-height: none; margin-bottom: 28px; }
+}
+
+/* 狭い画面では横に流れるチップ列にして、本文を先に見せる */
+@media (max-width: 860px) {
+	.doc-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; }
+	.doc-nav-name, .doc-nav h2, .doc-nav-repo { display: none; }
+	.doc-nav section { display: contents; }
+	.doc-nav ul { display: flex; gap: 8px; }
+	.doc-nav a { margin: 0; padding: 6px 13px; border: 1px solid var(--border); border-radius: 999px; white-space: nowrap; }
+}
+
+/* ページ内の目次。置ける幅があるときだけ出す */
+.doc-toc { position: sticky; top: 78px; max-height: calc(100vh - 100px); overflow-y: auto; font-size: 13px; }
+.doc-toc-head { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
 .doc-toc ul { margin: 0; padding: 0; list-style: none; border-left: 1px solid var(--border); }
 .doc-toc ul ul { border: 0; }
 .doc-toc a { display: block; padding: 5px 0 5px 14px; color: var(--text-dim); text-decoration: none; }
@@ -448,6 +479,15 @@ html.modal-open, html.modal-open body { overflow: hidden; }
 .doc-toc .toc-sub a { padding-left: 28px; font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); }
 .doc-toc .toc-sub a:hover { color: var(--text-dim); }
 .doc-toc .toc-sub-sub a { padding-left: 40px; }
+
+@media (max-width: 1199px) { .doc-toc { display: none; } }
+
+/* 前後のページ */
+.doc-pager { display: flex; justify-content: space-between; gap: 16px; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); }
+.doc-pager a { display: block; max-width: 48%; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); text-decoration: none; }
+.doc-pager a:hover { border-color: var(--text-faint); }
+.doc-pager a.is-next { margin-left: auto; text-align: right; }
+.doc-pager span { display: block; margin-bottom: 2px; font-size: 12px; color: var(--text-faint); }
 
 .doc { min-width: 0; line-height: 1.85; }
 .doc > :first-child { margin-top: 0; }

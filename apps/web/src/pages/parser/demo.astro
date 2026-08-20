@@ -4,8 +4,7 @@ import { toHtml, toPlainText } from "@cosense-toolbox/parser/compile";
 import { collect } from "@cosense-toolbox/parser/utils";
 import defaultStyle from "@cosense-toolbox/style/style.css?raw";
 import { createHighlighter } from "shiki";
-import ParserNav from "../../components/ParserNav.astro";
-import Base from "../../layouts/Base.astro";
+import Doc from "../../layouts/Doc.astro";
 import { resolveIconSrc } from "../../lib/cosense-icon";
 
 const PROJECT = "help-jp";
@@ -41,7 +40,6 @@ const source = [
 	"アイコン",
 	" [rakusai.icon]",
 	" [/icons/炎上.icon]",
-	" [shokai.icon]",
 	"",
 	"[数式]",
 	" [$ \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}]",
@@ -131,14 +129,12 @@ const tabs = [
 ];
 ---
 
-<Base title="Parser のデモ" description="Cosense 記法を位置情報つきの AST に変換する npm パッケージ" image="/og-parser.png">
-	<ParserNav />
-
-	<h1>デモ</h1>
+<Doc title="記法ギャラリー" description="Cosense の記法をひととおり parse して toHtml で描画したもの">
+	<h1>記法ギャラリー</h1>
 	<p class="lead">
 		本家の「その他の書き方」ページをそのまま <code>parse</code> して、<code>toHtml</code> で描画したもの。
 		ビルド時に生成しているので、この画面に実行時のパーサーは載っていない。
-		コードブロックの色付けは <a href="/parser/#highlight">highlight</a> に Shiki を挿している。
+		コードブロックの色付けは <a href="/parser/html/#highlight">highlight</a> に Shiki を挿している。
 	</p>
 
 	<div class="demo">
@@ -163,7 +159,7 @@ const tabs = [
 		<pre data-demo-panel="source" class="demo-panel" hidden>{source}</pre>
 		<pre data-demo-panel="plain" class="demo-panel" hidden>{toPlainText(page)}</pre>
 	</div>
-</Base>
+</Doc>
 
 <script>
 	const tabs = document.querySelectorAll<HTMLButtonElement>("[data-demo-tab]");
