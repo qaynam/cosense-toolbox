@@ -61,8 +61,7 @@ const toMarkdown = createCompiler<string>({
 
 `handlers` の型はノード型のマップから導出されるので、ノード型が増えても型が追随します。
 
-出力は文字列でなくてもかまいません。
-React の要素を組み立てるなら `createCompiler<ReactNode>` にします。
+出力は文字列でなくてもかまわないので、React の要素を組み立てるなら `createCompiler<ReactNode>` にします。
 
 ここまでで、既存の記法を読んで別の形にする方法は一通りです。
 最後に、記法そのものを増やす方法を扱います。

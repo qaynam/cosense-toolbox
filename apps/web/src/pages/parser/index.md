@@ -8,11 +8,11 @@ description: Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に
 
 Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換するライブラリです。
 
-- 依存は `effect` だけです。DOM も Node の API も使わないので、ブラウザでも Node でも Cloudflare Workers でも同じように動きます。
-- どのノードも、元のテキストの何行目の何文字目から始まるかを持っています。エディタで記法に色を付けたり、カーソルの下にあるリンクを判定したりできます。
-- AST はメソッドを持たない、ただのオブジェクトです。`JSON.stringify` した結果をそのまま保存しておいて、あとで読み直せます。Web Worker のような別スレッドへ送ることもできます。
-- 記法そのものを増やせます。プロジェクト固有の書きかたを足しても、元からある記法と同じように扱えます。
-- パースだけなら gzip 約 8 KB です。HTML への変換や AST の走査は別の import 元にしてあるので、使わなければバンドルに入りません。
+- 依存は `effect` だけで、DOM も Node の API も使わないので、ブラウザでも Node でも Cloudflare Workers でも同じように動きます。
+- どのノードも元のテキストの何行目の何文字目から始まるかを持っているので、エディタで記法に色を付けたり、カーソルの下にあるリンクを判定したりできます。
+- AST はメソッドを持たないただのオブジェクトなので、`JSON.stringify` した結果をそのまま保存して後から読み直したり、Web Worker のような別スレッドへ送ったりできます。
+- 記法そのものを増やせるので、プロジェクト固有の書きかたを足しても元からある記法と同じように扱えます。
+- HTML への変換や AST の走査は別の import 元にしてあるので、使わなければバンドルに入らず、パースだけなら gzip 約 8 KB に収まります。
 
 > **beta**：公開 API はまだ変わる可能性があります。
 
@@ -35,32 +35,27 @@ bun add @cosense-toolbox/parser@beta
 
 ## 使い方
 
-ページに書かれたリンクを集めてみます。
+ページをパースして、リンクを集めたり HTML にしたりしてみます。
 
 ```ts
 import { parse } from '@cosense-toolbox/parser'
 import { collectLinks } from '@cosense-toolbox/parser/utils'
+import { toHtml } from '@cosense-toolbox/parser/compile'
 
 const page = parse(`今日のメモ
 [プロジェクトA] の進捗を確認する
 #あとで読む`)
 
-collectLinks(page) // → ['プロジェクトA', 'あとで読む']
-```
-
-正規表現で切り出す場合と違い、`[* 太字]` や `` `[code]` `` はリンクとして数えません。
-記法の種類を判別したうえで取り出せます。
-
-同じ `page` から HTML を作ることもできます。
-
-```ts
-import { toHtml } from '@cosense-toolbox/parser/compile'
+collectLinks(page)
+// → ['プロジェクトA', 'あとで読む']
 
 toHtml(page)
-// <div class="page"><h1 class="title">今日のメモ</h1>…
+// → '<div class="page"><h1 class="title">今日のメモ</h1>…'
 ```
 
-このように、まず `parse` で AST を作り、その AST を目的に応じて処理する、という二段構えになっています。
+まず `parse` で AST を作り、その AST を目的に応じて処理する、という二段構えになっています。
+
+正規表現で切り出す場合と違って記法の種類を判別したうえで取り出すので、`[* 太字]` や `` `[code]` `` はリンクとして数えません。
 
 ## 全体の流れ
 
@@ -76,8 +71,7 @@ Cosense のテキスト
                      └─ createCompiler() 独自の形式にする
 ```
 
-パーサーは AST を作るところまでを担当します。
-AST から先をどうするかは、用途ごとに別のサブパスへ分かれています。
+パーサーは AST を作るところまでを担当していて、AST から先をどうするかは用途ごとに別のサブパスへ分かれています。
 
 ## API の選び方
 

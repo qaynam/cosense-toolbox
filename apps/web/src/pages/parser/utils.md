@@ -9,9 +9,18 @@ description: visit / find / collect / collectLinks / firstImage / rawTextOf
 AST の形が分かったので、そこから欲しいものを取り出します。
 このページの関数はすべて `@cosense-toolbox/parser/utils` から import します。
 
-この層はパーサー本体を import しません。
-そのため、AST を作る側と使う側を別々にバンドルできます。
+この層はパーサー本体を import しないので、AST を作る側と使う側を別々にバンドルできます。
 サーバーでパースして AST を保存し、クライアントでは走査だけを行う、といった分けかたができます。
+
+以降の例では、次の `page` を使います。
+
+```ts
+import { parse } from '@cosense-toolbox/parser'
+
+const page = parse(`関連ページ
+[JavaScript] と [TypeScript] を比べる
+#メモ`)
+```
 
 ## visit
 
@@ -41,8 +50,7 @@ visitor の戻り値で走査を制御できます。
 第 2 引数を省くと、すべてのノードが届きます。
 visitor の第 2 引数には、ルートからそのノードまでの祖先が配列で渡ります。
 
-このあとの `find` と `collect` と `collectLinks` は、いずれも `visit` の上に組み立てた薄い関数です。
-やりたいことが下の 3 つに当てはまらないときだけ `visit` を直接使ってください。
+このあとの `find` と `collect` と `collectLinks` はいずれも `visit` の上に組み立てた薄い関数なので、やりたいことがそれらに当てはまらないときだけ `visit` を直接使ってください。
 
 ## find
 
@@ -50,8 +58,7 @@ visitor の第 2 引数には、ルートからそのノードまでの祖先が
 find(tree, type): NodeOfType<K> | null
 ```
 
-その型の最初のノードを返します。
-無ければ `null` です。
+その型の最初のノードを返し、無ければ `null` を返します。
 
 ```ts
 import { find } from '@cosense-toolbox/parser/utils'
@@ -90,8 +97,7 @@ import { collectLinks } from '@cosense-toolbox/parser/utils'
 collectLinks(parse('t\n[A] と #B と [A]')) // → ['A', 'B']
 ```
 
-`includeProjectLinks` を渡すと `[/project/title]` も含めます。
-既定では含めません。
+`includeProjectLinks` を渡すと `[/project/title]` も含めますが、既定では含めません。
 
 サイトマップの生成、リンク切れの検査、被リンク一覧の表示に使えます。
 
@@ -101,9 +107,8 @@ collectLinks(parse('t\n[A] と #B と [A]')) // → ['A', 'B']
 firstImage(tree): ImageNode | null
 ```
 
-最初の画像ノードを返します。
+ページのサムネイルを選ぶときのために、最初の画像ノードを返します。
 無ければ `null` です。
-ページのサムネイルを選ぶときに使います。
 
 ```ts
 import { firstImage } from '@cosense-toolbox/parser/utils'

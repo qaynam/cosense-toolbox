@@ -10,8 +10,7 @@ description: parse / parseLine / tokenizeInline / createParser の使い分け
 すべて `@cosense-toolbox/parser` から import します。
 
 どれも例外を投げず、どんな入力でも必ず値を返します。
-記法として成立しない部分は素のテキストになるだけで、エラーにはなりません。
-そのため `try` で囲む必要はありません。
+記法として成立しない部分は素のテキストになるだけでエラーにはならないので、`try` で囲む必要はありません。
 
 ## parse
 
@@ -58,8 +57,7 @@ for (const block of page.children) {
 parseLine(raw: string, origin?: { line?: number; offset?: number }): LineBlock
 ```
 
-1 行だけを通常行としてパースします。
-エディタのように行単位で扱うときに使います。
+エディタのように行単位で扱うときのために、1 行だけを通常行としてパースします。
 
 ```ts
 import { parseLine } from '@cosense-toolbox/parser'
@@ -85,8 +83,7 @@ parseLine('code:foo.js')
 tokenizeInline(source: string, options?: TokenizeOptions): readonly InlineNode[]
 ```
 
-行の中だけを解析して、インラインノードの並びを返します。
-インデントや引用の判定はしません。
+行の中だけを解析してインラインノードの並びを返す関数で、インデントや引用の判定はしません。
 
 ```ts
 import { tokenizeInline } from '@cosense-toolbox/parser'
@@ -103,15 +100,16 @@ tokenizeInline('[* 太字] と [リンク]')
 createParser(options?: ParserOptions): { parse; parseLine; tokenizeInline }
 ```
 
-拡張を固定したパーサーを作ります。
-同じ拡張で何度もパースするときに、毎回 `extensions` を渡さずに済みます。
+拡張を固定したパーサーを作るので、同じ拡張で何度もパースするときに毎回 `extensions` を渡さずに済みます。
 
 ```ts
 import { createParser } from '@cosense-toolbox/parser'
 
+// mentions の作りかたは「記法の拡張」にあります
 const parser = createParser({ extensions: [mentions] })
-parser.parse(source)
-parser.parseLine(line)
+
+parser.parse('タイトル\n@qaynam に確認する')
+parser.parseLine('@qaynam に確認する')
 ```
 
 拡張そのものの書きかたは[記法の拡張](/parser/extend/)で説明します。
@@ -122,8 +120,7 @@ parser.parseLine(line)
 asImageSrc(url: string): string | null
 ```
 
-画像 URL を `<img src>` に入れられる形にします。
-画像でなければ `null` を返します。
+画像 URL を `<img src>` に入れられる形にして、画像でなければ `null` を返します。
 
 ```ts
 import { asImageSrc } from '@cosense-toolbox/parser'
@@ -136,8 +133,7 @@ asImageSrc('https://example.test/page')
 ```
 
 Gyazo のページ URL は画像そのものではないので、ここでだけ画像 URL に差し替わります。
-`parse` はこの変換をしません。
-AST はソースに書かれた文字列を保ちます。
+`parse` は AST にソースの文字列をそのまま残すため、この変換をしません。
 
 この使い分けの理由は、次のページの[画像の src は書き換えない](/parser/ast/#画像の-src-は書き換えない)で説明します。
 

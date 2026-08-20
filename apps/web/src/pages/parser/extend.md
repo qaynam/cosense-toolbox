@@ -41,12 +41,11 @@ const mention: InlineConstruct = (source, index) => {
 
 const mentions: Extension = { constructs: [mention] }
 
-parse(source, { extensions: [mentions] })
+parse('メモ\n@qaynam に確認する', { extensions: [mentions] })
 ```
 
 `Option.none()` を返すと、その位置では成立しなかったことになり、次のルールが試されます。
-`position` は返しません。
-走査ループが付けます。
+`position` は走査ループが付けるので、返す必要はありません。
 
 `[...]` の中身の解釈を足す場合は `bracketRules` を使います。
 同じ拡張で何度もパースするなら、[`createParser`](/parser/parse/#createparser) でパーサーを固定できます。
@@ -67,11 +66,15 @@ declare module '@cosense-toolbox/parser' {
 }
 ```
 
-```ts
-// 記法を足す
-const mention: InlineConstruct = (source, index) => { /* → { type: 'mention', user } */ }
+あとは、記法を足したパーサーでパースして、その `type` に対するハンドラを書けば描画まで通ります。
 
-// 描画を足す
+```ts
+import { parse } from '@cosense-toolbox/parser'
+import { escapeHtml, toHtml } from '@cosense-toolbox/parser/compile'
+
+// mention が { type: 'mention', user } を返すようにしておく
+const page = parse('メモ\n@qaynam に確認する', { extensions: [{ constructs: [mention] }] })
+
 toHtml(page, {
   handlers: { mention: (node) => `<a href="/u/${node.user}">@${escapeHtml(node.user)}</a>` },
 })

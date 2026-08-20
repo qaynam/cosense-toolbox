@@ -20,7 +20,9 @@ toHtml(node: AnyNode, options?: HtmlOptions): string
 import { parse } from '@cosense-toolbox/parser'
 import { toHtml } from '@cosense-toolbox/parser/compile'
 
-toHtml(parse('タイトル\nこれは [リンク] です'))
+const page = parse('タイトル\nこれは [リンク] です')
+
+toHtml(page)
 ```
 
 ```html
@@ -32,8 +34,8 @@ toHtml(parse('タイトル\nこれは [リンク] です'))
 </div>
 ```
 
-以降の HTML は読みやすさのために字下げして示します。
-実際の出力に要素間の空白は入りません。
+以降の HTML は読みやすさのために字下げして示しますが、実際の出力に要素間の空白は入りません。
+オプションの例では、上で作った `page` をそのまま使います。
 
 既定の見た目は [`@cosense-toolbox/style`](https://github.com/qaynam/cosense-toolbox/tree/main/packages/style) が別パッケージとして持っています。
 
@@ -68,7 +70,7 @@ toHtml(page, { pageUrl: (title) => `/wiki/${encodeURIComponent(title)}` })
 
 `title` には記法に書かれたタイトルがそのまま渡ります。
 `[title]` なら `title`、`[/proj/page]` なら `/proj/page`、`#tag` なら `tag`、`[user.icon]` なら `user` です。
-ノード型で分岐する必要はありません。
+どの記法でも同じ形で渡るので、ノード型で分岐する必要はありません。
 
 既定は `/{title}` で、区切りを含むタイトルは区切りを残して各段を encode します。
 `defaultPageUrl` として export しているので、独自のハンドラからも呼べます。
@@ -140,8 +142,7 @@ const shiki = await createHighlighter({ themes: ['github-light'], langs: ['js'] 
 highlight: (code, lang) => shiki.codeToHtml(code, { lang, theme: 'github-light', structure: 'inline' })
 ```
 
-`language` はファイル名から推測した名前です。
-拡張子があればそれが、無ければファイル名全体が渡ります。
+`language` はファイル名から推測した名前で、拡張子があればそれが、無ければファイル名全体が渡ります。
 `code:hello.js` なら `js`、`code:python` なら `python` です。
 言語名の綴りはライブラリごとに違うので、必要であれば受け取った側で読み替えてください。
 
@@ -234,14 +235,12 @@ handlers: {
 }
 ```
 
-既定のハンドラ一式は `createHtmlHandlers(options)` で取れます。
-既定の出力を包みたいときに使ってください。
+既定の出力を包みたいときは、`createHtmlHandlers(options)` で既定のハンドラ一式を取れます。
 
 拡張が足した独自のノード型も、`InlineNodeMap` を declaration merging で拡張してあればここのキーになります。
 ハンドラを書かなかった独自ノードは、子があればその中身が出力されます。
 
-ハンドラは `classNames` の設定を受け取りません。
-両方を使う場合、class 名は書いた側で決めることになります。
+ハンドラは `classNames` の設定を受け取らないので、両方を使う場合の class 名は書いた側で決めることになります。
 
 差し替えると既定のエスケープも無くなるので、[エスケープと URL の検査](#エスケープと-url-の検査)を必ずご確認ください。
 
