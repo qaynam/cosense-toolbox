@@ -6,8 +6,11 @@ description: toPlainText と createCompiler
 
 # 独自の形式に変換する
 
-`@cosense-toolbox/parser/compile` から import する。
-この層はパーサー本体を import しないので、変換だけを使う側のバンドルにパーサーは入らない。
+前のページの `toHtml` は、これから説明する `createCompiler` の上に作られています。
+同じ仕組みで、HTML 以外の形式も出せます。
+
+いずれも `@cosense-toolbox/parser/compile` から import します。
+この層はパーサー本体を import しないので、変換だけを使う側のバンドルにパーサーは入りません。
 
 ## toPlainText
 
@@ -15,7 +18,8 @@ description: toPlainText と createCompiler
 toPlainText(node: AnyNode): string
 ```
 
-記法を外したテキストを返す。オプションは無い。
+記法を外したテキストを返します。
+オプションはありません。
 
 ```ts
 import { toPlainText } from '@cosense-toolbox/parser/compile'
@@ -24,10 +28,10 @@ toPlainText(parse('タイトル\n[* 太字] と [リンク]'))
 // 'タイトル\n太字 と リンク'
 ```
 
-インデントは半角 2 文字、引用は `> ` として残る。
-コードブロックとテーブルは中身がそのまま出る。
+インデントは半角 2 文字、引用は `> ` として残ります。
+コードブロックとテーブルは中身がそのまま出ます。
 
-全文検索のインデックス作成や、抜粋の生成に使える。
+全文検索のインデックス作成や、抜粋の生成に使えます。
 
 ## createCompiler
 
@@ -35,8 +39,8 @@ toPlainText(parse('タイトル\n[* 太字] と [リンク]'))
 createCompiler<Out>(options: { handlers; fallback }): (node) => Out
 ```
 
-HTML とテキスト以外を出すときに使う。
-`toHtml` も `toPlainText` もこれで書かれている。
+HTML とテキスト以外を出すときに使います。
+`toHtml` も `toPlainText` もこれで書かれています。
 
 ```ts
 import { createCompiler } from '@cosense-toolbox/parser/compile'
@@ -51,7 +55,14 @@ const toMarkdown = createCompiler<string>({
 })
 ```
 
-`handlers` の型はノード型のマップから導出されるので、ノード型が増えても型が追随する。
-`fallback` はハンドラの無いノード型に使われる。
+`handlers` の書きかたは [`toHtml` の handlers](/parser/html/#handlers) と同じです。
+違いは、既定のハンドラに重ねるのではなく、一式を自分で用意する点です。
+ハンドラの無いノード型には `fallback` が使われます。
 
-出力は文字列でなくてもよい。React の要素を組み立てるなら `createCompiler<ReactNode>` にする。
+`handlers` の型はノード型のマップから導出されるので、ノード型が増えても型が追随します。
+
+出力は文字列でなくてもかまいません。
+React の要素を組み立てるなら `createCompiler<ReactNode>` にします。
+
+ここまでで、既存の記法を読んで別の形にする方法は一通りです。
+最後に、記法そのものを増やす方法を扱います。

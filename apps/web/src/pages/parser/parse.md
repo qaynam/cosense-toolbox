@@ -6,9 +6,12 @@ description: parse / parseLine / tokenizeInline / createParser の使い分け
 
 # パースする
 
-すべて `@cosense-toolbox/parser` から import する。
-どれも例外を投げず、どんな入力でも必ず値を返す。
-記法として成立しない部分は素のテキストになるだけで、エラーにはならない。
+ここからは、Cosense のテキストを AST に変換する関数を見ていきます。
+すべて `@cosense-toolbox/parser` から import します。
+
+どれも例外を投げず、どんな入力でも必ず値を返します。
+記法として成立しない部分は素のテキストになるだけで、エラーにはなりません。
+そのため `try` で囲む必要はありません。
 
 ## parse
 
@@ -16,7 +19,8 @@ description: parse / parseLine / tokenizeInline / createParser の使い分け
 parse(source: string, options?: ParseOptions): Page
 ```
 
-ページ全文を受け取り、ブロックの並びを返す。
+ページ全文を受け取り、ブロックの並びを返します。
+[概要](/parser/)で使ったのもこの関数です。
 
 ```ts
 import { parse } from '@cosense-toolbox/parser'
@@ -43,8 +47,10 @@ for (const block of page.children) {
 }
 ```
 
-1 行目は無条件でタイトルとして扱う。
-`code:` と `table:` は複数行にまたがるので、ページの文脈があって初めてブロックにまとまる。
+1 行目は無条件でタイトルとして扱います。
+`code:` と `table:` は複数行にまたがるので、ページの文脈があって初めてブロックにまとまります。
+
+ここで出てきた `title` や `line` といったブロックの中身は、[AST と位置情報](/parser/ast/)で詳しく扱います。
 
 ## parseLine
 
@@ -52,8 +58,8 @@ for (const block of page.children) {
 parseLine(raw: string, origin?: { line?: number; offset?: number }): LineBlock
 ```
 
-1 行だけを通常行としてパースする。
-エディタのように行単位で扱うときに使う。
+1 行だけを通常行としてパースします。
+エディタのように行単位で扱うときに使います。
 
 ```ts
 import { parseLine } from '@cosense-toolbox/parser'
@@ -62,16 +68,16 @@ parseLine('  > [リンク]')
 // LineBlock { indent: 2, quote: true, monospace: false, children: [...] }
 ```
 
-ページの文脈がないので、`code:` と `table:` は**ブロックにならない**。
+ページの文脈がないので、`code:` と `table:` は**ブロックになりません**。
 
 ```ts
 parseLine('code:foo.js')
 // LineBlock { children: [{ type: 'text', value: 'code:foo.js' }] }
 ```
 
-コードブロックやテーブルが要る処理には `parse` を使う。
+コードブロックやテーブルが必要な処理には `parse` を使ってください。
 
-`origin` にその行がページの何行目かを渡すと、位置情報がページ全体と揃う。
+`origin` にその行がページの何行目かを渡すと、位置情報がページ全体と揃います。
 
 ## tokenizeInline
 
@@ -79,8 +85,8 @@ parseLine('code:foo.js')
 tokenizeInline(source: string, options?: TokenizeOptions): readonly InlineNode[]
 ```
 
-行の中だけを解析して、インラインノードの並びを返す。
-インデントや引用の判定はしない。
+行の中だけを解析して、インラインノードの並びを返します。
+インデントや引用の判定はしません。
 
 ```ts
 import { tokenizeInline } from '@cosense-toolbox/parser'
@@ -89,7 +95,7 @@ tokenizeInline('[* 太字] と [リンク]')
 // [ Decoration, TextNode, InternalLink ]
 ```
 
-改行を含まない 1 行分の文字列を渡す。
+改行を含まない 1 行分の文字列を渡してください。
 
 ## createParser
 
@@ -97,8 +103,8 @@ tokenizeInline('[* 太字] と [リンク]')
 createParser(options?: ParserOptions): { parse; parseLine; tokenizeInline }
 ```
 
-拡張を固定したパーサーを作る。
-同じ拡張で何度もパースするときに、毎回 `extensions` を渡さずに済む。
+拡張を固定したパーサーを作ります。
+同じ拡張で何度もパースするときに、毎回 `extensions` を渡さずに済みます。
 
 ```ts
 import { createParser } from '@cosense-toolbox/parser'
@@ -108,7 +114,7 @@ parser.parse(source)
 parser.parseLine(line)
 ```
 
-拡張の書きかたは[記法を拡張する](/parser/extend/)にある。
+拡張そのものの書きかたは[記法を拡張する](/parser/extend/)で説明します。
 
 ## asImageSrc
 
@@ -116,8 +122,8 @@ parser.parseLine(line)
 asImageSrc(url: string): string | null
 ```
 
-画像 URL を `<img src>` に入れられる形にする。
-画像でなければ `null` を返す。
+画像 URL を `<img src>` に入れられる形にします。
+画像でなければ `null` を返します。
 
 ```ts
 import { asImageSrc } from '@cosense-toolbox/parser'
@@ -129,8 +135,11 @@ asImageSrc('https://example.test/page')
 // → null
 ```
 
-Gyazo のページ URL は画像そのものではないので、ここでだけ画像 URL に差し替わる。
-`parse` はこの変換をしない。AST はソースに書かれた文字列を保つ。
+Gyazo のページ URL は画像そのものではないので、ここでだけ画像 URL に差し替わります。
+`parse` はこの変換をしません。
+AST はソースに書かれた文字列を保ちます。
+
+この使い分けの理由は、次のページの[画像の src は書き換えない](/parser/ast/#画像の-src-は書き換えない)で説明します。
 
 ## normalizeLineEndings
 
@@ -138,5 +147,8 @@ Gyazo のページ URL は画像そのものではないので、ここでだけ
 normalizeLineEndings(source: string): string
 ```
 
-CRLF と CR を LF に揃える。
-`parse` は必ずこれを通してから解析するので、位置情報を自分で計算するときに使う。
+CRLF と CR を LF に揃えます。
+`parse` は必ずこれを通してから解析するので、位置情報を自分で計算するときに使ってください。
+
+これで、テキストから AST を作る方法は一通りです。
+次のページでは、できあがった AST の中身を見ていきます。

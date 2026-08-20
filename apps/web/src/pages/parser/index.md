@@ -8,13 +8,14 @@ description: Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に
 
 Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換するライブラリです。
 
-- 依存は `effect` だけ。DOM も Node の API も使わない
-- すべてのノードがソース上の位置を持つので、エディタのハイライトやキャレット連携に使える
-- AST は plain object。`JSON.stringify` で往復でき、worklet や postMessage を跨げる
-- 記法と出力の両方をプラグインで拡張できる
-- サブパスごとに export が分かれていて tree-shaking が効く (`parse` だけなら gzip 約 8 KB)
+- 依存は `effect` だけで、DOM も Node の API も使いません
+- すべてのノードがソース上の位置を持つので、エディタのハイライトやキャレット連携に使えます
+- AST は plain object です。`JSON.stringify` で往復でき、worklet や postMessage を跨げます
+- 記法と出力の両方をプラグインで拡張できます
+- サブパスごとに export が分かれていて tree-shaking が効きます (`parse` だけなら gzip 約 8 KB)
 
-> **beta**：公開 API はまだ変わりうる。安定するまではバージョンを固定して使うほうが安全。
+> **beta**：公開 API はまだ変わる可能性があります。
+> 安定するまではバージョンを固定して使うほうが安全です。
 
 ## インストール
 
@@ -26,11 +27,11 @@ npm i @cosense-toolbox/parser@beta
 bun add @cosense-toolbox/parser@beta
 ```
 
-既定の見た目が要るなら [`@cosense-toolbox/style`](https://github.com/qaynam/cosense-toolbox/tree/main/packages/style) を別途入れる。
+既定の見た目が必要であれば、[`@cosense-toolbox/style`](https://github.com/qaynam/cosense-toolbox/tree/main/packages/style) を別途入れてください。
 
 ## 使ってみる
 
-ページに書かれたリンクを集める。
+ページに書かれたリンクを集めてみます。
 
 ```ts
 import { parse } from '@cosense-toolbox/parser'
@@ -43,10 +44,10 @@ const page = parse(`今日のメモ
 collectLinks(page) // → ['プロジェクトA', 'あとで読む']
 ```
 
-正規表現で切り出すのと違い、`[* 太字]` や `` `[code]` `` はリンクとして数えない。
-記法の種類を判別したうえで取り出せる。
+正規表現で切り出す場合と違い、`[* 太字]` や `` `[code]` `` はリンクとして数えません。
+記法の種類を判別したうえで取り出せます。
 
-HTML にするならこう書く。
+同じ `page` から HTML を作ることもできます。
 
 ```ts
 import { toHtml } from '@cosense-toolbox/parser/compile'
@@ -54,6 +55,8 @@ import { toHtml } from '@cosense-toolbox/parser/compile'
 toHtml(page)
 // <div class="page"><h1 class="title">今日のメモ</h1>…
 ```
+
+このように、まず `parse` で AST を作り、その AST を目的に応じて処理する、という二段構えになっています。
 
 ## 全体の流れ
 
@@ -69,9 +72,12 @@ Cosense のテキスト
                      └─ createCompiler() 独自の形式にする
 ```
 
+パーサーは AST を作るところまでを担当します。
+AST から先をどうするかは、用途ごとに別のサブパスへ分かれています。
+
 ## どの API を使う？
 
-`import` 元がサブパスごとに分かれている点に注意する。
+`import` 元がサブパスごとに分かれている点にご注意ください。
 
 | やりたいこと | API | import 元 |
 | :--- | :--- | :--- |
@@ -88,6 +94,9 @@ Cosense のテキスト
 | 記法を追加する | [`Extension`](/parser/extend/) | `@cosense-toolbox/parser/plugin` |
 | 外から来た値が `Page` か検証する | [`decodePage`](/parser/extend/#スキーマで検証する) | `@cosense-toolbox/parser/schema` |
 
+この表の順番で、次のページから順に説明していきます。
+どの記法がどう変換されるかを先に見たい場合は、[記法ギャラリー](/parser/demo/)に一覧があります。
+
 ## 互換性の方針
 
 | 変更 | バージョン |
@@ -99,7 +108,7 @@ Cosense のテキスト
 | `position` の意味論の変更 | major |
 | ノード `type` 文字列のリネーム | major |
 
-ノード型は minor で増えうるので、`switch (node.type)` には `default` を置いておく。
+ノード型は minor で増える可能性があるので、`switch (node.type)` には `default` を置いてください。
 
 ```ts
 switch (node.type) {
@@ -115,8 +124,9 @@ switch (node.type) {
 
 ## ライセンス
 
-MIT。
+MIT です。
 
-**注意**
-このパッケージは Cosense (Scrapbox) の記法を解釈する非公式の実装である。
-開発元である Helpfeel 社とは関係がなく、公認も受けていない。
+> **注意**
+>
+> このパッケージは Cosense (Scrapbox) の記法を解釈する非公式の実装です。
+> 開発元である Helpfeel 社とは関係がなく、公認も受けていません。
