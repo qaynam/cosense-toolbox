@@ -27,7 +27,18 @@ const { prev, next } = adjacentDocs(Astro.url.pathname);
 
 <Base title={pageTitle} description={pageDescription} image="/og-parser.png" wide>
 	<div class="doc-shell">
-		<DocSidebar />
+		<button class="doc-menu-btn" type="button" aria-expanded="false" aria-controls="doc-aside">
+			<span class="doc-menu-icon" aria-hidden="true"></span>
+			メニュー
+		</button>
+		<div class="doc-scrim" hidden></div>
+
+		{/* 広い画面では display:contents で、中身がそのまま左右の列になる */}
+		<div class="doc-aside" id="doc-aside">
+			<DocSidebar />
+			<DocToc headings={headings} />
+		</div>
+
 		<article class="doc">
 			<slot />
 			{
@@ -51,9 +62,34 @@ const { prev, next } = adjacentDocs(Astro.url.pathname);
 				)
 			}
 		</article>
-		<DocToc headings={headings} />
 	</div>
 </Base>
+
+<script>
+	// 狭い画面ではサイドバーと目次をドロワーにまとめ、ハンバーガーで開く。
+	const menuBtn = document.querySelector<HTMLButtonElement>('.doc-menu-btn');
+	const aside = document.querySelector<HTMLElement>('.doc-aside');
+	const scrim = document.querySelector<HTMLElement>('.doc-scrim');
+
+	const setMenu = (open: boolean) => {
+		aside?.classList.toggle('is-open', open);
+		menuBtn?.setAttribute('aria-expanded', String(open));
+		if (scrim !== null && scrim !== undefined) scrim.hidden = !open;
+		document.body.classList.toggle('doc-menu-open', open);
+	};
+
+	menuBtn?.addEventListener('click', () => {
+		setMenu(menuBtn.getAttribute('aria-expanded') !== 'true');
+	});
+	scrim?.addEventListener('click', () => setMenu(false));
+	// 同じページ内のアンカーへ飛ぶときは遷移が起きないので、明示的に閉じる
+	aside?.addEventListener('click', (event) => {
+		if ((event.target as HTMLElement).closest('a') !== null) setMenu(false);
+	});
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape') setMenu(false);
+	});
+</script>
 
 <script>
 	// 見出しにパーマリンクを付ける。id は Astro が Markdown から振ったものを使う。
