@@ -11,15 +11,15 @@ const media = await resolveGyazo(url);
 
 {
 	media?.html ? (
-		// oEmbed が返した埋め込み(iframe等)をそのまま出す。
-		// 返ってきた width/height からアスペクト比を作り、iframeをぴったり収める（黒余白防止）
+		// set:html に入るのは Gyazo の oEmbed API がビルド時に返した HTML で、
+		// 利用者の入力は通らない。
+		// aspect-ratio は、返ってきた寸法で iframe を収めて黒余白を出さないため。
 		<div
 			class="gyazo-embed gyazo-rich"
 			style={media.width && media.height ? `aspect-ratio:${media.width} / ${media.height}` : undefined}
 			set:html={media.html}
 		/>
 	) : media ? (
-		// type=photo 等、埋め込みHTMLが無い場合は画像を出す
 		<a class="gyazo-embed" href={url} target="_blank" rel="noopener" aria-label="Gyazoでデモを開く">
 			<img
 				src={media.url}

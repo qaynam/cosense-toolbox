@@ -381,7 +381,7 @@ body.is-app { overflow: hidden; }
 @keyframes scrimIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes cardUp { from { transform: translateY(46px); opacity: 0; } to { transform: none; opacity: 1; } }
 html.modal-open, html.modal-open body { overflow: hidden; }
-/* カバー画像：コンテナ(880)より少し広い幅で中央寄せ。全体が見えるよう contain（=画像の自然比でそのまま表示） */
+/* カバー画像：コンテナ(880)より少し広い幅で中央寄せ。切れると困るので cover ではなく contain */
 .modal-media { width: min(960px, calc(100% - 32px)); margin: 0 auto; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 .modal-media img { width: 100%; height: auto; display: block; }
 .modal-body { padding: 22px 26px 30px; }

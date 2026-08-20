@@ -72,7 +72,7 @@ import { THEME_GROUPS } from '../lib/theme-tokens';
 	}
 	function applyToFrame() {
 		const css = genCss();
-		// same-origin なので iframe の <style id="user"> に直接書き込む（最も確実）
+		// same-origin なので iframe の <style id="user"> に直接書き込める
 		try {
 			const doc = frame?.contentDocument;
 			if (doc) {
@@ -85,7 +85,6 @@ import { THEME_GROUPS } from '../lib/theme-tokens';
 				s.textContent = css;
 			}
 		} catch {}
-		// 念のため postMessage でも送る
 		frame?.contentWindow?.postMessage({ type: 'userCss', css }, '*');
 	}
 	function update() {
@@ -95,7 +94,7 @@ import { THEME_GROUPS } from '../lib/theme-tokens';
 		applyToFrame();
 	}
 
-	// 色を動かしている最中も即時反映（input）
+	// ドラッグ中も追従させたいので change ではなく input で拾う
 	inputs.forEach((i) =>
 		i.addEventListener('input', () => {
 			const key = i.dataset.var!;
@@ -108,7 +107,6 @@ import { THEME_GROUPS } from '../lib/theme-tokens';
 	// iframe の (再)読み込み後に現在の上書きを再適用
 	frame?.addEventListener('load', applyToFrame);
 
-	// プレビュー切替（記事 / 一覧）
 	document.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((b) =>
 		b.addEventListener('click', () => {
 			document.querySelectorAll('[data-view]').forEach((x) => x.classList.toggle('is-active', x === b));
@@ -116,7 +114,6 @@ import { THEME_GROUPS } from '../lib/theme-tokens';
 		}),
 	);
 
-	// リセット
 	document.querySelector('[data-builder-reset]')?.addEventListener('click', () => {
 		Object.keys(state).forEach((k) => delete state[k]);
 		inputs.forEach((i) => (i.value = i.getAttribute('value') || '#000000'));

@@ -3,14 +3,13 @@ export type Group = 'theme' | 'tools' | 'mods' | 'fun' | 'core';
 export type Status = 'active' | 'disabled' | 'experimental';
 export type DemoTier = 'A' | 'B' | 'C';
 
-// モノトーン方針：色での区別はせず、ラベル(group)だけで分類する
-export const CATEGORY_META: Record<Category, { label: string; group: Group; accent: string }> = {
-	'theme': { label: 'テーマ変更', group: 'theme', accent: '#8c8c8c' },
-	'tools-editor': { label: 'ツール・エディタ', group: 'tools', accent: '#8c8c8c' },
-	'tools-page': { label: 'ツール・ページ', group: 'tools', accent: '#8c8c8c' },
-	'mods': { label: '改造', group: 'mods', accent: '#8c8c8c' },
-	'fun': { label: '飛び道具', group: 'fun', accent: '#8c8c8c' },
-	'core': { label: '基盤', group: 'core', accent: '#8c8c8c' },
+export const CATEGORY_META: Record<Category, { label: string; group: Group }> = {
+	'theme': { label: 'テーマ変更', group: 'theme' },
+	'tools-editor': { label: 'ツール・エディタ', group: 'tools' },
+	'tools-page': { label: 'ツール・ページ', group: 'tools' },
+	'mods': { label: '改造', group: 'mods' },
+	'fun': { label: '飛び道具', group: 'fun' },
+	'core': { label: '基盤', group: 'core' },
 };
 
 export const GROUPS: { id: Group | 'all'; label: string }[] = [

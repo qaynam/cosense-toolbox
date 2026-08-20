@@ -107,7 +107,6 @@ const iconUrlByUser = new Map(
 const shiki = await createHighlighter({ themes: ["github-dark-default"], langs: ["js"] });
 
 const body = toHtml(page, {
-	// 記法に書かれたタイトルがそのまま渡るので、ノード型で分岐しなくてよい。
 	pageUrl,
 	iconImageUrl: (node) => iconUrlByUser.get(node.user) ?? null,
 	highlight: (code, language) =>

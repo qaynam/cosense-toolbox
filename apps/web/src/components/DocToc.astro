@@ -23,7 +23,6 @@ const nest = (headings: MarkdownHeading[], depth: number): Section[] => {
 		const last = sections[sections.length - 1];
 		if (last !== undefined) last.children.push({ heading, children: [] });
 	}
-	// 子の中をもう一段掘る。深さ 4 で止める。
 	return depth >= 4
 		? sections
 		: sections.map((section) => ({

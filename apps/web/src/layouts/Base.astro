@@ -301,7 +301,8 @@ const registry = all.map((e) => ({
 			document.addEventListener('click', async (e) => {
 				const t = e.target as HTMLElement;
 
-				// カード → モーダルを開く（背景のギャラリーはそのまま残す）
+				// 遷移させずモーダルにするのは、背景のギャラリーを残すため。
+				// 修飾キー付きと中クリックだけは、別タブで開く既定の動きに任せる。
 				const cardLink = t.closest<HTMLAnchorElement>('.card-link');
 				if (cardLink && !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) && (e as MouseEvent).button === 0) {
 					e.preventDefault();
@@ -309,7 +310,6 @@ const registry = all.map((e) => ({
 					return;
 				}
 
-				// モーダルを閉じる（×ボタン / 背景クリック）
 				if (t.closest('[data-modal-close]')) {
 					e.preventDefault();
 					requestClose();
@@ -322,7 +322,6 @@ const registry = all.map((e) => ({
 					return;
 				}
 
-				// ライブデモ(userCSS)のトグル
 				const demoToggle = t.closest<HTMLElement>('[data-css-demo-toggle]');
 				if (demoToggle) {
 					const demo = demoToggle.closest<HTMLElement>('.css-demo');
@@ -337,13 +336,11 @@ const registry = all.map((e) => ({
 					return;
 				}
 
-				// コピー
 				const copyBtn = t.closest<HTMLElement>('[data-copy]');
 				if (copyBtn) {
 					clip(copyBtn.getAttribute('data-copy') || '', copyBtn);
 					return;
 				}
-				// ツールボックスに積む/外す
 				const addBtn = t.closest<HTMLElement>('[data-toolbox-add]');
 				if (addBtn) {
 					const slug = addBtn.getAttribute('data-toolbox-add') || '';
@@ -353,7 +350,6 @@ const registry = all.map((e) => ({
 					render();
 					return;
 				}
-				// テーマ
 				const themeBtn = t.closest<HTMLElement>('[data-theme-toggle]');
 				if (themeBtn) {
 					const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
@@ -371,7 +367,6 @@ const registry = all.map((e) => ({
 					syncTheme();
 					return;
 				}
-				// ツールボックス・ドロワー
 				if (t.closest('[data-tb-open]')) return setDrawer(true);
 				if (t.closest('[data-tb-close]')) return setDrawer(false);
 				const rm = t.closest<HTMLElement>('[data-tb-remove]');

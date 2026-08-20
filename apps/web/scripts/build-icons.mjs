@@ -7,7 +7,6 @@ import sharp from 'sharp';
 
 const SOURCE = 'public/beaver.png';
 
-/** 透過部分を落として絵の実寸に切り詰めたバッファ。 */
 const trimmed = await sharp(SOURCE).trim().toBuffer();
 
 const icons = [

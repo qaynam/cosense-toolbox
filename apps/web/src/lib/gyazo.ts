@@ -25,7 +25,7 @@ export async function resolveGyazo(pageUrl: string): Promise<GyazoMedia | null> 
 	if (!id) return null;
 	if (cache.has(id)) return cache.get(id)!;
 
-	// フォールバック（oEmbed が取れない場合）
+	// oEmbed が取れなくても表示できるよう、先に直リンクを組み立てておく
 	let media: GyazoMedia = { id, url: `https://i.gyazo.com/${id}.png`, width: 0, height: 0 };
 	try {
 		const endpoint = `https://api.gyazo.com/api/oembed?url=${encodeURIComponent(`https://gyazo.com/${id}`)}`;
@@ -38,7 +38,6 @@ export async function resolveGyazo(pageUrl: string): Promise<GyazoMedia | null> 
 				html?: string;
 				type?: string;
 			};
-			// oEmbed が html(iframe等) を返せばそれを優先。なければ画像URL。
 			media = {
 				id,
 				url: j.url ?? media.url,

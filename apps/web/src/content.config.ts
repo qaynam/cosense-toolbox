@@ -4,13 +4,10 @@ import { glob } from 'astro/loaders';
 const scripts = defineCollection({
 	loader: glob({ pattern: '**/*.md', base: './src/content/scripts' }),
 	schema: z.object({
-		/** 表示名（日本語可） */
 		title: z.string(),
-		/** カテゴリ */
 		category: z.enum(['theme', 'tools-editor', 'tools-page', 'mods', 'fun', 'core']),
-		/** 絞り込み・検索用のタグ */
+		/** 詳細ページにチップとして出し、検索の対象にもなる */
 		tags: z.array(z.string()).default([]),
-		/** 動作状況 */
 		status: z.enum(['active', 'disabled', 'experimental']).default('active'),
 		/** カードに出る1行説明 */
 		summary: z.string(),
@@ -23,9 +20,9 @@ const scripts = defineCollection({
 		demoTier: z.enum(['A', 'B', 'C']).optional(),
 		/** 元のCosenseページURL */
 		source: z.string(),
-		/** カードのサムネ画像パス（任意） */
+		/** カードのサムネイル。未指定なら共通のダミー画像 */
 		media: z.string().optional(),
-		/** デモのGyazo画像ページURL ( https://gyazo.com/XXXX )（任意。未指定はダミー） */
+		/** Gyazo の画像ページ URL ( https://gyazo.com/XXXX )。未指定なら共通のダミー */
 		demo: z.string().optional(),
 		/** トップで優先表示 */
 		featured: z.boolean().default(false),
