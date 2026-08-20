@@ -521,6 +521,8 @@ html.modal-open, html.modal-open body { overflow: hidden; }
 	.doc-menu-btn[aria-expanded='true'] .doc-menu-icon::after { transform: translateY(-5px) rotate(-45deg); }
 
 	.doc-scrim { display: block; position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, 0.45); }
+	/* hidden 属性の display:none は author の display に負けるので、明示的に戻す */
+	.doc-scrim[hidden] { display: none; }
 
 	.doc-aside {
 		display: block;
