@@ -54,3 +54,40 @@ const { prev, next } = adjacentDocs(Astro.url.pathname);
 		<DocToc headings={headings} />
 	</div>
 </Base>
+
+<script>
+	// 見出しにパーマリンクを付ける。id は Astro が Markdown から振ったものを使う。
+	// クリックでリンクを開かず、絶対 URL をクリップボードへ入れる。
+	const doc = document.querySelector('.doc');
+
+	for (const heading of doc?.querySelectorAll<HTMLElement>('h2[id], h3[id], h4[id]') ?? []) {
+		const anchor = document.createElement('a');
+		anchor.className = 'heading-anchor';
+		anchor.href = `#${heading.id}`;
+		anchor.textContent = '#';
+		anchor.setAttribute('aria-label', `「${heading.textContent}」へのリンクをコピー`);
+		heading.append(anchor);
+	}
+
+	let restore: ReturnType<typeof setTimeout> | undefined;
+
+	doc?.addEventListener('click', (event) => {
+		const anchor = (event.target as HTMLElement).closest<HTMLAnchorElement>('.heading-anchor');
+		if (anchor === null || anchor === undefined) return;
+		event.preventDefault();
+
+		const hash = anchor.getAttribute('href') ?? '';
+		// 開いている場所は変わらないので、スクロールを起こさない replaceState にする
+		history.replaceState(null, '', hash);
+
+		navigator.clipboard
+			.writeText(new URL(hash, location.href).href)
+			.then(() => {
+				anchor.classList.add('is-copied');
+				clearTimeout(restore);
+				restore = setTimeout(() => anchor.classList.remove('is-copied'), 1400);
+			})
+			// クリップボードを使えない文脈 (http など) では、URL の更新だけで終える
+			.catch(() => {});
+	});
+</script>

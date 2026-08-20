@@ -491,9 +491,49 @@ html.modal-open, html.modal-open body { overflow: hidden; }
 .doc-pager span { display: block; margin-bottom: 4px; font-size: 12px; color: var(--text-faint); }
 @media (max-width: 600px) { .doc-pager { grid-template-columns: 1fr; } .doc-pager a.is-next { grid-column: 1; } }
 
-.doc { min-width: 0; max-width: 52rem; line-height: 1.85; }
+.doc { min-width: 0; max-width: 52rem; line-height: 1.85; margin-top: 24px; }
 .doc > :first-child { margin-top: 0; }
 .doc h1 { margin: 0 0 24px; font-size: clamp(26px, 4vw, 34px); line-height: 1.25; letter-spacing: -0.02em; }
+/* 見出しのパーマリンク。読んでいる間は邪魔をしないよう、行に重ねて置く */
+.doc :is(h2, h3, h4) { position: relative; }
+.doc .heading-anchor {
+	position: absolute;
+	top: 0;
+	left: -1.1em;
+	width: 1.1em;
+	opacity: 0;
+	font-family: var(--font-mono);
+	font-weight: 400;
+	color: var(--text-faint);
+	text-decoration: none;
+	cursor: pointer;
+}
+.doc :is(h2, h3, h4):hover .heading-anchor,
+.doc .heading-anchor:focus-visible { opacity: 1; }
+.doc .heading-anchor:hover { color: var(--text); }
+/* コピーした直後だけ、押した手応えとして表示を残す */
+.doc .heading-anchor.is-copied { opacity: 1; color: var(--text); }
+.doc .heading-anchor.is-copied::after {
+	content: 'コピーしました';
+	position: absolute;
+	left: 50%;
+	top: -1.9em;
+	transform: translateX(-50%);
+	padding: 3px 8px;
+	border-radius: 6px;
+	background: var(--text);
+	color: var(--bg);
+	font-family: var(--font-sans);
+	font-size: 11px;
+	font-weight: 500;
+	white-space: nowrap;
+}
+/* 左に逃がす余白が無い幅では、見出しの後ろに置く */
+@media (max-width: 900px) {
+	.doc .heading-anchor { position: static; opacity: 1; width: auto; margin-left: 0.4em; }
+	.doc .heading-anchor.is-copied::after { top: -1.6em; }
+}
+
 .doc h2 { margin: 56px 0 16px; padding-bottom: 8px; font-size: 22px; border-bottom: 1px solid var(--border); scroll-margin-top: 78px; }
 .doc h3 { margin: 40px 0 12px; font-size: 17px; font-family: var(--font-mono); scroll-margin-top: 78px; }
 .doc h4, .doc h5 { margin: 28px 0 10px; font-size: 15px; }

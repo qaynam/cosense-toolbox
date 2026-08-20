@@ -6,7 +6,7 @@ description: Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に
 
 # @cosense-toolbox/parser
 
-Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する。
+Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換するライブラリです。
 
 - 依存は `effect` だけ。DOM も Node の API も使わない
 - すべてのノードがソース上の位置を持つので、エディタのハイライトやキャレット連携に使える
@@ -117,5 +117,6 @@ switch (node.type) {
 
 MIT。
 
+**注意**
 このパッケージは Cosense (Scrapbox) の記法を解釈する非公式の実装である。
 開発元である Helpfeel 社とは関係がなく、公認も受けていない。
