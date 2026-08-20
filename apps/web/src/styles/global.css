@@ -11,6 +11,7 @@
 	--text-faint: #7c7c7c;
 	--accent: #cfcfcf;
 	--code-bg: #1b1b1b;
+	--font-sans: Roboto, 'Noto Sans JP', sans-serif;
 	--font-mono: 'Geist Mono', ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
 	--radius: 12px;
 	--maxw: 1180px;
@@ -39,8 +40,7 @@ body {
 	margin: 0;
 	background: var(--bg);
 	color: var(--text);
-	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue',
-		'Hiragino Sans', 'Noto Sans JP', Meiryo, sans-serif;
+	font-family: var(--font-sans);
 	line-height: 1.65;
 	-webkit-font-smoothing: antialiased;
 	transition: background-color 0.25s ease, color 0.25s ease;
@@ -48,6 +48,7 @@ body {
 
 a { color: inherit; text-decoration: none; }
 .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+.wrap-wide { max-width: 1420px; }
 
 /* ---------- header ---------- */
 .site-header {
@@ -428,10 +429,9 @@ html.modal-open, html.modal-open body { overflow: hidden; }
  * 1200px を切ると右の目次が本文の上へ落ちて畳まれる。 */
 .doc-shell {
 	display: grid;
-	grid-template-columns: 13rem minmax(0, 46rem) 14rem;
+	grid-template-columns: 15rem minmax(0, 1fr) 15rem;
 	grid-template-areas: 'nav main toc';
-	justify-content: center;
-	gap: 0 40px;
+	gap: 0 56px;
 	align-items: start;
 }
 .doc-nav { grid-area: nav; }
@@ -439,22 +439,23 @@ html.modal-open, html.modal-open body { overflow: hidden; }
 .doc-toc { grid-area: toc; }
 
 @media (max-width: 1199px) {
-	.doc-shell { grid-template-columns: 13rem minmax(0, 1fr); grid-template-areas: 'nav main'; }
+	.doc-shell { grid-template-columns: 14rem minmax(0, 1fr); grid-template-areas: 'nav main'; gap: 0 40px; }
 }
 @media (max-width: 860px) {
 	.doc-shell { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'nav' 'main'; }
 }
 
 /* サイト内の目次。JS を使わず、幅で見せかたを切り替える */
-.doc-nav { position: sticky; top: 78px; max-height: calc(100vh - 100px); overflow-y: auto; font-size: 14px; }
-.doc-nav-name { display: block; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); word-break: break-all; }
-.doc-nav section { margin-bottom: 22px; }
-.doc-nav h2 { margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
-.doc-nav ul { margin: 0; padding: 0; list-style: none; }
-.doc-nav a { display: block; padding: 5px 10px; margin-left: -10px; border-radius: 5px; color: var(--text-dim); text-decoration: none; }
+.doc-nav { position: sticky; top: 78px; max-height: calc(100vh - 100px); overflow-y: auto; font-size: 13.5px; }
+.doc-nav-name { display: block; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid var(--border); font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); word-break: break-all; }
+.doc-nav section { margin-bottom: 20px; }
+.doc-nav h2 { margin: 0 0 6px; font-size: 13.5px; font-weight: 700; color: var(--text); }
+/* 見出しの下にぶら下がる形にして、階層を線で示す */
+.doc-nav ul { margin: 0; padding: 0 0 0 12px; list-style: none; border-left: 1px solid var(--border); }
+.doc-nav a { display: block; padding: 5px 10px; border-radius: 6px; color: var(--text-dim); text-decoration: none; }
 .doc-nav a:hover { color: var(--text); background: var(--bg-soft); }
-.doc-nav a[aria-current='page'] { color: var(--text); background: var(--bg-soft); font-weight: 600; }
-.doc-nav-repo { display: inline-block; font-size: 13px; color: var(--text-faint); }
+.doc-nav a[aria-current='page'] { color: var(--text); background: var(--bg-soft); font-weight: 500; }
+.doc-nav-repo { display: inline-block; margin-top: 4px; font-size: 13px; color: var(--text-faint); }
 
 @media (max-width: 1199px) {
 	.doc-nav { position: static; max-height: none; margin-bottom: 28px; }
@@ -465,13 +466,13 @@ html.modal-open, html.modal-open body { overflow: hidden; }
 	.doc-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; }
 	.doc-nav-name, .doc-nav h2, .doc-nav-repo { display: none; }
 	.doc-nav section { display: contents; }
-	.doc-nav ul { display: flex; gap: 8px; }
-	.doc-nav a { margin: 0; padding: 6px 13px; border: 1px solid var(--border); border-radius: 999px; white-space: nowrap; }
+	.doc-nav ul { display: flex; gap: 8px; padding: 0; border: 0; }
+	.doc-nav a { padding: 6px 13px; border: 1px solid var(--border); border-radius: 999px; white-space: nowrap; }
 }
 
 /* ページ内の目次。置ける幅があるときだけ出す */
 .doc-toc { position: sticky; top: 78px; max-height: calc(100vh - 100px); overflow-y: auto; font-size: 13px; }
-.doc-toc-head { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+.doc-toc-head { margin: 0 0 10px; font-size: 13.5px; font-weight: 700; color: var(--text); }
 .doc-toc ul { margin: 0; padding: 0; list-style: none; border-left: 1px solid var(--border); }
 .doc-toc ul ul { border: 0; }
 .doc-toc a { display: block; padding: 5px 0 5px 14px; color: var(--text-dim); text-decoration: none; }
@@ -483,13 +484,14 @@ html.modal-open, html.modal-open body { overflow: hidden; }
 @media (max-width: 1199px) { .doc-toc { display: none; } }
 
 /* 前後のページ */
-.doc-pager { display: flex; justify-content: space-between; gap: 16px; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); }
-.doc-pager a { display: block; max-width: 48%; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); text-decoration: none; }
-.doc-pager a:hover { border-color: var(--text-faint); }
-.doc-pager a.is-next { margin-left: auto; text-align: right; }
-.doc-pager span { display: block; margin-bottom: 2px; font-size: 12px; color: var(--text-faint); }
+.doc-pager { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); }
+.doc-pager a { padding: 14px 18px; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); text-decoration: none; }
+.doc-pager a:hover { border-color: var(--text-faint); background: var(--bg-soft); }
+.doc-pager a.is-next { grid-column: 2; text-align: right; }
+.doc-pager span { display: block; margin-bottom: 4px; font-size: 12px; color: var(--text-faint); }
+@media (max-width: 600px) { .doc-pager { grid-template-columns: 1fr; } .doc-pager a.is-next { grid-column: 1; } }
 
-.doc { min-width: 0; line-height: 1.85; }
+.doc { min-width: 0; max-width: 52rem; line-height: 1.85; }
 .doc > :first-child { margin-top: 0; }
 .doc h1 { margin: 0 0 24px; font-size: clamp(26px, 4vw, 34px); line-height: 1.25; letter-spacing: -0.02em; }
 .doc h2 { margin: 56px 0 16px; padding-bottom: 8px; font-size: 22px; border-bottom: 1px solid var(--border); scroll-margin-top: 78px; }

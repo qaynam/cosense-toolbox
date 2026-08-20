@@ -8,12 +8,15 @@ interface Props {
 	description?: string;
 	image?: string;
 	app?: boolean;
+	/** ドキュメントのように 3 カラムを並べる画面で、本文の枠を広げる */
+	wide?: boolean;
 }
 const {
 	title = 'Cosense Toolbox',
 	description = 'Cosense (旧Scrapbox) をもっと面白く、もっと強力に使うためのツール群',
 	image,
 	app = false,
+	wide = false,
 } = Astro.props;
 const fullTitle = title === 'Cosense Toolbox' ? title : `${title} — Cosense Toolbox`;
 
@@ -61,7 +64,7 @@ const registry = all.map((e) => ({
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
-			href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap"
+			href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap"
 			rel="stylesheet"
 		/>
 		<title>{fullTitle}</title>
@@ -99,7 +102,7 @@ const registry = all.map((e) => ({
 			</div>
 		</header>
 
-		<main class={app ? 'main-app' : 'wrap'}>
+		<main class={app ? 'main-app' : wide ? 'wrap wrap-wide' : 'wrap'}>
 			<slot />
 		</main>
 
