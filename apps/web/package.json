@@ -19,11 +19,9 @@
     "@cosense-toolbox/style": "workspace:*",
     "astro": "7.2.3",
     "sharp": "^0.34.5",
-    "shiki": "^3.0.0",
     "typescript": "^6.0.3"
   },
   "devDependencies": {
-    "shiki": "^4.4.3",
     "wrangler": "^4.20.0"
   },
   "private": true

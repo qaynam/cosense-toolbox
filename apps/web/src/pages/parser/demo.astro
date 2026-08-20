@@ -1,13 +1,9 @@
 ---
+import { Code } from "astro:components";
 import { parse } from "@cosense-toolbox/parser";
 import { toHtml, toPlainText } from "@cosense-toolbox/parser/compile";
-import { collect } from "@cosense-toolbox/parser/utils";
 import defaultStyle from "@cosense-toolbox/style/style.css?raw";
-import { createHighlighter } from "shiki";
 import Doc from "../../layouts/Doc.astro";
-import { resolveIconSrc } from "../../lib/cosense-icon";
-
-const PROJECT = "help-jp";
 
 // 本家の「その他の書き方」ページの内容。記法をひととおり含んでいる。
 const source = [
@@ -88,53 +84,42 @@ const source = [
 ].join("\n");
 
 const page = parse(source);
+const html = toHtml(page);
+const text = toPlainText(page);
 
-const pageUrl = (title: string) =>
-	title.startsWith("/")
-		? `https://scrapbox.io${title.split("/").map(encodeURIComponent).join("/")}`
-		: `https://scrapbox.io/${PROJECT}/${encodeURIComponent(title)}`;
+// このページに載せているコード。実際に上で動かしているものと同じにする。
+const example = `import { parse } from '@cosense-toolbox/parser'
+import { toHtml, toPlainText } from '@cosense-toolbox/parser/compile'
 
-// iconImageUrl は同期なので、AST からアイコンを集めて先に URL を解決しておく。
-// (本家の icon API は CORP で別オリジンから読めないため、ビルド時に Gyazo の直リンクへ変える)
-const iconUrlByUser = new Map(
-	await Promise.all(
-		collect(page, "icon").map(
-			async (icon) => [icon.user, await resolveIconSrc(PROJECT, icon.user)] as const,
-		),
-	),
-);
+const page = parse(source)
 
-const shiki = await createHighlighter({ themes: ["github-dark-default"], langs: ["js"] });
-
-const body = toHtml(page, {
-	pageUrl,
-	iconImageUrl: (node) => iconUrlByUser.get(node.user) ?? null,
-	highlight: (code, language) =>
-		shiki.codeToHtml(code, {
-			lang: shiki.getLoadedLanguages().includes(language) ? language : "text",
-			theme: "github-dark-default",
-			structure: "inline",
-		}),
-});
+const html = toHtml(page)
+const text = toPlainText(page)`;
 
 // iframe に入れて周りの CSS から切り離す。
 // style は <head> に一度だけ置けばよいので toHtml の style オプションは使わない。
-const document = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><style>${defaultStyle}</style></head><body>${body}</body></html>`;
+const document = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><style>${defaultStyle}</style></head><body>${html}</body></html>`;
 
 const tabs = [
 	{ id: "rendered", label: "表示" },
-	{ id: "source", label: "記法" },
-	{ id: "plain", label: "記法を外す" },
+	{ id: "source", label: "元の記法" },
+	{ id: "html", label: "toHtml の出力" },
+	{ id: "plain", label: "toPlainText の出力" },
 ];
 ---
 
-<Doc title="対応記法" description="Cosense の記法をひととおり parse して toHtml で描画したもの">
-	<h1>対応記法</h1>
+<Doc title="例" description="Cosense の記法をひととおり parse して toHtml で描画した結果">
+	<h1>例</h1>
 	<p class="lead">
-		本家の <a href="https://scrapbox.io/help-jp/その他の書き方" target="_blank">その他の書き方</a> ページをそのまま <code>parse</code> して、<code>toHtml</code> で描画したものです。どの記法がどう変換されるかは、ここでまとめて確認できます。
+		本家の <a href="https://scrapbox.io/help-jp/その他の書き方" target="_blank">その他の書き方</a> ページを、下のコードだけで変換した結果です。オプションを何も渡していないので、これが既定の出力になります。
 	</p>
+
+	<Code code={example} lang="ts" theme="github-dark" />
+
 	<p class="lead">
-		ビルド時に生成しているので、この画面に実行時のパーサーは載っていません。コードブロックの色付けは <a href="/parser/html/#highlight">highlight</a> に Shiki を挿しています。次のページから、ここで使っている API を順に説明します。
+		リンク先が <code>/タイトル</code> になっているのは既定の動作で、実際のプロジェクトに向けるには <a href="/parser/html/#pageurl">pageUrl</a> を渡します。
+		アイコンが画像でなく名前で出ているのも同じで、<a href="/parser/html/#iconimageurl">iconImageUrl</a> を渡すと画像になります。
+		コードブロックに色を付けるには <a href="/parser/html/#highlight">highlight</a> にハイライタを挿します。
 	</p>
 
 	<div class="demo">
@@ -157,7 +142,8 @@ const tabs = [
 			<iframe title="toHtml の出力" srcdoc={document}></iframe>
 		</div>
 		<pre data-demo-panel="source" class="demo-panel" hidden>{source}</pre>
-		<pre data-demo-panel="plain" class="demo-panel" hidden>{toPlainText(page)}</pre>
+		<pre data-demo-panel="html" class="demo-panel" hidden>{html}</pre>
+		<pre data-demo-panel="plain" class="demo-panel" hidden>{text}</pre>
 	</div>
 </Doc>
 

@@ -17,7 +17,7 @@ export const PARSER_DOCS: DocGroup[] = [
 		label: 'はじめに',
 		links: [
 			{ href: '/parser/', label: '概要' },
-			{ href: '/parser/demo/', label: '対応記法' },
+			{ href: '/parser/demo/', label: '例' },
 		],
 	},
 	{
@@ -25,7 +25,7 @@ export const PARSER_DOCS: DocGroup[] = [
 		links: [
 			{ href: '/parser/parse/', label: 'パース' },
 			{ href: '/parser/ast/', label: 'AST と位置情報' },
-			{ href: '/parser/utils/', label: 'AST の走査' },
+			{ href: '/parser/utils/', label: 'ヘルパー' },
 			{ href: '/parser/html/', label: 'HTML への変換' },
 			{ href: '/parser/compile/', label: '独自形式への変換' },
 			{ href: '/parser/extend/', label: '記法の拡張' },

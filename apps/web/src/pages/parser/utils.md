@@ -1,13 +1,16 @@
 ---
 layout: ../../layouts/Doc.astro
-title: AST の走査
-description: visit / find / collect / collectLinks / firstImage / rawTextOf
+title: ヘルパー
+description: AST から欲しいものを取り出す小さな関数群
 ---
 
-# AST の走査
+# ヘルパー
 
 AST の形が分かったので、そこから欲しいものを取り出します。
-このページの関数はすべて `@cosense-toolbox/parser/utils` から import します。
+
+リンクを集める、ある型のノードを数える、生テキストを切り出す。
+どれも `Page` を自分で辿れば書けますが、よく書くものはヘルパーとして用意してあります。
+すべて `@cosense-toolbox/parser/utils` から import します。
 
 この層はパーサー本体を import しないので、AST を作る側と使う側を別々にバンドルできます。
 サーバーでパースして AST を保存し、クライアントでは走査だけを行う、といった分けかたができます。

@@ -42,7 +42,7 @@ toHtml(page)       // → '<div class="page"><h1 class="title">今日のメモ</
 | モジュール | 役割 | API |
 | :--- | :--- | :--- |
 | `@cosense-toolbox/parser` | テキストを AST にする | `parse` `parseLine` `tokenizeInline` `createParser` `asImageSrc` `normalizeLineEndings` |
-| `@cosense-toolbox/parser/utils` | AST から取り出す | `visit` `find` `collect` `collectLinks` `firstImage` `rawTextOf` |
+| `@cosense-toolbox/parser/utils` | ヘルパー。AST から取り出す | `visit` `find` `collect` `collectLinks` `firstImage` `rawTextOf` |
 | `@cosense-toolbox/parser/compile` | AST を別の形式にする | `toHtml` `toPlainText` `createCompiler` |
 | `@cosense-toolbox/parser/plugin` | 記法を足す (型のみ) | `Extension` `InlineConstruct` `BracketRule` `NodeHandlers` |
 | `@cosense-toolbox/parser/schema` | 外から来た値を検証する | `decodePage` |
@@ -52,10 +52,10 @@ toHtml(page)       // → '<div class="page"><h1 class="title">今日のメモ</
 | ページ | 内容 |
 | :--- | :--- |
 | [概要](https://cosense-toolbox.qaynam.dev/parser/) | インストールと、どの API を使うかの早見表 |
-| [対応記法](https://cosense-toolbox.qaynam.dev/parser/demo/) | 記法をひととおり変換した結果 |
+| [例](https://cosense-toolbox.qaynam.dev/parser/demo/) | 記法をひととおり変換した結果とコード |
 | [パース](https://cosense-toolbox.qaynam.dev/parser/parse/) | `parse` / `parseLine` / `tokenizeInline` / `createParser` |
 | [AST と位置情報](https://cosense-toolbox.qaynam.dev/parser/ast/) | ノードの構造と `position` の意味 |
-| [AST の走査](https://cosense-toolbox.qaynam.dev/parser/utils/) | `visit` / `find` / `collect` など |
+| [ヘルパー](https://cosense-toolbox.qaynam.dev/parser/utils/) | `visit` / `find` / `collect` など |
 | [HTML への変換](https://cosense-toolbox.qaynam.dev/parser/html/) | `toHtml` と 7 つのオプション |
 | [独自形式への変換](https://cosense-toolbox.qaynam.dev/parser/compile/) | `toPlainText` / `createCompiler` |
 | [記法の拡張](https://cosense-toolbox.qaynam.dev/parser/extend/) | `Extension` と独自のノード型 |
