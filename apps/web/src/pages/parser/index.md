@@ -136,31 +136,6 @@ AST を別の形式に変換します。
 上から順に、次のページから説明していきます。
 どの記法がどう変換されるかを先に見たい場合は、[対応記法](/parser/demo/)にすべて並べてあります。
 
-## 互換性について
-
-| 変更 | バージョン |
-| :--- | :--- |
-| 新しいノード `type` の追加 | minor |
-| 既存ノードへの optional フィールド追加 | minor |
-| オプションへの optional フィールド追加 | minor |
-| 既存ノードのフィールドの削除、型変更、必須化 | major |
-| `position` の意味論の変更 | major |
-| ノード `type` 文字列のリネーム | major |
-
-ノード型は minor で増える可能性があるので、`switch (node.type)` には `default` を置いてください。
-
-```ts
-switch (node.type) {
-  case 'text':
-    return node.value
-  case 'internalLink':
-    return node.label
-  default:
-    // 知らないノード型はここに来る
-    return ''
-}
-```
-
 ## ライセンス
 
-MIT です。
+MIT
