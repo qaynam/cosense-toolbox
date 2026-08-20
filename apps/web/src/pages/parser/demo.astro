@@ -1,64 +1,49 @@
 ---
 import { Code } from "astro:components";
+import defaultStyle from "@cosense-toolbox/style/style.css?raw";
 import Doc from "../../layouts/Doc.astro";
-import { htmlDemo, htmlDemoWithResolvedLinks, SOURCE } from "../../lib/html-demo";
+import { html as basicHtml } from "../../lib/demo-basic";
+import { html as iconsHtml } from "../../lib/demo-icons";
 
-const htmlDemoCode = import.meta.glob("../../lib/html-demo.ts", {
+const raw = import.meta.glob("../../lib/demo-*.ts", {
   query: "?raw",
   import: "default",
   eager: true,
-})["../../lib/html-demo.ts"] as string;
+}) as Record<string, string>;
 
-/**
- * html-demo.ts から関数を 1 つ切り出す。直前の JSDoc も含める。
- * ここに実装を書き写すと本体とずれるので、ファイルから読む。
- */
-function pickFunction(code: string, name: string): string {
-  const lines = code.split("\n");
-  const declared = lines.findIndex((line) =>
-    line.includes(`function ${name}(${SOURCE}`),
-  );
-  if (declared < 0) return code;
-
-  let from = declared;
-  while (from > 0 && /^\s*(\/\*\*|\*)/.test(lines[from - 1])) from--;
-  const closed = lines.findIndex((line, i) => i > declared && line === "}");
-
-  return lines.slice(from, closed + 1).join("\n");
-}
+const preview = (body: string) =>
+  `<!doctype html><html lang="ja"><head><meta charset="utf-8"><style>${defaultStyle}</style></head><body>${body}</body></html>`;
 
 const demos = [
   {
-    id: "plain",
+    id: "basic",
     heading: "そのまま変換する",
-    code: pickFunction(htmlDemoCode, "htmlDemo"),
-    document: htmlDemo(),
+    code: raw["../../lib/demo-basic.ts"],
+    document: preview(basicHtml),
   },
   {
-    id: "resolved",
-    heading: "リンクとアイコンを解決する",
-    code: pickFunction(htmlDemoCode, "htmlDemoWithResolvedLinks"),
-    document: await htmlDemoWithResolvedLinks(),
+    id: "icons",
+    heading: "リンク先とアイコンを渡す",
+    code: raw["../../lib/demo-icons.ts"],
+    document: preview(iconsHtml),
   },
 ];
 ---
 
 <Doc
   title="例"
-  description="Cosense の記法をひととおり parse して toHtml で描画した結果"
+  description="Cosense の記法を parse して toHtml で描画した結果と、その実装"
 >
   <h1>例</h1>
   <p class="lead">
-    <a href="https://scrapbox.io/help-jp/その他の書き方" target="_blank"
+    本家の <a href="https://scrapbox.io/help-jp/その他の書き方" target="_blank"
       >/help-jp/その他の書き方</a
-    > ページを、下のコードだけで変換した結果です。
+    > を変換したものです。実装はそのまま動くコードで、この画面もそれで作っています。
   </p>
 
   <h2 id="そのまま変換する">{demos[0].heading}</h2>
   <p class="lead">
-    <code>toHtml</code> にオプションを渡していないので、リンク先が <code
-      >/タイトル</code
-    > になり、アイコンはユーザー名のテキストリンクになります。
+    <code>parse</code> して <code>toHtml</code> に渡すだけの、いちばん短い書きかたです。
   </p>
 
   <div class="demo">
@@ -81,9 +66,18 @@ const demos = [
     </div>
   </div>
 
-  <h2 id="リンクとアイコンを解決する">{demos[1].heading}</h2>
   <p class="lead">
-    <a href="/parser/html/#pageurl">pageUrl</a> と <a href="/parser/html/#iconimageurl">iconImageUrl</a> を渡すと、リンク先が本家のページに向き、アイコンが画像になります。 どちらも記法には書かれていない情報なので、外から渡して補います。
+    ただし、アイコンが画像になりません。<code>[rakusai.icon]</code> の画像は
+    <code>/api/pages/{"{project}"}/rakusai/icon</code>
+    にありますが、記法にプロジェクト名が書かれていないので、パーサーには URL を組み立てられないからです。
+    リンク先が <code>/タイトル</code> になっているのも同じ理由です。
+  </p>
+
+  <h2 id="リンク先とアイコンを渡す">{demos[1].heading}</h2>
+  <p class="lead">
+    そこで <a href="/parser/html/#pageurl">pageUrl</a> と <a
+      href="/parser/html/#iconimageurl">iconImageUrl</a
+    > を渡します。プロジェクト名を知っているのは呼び出し側なので、URL の組み立ても呼び出し側が行います。
   </p>
 
   <div class="demo">
@@ -108,7 +102,6 @@ const demos = [
 </Doc>
 
 <script>
-  // .demo が 2 つ以上あるので、タブの切り替えはその中だけに閉じる。
   for (const demo of document.querySelectorAll<HTMLElement>(".demo")) {
     const tabs = demo.querySelectorAll<HTMLButtonElement>("[data-demo-tab]");
     const panels = demo.querySelectorAll<HTMLElement>("[data-demo-panel]");
@@ -165,15 +158,5 @@ const demos = [
     height: 70vh;
     border: 0;
     background: #fefefe;
-  }
-
-  pre.demo-panel {
-    max-height: 70vh;
-    padding: 20px;
-    background: var(--code-bg);
-    font-family: var(--font-mono);
-    font-size: 13px;
-    line-height: 1.7;
-    white-space: pre-wrap;
   }
 </style>
