@@ -22,9 +22,9 @@ toPlainText(node: AnyNode): string
 オプションはありません。
 
 ```ts
-import { toPlainText } from '@cosense-toolbox/parser/compile'
+import { toPlainText } from "@cosense-toolbox/parser/compile";
 
-toPlainText(parse('タイトル\n[* 太字] と [リンク]'))
+toPlainText(parse("タイトル\n[* 太字] と [リンク]"));
 // 'タイトル\n太字 と リンク'
 ```
 
@@ -43,16 +43,16 @@ HTML とテキスト以外を出すときに使います。
 `toHtml` も `toPlainText` もこれで書かれています。
 
 ```ts
-import { createCompiler } from '@cosense-toolbox/parser/compile'
+import { createCompiler } from "@cosense-toolbox/parser/compile";
 
 const toMarkdown = createCompiler<string>({
   handlers: {
     internalLink: (node) => `[[${node.target}]]`,
-    decoration: (node, ctx) => `**${ctx.children(node).join('')}**`,
+    decoration: (node, ctx) => `**${ctx.children(node).join("")}**`,
     text: (node) => node.value,
   },
-  fallback: (node, ctx) => ctx.children(node).join(''),
-})
+  fallback: (node, ctx) => ctx.children(node).join(""),
+});
 ```
 
 `handlers` の書きかたは [`toHtml` の handlers](/parser/html/#handlers) と同じです。

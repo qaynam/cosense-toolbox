@@ -7,7 +7,11 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 const KN = "src/styles/knowledge";
 const OUT = "public/builder";
 
-const needed = [`${KN}/index.css`, `${KN}/article.html`, `${KN}/page-list.html`];
+const needed = [
+  `${KN}/index.css`,
+  `${KN}/article.html`,
+  `${KN}/page-list.html`,
+];
 if (!needed.every((f) => existsSync(f))) {
   console.warn(
     `[build-preview] skip: ${KN}/ が見つからないためテーマビルダーのプレビューは生成しません。`,

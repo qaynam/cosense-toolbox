@@ -17,12 +17,12 @@ toHtml(node: AnyNode, options?: HtmlOptions): string
 引数はページ全体でなくてもよく、`parseLine` が返した 1 行でも、AST の任意のノードでも受け取ります。
 
 ```ts
-import { parse } from '@cosense-toolbox/parser'
-import { toHtml } from '@cosense-toolbox/parser/compile'
+import { parse } from "@cosense-toolbox/parser";
+import { toHtml } from "@cosense-toolbox/parser/compile";
 
-const page = parse('タイトル\nこれは [リンク] です')
+const page = parse("タイトル\nこれは [リンク] です");
 
-toHtml(page)
+toHtml(page);
 ```
 
 ```html
@@ -41,15 +41,15 @@ toHtml(page)
 
 ## オプション
 
-| オプション | 型 | 既定 |
-| :--- | :--- | :--- |
-| [`pageUrl`](#pageurl) | `(title, node) => string` | `/{title}` |
-| [`iconImageUrl`](#iconimageurl) | `(node) => string \| null` | 常に `null` |
-| [`highlight`](#highlight) | `(code, language) => string` | 色付けしない |
-| [`classNames`](#classnames) | `HtmlClassNames` | `defaultClassNames` |
-| [`showPads`](#showpads) | `boolean` | `false` |
-| [`handlers`](#handlers) | `NodeHandlers<string>` | 既定のハンドラ |
-| [`style`](#style) | `string` | `<style>` を出さない |
+| オプション                      | 型                           | 既定                 |
+| :------------------------------ | :--------------------------- | :------------------- |
+| [`pageUrl`](#pageurl)           | `(title, node) => string`    | `/{title}`           |
+| [`iconImageUrl`](#iconimageurl) | `(node) => string \| null`   | 常に `null`          |
+| [`highlight`](#highlight)       | `(code, language) => string` | 色付けしない         |
+| [`classNames`](#classnames)     | `HtmlClassNames`             | `defaultClassNames`  |
+| [`showPads`](#showpads)         | `boolean`                    | `false`              |
+| [`handlers`](#handlers)         | `NodeHandlers<string>`       | 既定のハンドラ       |
+| [`style`](#style)               | `string`                     | `<style>` を出さない |
 
 上の 3 つは、AST から導けない情報を外から渡すためにあります。
 ページをどの URL で配信しているか、アイコン画像がどこにあるか、コードの構文がどう色分けされるかは、どれもソースに書かれていないからです。
@@ -65,7 +65,7 @@ pageUrl?: (title: string, node: PageRefNode) => string
 対象は `[title]` と `[/proj/page]` と `#tag` と `[user.icon]` の 4 つです。
 
 ```ts
-toHtml(page, { pageUrl: (title) => `/wiki/${encodeURIComponent(title)}` })
+toHtml(page, { pageUrl: (title) => `/wiki/${encodeURIComponent(title)}` });
 ```
 
 `title` には記法に書かれたタイトルがそのまま渡ります。
@@ -90,13 +90,19 @@ iconImageUrl?: (node: IconNode) => string | null
 
 ```ts
 toHtml(page, {
-  iconImageUrl: (node) => `/api/pages/help-jp/${encodeURIComponent(node.user)}/icon`,
-})
+  iconImageUrl: (node) =>
+    `/api/pages/help-jp/${encodeURIComponent(node.user)}/icon`,
+});
 ```
 
 ```html
 <a class="link icon" href="/rakusai">
-  <img class="icon" src="/api/pages/help-jp/rakusai/icon" alt="rakusai" title="rakusai">
+  <img
+    class="icon"
+    src="/api/pages/help-jp/rakusai/icon"
+    alt="rakusai"
+    title="rakusai"
+  />
 </a>
 ```
 
@@ -120,26 +126,33 @@ highlight?: (code: string, language: string) => string
 シグネチャは markdown-it の同名オプションと同じなので、たいていのハイライタがそのまま嵌ります。
 
 ```ts
-import hljs from 'highlight.js'
+import hljs from "highlight.js";
 
 toHtml(page, {
   highlight: (code, language) =>
-    hljs.highlight(code, { language: hljs.getLanguage(language) ? language : 'plaintext' }).value,
-})
+    hljs.highlight(code, {
+      language: hljs.getLanguage(language) ? language : "plaintext",
+    }).value,
+});
 ```
 
 ライブラリごとの書きかたは次のとおりです。
 
 ```ts
 // Prism
-highlight: (code, lang) => Prism.highlight(code, Prism.languages[lang] ?? Prism.languages.plain, lang)
+highlight: (code, lang) =>
+  Prism.highlight(code, Prism.languages[lang] ?? Prism.languages.plain, lang);
 
 // sugar-high
-highlight: (code) => sugarHigh(code)
+highlight: (code) => sugarHigh(code);
 
 // Shiki は既定で <pre><code> ごと返すので、structure: 'inline' で中身だけにする
-const shiki = await createHighlighter({ themes: ['github-light'], langs: ['js'] })
-highlight: (code, lang) => shiki.codeToHtml(code, { lang, theme: 'github-light', structure: 'inline' })
+const shiki = await createHighlighter({
+  themes: ["github-light"],
+  langs: ["js"],
+});
+highlight: (code, lang) =>
+  shiki.codeToHtml(code, { lang, theme: "github-light", structure: "inline" });
 ```
 
 `language` はファイル名から推測した名前で、拡張子があればそれが、無ければファイル名全体が渡ります。
@@ -154,7 +167,7 @@ highlight: (code, lang) => shiki.codeToHtml(code, { lang, theme: 'github-light',
 ハイライタのテーマ CSS が特定の class を要求する場合は、次の `classNames` で足せます。
 
 ```ts
-toHtml(page, { highlight, classNames: { codeHighlight: 'highlight hljs' } })
+toHtml(page, { highlight, classNames: { codeHighlight: "highlight hljs" } });
 ```
 
 ### classNames
@@ -167,7 +180,12 @@ classNames?: HtmlClassNames
 指定したキーだけが既定を上書きします。
 
 ```ts
-toHtml(page, { classNames: { line: 'my-2 leading-7', internalLink: 'text-sky-600 underline' } })
+toHtml(page, {
+  classNames: {
+    line: "my-2 leading-7",
+    internalLink: "text-sky-600 underline",
+  },
+});
 ```
 
 値は置き換えであって追加ではありません。
@@ -176,15 +194,15 @@ toHtml(page, { classNames: { line: 'my-2 leading-7', internalLink: 'text-sky-600
 
 既定の一覧は `defaultClassNames` として export しています。
 
-| キー | 対象 |
-| :--- | :--- |
-| `page` `title` `line` | ページ全体、1 行目、通常の行 |
-| `quote` `monospace` | 引用行の `<blockquote>`、等幅行の `<code>` |
-| `codeBlock` | コードブロックに属する行 (ヘッダと本体の両方) |
-| `codeStart` `codeFilename` `codeBody` `codeHighlight` | ヘッダの `<code>`、ファイル名、本体の `<code>`、色付けした本体に足す class |
-| `indentMark` `pad` `dot` | `showPads` のときだけ出る要素 |
-| `internalLink` `externalLink` `projectLink` `hashtag` | 各リンク |
-| `inlineCode` `image` `icon` `formula` `decoration` `table` | 各インライン記法とテーブル |
+| キー                                                       | 対象                                                                       |
+| :--------------------------------------------------------- | :------------------------------------------------------------------------- |
+| `page` `title` `line`                                      | ページ全体、1 行目、通常の行                                               |
+| `quote` `monospace`                                        | 引用行の `<blockquote>`、等幅行の `<code>`                                 |
+| `codeBlock`                                                | コードブロックに属する行 (ヘッダと本体の両方)                              |
+| `codeStart` `codeFilename` `codeBody` `codeHighlight`      | ヘッダの `<code>`、ファイル名、本体の `<code>`、色付けした本体に足す class |
+| `indentMark` `pad` `dot`                                   | `showPads` のときだけ出る要素                                              |
+| `internalLink` `externalLink` `projectLink` `hashtag`      | 各リンク                                                                   |
+| `inlineCode` `image` `icon` `formula` `decoration` `table` | 各インライン記法とテーブル                                                 |
 
 ### showPads
 
@@ -223,7 +241,7 @@ handlers?: NodeHandlers<string>
 ```ts
 toHtml(page, {
   handlers: { formula: (node) => katex.renderToString(node.value) },
-})
+});
 ```
 
 ハンドラは `(node, ctx)` を受け取ります。
@@ -253,9 +271,9 @@ style?: string
 渡した CSS を `<style>` 要素として出力の先頭に差し込みます。
 
 ```ts
-import css from '@cosense-toolbox/style/style.css?raw'
+import css from "@cosense-toolbox/style/style.css?raw";
 
-toHtml(page, { style: css })
+toHtml(page, { style: css });
 // <style>…</style><div class="page">…</div>
 ```
 
@@ -268,14 +286,14 @@ class 名は接頭辞を持たず、すべて [`classNames`](#classnames) で差
 
 ### ブロック
 
-| 記法 | HTML |
-| :--- | :--- |
-| 1 行目 | `<h1 class="title">タイトル</h1>` |
-| 通常の行 | `<div class="line">本文</div>` |
+| 記法         | HTML                                           |
+| :----------- | :--------------------------------------------- |
+| 1 行目       | `<h1 class="title">タイトル</h1>`              |
+| 通常の行     | `<div class="line">本文</div>`                 |
 | 字下げした行 | `<div class="line" data-indent="2">本文</div>` |
-| 空行 | `<div class="line"><br></div>` |
-| `> 引用` | `<blockquote class="quote">引用</blockquote>` |
-| `$ ls` | `<code class="monospace">$ ls</code>` |
+| 空行         | `<div class="line"><br></div>`                 |
+| `> 引用`     | `<blockquote class="quote">引用</blockquote>`  |
+| `$ ls`       | `<code class="monospace">$ ls</code>`          |
 
 ページ全体は `<div class="page">` で包まれます。
 インデントの深さは class ではなく `data-indent` 属性で表します。
@@ -286,7 +304,9 @@ class 名は接頭辞を持たず、すべて [`classNames`](#classnames) で差
 
 ```html
 <table class="table">
-  <caption>テーブル名</caption>
+  <caption>
+    テーブル名
+  </caption>
   <tbody>
     <tr>
       <td>abc</td>
@@ -318,18 +338,18 @@ class 名は接頭辞を持たず、すべて [`classNames`](#classnames) で差
 
 ### インライン
 
-| 記法 | HTML |
-| :--- | :--- |
-| `[title]` | `<a class="link" href="/title">title</a>` |
-| `https://a.test/x` | `<a class="link link-external" href="https://a.test/x">https://a.test/x</a>` |
-| `[https://a.test/x label]` | `<a class="link link-external" href="https://a.test/x">label</a>` |
-| `[/proj/page]` | `<a class="link link-project" href="/proj/page">/proj/page</a>` |
-| `#tag` | `<a class="hashtag" href="/tag">#tag</a>` |
-| `` `code` `` | `<code class="code">code</code>` |
-| `[a.png]` | `<img class="image" src="a.png" alt="">` |
-| `[[a.png]]` | `<img class="image" src="a.png" alt="" data-large="true">` |
-| `[user.icon]` | `<a class="link icon" href="/user">user</a>` |
-| `[$ x^2]` | `<span class="formula">x^2</span>` |
+| 記法                       | HTML                                                                         |
+| :------------------------- | :--------------------------------------------------------------------------- |
+| `[title]`                  | `<a class="link" href="/title">title</a>`                                    |
+| `https://a.test/x`         | `<a class="link link-external" href="https://a.test/x">https://a.test/x</a>` |
+| `[https://a.test/x label]` | `<a class="link link-external" href="https://a.test/x">label</a>`            |
+| `[/proj/page]`             | `<a class="link link-project" href="/proj/page">/proj/page</a>`              |
+| `#tag`                     | `<a class="hashtag" href="/tag">#tag</a>`                                    |
+| `` `code` ``               | `<code class="code">code</code>`                                             |
+| `[a.png]`                  | `<img class="image" src="a.png" alt="">`                                     |
+| `[[a.png]]`                | `<img class="image" src="a.png" alt="" data-large="true">`                   |
+| `[user.icon]`              | `<a class="link icon" href="/user">user</a>`                                 |
+| `[$ x^2]`                  | `<span class="formula">x^2</span>`                                           |
 
 数式は組版せず、記法を外した中身をそのまま置きます。
 KaTeX に渡したい場合は [`handlers`](#handlers) で差し替えてください。
@@ -375,27 +395,27 @@ KaTeX に渡したい場合は [`handlers`](#handlers) で差し替えてくだ�
 そこでのエスケープは書いた人の責任になります。
 同じことをするための部品を export しています。
 
-| export | 役割 |
-| :--- | :--- |
-| `escapeHtml(value)` | `& < > " '` を実体参照にします |
-| `safeHref(url)` | href に入れて安全な URL だけを返します。script が動くスキームなら `null` です |
-| `safeSrc(url)` | src 版です。`data:` 画像は許します |
-| `defaultPageUrl(title)` | `pageUrl` の既定の実装です |
-| `defaultClassNames` | 既定の class 名です |
+| export                  | 役割                                                                          |
+| :---------------------- | :---------------------------------------------------------------------------- |
+| `escapeHtml(value)`     | `& < > " '` を実体参照にします                                                |
+| `safeHref(url)`         | href に入れて安全な URL だけを返します。script が動くスキームなら `null` です |
+| `safeSrc(url)`          | src 版です。`data:` 画像は許します                                            |
+| `defaultPageUrl(title)` | `pageUrl` の既定の実装です                                                    |
+| `defaultClassNames`     | 既定の class 名です                                                           |
 
 外部リンクを別タブで開く例を示します。
 
 ```ts
-import { escapeHtml, safeHref, toHtml } from '@cosense-toolbox/parser/compile'
+import { escapeHtml, safeHref, toHtml } from "@cosense-toolbox/parser/compile";
 
 toHtml(page, {
   handlers: {
     externalLink: (node) => {
-      const href = safeHref(node.target)
-      return `<a class="link link-external" href="${escapeHtml(href ?? '')}" target="_blank" rel="noreferrer">${escapeHtml(node.label)}</a>`
+      const href = safeHref(node.target);
+      return `<a class="link link-external" href="${escapeHtml(href ?? "")}" target="_blank" rel="noreferrer">${escapeHtml(node.label)}</a>`;
     },
   },
-})
+});
 ```
 
 信頼できないページを表示する場合は、許可する画像 URL の制限も呼び出し側で行ってください。

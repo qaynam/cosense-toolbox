@@ -12,12 +12,12 @@ description: Extension で記法を足し、declaration merging で独自のノ�
 型は `@cosense-toolbox/parser/plugin` から import します。
 このサブパスは型だけを持ち、実行時のコードを含みません。
 
-| 型 | 役割 |
-| :--- | :--- |
-| `InlineConstruct` | 行の任意の位置から始まる記法を足します |
-| `BracketRule` | `[...]` の中身の解釈を足します |
-| `Extension` | 上の 2 つをまとめて `parse` に渡す形です |
-| `NodeHandlers` | 出力側のハンドラの型です |
+| 型                | 役割                                     |
+| :---------------- | :--------------------------------------- |
+| `InlineConstruct` | 行の任意の位置から始まる記法を足します   |
+| `BracketRule`     | `[...]` の中身の解釈を足します           |
+| `Extension`       | 上の 2 つをまとめて `parse` に渡す形です |
+| `NodeHandlers`    | 出力側のハンドラの型です                 |
 
 ## 記法を足す
 
@@ -25,23 +25,26 @@ description: Extension で記法を足し、declaration merging で独自のノ�
 既定のルールより先に試されるので、既存の記法を上書きすることもできます。
 
 ```ts
-import { Option } from 'effect'
-import { parse } from '@cosense-toolbox/parser'
-import type { Extension, InlineConstruct } from '@cosense-toolbox/parser/plugin'
+import { Option } from "effect";
+import { parse } from "@cosense-toolbox/parser";
+import type {
+  Extension,
+  InlineConstruct,
+} from "@cosense-toolbox/parser/plugin";
 
 const mention: InlineConstruct = (source, index) => {
-  if (source[index] !== '@') return Option.none()
-  const match = source.slice(index + 1).match(/^[A-Za-z0-9_-]+/)
-  if (!match) return Option.none()
+  if (source[index] !== "@") return Option.none();
+  const match = source.slice(index + 1).match(/^[A-Za-z0-9_-]+/);
+  if (!match) return Option.none();
   return Option.some({
-    node: { type: 'internalLink', label: `@${match[0]}`, target: match[0] },
+    node: { type: "internalLink", label: `@${match[0]}`, target: match[0] },
     length: match[0].length + 1,
-  })
-}
+  });
+};
 
-const mentions: Extension = { constructs: [mention] }
+const mentions: Extension = { constructs: [mention] };
 
-parse('メモ\n@qaynam に確認する', { extensions: [mentions] })
+parse("メモ\n@qaynam に確認する", { extensions: [mentions] });
 ```
 
 `Option.none()` を返すと、その位置では成立しなかったことになり、次のルールが試されます。
@@ -59,9 +62,9 @@ parse('メモ\n@qaynam に確認する', { extensions: [mentions] })
 mdast と同じ手法で、`NodeHandlers` のキーにも `visit` の型引数にも自動で現れるので、描画まで型が通ります。
 
 ```ts
-declare module '@cosense-toolbox/parser' {
+declare module "@cosense-toolbox/parser" {
   interface InlineNodeMap {
-    mention: { type: 'mention'; user: string; position: Position }
+    mention: { type: "mention"; user: string; position: Position };
   }
 }
 ```
@@ -69,15 +72,20 @@ declare module '@cosense-toolbox/parser' {
 あとは、記法を足したパーサーでパースして、その `type` に対するハンドラを書けば描画まで通ります。
 
 ```ts
-import { parse } from '@cosense-toolbox/parser'
-import { escapeHtml, toHtml } from '@cosense-toolbox/parser/compile'
+import { parse } from "@cosense-toolbox/parser";
+import { escapeHtml, toHtml } from "@cosense-toolbox/parser/compile";
 
 // mention が { type: 'mention', user } を返すようにしておく
-const page = parse('メモ\n@qaynam に確認する', { extensions: [{ constructs: [mention] }] })
+const page = parse("メモ\n@qaynam に確認する", {
+  extensions: [{ constructs: [mention] }],
+});
 
 toHtml(page, {
-  handlers: { mention: (node) => `<a href="/u/${node.user}">@${escapeHtml(node.user)}</a>` },
-})
+  handlers: {
+    mention: (node) =>
+      `<a href="/u/${node.user}">@${escapeHtml(node.user)}</a>`,
+  },
+});
 ```
 
 ハンドラを書かなかった独自ノードは、子があればその中身が出力されます。
@@ -89,10 +97,10 @@ toHtml(page, {
 `@cosense-toolbox/parser/schema` は、worklet や postMessage を跨いで受け取った、本当に `Page` か分からない値を検証します。
 
 ```ts
-import { decodePage } from '@cosense-toolbox/parser/schema'
-import { Either } from 'effect'
+import { decodePage } from "@cosense-toolbox/parser/schema";
+import { Either } from "effect";
 
-const decoded = decodePage(JSON.parse(input))
+const decoded = decodePage(JSON.parse(input));
 if (Either.isRight(decoded)) {
   // decoded.right は Page
 }

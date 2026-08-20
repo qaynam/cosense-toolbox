@@ -9,9 +9,9 @@
     // /s/slug → /s/slug/index.html を解決
     "html_handling": "auto-trailing-slash",
     // 見つからない時は dist/404.html を返す
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
   },
   "observability": {
-    "enabled": true
-  }
+    "enabled": true,
+  },
 }

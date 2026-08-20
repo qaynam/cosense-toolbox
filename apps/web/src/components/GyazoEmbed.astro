@@ -1,32 +1,42 @@
 ---
-import { resolveGyazo } from '../lib/gyazo';
+import { resolveGyazo } from "../lib/gyazo";
 
 interface Props {
-	/** Gyazo の画像ページURL ( https://gyazo.com/XXXX ) */
-	url: string;
+  /** Gyazo の画像ページURL ( https://gyazo.com/XXXX ) */
+  url: string;
 }
 const { url } = Astro.props;
 const media = await resolveGyazo(url);
 ---
 
 {
-	media?.html ? (
-		// set:html に入るのは Gyazo の oEmbed API がビルド時に返した HTML で、
-		// 利用者の入力は通らない。
-		// aspect-ratio は、返ってきた寸法で iframe を収めて黒余白を出さないため。
-		<div
-			class="gyazo-embed gyazo-rich"
-			style={media.width && media.height ? `aspect-ratio:${media.width} / ${media.height}` : undefined}
-			set:html={media.html}
-		/>
-	) : media ? (
-		<a class="gyazo-embed" href={url} target="_blank" rel="noopener" aria-label="Gyazoでデモを開く">
-			<img
-				src={media.url}
-				alt="デモ"
-				loading="lazy"
-				{...(media.width ? { width: media.width, height: media.height } : {})}
-			/>
-		</a>
-	) : null
+  media?.html ? (
+    // set:html に入るのは Gyazo の oEmbed API がビルド時に返した HTML で、
+    // 利用者の入力は通らない。
+    // aspect-ratio は、返ってきた寸法で iframe を収めて黒余白を出さないため。
+    <div
+      class="gyazo-embed gyazo-rich"
+      style={
+        media.width && media.height
+          ? `aspect-ratio:${media.width} / ${media.height}`
+          : undefined
+      }
+      set:html={media.html}
+    />
+  ) : media ? (
+    <a
+      class="gyazo-embed"
+      href={url}
+      target="_blank"
+      rel="noopener"
+      aria-label="Gyazoでデモを開く"
+    >
+      <img
+        src={media.url}
+        alt="デモ"
+        loading="lazy"
+        {...(media.width ? { width: media.width, height: media.height } : {})}
+      />
+    </a>
+  ) : null
 }

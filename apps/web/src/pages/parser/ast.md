@@ -27,18 +27,18 @@ Page
 `TitleBlock` と `LineBlock` の `children` に入るのが、インラインノードです。
 10 種類あり、すべて `type` で判別できます。
 
-| type | 記法 |
-| :--- | :--- |
-| `text` | 記法にならなかった素のテキスト |
-| `internalLink` | `[title]` |
-| `externalLink` | 裸の URL、`[url]`、`[url label]`、`[label url]` |
-| `projectLink` | `[/project/title]` (`project` と `title` に分解済み) |
-| `hashtag` | `#tag` |
-| `inlineCode` | `` `code` `` |
-| `image` | `[url.png]`、`[[url.png]]` (large)、`[linkUrl imageUrl]` (link つき) |
-| `icon` | `[user.icon]`、`[user.icon*5]` |
-| `formula` | `[$ x^2]` |
-| `decoration` | `[* 太字]` `[/ 斜体]` `[- 打消し]` `[_ 下線]` とその複合、`[[太字]]` |
+| type           | 記法                                                                 |
+| :------------- | :------------------------------------------------------------------- |
+| `text`         | 記法にならなかった素のテキスト                                       |
+| `internalLink` | `[title]`                                                            |
+| `externalLink` | 裸の URL、`[url]`、`[url label]`、`[label url]`                      |
+| `projectLink`  | `[/project/title]` (`project` と `title` に分解済み)                 |
+| `hashtag`      | `#tag`                                                               |
+| `inlineCode`   | `` `code` ``                                                         |
+| `image`        | `[url.png]`、`[[url.png]]` (large)、`[linkUrl imageUrl]` (link つき) |
+| `icon`         | `[user.icon]`、`[user.icon*5]`                                       |
+| `formula`      | `[$ x^2]`                                                            |
+| `decoration`   | `[* 太字]` `[/ 斜体]` `[- 打消し]` `[_ 下線]` とその複合、`[[太字]]` |
 
 リンクを `internalLink` と `externalLink` と `projectLink` の 3 つに分けてあるので、`switch` の網羅性が効きます。
 
@@ -61,12 +61,19 @@ Gyazo のページ URL (`https://gyazo.com/{hash}`) のように、そのまま�
 すべてのノードが `position` を持ちます。
 
 ```ts
-interface Point { line: number; column: number; offset: number }  // すべて 0-based
-interface Position { start: Point; end: Point }                   // end は exclusive
+interface Point {
+  line: number;
+  column: number;
+  offset: number;
+} // すべて 0-based
+interface Position {
+  start: Point;
+  end: Point;
+} // end は exclusive
 ```
 
 ```ts
-parse('タイトル\nサンプル').children[1].children[0]
+parse("タイトル\nサンプル").children[1].children[0];
 // {
 //   type: 'text',
 //   value: 'サンプル',

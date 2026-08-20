@@ -18,11 +18,11 @@ AST の形が分かったので、そこから欲しいものを取り出しま�
 以降の例では、次の `page` を使います。
 
 ```ts
-import { parse } from '@cosense-toolbox/parser'
+import { parse } from "@cosense-toolbox/parser";
 
 const page = parse(`関連ページ
 [JavaScript] と [TypeScript] を比べる
-#メモ`)
+#メモ`);
 ```
 
 ## visit
@@ -35,20 +35,20 @@ visit(tree, type?, visitor): void
 型を渡すと、その型のノードだけが visitor に届きます。
 
 ```ts
-import { visit } from '@cosense-toolbox/parser/utils'
+import { visit } from "@cosense-toolbox/parser/utils";
 
-visit(page, 'internalLink', (node) => {
-  console.log(node.target)
-})
+visit(page, "internalLink", (node) => {
+  console.log(node.target);
+});
 ```
 
 visitor の戻り値で走査を制御できます。
 
-| 戻り値 | 挙動 |
-| :--- | :--- |
+| 戻り値   | 挙動                       |
+| :------- | :------------------------- |
 | `'skip'` | そのノードの子を辿りません |
-| `'exit'` | 走査全体を打ち切ります |
-| それ以外 | そのまま続けます |
+| `'exit'` | 走査全体を打ち切ります     |
+| それ以外 | そのまま続けます           |
 
 第 2 引数を省くと、すべてのノードが届きます。
 visitor の第 2 引数には、ルートからそのノードまでの祖先が配列で渡ります。
@@ -64,9 +64,9 @@ find(tree, type): NodeOfType<K> | null
 その型の最初のノードを返し、無ければ `null` を返します。
 
 ```ts
-import { find } from '@cosense-toolbox/parser/utils'
+import { find } from "@cosense-toolbox/parser/utils";
 
-find(page, 'codeBlock') // → CodeBlock | null
+find(page, "codeBlock"); // → CodeBlock | null
 ```
 
 ## collect
@@ -78,9 +78,9 @@ collect(tree, type): NodeOfType<K>[]
 その型のノードを出現順にすべて返します。
 
 ```ts
-import { collect } from '@cosense-toolbox/parser/utils'
+import { collect } from "@cosense-toolbox/parser/utils";
 
-collect(page, 'icon') // → IconNode[]
+collect(page, "icon"); // → IconNode[]
 ```
 
 戻り値の型はノード型から導出されるので、`collect(page, 'icon')` は `IconNode[]` になります。
@@ -95,9 +95,9 @@ collectLinks(tree, options?: { includeProjectLinks?: boolean }): string[]
 `[title]` と `#title` は同じページを指すので 1 件として数えます。
 
 ```ts
-import { collectLinks } from '@cosense-toolbox/parser/utils'
+import { collectLinks } from "@cosense-toolbox/parser/utils";
 
-collectLinks(parse('t\n[A] と #B と [A]')) // → ['A', 'B']
+collectLinks(parse("t\n[A] と #B と [A]")); // → ['A', 'B']
 ```
 
 `includeProjectLinks` を渡すと `[/project/title]` も含めますが、既定では含めません。
@@ -114,9 +114,9 @@ firstImage(tree): ImageNode | null
 無ければ `null` です。
 
 ```ts
-import { firstImage } from '@cosense-toolbox/parser/utils'
+import { firstImage } from "@cosense-toolbox/parser/utils";
 
-firstImage(page)?.src
+firstImage(page)?.src;
 ```
 
 `src` はソースに書かれた URL のままなので、`<img>` に入れる前に [`asImageSrc`](/parser/parse/#asimagesrc) を通してください。
@@ -131,12 +131,12 @@ rawTextOf(source, node): string
 [`position`](/parser/ast/#position) から切り出すので、記法のマーカーも含みます。
 
 ```ts
-import { rawTextOf } from '@cosense-toolbox/parser/utils'
+import { rawTextOf } from "@cosense-toolbox/parser/utils";
 
-const source = 'title\nこれは [リンク] です'
-const link = parse(source).children[1].children[1]
+const source = "title\nこれは [リンク] です";
+const link = parse(source).children[1].children[1];
 
-rawTextOf(source, link) // → '[リンク]'
+rawTextOf(source, link); // → '[リンク]'
 ```
 
 ここまでが、AST から必要な部分だけを取り出す方法です。

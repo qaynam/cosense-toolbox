@@ -2,74 +2,78 @@
 import type { MarkdownHeading } from "astro";
 
 interface Props {
-	headings: MarkdownHeading[];
+  headings: MarkdownHeading[];
 }
 
 interface Section {
-	heading: MarkdownHeading;
-	children: Section[];
+  heading: MarkdownHeading;
+  children: Section[];
 }
 
 // h2 から h4 までを入れ子に組み直す。
 // オプションの一覧が h4 まで下がるので、h2 だけにすると個々のオプションへ飛べなくなる。
 const nest = (headings: MarkdownHeading[], depth: number): Section[] => {
-	const sections: Section[] = [];
-	for (const heading of headings) {
-		if (heading.depth < depth) continue;
-		if (heading.depth === depth) {
-			sections.push({ heading, children: [] });
-			continue;
-		}
-		const last = sections[sections.length - 1];
-		if (last !== undefined) last.children.push({ heading, children: [] });
-	}
-	return depth >= 4
-		? sections
-		: sections.map((section) => ({
-				heading: section.heading,
-				children: nest(
-					section.children.map((child) => child.heading),
-					depth + 1,
-				),
-			}));
+  const sections: Section[] = [];
+  for (const heading of headings) {
+    if (heading.depth < depth) continue;
+    if (heading.depth === depth) {
+      sections.push({ heading, children: [] });
+      continue;
+    }
+    const last = sections[sections.length - 1];
+    if (last !== undefined) last.children.push({ heading, children: [] });
+  }
+  return depth >= 4
+    ? sections
+    : sections.map((section) => ({
+        heading: section.heading,
+        children: nest(
+          section.children.map((child) => child.heading),
+          depth + 1,
+        ),
+      }));
 };
 
 const sections = nest(
-	Astro.props.headings.filter((heading) => heading.depth >= 2 && heading.depth <= 4),
-	2,
+  Astro.props.headings.filter(
+    (heading) => heading.depth >= 2 && heading.depth <= 4,
+  ),
+  2,
 );
 ---
 
 {/* 見出しの無いページでは表題だけが残ってしまうので、丸ごと出さない */}
 {
-	sections.length > 0 && (
-		<nav class="doc-toc" aria-label="このページの内容">
-			<p class="doc-toc-head">このページの内容</p>
-			<ul>
-				{sections.map((section) => (
-					<li>
-						<a href={`#${section.heading.slug}`}>{section.heading.text}</a>
-						{section.children.length > 0 && (
-							<ul class="toc-sub">
-								{section.children.map((child) => (
-									<li>
-										<a href={`#${child.heading.slug}`}>{child.heading.text}</a>
-										{child.children.length > 0 && (
-											<ul class="toc-sub-sub">
-												{child.children.map((grandchild) => (
-													<li>
-														<a href={`#${grandchild.heading.slug}`}>{grandchild.heading.text}</a>
-													</li>
-												))}
-											</ul>
-										)}
-									</li>
-								))}
-							</ul>
-						)}
-					</li>
-				))}
-			</ul>
-		</nav>
-	)
+  sections.length > 0 && (
+    <nav class="doc-toc" aria-label="このページの内容">
+      <p class="doc-toc-head">このページの内容</p>
+      <ul>
+        {sections.map((section) => (
+          <li>
+            <a href={`#${section.heading.slug}`}>{section.heading.text}</a>
+            {section.children.length > 0 && (
+              <ul class="toc-sub">
+                {section.children.map((child) => (
+                  <li>
+                    <a href={`#${child.heading.slug}`}>{child.heading.text}</a>
+                    {child.children.length > 0 && (
+                      <ul class="toc-sub-sub">
+                        {child.children.map((grandchild) => (
+                          <li>
+                            <a href={`#${grandchild.heading.slug}`}>
+                              {grandchild.heading.text}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
 }

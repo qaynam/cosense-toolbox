@@ -1,129 +1,148 @@
 ---
-import type { MarkdownHeading } from 'astro';
-import DocSidebar from '../components/DocSidebar.astro';
-import DocToc from '../components/DocToc.astro';
-import { adjacentDocs } from '../lib/parser-docs';
-import Base from './Base.astro';
+import type { MarkdownHeading } from "astro";
+import DocSidebar from "../components/DocSidebar.astro";
+import DocToc from "../components/DocToc.astro";
+import { adjacentDocs } from "../lib/parser-docs";
+import Base from "./Base.astro";
 
 interface Frontmatter {
-	title: string;
-	description?: string;
+  title: string;
+  description?: string;
 }
 
 interface Props {
-	/** Markdown ページから渡る。`.astro` ページは title / description を直接渡す */
-	frontmatter?: Frontmatter;
-	headings?: MarkdownHeading[];
-	title?: string;
-	description?: string;
+  /** Markdown ページから渡る。`.astro` ページは title / description を直接渡す */
+  frontmatter?: Frontmatter;
+  headings?: MarkdownHeading[];
+  title?: string;
+  description?: string;
 }
 
 const { frontmatter, headings = [], title, description } = Astro.props;
-const pageTitle = frontmatter?.title ?? title ?? '@cosense-toolbox/parser';
+const pageTitle = frontmatter?.title ?? title ?? "@cosense-toolbox/parser";
 const pageDescription =
-	frontmatter?.description ?? description ?? 'Cosense 記法を位置情報つきの AST に変換する npm パッケージ';
+  frontmatter?.description ??
+  description ??
+  "Cosense 記法を位置情報つきの AST に変換する npm パッケージ";
 const { prev, next } = adjacentDocs(Astro.url.pathname);
 ---
 
-<Base title={pageTitle} description={pageDescription} image="/og-parser.png" wide>
-	<div class="doc-shell">
-		<button class="doc-menu-btn" type="button" aria-expanded="false" aria-controls="doc-aside">
-			<span class="doc-menu-icon" aria-hidden="true"></span>
-			メニュー
-		</button>
-		<div class="doc-scrim" hidden></div>
+<Base
+  title={pageTitle}
+  description={pageDescription}
+  image="/og-parser.png"
+  wide
+>
+  <div class="doc-shell">
+    <button
+      class="doc-menu-btn"
+      type="button"
+      aria-expanded="false"
+      aria-controls="doc-aside"
+    >
+      <span class="doc-menu-icon" aria-hidden="true"></span>
+      メニュー
+    </button>
+    <div class="doc-scrim" hidden></div>
 
-		{/* 広い画面では display:contents で、中身がそのまま左右の列になる */}
-		<div class="doc-aside" id="doc-aside">
-			<DocSidebar />
-			<DocToc headings={headings} />
-		</div>
+    {/* 広い画面では display:contents で、中身がそのまま左右の列になる */}
+    <div class="doc-aside" id="doc-aside">
+      <DocSidebar />
+      <DocToc headings={headings} />
+    </div>
 
-		<article class="doc">
-			<slot />
-			{
-				(prev !== undefined || next !== undefined) && (
-					<nav class="doc-pager" aria-label="前後のページ">
-						{prev !== undefined ? (
-							<a href={prev.href} rel="prev">
-								<span>前へ</span>
-								{prev.label}
-							</a>
-						) : (
-							<span />
-						)}
-						{next !== undefined && (
-							<a class="is-next" href={next.href} rel="next">
-								<span>次へ</span>
-								{next.label}
-							</a>
-						)}
-					</nav>
-				)
-			}
-		</article>
-	</div>
+    <article class="doc">
+      <slot />
+      {
+        (prev !== undefined || next !== undefined) && (
+          <nav class="doc-pager" aria-label="前後のページ">
+            {prev !== undefined ? (
+              <a href={prev.href} rel="prev">
+                <span>前へ</span>
+                {prev.label}
+              </a>
+            ) : (
+              <span />
+            )}
+            {next !== undefined && (
+              <a class="is-next" href={next.href} rel="next">
+                <span>次へ</span>
+                {next.label}
+              </a>
+            )}
+          </nav>
+        )
+      }
+    </article>
+  </div>
 </Base>
 
 <script>
-	// 狭い画面ではサイドバーと目次をドロワーにまとめ、ハンバーガーで開く。
-	const menuBtn = document.querySelector<HTMLButtonElement>('.doc-menu-btn');
-	const aside = document.querySelector<HTMLElement>('.doc-aside');
-	const scrim = document.querySelector<HTMLElement>('.doc-scrim');
+  // 狭い画面ではサイドバーと目次をドロワーにまとめ、ハンバーガーで開く。
+  const menuBtn = document.querySelector<HTMLButtonElement>(".doc-menu-btn");
+  const aside = document.querySelector<HTMLElement>(".doc-aside");
+  const scrim = document.querySelector<HTMLElement>(".doc-scrim");
 
-	const setMenu = (open: boolean) => {
-		aside?.classList.toggle('is-open', open);
-		menuBtn?.setAttribute('aria-expanded', String(open));
-		if (scrim !== null && scrim !== undefined) scrim.hidden = !open;
-		document.body.classList.toggle('doc-menu-open', open);
-	};
+  const setMenu = (open: boolean) => {
+    aside?.classList.toggle("is-open", open);
+    menuBtn?.setAttribute("aria-expanded", String(open));
+    if (scrim !== null && scrim !== undefined) scrim.hidden = !open;
+    document.body.classList.toggle("doc-menu-open", open);
+  };
 
-	menuBtn?.addEventListener('click', () => {
-		setMenu(menuBtn.getAttribute('aria-expanded') !== 'true');
-	});
-	scrim?.addEventListener('click', () => setMenu(false));
-	// 同じページ内のアンカーへ飛ぶときは遷移が起きないので、明示的に閉じる
-	aside?.addEventListener('click', (event) => {
-		if ((event.target as HTMLElement).closest('a') !== null) setMenu(false);
-	});
-	document.addEventListener('keydown', (event) => {
-		if (event.key === 'Escape') setMenu(false);
-	});
+  menuBtn?.addEventListener("click", () => {
+    setMenu(menuBtn.getAttribute("aria-expanded") !== "true");
+  });
+  scrim?.addEventListener("click", () => setMenu(false));
+  // 同じページ内のアンカーへ飛ぶときは遷移が起きないので、明示的に閉じる
+  aside?.addEventListener("click", (event) => {
+    if ((event.target as HTMLElement).closest("a") !== null) setMenu(false);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") setMenu(false);
+  });
 </script>
 
 <script>
-	// 見出しにパーマリンクを付ける。id は Astro が Markdown から振ったものを使う。
-	// クリックでリンクを開かず、絶対 URL をクリップボードへ入れる。
-	const doc = document.querySelector('.doc');
+  // 見出しにパーマリンクを付ける。id は Astro が Markdown から振ったものを使う。
+  // クリックでリンクを開かず、絶対 URL をクリップボードへ入れる。
+  const doc = document.querySelector(".doc");
 
-	for (const heading of doc?.querySelectorAll<HTMLElement>('h2[id], h3[id], h4[id]') ?? []) {
-		const anchor = document.createElement('a');
-		anchor.className = 'heading-anchor';
-		anchor.href = `#${heading.id}`;
-		anchor.textContent = '#';
-		anchor.setAttribute('aria-label', `「${heading.textContent}」へのリンクをコピー`);
-		heading.append(anchor);
-	}
+  for (const heading of doc?.querySelectorAll<HTMLElement>(
+    "h2[id], h3[id], h4[id]",
+  ) ?? []) {
+    const anchor = document.createElement("a");
+    anchor.className = "heading-anchor";
+    anchor.href = `#${heading.id}`;
+    anchor.textContent = "#";
+    anchor.setAttribute(
+      "aria-label",
+      `「${heading.textContent}」へのリンクをコピー`,
+    );
+    heading.append(anchor);
+  }
 
-	let restore: ReturnType<typeof setTimeout> | undefined;
+  let restore: ReturnType<typeof setTimeout> | undefined;
 
-	doc?.addEventListener('click', (event) => {
-		const anchor = (event.target as HTMLElement).closest<HTMLAnchorElement>('.heading-anchor');
-		if (anchor === null || anchor === undefined) return;
-		event.preventDefault();
+  doc?.addEventListener("click", (event) => {
+    const anchor = (event.target as HTMLElement).closest<HTMLAnchorElement>(
+      ".heading-anchor",
+    );
+    if (anchor === null || anchor === undefined) return;
+    event.preventDefault();
 
-		const hash = anchor.getAttribute('href') ?? '';
-		// 開いている場所は変わらないので、スクロールを起こさない replaceState にする
-		history.replaceState(null, '', hash);
+    const hash = anchor.getAttribute("href") ?? "";
+    // 開いている場所は変わらないので、スクロールを起こさない replaceState にする
+    history.replaceState(null, "", hash);
 
-		navigator.clipboard
-			.writeText(new URL(hash, location.href).href)
-			.then(() => {
-				anchor.classList.add('is-copied');
-				clearTimeout(restore);
-				restore = setTimeout(() => anchor.classList.remove('is-copied'), 1400);
-			})
-			// クリップボードを使えない文脈 (http など) では、URL の更新だけで終える
-			.catch(() => {});
-	});
+    navigator.clipboard
+      .writeText(new URL(hash, location.href).href)
+      .then(() => {
+        anchor.classList.add("is-copied");
+        clearTimeout(restore);
+        restore = setTimeout(() => anchor.classList.remove("is-copied"), 1400);
+      })
+      // クリップボードを使えない文脈 (http など) では、URL の更新だけで終える
+      .catch(() => {});
+  });
 </script>

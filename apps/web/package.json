@@ -11,13 +11,16 @@
     "deploy": "astro build && wrangler deploy",
     "deploy:ci": "wrangler deploy",
     "preview:worker": "astro build && wrangler dev",
-    "gen": "bun scripts/build-preview.mjs && bun scripts/build-icons.mjs && bun scripts/build-og.mjs"
+    "gen": "bun scripts/build-preview.mjs && bun scripts/build-icons.mjs && bun scripts/build-og.mjs",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@astrojs/check": "0.9.10",
     "@cosense-toolbox/parser": "workspace:*",
     "@cosense-toolbox/style": "workspace:*",
     "astro": "7.2.3",
+    "prettier": "^3.9.6",
+    "prettier-plugin-astro": "^0.14.1",
     "sharp": "^0.34.5",
     "typescript": "^6.0.3"
   },

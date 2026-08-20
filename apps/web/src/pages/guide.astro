@@ -1,81 +1,100 @@
 ---
-import Base from '../layouts/Base.astro';
-import { SITE } from '../lib/site';
+import Base from "../layouts/Base.astro";
+import { SITE } from "../lib/site";
 ---
 
 <Base title="使い方">
-	<section class="guide">
-		<a class="back" href="/">← userscript 一覧へ戻る</a>
-		<h1>使い方</h1>
-		<p>
-			Cosense (旧Scrapbox) には <strong>userscript</strong> という仕組みがあります。自分のページに書いた
-			JavaScript / CSS を、自分のブラウザでだけ実行できるものです。ここのスクリプトはすべてその仕組みに乗っているので、
-			ブラウザ拡張もビルドも要りません。設定ページに1行足すだけで動きます。
-		</p>
+  <section class="guide">
+    <a class="back" href="/">← userscript 一覧へ戻る</a>
+    <h1>使い方</h1>
+    <p>
+      Cosense (旧Scrapbox) には <strong>userscript</strong> という仕組みがあります。自分のページに書いた
+      JavaScript / CSS を、自分のブラウザでだけ実行できるものです。ここのスクリプトはすべてその仕組みに乗っているので、
+      ブラウザ拡張もビルドも要りません。設定ページに1行足すだけで動きます。
+    </p>
 
-		<h2>1. 設定ページを開く</h2>
-		<p>
-			Cosense で<strong>自分のユーザー名と同じタイトルのページ</strong>を開きます。これが設定ページです。無ければ作ってください。
-			Cosense はこのページの <code>code:script.js</code> を、プロジェクトを開くたびに読み込みます。
-		</p>
+    <h2>1. 設定ページを開く</h2>
+    <p>
+      Cosense で<strong>自分のユーザー名と同じタイトルのページ</strong
+      >を開きます。これが設定ページです。無ければ作ってください。 Cosense
+      はこのページの <code>code:script.js</code> を、プロジェクトを開くたびに読み込みます。
+    </p>
 
-		<h2>2. スニペットを貼る</h2>
-		<p>
-			各スクリプトの詳細ページにある「📋 コピー」で1行が手に入ります。それを設定ページの
-			<code>code:script.js</code> ブロックに追加します。
-		</p>
-		<pre><code>{`code:script.js
+    <h2>2. スニペットを貼る</h2>
+    <p>
+      各スクリプトの詳細ページにある「📋
+      コピー」で1行が手に入ります。それを設定ページの
+      <code>code:script.js</code> ブロックに追加します。
+    </p>
+    <pre><code>{`code:script.js
  import "/api/code/${SITE.cosenseProject}/選択して自動リンクするuserScript/script.js";`}</code></pre>
 
-		<p>userCSS のものは <code>code:style.css</code> ブロックで <code>@import</code> します。</p>
-		<pre><code>{`code:style.css
+    <p>
+      userCSS のものは <code>code:style.css</code> ブロックで <code
+        >@import</code
+      > します。
+    </p>
+    <pre><code>{`code:style.css
  @import url('/api/code/${SITE.cosenseProject}/コードブロックの行番号を表示するUserCSS/style.css');`}</code></pre>
 
-		<div class="note">
-			<strong>まとめて入れる場合</strong>は、一覧や詳細ページの <strong>＋</strong> ボタンで気に入ったものを積んでから、
-			ヘッダの 🧰 を開いて「まとめてコピー」を押します。JavaScript と CSS が
-			<code>code:script.js</code> と <code>code:style.css</code> に振り分けられた状態で1枚のスニペットになるので、
-			そのまま設定ページに貼れます。
-		</div>
+    <div class="note">
+      <strong>まとめて入れる場合</strong>は、一覧や詳細ページの <strong
+        >＋</strong
+      > ボタンで気に入ったものを積んでから、 ヘッダの 🧰 を開いて「まとめてコピー」を押します。JavaScript
+      と CSS が
+      <code>code:script.js</code> と <code>code:style.css</code> に振り分けられた状態で1枚のスニペットになるので、
+      そのまま設定ページに貼れます。
+    </div>
 
-		<h2>3. 保存してリロード</h2>
-		<p>
-			ページを保存して再読み込みすれば反映されます。外したくなったら、その <code>import</code> の行を消すだけです。
-			ファイルも設定も残りません。
-		</p>
+    <h2>3. 保存してリロード</h2>
+    <p>
+      ページを保存して再読み込みすれば反映されます。外したくなったら、その <code
+        >import</code
+      > の行を消すだけです。 ファイルも設定も残りません。
+    </p>
 
-		<h2>コードはどこにあるか</h2>
-		<p>
-			スクリプトの実体は Cosense のページのコードブロックに置いてあります。中身は次の API で取得できます。
-		</p>
-		<pre><code>/api/code/&lt;プロジェクト名&gt;/&lt;ページタイトル&gt;/&lt;コードブロックのタイトル&gt;</code></pre>
-		<p>
-			末尾はコードブロックに書いたタイトルがそのまま入ります。<code>code:script.js</code> と書いていれば
-			<code>script.js</code>、<code>code:style.css</code> なら <code>style.css</code> です。
-		</p>
+    <h2>コードはどこにあるか</h2>
+    <p>
+      スクリプトの実体は Cosense
+      のページのコードブロックに置いてあります。中身は次の API で取得できます。
+    </p>
+    <pre><code>/api/code/&lt;プロジェクト名&gt;/&lt;ページタイトル&gt;/&lt;コードブロックのタイトル&gt;</code></pre>
+    <p>
+      末尾はコードブロックに書いたタイトルがそのまま入ります。<code
+        >code:script.js</code
+      > と書いていれば
+      <code>script.js</code>、<code>code:style.css</code> なら <code
+        >style.css</code
+      > です。
+    </p>
 
-		<div class="note">
-			このパスは scrapbox.io の中であれば<strong>別プロジェクトのコードも読み込めます</strong>。
-			そのため、多くは {SITE.cosenseProject} の実装をそのまま import するだけで動きます。
-			自分のプロジェクトにコードをコピーして、そちらを指しても構いません。
-		</div>
+    <div class="note">
+      このパスは scrapbox.io の中であれば<strong
+        >別プロジェクトのコードも読み込めます</strong
+      >。 そのため、多くは {SITE.cosenseProject} の実装をそのまま import するだけで動きます。
+      自分のプロジェクトにコードをコピーして、そちらを指しても構いません。
+    </div>
 
-		<h2>できること、できないこと</h2>
-		<ul>
-			<li><strong>できる</strong>：Cosense の UI のカスタマイズ、内部 API、Clipboard、localStorage、CacheStorage の利用。</li>
-			<li>
-				<strong>できない</strong>：CSP により外部へのネットワークリクエストはほぼ通りません。
-				ここのスクリプトは scrapbox.io の中で完結するように書いてあります。
-			</li>
-		</ul>
+    <h2>できること、できないこと</h2>
+    <ul>
+      <li>
+        <strong>できる</strong>：Cosense の UI のカスタマイズ、内部
+        API、Clipboard、localStorage、CacheStorage の利用。
+      </li>
+      <li>
+        <strong>できない</strong>：CSP
+        により外部へのネットワークリクエストはほぼ通りません。
+        ここのスクリプトは scrapbox.io の中で完結するように書いてあります。
+      </li>
+    </ul>
 
-		<p style="margin-top:28px">
-			<a
-				class="source-link"
-				href={`https://scrapbox.io/${SITE.cosenseProject}/userScript&userCss`}
-				target="_blank"
-				rel="noopener">配布元の一覧ページ（{SITE.cosenseProject}） ↗</a
-			>
-		</p>
-	</section>
+    <p style="margin-top:28px">
+      <a
+        class="source-link"
+        href={`https://scrapbox.io/${SITE.cosenseProject}/userScript&userCss`}
+        target="_blank"
+        rel="noopener">配布元の一覧ページ（{SITE.cosenseProject}） ↗</a
+      >
+    </p>
+  </section>
 </Base>

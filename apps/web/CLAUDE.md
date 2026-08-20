@@ -79,6 +79,7 @@ userscript の実体は Cosense の **`cosense-toolbox`** プロジェクト（�
 ## 現状
 
 `bun run build` で **52ページ**生成OK。実装済み：
+
 - ギャラリー（カード＋フィルタ＋検索）／詳細ページ／使い方ページ
 - **ツールボックス（カート）**：積んで一括コピー
 - **ライトモード**：ヘッダのトグルで切替（`is:inline`で描画前にテーマ確定、localStorage永続）
@@ -87,6 +88,7 @@ userscript の実体は Cosense の **`cosense-toolbox`** プロジェクト（�
 - テーマ系4本にA層ライブデモ。パレットはCosense(#111)寄り＋星グラデ
 
 **注意 / 残タスク**:
+
 - **プロジェクト名は `cosense-toolbox`**。旧称 cosense-toolbox は全置換で消去済み（install path / source URL も `cosense-toolbox`）。**元コードの実体ページがまだCosense上で別名の可能性あり** → CLIで読むときは実プロジェクト名を確認
 - 各スクリプトの**スクショ未取得**（全部ダミー画像）。`src/content/scripts/<slug>.md` の `media` に画像URLを入れると差し替わる
 - ライブデモ拡充：A層の横展開、B層（`@astrojs/alpinejs`でcosense-command等）、C層（GIF）

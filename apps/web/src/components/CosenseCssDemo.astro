@@ -1,28 +1,31 @@
 ---
 interface Props {
-	css: string;
+  css: string;
 }
 const { css } = Astro.props;
 
-const indentSpans = (n: number) => '<span><span class="pad"></span></span>'.repeat(n);
-const line = (n: number, text: string, cls = '') =>
-	`<div class="line ${cls}"><span class="indent-mark">${indentSpans(n)}</span><span class="text">${text}</span></div>`;
+const indentSpans = (n: number) =>
+  '<span><span class="pad"></span></span>'.repeat(n);
+const line = (n: number, text: string, cls = "") =>
+  `<div class="line ${cls}"><span class="indent-mark">${indentSpans(n)}</span><span class="text">${text}</span></div>`;
 const codeLine = (c: string) =>
-	`<div class="line"><span class="indent"><code class="code-body">${c}</code></span></div>`;
+  `<div class="line"><span class="indent"><code class="code-body">${c}</code></span></div>`;
 
 const mock = [
-	`<div class="line line-title"><span class="text">デモページ</span></div>`,
-	`<div class="line section-title"><span class="text">はじめに</span></div>`,
-	line(1, 'これはふつうの行です'),
-	line(2, 'ネストした行（カーソル行）', 'cursor-line'),
-	line(3, 'さらにネストした行'),
-	line(6, '深いインデント → 虹色になる'),
-	`<div class="line section-title"><span class="text">コード例</span></div>`,
-	`<div class="code-block">` +
-		`<div class="line code-block-title"><span class="indent"><code class="code-body">code:demo.js</code></span></div>` +
-		['const a = 1;', 'const b = 2;', 'function sum() {', '  return a + b;', '}'].map(codeLine).join('') +
-		`</div>`,
-].join('');
+  `<div class="line line-title"><span class="text">デモページ</span></div>`,
+  `<div class="line section-title"><span class="text">はじめに</span></div>`,
+  line(1, "これはふつうの行です"),
+  line(2, "ネストした行（カーソル行）", "cursor-line"),
+  line(3, "さらにネストした行"),
+  line(6, "深いインデント → 虹色になる"),
+  `<div class="line section-title"><span class="text">コード例</span></div>`,
+  `<div class="code-block">` +
+    `<div class="line code-block-title"><span class="indent"><code class="code-body">code:demo.js</code></span></div>` +
+    ["const a = 1;", "const b = 2;", "function sum() {", "  return a + b;", "}"]
+      .map(codeLine)
+      .join("") +
+    `</div>`,
+].join("");
 
 const baseCss = `
 *{box-sizing:border-box}
@@ -46,9 +49,19 @@ const srcdoc = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><styl
 
 <!-- トグル挙動は Base.astro の委譲ハンドラ([data-css-demo-toggle])で処理。スタイルは global.css。 -->
 <div class="css-demo" data-on="false">
-	<div class="css-demo-bar">
-		<span class="css-demo-title">疑似Cosenseページ・ライブプレビュー</span>
-		<button class="btn primary css-demo-toggle" data-css-demo-toggle aria-pressed="false" type="button">userCSS を適用 ▶</button>
-	</div>
-	<iframe class="css-demo-frame" srcdoc={srcdoc} title="userCSS live demo" sandbox="allow-scripts" loading="lazy"></iframe>
+  <div class="css-demo-bar">
+    <span class="css-demo-title">疑似Cosenseページ・ライブプレビュー</span>
+    <button
+      class="btn primary css-demo-toggle"
+      data-css-demo-toggle
+      aria-pressed="false"
+      type="button">userCSS を適用 ▶</button
+    >
+  </div>
+  <iframe
+    class="css-demo-frame"
+    srcdoc={srcdoc}
+    title="userCSS live demo"
+    sandbox="allow-scripts"
+    loading="lazy"></iframe>
 </div>

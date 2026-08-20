@@ -1,214 +1,184 @@
 ---
 import { Code } from "astro:components";
-import { parse } from "@cosense-toolbox/parser";
-import { toHtml, toPlainText } from "@cosense-toolbox/parser/compile";
-import defaultStyle from "@cosense-toolbox/style/style.css?raw";
 import Doc from "../../layouts/Doc.astro";
+import { htmlDemo, htmlDemoWithResolvedLinks } from "../../lib/html-demo";
 
-// 本家の「その他の書き方」ページの内容。記法をひととおり含んでいる。
-const source = [
-	"その他の書き方",
-	"基本的な[ブラケティング]の他にも、色々な[記法]があります",
-	"",
-	"外部リンク (一般のWebページへのリンク)",
-	" URLを書くとリンクになる",
-	"  https://yahoo.co.jp",
-	"	`[URL タイトル]`",
-	"	 [https://yahoo.com Yahoo!]",
-	" `[タイトル URL]`逆順でもok",
-	"  [Yahoo! https://yahoo.com]",
-	"",
-	"画像",
-	"	`[画像URL]`",
-	"  [https://i.gyazo.com/da78df293f9e83a74b5402411e2f2e01.png]",
-	" `[[画像URL]]`",
-	"  横幅いっぱい、高さ制限無しで大きな画像を表示",
-	"",
-	"リンク付き画像",
-	"	`[リンク先URL 画像URL]`",
-	"  [http://yahoo.co.jp https://i.gyazo.com/da78df293f9e83a74b5402411e2f2e01.png]",
-	"",
-	"別プロジェクトへのリンク",
-	" `/プロジェクト名/ページ名`",
-	" [/icons]",
-	" [/icons/すごい]",
-	"",
-	"アイコン",
-	" [rakusai.icon]",
-	" [/icons/炎上.icon]",
-	"",
-	"[数式]",
-	" [$ \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}]",
-	"",
-	"[HashTag]",
-	" #HashTag",
-	"",
-	"引用",
-	" > 行頭に`>`を書くと引用になります",
-	"",
-	"コード",
-	" バッククオート`\\``で囲む",
-	"  `function() {  return \\`hello\\` }`",
-	"",
-	"[コードブロック]",
-	" code:hello.js",
-	"  function () {",
-	"    alert(document.location.href)",
-	'    console.log("hello")',
-	"    // コメントも書けるぞ",
-	"  }",
-	"",
-	"[テーブル]",
-	" `table:テーブル名` の後、インデントしてtab区切り",
-	" table:テーブルの例",
-	"  abc	def",
-	"  12345	6789",
-	"  長い長い文字列	短い文字列",
-	"",
-	"コマンドライン",
-	" 行頭に`$`もしくは`%`",
-	" $ git reset --hard HEAD^",
-	" % cp a.txt b.txt",
-	"",
-	"[[強調]]と[*** 大きな文字]",
-	"	`[[強調]]` ⇒ [[強調]]",
-	" `[* 強調]` ⇒ [* 強調]",
-	" `[**** もっと大きな文字]` => [**** もっと大きな文字]",
-	"",
-	"[/ 斜体]",
-	" `[/ 斜体文字]` ⇒ [/ 斜体文字]",
-	" `[/* 太字斜体文字]` => [/* 太字斜体文字]",
-	"",
-	"[- 打ち消し線]",
-	" `[- 打ち消し]` ⇒ [- 打ち消し]",
-].join("\n");
+const htmlDemoCode = import.meta.glob("../../lib/html-demo.ts", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+})["../../lib/html-demo.ts"] as string;
 
-const page = parse(source);
-const html = toHtml(page);
-const text = toPlainText(page);
+/**
+ * html-demo.ts から関数を 1 つ切り出す。直前の JSDoc も含める。
+ * ここに実装を書き写すと本体とずれるので、ファイルから読む。
+ */
+function pickFunction(code: string, name: string): string {
+  const lines = code.split("\n");
+  const declared = lines.findIndex((line) =>
+    line.includes(`function ${name}(`),
+  );
+  if (declared < 0) return code;
 
-// このページに載せているコード。実際に上で動かしているものと同じにする。
-const example = `import { parse } from '@cosense-toolbox/parser'
-import { toHtml, toPlainText } from '@cosense-toolbox/parser/compile'
+  let from = declared;
+  while (from > 0 && /^\s*(\/\*\*|\*)/.test(lines[from - 1])) from--;
+  const closed = lines.findIndex((line, i) => i > declared && line === "}");
 
-const page = parse(source)
+  return lines.slice(from, closed + 1).join("\n");
+}
 
-const html = toHtml(page)
-const text = toPlainText(page)`;
-
-// iframe に入れて周りの CSS から切り離す。
-// style は <head> に一度だけ置けばよいので toHtml の style オプションは使わない。
-const document = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><style>${defaultStyle}</style></head><body>${html}</body></html>`;
-
-const tabs = [
-	{ id: "rendered", label: "表示" },
-	{ id: "source", label: "元の記法" },
-	{ id: "html", label: "toHtml の出力" },
-	{ id: "plain", label: "toPlainText の出力" },
+const demos = [
+  {
+    id: "plain",
+    heading: "そのまま変換する",
+    code: pickFunction(htmlDemoCode, "htmlDemo"),
+    document: htmlDemo(),
+  },
+  {
+    id: "resolved",
+    heading: "リンクとアイコンを解決する",
+    code: pickFunction(htmlDemoCode, "htmlDemoWithResolvedLinks"),
+    document: await htmlDemoWithResolvedLinks(),
+  },
 ];
 ---
 
-<Doc title="例" description="Cosense の記法をひととおり parse して toHtml で描画した結果">
-	<h1>例</h1>
-	<p class="lead">
-		本家の <a href="https://scrapbox.io/help-jp/その他の書き方" target="_blank">その他の書き方</a> ページを、下のコードだけで変換した結果です。オプションを何も渡していないので、これが既定の出力になります。
-	</p>
+<Doc
+  title="例"
+  description="Cosense の記法をひととおり parse して toHtml で描画した結果"
+>
+  <h1>例</h1>
+  <p class="lead">
+    <a href="https://scrapbox.io/help-jp/その他の書き方" target="_blank"
+      >/help-jp/その他の書き方</a
+    > ページを、下のコードだけで変換した結果です。
+  </p>
 
-	<Code code={example} lang="ts" theme="github-dark" />
+  <h2 id="そのまま変換する">{demos[0].heading}</h2>
+  <p class="lead">
+    <code>toHtml</code> にオプションを渡していないので、リンク先が <code
+      >/タイトル</code
+    > になり、アイコンはユーザー名のテキストリンクになります。
+  </p>
 
-	<p class="lead">
-		リンク先が <code>/タイトル</code> になっているのは既定の動作で、実際のプロジェクトに向けるには <a href="/parser/html/#pageurl">pageUrl</a> を渡します。
-		アイコンが画像でなく名前で出ているのも同じで、<a href="/parser/html/#iconimageurl">iconImageUrl</a> を渡すと画像になります。
-		コードブロックに色を付けるには <a href="/parser/html/#highlight">highlight</a> にハイライタを挿します。
-	</p>
+  <div class="demo">
+    <div class="demo-tabs" role="tablist">
+      <button type="button" role="tab" data-demo-tab="code" aria-selected="true"
+        >実装</button
+      >
+      <button
+        type="button"
+        role="tab"
+        data-demo-tab="view"
+        aria-selected="false">描画</button
+      >
+    </div>
+    <div data-demo-panel="code" class="demo-panel">
+      <Code lang="ts" code={demos[0].code} />
+    </div>
+    <div data-demo-panel="view" class="demo-panel" hidden>
+      <iframe title={demos[0].heading} srcdoc={demos[0].document}></iframe>
+    </div>
+  </div>
 
-	<div class="demo">
-		<div class="demo-tabs" role="tablist">
-			{
-				tabs.map((tab, index) => (
-					<button
-						type="button"
-						role="tab"
-						data-demo-tab={tab.id}
-						aria-selected={index === 0 ? "true" : "false"}
-					>
-						{tab.label}
-					</button>
-				))
-			}
-		</div>
+  <h2 id="リンクとアイコンを解決する">{demos[1].heading}</h2>
+  <p class="lead">
+    <a href="/parser/html/#pageurl">pageUrl</a> と <a
+      href="/parser/html/#iconimageurl">iconImageUrl</a
+    > を渡すと、リンク先が本家のページに向き、アイコンが画像になります。 どちらも記法には書かれていない情報なので、外から渡して補います。
+    コードブロックに色を付けたい場合は、さらに <a href="/parser/html/#highlight"
+      >highlight</a
+    > にハイライタを挿します。
+  </p>
 
-		<div data-demo-panel="rendered" class="demo-panel">
-			<iframe title="toHtml の出力" srcdoc={document}></iframe>
-		</div>
-		<pre data-demo-panel="source" class="demo-panel" hidden>{source}</pre>
-		<pre data-demo-panel="html" class="demo-panel" hidden>{html}</pre>
-		<pre data-demo-panel="plain" class="demo-panel" hidden>{text}</pre>
-	</div>
+  <div class="demo">
+    <div class="demo-tabs" role="tablist">
+      <button type="button" role="tab" data-demo-tab="code" aria-selected="true"
+        >実装</button
+      >
+      <button
+        type="button"
+        role="tab"
+        data-demo-tab="view"
+        aria-selected="false">描画</button
+      >
+    </div>
+    <div data-demo-panel="code" class="demo-panel">
+      <Code lang="ts" code={demos[1].code} />
+    </div>
+    <div data-demo-panel="view" class="demo-panel" hidden>
+      <iframe title={demos[1].heading} srcdoc={demos[1].document}></iframe>
+    </div>
+  </div>
 </Doc>
 
 <script>
-	const tabs = document.querySelectorAll<HTMLButtonElement>("[data-demo-tab]");
-	const panels = document.querySelectorAll<HTMLElement>("[data-demo-panel]");
+  // .demo が 2 つ以上あるので、タブの切り替えはその中だけに閉じる。
+  for (const demo of document.querySelectorAll<HTMLElement>(".demo")) {
+    const tabs = demo.querySelectorAll<HTMLButtonElement>("[data-demo-tab]");
+    const panels = demo.querySelectorAll<HTMLElement>("[data-demo-panel]");
 
-	for (const tab of tabs) {
-		tab.addEventListener("click", () => {
-			const name = tab.dataset.demoTab;
-			for (const other of tabs) other.setAttribute("aria-selected", String(other === tab));
-			for (const panel of panels) panel.hidden = panel.dataset.demoPanel !== name;
-		});
-	}
+    for (const tab of tabs) {
+      tab.addEventListener("click", () => {
+        const name = tab.dataset.demoTab;
+        for (const other of tabs)
+          other.setAttribute("aria-selected", String(other === tab));
+        for (const panel of panels)
+          panel.hidden = panel.dataset.demoPanel !== name;
+      });
+    }
+  }
 </script>
 
 <style>
-	.lead {
-		color: var(--text-dim);
-	}
+  .lead {
+    color: var(--text-dim);
+  }
 
-	.demo-tabs {
-		display: flex;
-		gap: 4px;
-		margin: 28px 0 0;
-	}
+  .demo-tabs {
+    display: flex;
+    gap: 4px;
+    margin: 28px 0 0;
+  }
 
-	.demo-tabs button {
-		padding: 8px 16px;
-		border: 1px solid var(--border);
-		border-bottom: 0;
-		border-radius: 8px 8px 0 0;
-		background: var(--bg);
-		color: var(--text-dim);
-		font-size: 13.5px;
-		cursor: pointer;
-	}
+  .demo-tabs button {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    background: var(--bg);
+    color: var(--text-dim);
+    font-size: 13.5px;
+    cursor: pointer;
+  }
 
-	.demo-tabs button[aria-selected="true"] {
-		background: var(--bg-elev);
-		color: var(--text);
-	}
+  .demo-tabs button[aria-selected="true"] {
+    background: var(--bg-elev);
+    color: var(--text);
+  }
 
-	.demo-panel {
-		margin: 0;
-		border: 1px solid var(--border);
-		border-radius: 0 var(--radius) var(--radius) var(--radius);
-		overflow: auto;
-	}
+  .demo-panel {
+    margin: 0;
+    border: 1px solid var(--border);
+    border-radius: 0 var(--radius) var(--radius) var(--radius);
+    overflow: auto;
+  }
 
-	.demo-panel iframe {
-		display: block;
-		width: 100%;
-		height: 70vh;
-		border: 0;
-		background: #fefefe;
-	}
+  .demo-panel iframe {
+    display: block;
+    width: 100%;
+    height: 70vh;
+    border: 0;
+    background: #fefefe;
+  }
 
-	pre.demo-panel {
-		max-height: 70vh;
-		padding: 20px;
-		background: var(--code-bg);
-		font-family: var(--font-mono);
-		font-size: 13px;
-		line-height: 1.7;
-		white-space: pre-wrap;
-	}
+  pre.demo-panel {
+    max-height: 70vh;
+    padding: 20px;
+    background: var(--code-bg);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
 </style>

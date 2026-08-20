@@ -1,6 +1,6 @@
 ---
 layout: ../../layouts/Doc.astro
-title: '@cosense-toolbox/parser'
+title: "@cosense-toolbox/parser"
 description: Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換するパーサー
 ---
 
@@ -12,18 +12,18 @@ description: Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に
 記法を読み取るだけでなく、それが元のテキストのどこに書かれていたかまで返します。
 
 ```ts
-import { parse } from '@cosense-toolbox/parser'
-import { collectLinks } from '@cosense-toolbox/parser/utils'
-import { toHtml } from '@cosense-toolbox/parser/compile'
+import { parse } from "@cosense-toolbox/parser";
+import { collectLinks } from "@cosense-toolbox/parser/utils";
+import { toHtml } from "@cosense-toolbox/parser/compile";
 
 const page = parse(`今日のメモ
 [プロジェクトA] の進捗を確認する
-#あとで読む`)
+#あとで読む`);
 
-collectLinks(page)
+collectLinks(page);
 // → ['プロジェクトA', 'あとで読む']
 
-toHtml(page)
+toHtml(page);
 // → '<div class="page"><h1 class="title">今日のメモ</h1>…'
 ```
 
@@ -93,55 +93,55 @@ Cosense のテキスト
 
 テキストを AST にします。
 
-| API | 何をするか |
-| :--- | :--- |
-| [`parse`](/parser/parse/#parse) | ページ全体をパースする |
-| [`parseLine`](/parser/parse/#parseline) | 1 行だけをパースする |
-| [`tokenizeInline`](/parser/parse/#tokenizeinline) | 行の中の記法だけを取る |
-| [`createParser`](/parser/parse/#createparser) | 拡張を固定したパーサーを作る |
-| [`asImageSrc`](/parser/parse/#asimagesrc) | 画像 URL を `<img src>` に入る形にする |
-| [`normalizeLineEndings`](/parser/parse/#normalizelineendings) | 改行コードを LF に揃える |
+| API                                                           | 何をするか                             |
+| :------------------------------------------------------------ | :------------------------------------- |
+| [`parse`](/parser/parse/#parse)                               | ページ全体をパースする                 |
+| [`parseLine`](/parser/parse/#parseline)                       | 1 行だけをパースする                   |
+| [`tokenizeInline`](/parser/parse/#tokenizeinline)             | 行の中の記法だけを取る                 |
+| [`createParser`](/parser/parse/#createparser)                 | 拡張を固定したパーサーを作る           |
+| [`asImageSrc`](/parser/parse/#asimagesrc)                     | 画像 URL を `<img src>` に入る形にする |
+| [`normalizeLineEndings`](/parser/parse/#normalizelineendings) | 改行コードを LF に揃える               |
 
 ### @cosense-toolbox/parser/utils
 
 AST から欲しいものを取り出します。
 
-| API | 何をするか |
-| :--- | :--- |
-| [`visit`](/parser/utils/#visit) | 木を深さ優先で辿る |
-| [`find`](/parser/utils/#find) | ある型の最初のノードを返す |
-| [`collect`](/parser/utils/#collect) | ある型のノードをすべて集める |
-| [`collectLinks`](/parser/utils/#collectlinks) | リンクの指す先を集める |
-| [`firstImage`](/parser/utils/#firstimage) | 最初の画像ノードを返す |
-| [`rawTextOf`](/parser/utils/#rawtextof) | ノードの生テキストを切り出す |
+| API                                           | 何をするか                   |
+| :-------------------------------------------- | :--------------------------- |
+| [`visit`](/parser/utils/#visit)               | 木を深さ優先で辿る           |
+| [`find`](/parser/utils/#find)                 | ある型の最初のノードを返す   |
+| [`collect`](/parser/utils/#collect)           | ある型のノードをすべて集める |
+| [`collectLinks`](/parser/utils/#collectlinks) | リンクの指す先を集める       |
+| [`firstImage`](/parser/utils/#firstimage)     | 最初の画像ノードを返す       |
+| [`rawTextOf`](/parser/utils/#rawtextof)       | ノードの生テキストを切り出す |
 
 ### @cosense-toolbox/parser/compile
 
 AST を別の形式に変換します。
 
-| API | 何をするか |
-| :--- | :--- |
-| [`toHtml`](/parser/html/) | HTML にする |
-| [`toPlainText`](/parser/compile/#toplaintext) | 記法を外したテキストにする |
-| [`createCompiler`](/parser/compile/#createcompiler) | 独自の形式にする |
+| API                                                 | 何をするか                 |
+| :-------------------------------------------------- | :------------------------- |
+| [`toHtml`](/parser/html/)                           | HTML にする                |
+| [`toPlainText`](/parser/compile/#toplaintext)       | 記法を外したテキストにする |
+| [`createCompiler`](/parser/compile/#createcompiler) | 独自の形式にする           |
 
 ### @cosense-toolbox/parser/plugin
 
 記法を足すための型だけを持ち、実行時のコードは含みません。
 
-| 型 | 何をするか |
-| :--- | :--- |
-| [`InlineConstruct`](/parser/extend/#記法を足す) | 行のどこからでも始まる記法を足す |
-| [`BracketRule`](/parser/extend/#記法を足す) | `[...]` の中身の解釈を足す |
-| [`Extension`](/parser/extend/#記法を足す) | 上の 2 つをまとめて `parse` に渡す |
-| [`NodeHandlers`](/parser/html/#handlers) | 出力側のハンドラの型 |
+| 型                                              | 何をするか                         |
+| :---------------------------------------------- | :--------------------------------- |
+| [`InlineConstruct`](/parser/extend/#記法を足す) | 行のどこからでも始まる記法を足す   |
+| [`BracketRule`](/parser/extend/#記法を足す)     | `[...]` の中身の解釈を足す         |
+| [`Extension`](/parser/extend/#記法を足す)       | 上の 2 つをまとめて `parse` に渡す |
+| [`NodeHandlers`](/parser/html/#handlers)        | 出力側のハンドラの型               |
 
 ### @cosense-toolbox/parser/schema
 
 外から来た値を検証します。
 
-| API | 何をするか |
-| :--- | :--- |
+| API                                                | 何をするか                   |
+| :------------------------------------------------- | :--------------------------- |
 | [`decodePage`](/parser/extend/#スキーマで検証する) | 値が `Page` かどうか確かめる |
 
 上から順に、次のページから説明していきます。

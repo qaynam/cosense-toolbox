@@ -5,7 +5,7 @@
  * （配布される本体はメディアクエリ付き。詳細ページの「コピー」は本物を渡す）
  */
 export const CSS_DEMOS: Record<string, string> = {
-	'line-numbers': `
+  "line-numbers": `
 .lines { counter-reset: line }
 .line:not(.line-title) { counter-increment: line }
 .app:not(.presentation) .line:not(.line-title)::before {
@@ -18,7 +18,7 @@ export const CSS_DEMOS: Record<string, string> = {
 .line.cursor-line:not(.line-title)::before { opacity: 1; font-weight: bolder }
 `,
 
-	'section-numbers': `
+  "section-numbers": `
 .app { counter-reset: section }
 .app:not(.presentation) .line.section-title:not(.line-title) { position: relative }
 .app:not(.presentation) .line.section-title:not(.line-title)::after {
@@ -36,7 +36,7 @@ export const CSS_DEMOS: Record<string, string> = {
 }
 `,
 
-	'code-block-line-numbers': `
+  "code-block-line-numbers": `
 body *::before { --code-number-color: #1C2B27; --code-accent-color: #C9E6DE }
 .section-title { counter-reset: codeline }
 .code-block span.indent code.code-body {
@@ -59,7 +59,7 @@ body *::before { --code-number-color: #1C2B27; --code-accent-color: #C9E6DE }
 }
 `,
 
-	'indent-rainbow': `
+  "indent-rainbow": `
 .indent-mark { height: 100% !important }
 .indent-mark .pad { height: 100% !important; overflow: unset !important }
 .indent-mark span:nth-child(4n+1) .pad { background: lightblue !important; opacity: 0.5 }

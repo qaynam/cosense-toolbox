@@ -22,26 +22,32 @@ parse(source: string, options?: ParseOptions): Page
 [概要](/parser/)で使ったのもこの関数です。
 
 ```ts
-import { parse } from '@cosense-toolbox/parser'
+import { parse } from "@cosense-toolbox/parser";
 
-const page = parse('タイトル\nこれは [リンク] です')
+const page = parse("タイトル\nこれは [リンク] です");
 
 for (const block of page.children) {
   switch (block.type) {
-    case 'title':
-      console.log('title:', block.value)
-      break
-    case 'line':
-      console.log('line:', block.children.map((node) => node.type))
-      break
-    case 'codeBlock':
-      console.log(block.filename, block.lines.map((line) => line.value))
-      break
-    case 'table':
-      console.log(block.name, block.rows.length)
-      break
+    case "title":
+      console.log("title:", block.value);
+      break;
+    case "line":
+      console.log(
+        "line:",
+        block.children.map((node) => node.type),
+      );
+      break;
+    case "codeBlock":
+      console.log(
+        block.filename,
+        block.lines.map((line) => line.value),
+      );
+      break;
+    case "table":
+      console.log(block.name, block.rows.length);
+      break;
     default:
-      break
+      break;
   }
 }
 ```
@@ -60,16 +66,16 @@ parseLine(raw: string, origin?: { line?: number; offset?: number }): LineBlock
 エディタのように行単位で扱うときのために、1 行だけを通常行としてパースします。
 
 ```ts
-import { parseLine } from '@cosense-toolbox/parser'
+import { parseLine } from "@cosense-toolbox/parser";
 
-parseLine('  > [リンク]')
+parseLine("  > [リンク]");
 // LineBlock { indent: 2, quote: true, monospace: false, children: [...] }
 ```
 
 ページの文脈がないので、`code:` と `table:` は**ブロックになりません**。
 
 ```ts
-parseLine('code:foo.js')
+parseLine("code:foo.js");
 // LineBlock { children: [{ type: 'text', value: 'code:foo.js' }] }
 ```
 
@@ -86,9 +92,9 @@ tokenizeInline(source: string, options?: TokenizeOptions): readonly InlineNode[]
 行の中だけを解析してインラインノードの並びを返す関数で、インデントや引用の判定はしません。
 
 ```ts
-import { tokenizeInline } from '@cosense-toolbox/parser'
+import { tokenizeInline } from "@cosense-toolbox/parser";
 
-tokenizeInline('[* 太字] と [リンク]')
+tokenizeInline("[* 太字] と [リンク]");
 // [ Decoration, TextNode, InternalLink ]
 ```
 
@@ -103,13 +109,13 @@ createParser(options?: ParserOptions): { parse; parseLine; tokenizeInline }
 拡張を固定したパーサーを作るので、同じ拡張で何度もパースするときに毎回 `extensions` を渡さずに済みます。
 
 ```ts
-import { createParser } from '@cosense-toolbox/parser'
+import { createParser } from "@cosense-toolbox/parser";
 
 // mentions の作りかたは「記法の拡張」にあります
-const parser = createParser({ extensions: [mentions] })
+const parser = createParser({ extensions: [mentions] });
 
-parser.parse('タイトル\n@qaynam に確認する')
-parser.parseLine('@qaynam に確認する')
+parser.parse("タイトル\n@qaynam に確認する");
+parser.parseLine("@qaynam に確認する");
 ```
 
 拡張そのものの書きかたは[記法の拡張](/parser/extend/)で説明します。
@@ -123,12 +129,12 @@ asImageSrc(url: string): string | null
 画像 URL を `<img src>` に入れられる形にして、画像でなければ `null` を返します。
 
 ```ts
-import { asImageSrc } from '@cosense-toolbox/parser'
+import { asImageSrc } from "@cosense-toolbox/parser";
 
-asImageSrc('https://gyazo.com/503a911fea542532aa5aba0a88eb7b60')
+asImageSrc("https://gyazo.com/503a911fea542532aa5aba0a88eb7b60");
 // → 'https://i.gyazo.com/503a911fea542532aa5aba0a88eb7b60.png'
 
-asImageSrc('https://example.test/page')
+asImageSrc("https://example.test/page");
 // → null
 ```
 

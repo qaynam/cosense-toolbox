@@ -1,123 +1,160 @@
 ---
-import Base from '../layouts/Base.astro';
-import { THEME_GROUPS } from '../lib/theme-tokens';
+import Base from "../layouts/Base.astro";
+import { THEME_GROUPS } from "../lib/theme-tokens";
 ---
 
 <Base title="テーマビルダー" app>
-	<div class="builder-app">
-		<aside class="builder-side">
-			<div class="builder-side-head">
-				<strong>テーマビルダー</strong>
-				<p>色を変えると右に即反映。できた userCSS をコピーして自分の Cosense の <code>code:style.css</code> に貼るだけ。</p>
-			</div>
+  <div class="builder-app">
+    <aside class="builder-side">
+      <div class="builder-side-head">
+        <strong>テーマビルダー</strong>
+        <p>
+          色を変えると右に即反映。できた userCSS をコピーして自分の Cosense の <code
+            >code:style.css</code
+          > に貼るだけ。
+        </p>
+      </div>
 
-			<div class="builder-side-scroll">
-				{
-					THEME_GROUPS.map((g) => (
-						<section class="ctrl-group">
-							<h2>{g.title}</h2>
-							{g.tokens.map((t) => (
-								<label class="ctrl">
-									<span class="ctrl-label">{t.label}</span>
-									<span class="ctrl-swatch">
-										<input type="color" data-var={t.var} value={t.default} />
-									</span>
-								</label>
-							))}
-						</section>
-					))
-				}
-			</div>
+      <div class="builder-side-scroll">
+        {
+          THEME_GROUPS.map((g) => (
+            <section class="ctrl-group">
+              <h2>{g.title}</h2>
+              {g.tokens.map((t) => (
+                <label class="ctrl">
+                  <span class="ctrl-label">{t.label}</span>
+                  <span class="ctrl-swatch">
+                    <input type="color" data-var={t.var} value={t.default} />
+                  </span>
+                </label>
+              ))}
+            </section>
+          ))
+        }
+      </div>
 
-			<div class="builder-side-foot">
-				<details class="builder-output">
-					<summary>生成された userCSS を見る</summary>
-					<pre><code id="builder-css">/* 色を変えるとここに userCSS が出ます */</code></pre>
-				</details>
-				<div class="side-actions">
-					<button class="btn" data-builder-reset type="button">リセット</button>
-					<button class="btn primary" id="builder-copy" data-copy="" type="button"><span class="label">📋 userCSSをコピー</span></button>
-				</div>
-			</div>
-		</aside>
+      <div class="builder-side-foot">
+        <details class="builder-output">
+          <summary>生成された userCSS を見る</summary>
+          <pre><code id="builder-css">/* 色を変えるとここに userCSS が出ます */</code></pre>
+        </details>
+        <div class="side-actions">
+          <button class="btn" data-builder-reset type="button">リセット</button>
+          <button
+            class="btn primary"
+            id="builder-copy"
+            data-copy=""
+            type="button"><span class="label">📋 userCSSをコピー</span></button
+          >
+        </div>
+      </div>
+    </aside>
 
-		<div class="builder-canvas">
-			<div class="builder-canvas-bar">
-				<div class="seg">
-					<button data-view="article" class="seg-btn is-active" type="button">記事</button>
-					<button data-view="list" class="seg-btn" type="button">ページ一覧</button>
-				</div>
-				<span class="canvas-hint">プレビュー（疑似Cosense・既定テーマ）</span>
-			</div>
-			<div class="builder-stage">
-				<iframe id="builder-preview" src="/builder/preview-article.html" title="Cosenseプレビュー"></iframe>
-			</div>
-		</div>
-	</div>
+    <div class="builder-canvas">
+      <div class="builder-canvas-bar">
+        <div class="seg">
+          <button data-view="article" class="seg-btn is-active" type="button"
+            >記事</button
+          >
+          <button data-view="list" class="seg-btn" type="button"
+            >ページ一覧</button
+          >
+        </div>
+        <span class="canvas-hint">プレビュー（疑似Cosense・既定テーマ）</span>
+      </div>
+      <div class="builder-stage">
+        <iframe
+          id="builder-preview"
+          src="/builder/preview-article.html"
+          title="Cosenseプレビュー"></iframe>
+      </div>
+    </div>
+  </div>
 
-	<script>
-	const frame = document.getElementById('builder-preview') as HTMLIFrameElement;
-	const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('[data-var]'));
-	const out = document.getElementById('builder-css');
-	const copyBtn = document.getElementById('builder-copy');
+  <script>
+    const frame = document.getElementById(
+      "builder-preview",
+    ) as HTMLIFrameElement;
+    const inputs = Array.from(
+      document.querySelectorAll<HTMLInputElement>("[data-var]"),
+    );
+    const out = document.getElementById("builder-css");
+    const copyBtn = document.getElementById("builder-copy");
 
-	const defaults: Record<string, string> = {};
-	inputs.forEach((i) => (defaults[i.dataset.var!] = (i.getAttribute('value') || '').toLowerCase()));
-	const state: Record<string, string> = {};
+    const defaults: Record<string, string> = {};
+    inputs.forEach(
+      (i) =>
+        (defaults[i.dataset.var!] = (
+          i.getAttribute("value") || ""
+        ).toLowerCase()),
+    );
+    const state: Record<string, string> = {};
 
-	function genCss() {
-		const keys = Object.keys(state);
-		if (!keys.length) return '';
-		return ':root {\n' + keys.map((k) => `\t${k}: ${state[k]} !important;`).join('\n') + '\n}';
-	}
-	function applyToFrame() {
-		const css = genCss();
-		// same-origin なので iframe の <style id="user"> に直接書き込める
-		try {
-			const doc = frame?.contentDocument;
-			if (doc) {
-				let s = doc.getElementById('user') as HTMLStyleElement | null;
-				if (!s) {
-					s = doc.createElement('style');
-					s.id = 'user';
-					(doc.head || doc.documentElement).appendChild(s);
-				}
-				s.textContent = css;
-			}
-		} catch {}
-		frame?.contentWindow?.postMessage({ type: 'userCss', css }, '*');
-	}
-	function update() {
-		const css = genCss();
-		if (out) out.textContent = css || '/* 色を変えるとここに userCSS が出ます */';
-		if (copyBtn) copyBtn.dataset.copy = css;
-		applyToFrame();
-	}
+    function genCss() {
+      const keys = Object.keys(state);
+      if (!keys.length) return "";
+      return (
+        ":root {\n" +
+        keys.map((k) => `\t${k}: ${state[k]} !important;`).join("\n") +
+        "\n}"
+      );
+    }
+    function applyToFrame() {
+      const css = genCss();
+      // same-origin なので iframe の <style id="user"> に直接書き込める
+      try {
+        const doc = frame?.contentDocument;
+        if (doc) {
+          let s = doc.getElementById("user") as HTMLStyleElement | null;
+          if (!s) {
+            s = doc.createElement("style");
+            s.id = "user";
+            (doc.head || doc.documentElement).appendChild(s);
+          }
+          s.textContent = css;
+        }
+      } catch {}
+      frame?.contentWindow?.postMessage({ type: "userCss", css }, "*");
+    }
+    function update() {
+      const css = genCss();
+      if (out)
+        out.textContent = css || "/* 色を変えるとここに userCSS が出ます */";
+      if (copyBtn) copyBtn.dataset.copy = css;
+      applyToFrame();
+    }
 
-	// ドラッグ中も追従させたいので change ではなく input で拾う
-	inputs.forEach((i) =>
-		i.addEventListener('input', () => {
-			const key = i.dataset.var!;
-			if (i.value.toLowerCase() === defaults[key]) delete state[key];
-			else state[key] = i.value;
-			update();
-		}),
-	);
+    // ドラッグ中も追従させたいので change ではなく input で拾う
+    inputs.forEach((i) =>
+      i.addEventListener("input", () => {
+        const key = i.dataset.var!;
+        if (i.value.toLowerCase() === defaults[key]) delete state[key];
+        else state[key] = i.value;
+        update();
+      }),
+    );
 
-	// iframe の (再)読み込み後に現在の上書きを再適用
-	frame?.addEventListener('load', applyToFrame);
+    // iframe の (再)読み込み後に現在の上書きを再適用
+    frame?.addEventListener("load", applyToFrame);
 
-	document.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((b) =>
-		b.addEventListener('click', () => {
-			document.querySelectorAll('[data-view]').forEach((x) => x.classList.toggle('is-active', x === b));
-			frame.src = b.dataset.view === 'list' ? '/builder/preview-list.html' : '/builder/preview-article.html';
-		}),
-	);
+    document.querySelectorAll<HTMLButtonElement>("[data-view]").forEach((b) =>
+      b.addEventListener("click", () => {
+        document
+          .querySelectorAll("[data-view]")
+          .forEach((x) => x.classList.toggle("is-active", x === b));
+        frame.src =
+          b.dataset.view === "list"
+            ? "/builder/preview-list.html"
+            : "/builder/preview-article.html";
+      }),
+    );
 
-	document.querySelector('[data-builder-reset]')?.addEventListener('click', () => {
-		Object.keys(state).forEach((k) => delete state[k]);
-		inputs.forEach((i) => (i.value = i.getAttribute('value') || '#000000'));
-		update();
-	});
-	</script>
+    document
+      .querySelector("[data-builder-reset]")
+      ?.addEventListener("click", () => {
+        Object.keys(state).forEach((k) => delete state[k]);
+        inputs.forEach((i) => (i.value = i.getAttribute("value") || "#000000"));
+        update();
+      });
+  </script>
 </Base>

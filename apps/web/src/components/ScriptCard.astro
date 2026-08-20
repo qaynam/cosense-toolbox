@@ -1,25 +1,40 @@
 ---
-import type { CollectionEntry } from 'astro:content';
-import { CATEGORY_META, STATUS_META } from '../lib/categories';
+import type { CollectionEntry } from "astro:content";
+import { CATEGORY_META, STATUS_META } from "../lib/categories";
 
 interface Props {
-	entry: CollectionEntry<'scripts'>;
+  entry: CollectionEntry<"scripts">;
 }
 const { entry } = Astro.props;
 const { data } = entry;
 const cat = CATEGORY_META[data.category];
 const status = STATUS_META[data.status];
 const href = `/s/${entry.id}/`;
-const searchText = [data.title, data.summary, data.tags.join(' '), cat.label].join(' ').toLowerCase();
+const searchText = [data.title, data.summary, data.tags.join(" "), cat.label]
+  .join(" ")
+  .toLowerCase();
 ---
 
-<article class="card" data-group={cat.group} data-status={data.status} data-search={searchText}>
-	<a class="card-link" href={href}>
-		<h3 class="card-title">
-			{data.title}
-			{data.status !== 'active' && <span class="card-status">{status.label}</span>}
-		</h3>
-		<p class="card-summary">{data.summary}</p>
-	</a>
-	<button class="card-add" data-toolbox-add={entry.id} aria-label="ツールボックスに追加 / 削除" type="button"></button>
+<article
+  class="card"
+  data-group={cat.group}
+  data-status={data.status}
+  data-search={searchText}
+>
+  <a class="card-link" href={href}>
+    <h3 class="card-title">
+      {data.title}
+      {
+        data.status !== "active" && (
+          <span class="card-status">{status.label}</span>
+        )
+      }
+    </h3>
+    <p class="card-summary">{data.summary}</p>
+  </a>
+  <button
+    class="card-add"
+    data-toolbox-add={entry.id}
+    aria-label="ツールボックスに追加 / 削除"
+    type="button"></button>
 </article>

@@ -1,16 +1,19 @@
 ---
-import { getCollection, render } from 'astro:content';
-import { Code } from 'astro:components';
-import Base from '../../layouts/Base.astro';
-import CosenseCssDemo from '../../components/CosenseCssDemo.astro';
-import GyazoEmbed from '../../components/GyazoEmbed.astro';
-import { CATEGORY_META, STATUS_META } from '../../lib/categories';
-import { CSS_DEMOS } from '../../lib/demos';
-import { SITE } from '../../lib/site';
+import { getCollection, render } from "astro:content";
+import { Code } from "astro:components";
+import Base from "../../layouts/Base.astro";
+import CosenseCssDemo from "../../components/CosenseCssDemo.astro";
+import GyazoEmbed from "../../components/GyazoEmbed.astro";
+import { CATEGORY_META, STATUS_META } from "../../lib/categories";
+import { CSS_DEMOS } from "../../lib/demos";
+import { SITE } from "../../lib/site";
 
 export async function getStaticPaths() {
-	const scripts = await getCollection('scripts');
-	return scripts.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+  const scripts = await getCollection("scripts");
+  return scripts.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
 }
 
 const { entry } = Astro.props;
@@ -21,64 +24,101 @@ const status = STATUS_META[data.status];
 const demoCss = CSS_DEMOS[entry.id];
 const thumb = data.media ?? SITE.dummyThumb;
 const demoUrl = data.demo ?? SITE.dummyGyazoDemo;
-const lang = data.install.kind === 'css' ? 'css' : 'js';
+const lang = data.install.kind === "css" ? "css" : "js";
 
-const sources = import.meta.glob('../../sources/*.txt', { query: '?raw', import: 'default', eager: true });
-const sourceCode = sources[`../../sources/${entry.id}.txt`] as string | undefined;
+const sources = import.meta.glob("../../sources/*.txt", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+const sourceCode = sources[`../../sources/${entry.id}.txt`] as
+  string | undefined;
 ---
 
 <Base title={data.title} description={data.summary} image={thumb}>
-	<div class="modal-scrim" data-modal-scrim>
-		<button class="modal-backdrop-close" data-modal-close type="button" aria-label="閉じる">✕</button>
-		<article class="modal-card">
-			<div class="modal-media">
-				<img src={thumb} alt={data.title} />
-			</div>
-			<div class="modal-content">
-			<div class="modal-body">
-				<div class="card-tagrow">
-					<span class="chip">{cat.label}</span>
-					{data.status !== 'active' && <span class="chip ghost">{status.label}</span>}
-					{data.tags.map((t) => <span class="chip ghost">#{t}</span>)}
-				</div>
+  <div class="modal-scrim" data-modal-scrim>
+    <button
+      class="modal-backdrop-close"
+      data-modal-close
+      type="button"
+      aria-label="閉じる">✕</button
+    >
+    <article class="modal-card">
+      <div class="modal-media">
+        <img src={thumb} alt={data.title} />
+      </div>
+      <div class="modal-content">
+        <div class="modal-body">
+          <div class="card-tagrow">
+            <span class="chip">{cat.label}</span>
+            {
+              data.status !== "active" && (
+                <span class="chip ghost">{status.label}</span>
+              )
+            }
+            {data.tags.map((t) => <span class="chip ghost">#{t}</span>)}
+          </div>
 
-				<div class="title-row">
-					<h1>{data.title}</h1>
-					<button class="btn add" data-toolbox-add={entry.id} type="button"><span class="label">＋ ツールボックスに追加</span></button>
-				</div>
+          <div class="title-row">
+            <h1>{data.title}</h1>
+            <button class="btn add" data-toolbox-add={entry.id} type="button"
+              ><span class="label">＋ ツールボックスに追加</span></button
+            >
+          </div>
 
-				<div class="prose">
-					<Content />
-				</div>
+          <div class="prose">
+            <Content />
+          </div>
 
-				<h2 class="section-h">デモ</h2>
-				{demoCss ? <CosenseCssDemo css={demoCss} /> : <GyazoEmbed url={demoUrl} />}
+          <h2 class="section-h">デモ</h2>
+          {
+            demoCss ? (
+              <CosenseCssDemo css={demoCss} />
+            ) : (
+              <GyazoEmbed url={demoUrl} />
+            )
+          }
 
-				<h2 class="section-h">インストール</h2>
-				<div class="install">
-					<div class="install-head">
-						<span>設定ページの code:{data.install.kind === 'css' ? 'style.css' : 'script.js'} に貼る</span>
-						<button class="btn copy" data-copy={data.install.code} type="button"><span class="label">📋 コピー</span></button>
-					</div>
-					<pre><code>{data.install.code}</code></pre>
-				</div>
+          <h2 class="section-h">インストール</h2>
+          <div class="install">
+            <div class="install-head">
+              <span
+                >設定ページの code:{
+                  data.install.kind === "css" ? "style.css" : "script.js"
+                } に貼る</span
+              >
+              <button
+                class="btn copy"
+                data-copy={data.install.code}
+                type="button"><span class="label">📋 コピー</span></button
+              >
+            </div>
+            <pre><code>{data.install.code}</code></pre>
+          </div>
 
-				{
-					sourceCode && (
-						<details class="src-acc">
-							<summary>ソースコード全文を見る（{lang.toUpperCase()}）</summary>
-							<div class="src-code">
-								<Code code={sourceCode} lang={lang} theme="github-dark" />
-							</div>
-						</details>
-					)
-				}
+          {
+            sourceCode && (
+              <details class="src-acc">
+                <summary>
+                  ソースコード全文を見る（{lang.toUpperCase()}）
+                </summary>
+                <div class="src-code">
+                  <Code code={sourceCode} lang={lang} theme="github-dark" />
+                </div>
+              </details>
+            )
+          }
 
-				<a class="source-link" href={data.source} target="_blank" rel="noopener">
-					元のCosenseページを見る ↗
-				</a>
-			</div>
-			</div>
-		</article>
-	</div>
+          <a
+            class="source-link"
+            href={data.source}
+            target="_blank"
+            rel="noopener"
+          >
+            元のCosenseページを見る ↗
+          </a>
+        </div>
+      </div>
+    </article>
+  </div>
 </Base>
