@@ -19,8 +19,6 @@ const source = [
 const encodePath = (path: string) =>
   path.split("/").map(encodeURIComponent).join("/");
 
-// /api/pages/{project}/{user}/icon は Gyazo へ 302 する。
-// 直リンクにしておかないと、別オリジンの <img> からは CORP で読めない。
 async function resolveIconSrc(user: string): Promise<string> {
   const path = user.startsWith("/")
     ? encodePath(user)
@@ -37,7 +35,6 @@ async function resolveIconSrc(user: string): Promise<string> {
 
 const page = parse(source);
 
-// iconImageUrl は同期に呼ばれるので、先に集めて解決しておく。
 const iconSrcByUser = new Map(
   await Promise.all(
     collect(page, "icon").map(
