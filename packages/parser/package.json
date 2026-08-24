@@ -42,14 +42,14 @@
         "default": "./dist/utils.cjs"
       }
     },
-    "./plugin": {
+    "./extensions": {
       "import": {
-        "types": "./dist/plugin.d.mts",
-        "default": "./dist/plugin.mjs"
+        "types": "./dist/extensions.d.mts",
+        "default": "./dist/extensions.mjs"
       },
       "require": {
-        "types": "./dist/plugin.d.cts",
-        "default": "./dist/plugin.cjs"
+        "types": "./dist/extensions.d.cts",
+        "default": "./dist/extensions.cjs"
       }
     },
     "./compile": {

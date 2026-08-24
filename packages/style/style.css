@@ -194,7 +194,7 @@
 }
 
 /*
- * 本体行はヘッダより 1 段深いが、ブロックの左端はヘッダに揃える (本家と同じ)。
+ * 本体行はヘッダより 1 段深いが、ブロックの左端はヘッダに揃える (Cosense Web と同じ)。
  * 1 段ぶん左に出してから同じだけ padding で戻すことで、文字の位置は保ったまま背景だけ広げる。
  */
 .page .line.code-block > .code-body {
@@ -204,7 +204,7 @@
   white-space: pre-wrap;
 }
 
-/* ファイル名は本家と同じ見出しバッジ。 */
+/* ファイル名はCosense Web と同じ見出しバッジ。 */
 .page .code-block-start {
   padding: 1px 2px;
   font-size: 0.95em;
@@ -212,7 +212,7 @@
   background: var(--cosense-badge-bg, #ffcfc6);
 }
 
-/* 中点が付くのはヘッダ行だけ (本家では本体行に dot が無い)。 */
+/* 中点が付くのはヘッダ行だけ (Cosense Web では本体行に dot が無い)。 */
 .page .line.code-block:not(:has(> .code-start))::before {
   content: none;
 }

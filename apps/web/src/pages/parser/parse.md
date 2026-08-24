@@ -60,7 +60,7 @@ for (const block of page.children) {
 ## parseLine
 
 ```ts
-parseLine(raw: string, origin?: { line?: number; offset?: number }): LineBlock
+parseLine(raw: string, options?: ParseLineOptions): LineBlock
 ```
 
 エディタのように行単位で扱うときのために、1 行だけを通常行としてパースします。
@@ -81,7 +81,8 @@ parseLine("code:foo.js");
 
 コードブロックやテーブルが必要な処理には `parse` を使ってください。
 
-`origin` にその行がページの何行目かを渡すと、位置情報がページ全体と揃います。
+`options.line` と `options.offset` にその行がページのどこかを渡すと、位置情報がページ全体と揃います。
+`options.extensions` は `parse` と同じものを受け取ります。
 
 ## tokenizeInline
 

@@ -16,7 +16,7 @@ import { urlRule } from './url'
 export const bracketRules: readonly BracketRule[] = [formulaRule, decorationRule]
 
 /**
- * 「単純ターゲット」のルール。中身に `[` / `]` を含むときは試さない (本家準拠)。
+ * 「単純ターゲット」のルール。中身に `[` / `]` を含むときは試さない (Cosense Web に合わせている)。
  * これにより `[[そうね] ですね]` の外側は記法にならず、先頭の `[` が素の文字になる。
  * 末尾の internalLinkRule は常に成立する catch-all。
  */

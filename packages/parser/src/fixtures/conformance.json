@@ -4,50 +4,97 @@
     {
       "description": "記法が無ければテキストノード 1 つ",
       "input": "ただの文章です",
-      "expected": [{ "type": "text", "value": "ただの文章です" }]
+      "expected": [
+        {
+          "type": "text",
+          "value": "ただの文章です"
+        }
+      ]
     },
     {
       "description": "[title] は内部リンク",
       "input": "[React Native]",
-      "expected": [{ "type": "internalLink", "label": "React Native", "target": "React Native" }]
+      "expected": [
+        {
+          "type": "internalLink",
+          "label": "React Native",
+          "target": "React Native"
+        }
+      ]
     },
     {
       "description": "内部リンクは前後のテキストと分かれる",
       "input": "a [b] c",
       "expected": [
-        { "type": "text", "value": "a " },
-        { "type": "internalLink", "label": "b", "target": "b" },
-        { "type": "text", "value": " c" }
+        {
+          "type": "text",
+          "value": "a "
+        },
+        {
+          "type": "internalLink",
+          "label": "b",
+          "target": "b"
+        },
+        {
+          "type": "text",
+          "value": " c"
+        }
       ]
     },
     {
       "description": "裸の URL は外部リンク",
       "input": "https://a.test/x",
       "expected": [
-        { "type": "externalLink", "label": "https://a.test/x", "target": "https://a.test/x" }
+        {
+          "type": "externalLink",
+          "label": "https://a.test/x",
+          "target": "https://a.test/x"
+        }
       ]
     },
     {
       "description": "大文字で始まる URL も外部リンク",
       "input": "Https://a.test/x",
       "expected": [
-        { "type": "externalLink", "label": "Https://a.test/x", "target": "Https://a.test/x" }
+        {
+          "type": "externalLink",
+          "label": "Https://a.test/x",
+          "target": "Https://a.test/x"
+        }
       ]
     },
     {
       "description": "[url label] はラベル付き外部リンク",
       "input": "[https://example.com Example]",
-      "expected": [{ "type": "externalLink", "label": "Example", "target": "https://example.com" }]
+      "expected": [
+        {
+          "type": "externalLink",
+          "label": "Example",
+          "target": "https://example.com"
+        }
+      ]
     },
     {
       "description": "[label url] も同じ結果になる",
       "input": "[Example https://example.com]",
-      "expected": [{ "type": "externalLink", "label": "Example", "target": "https://example.com" }]
+      "expected": [
+        {
+          "type": "externalLink",
+          "label": "Example",
+          "target": "https://example.com"
+        }
+      ]
     },
     {
       "description": "画像でない URL が 2 つなら 先頭がリンク先・2 番目が表示テキスト",
       "input": "[https://a.com https://b.com]",
-      "expected": [{ "type": "externalLink", "label": "https://b.com", "target": "https://a.com" }]
+      "expected": [
+        {
+          "type": "externalLink",
+          "label": "https://b.com",
+          "target": "https://a.com"
+        }
+      ]
     },
     {
       "description": "[/project/title] はプロジェクトリンク",
@@ -78,42 +125,85 @@
     {
       "description": "#tag はハッシュタグ",
       "input": "#tag",
-      "expected": [{ "type": "hashtag", "value": "tag" }]
+      "expected": [
+        {
+          "type": "hashtag",
+          "value": "tag"
+        }
+      ]
     },
     {
       "description": "単語の途中の # はハッシュタグにならない",
       "input": "a#b",
-      "expected": [{ "type": "text", "value": "a#b" }]
+      "expected": [
+        {
+          "type": "text",
+          "value": "a#b"
+        }
+      ]
     },
     {
       "description": "バッククォートはインラインコード",
       "input": "`code`",
-      "expected": [{ "type": "inlineCode", "value": "code" }]
+      "expected": [
+        {
+          "type": "inlineCode",
+          "value": "code"
+        }
+      ]
     },
     {
       "description": "閉じないバッククォートは素の文字",
       "input": "`code",
-      "expected": [{ "type": "text", "value": "`code" }]
+      "expected": [
+        {
+          "type": "text",
+          "value": "`code"
+        }
+      ]
     },
     {
       "description": "[$ ...] は数式",
       "input": "[$ x^2]",
-      "expected": [{ "type": "formula", "value": "x^2" }]
+      "expected": [
+        {
+          "type": "formula",
+          "value": "x^2"
+        }
+      ]
     },
     {
       "description": "[user.icon] はアイコン",
       "input": "[takker.icon]",
-      "expected": [{ "type": "icon", "user": "takker", "count": 1 }]
+      "expected": [
+        {
+          "type": "icon",
+          "user": "takker",
+          "count": 1
+        }
+      ]
     },
     {
       "description": "[user.icon*N] は連打数を持つ",
       "input": "[a.icon*3]",
-      "expected": [{ "type": "icon", "user": "a", "count": 3 }]
+      "expected": [
+        {
+          "type": "icon",
+          "user": "a",
+          "count": 3
+        }
+      ]
     },
     {
       "description": "連打数の上限は 20",
       "input": "[a.icon*999]",
-      "expected": [{ "type": "icon", "user": "a", "count": 20 }]
+      "expected": [
+        {
+          "type": "icon",
+          "user": "a",
+          "count": 20
+        }
+      ]
     },
     {
       "description": "[* text] は太字",
@@ -127,7 +217,13 @@
           "strike": false,
           "underline": false,
           "sizeLevel": 0,
-          "children": [{ "type": "text", "value": "太字" }]
+          "children": [
+            {
+              "type": "text",
+              "value": "太字"
+            }
+          ],
+          "markers": ["*"]
         }
       ]
     },
@@ -143,7 +239,13 @@
           "strike": false,
           "underline": false,
           "sizeLevel": 2,
-          "children": [{ "type": "text", "value": "見出し" }]
+          "children": [
+            {
+              "type": "text",
+              "value": "見出し"
+            }
+          ],
+          "markers": ["*"]
         }
       ]
     },
@@ -159,7 +261,13 @@
           "strike": false,
           "underline": false,
           "sizeLevel": 4,
-          "children": [{ "type": "text", "value": "特大" }]
+          "children": [
+            {
+              "type": "text",
+              "value": "特大"
+            }
+          ],
+          "markers": ["*"]
         }
       ]
     },
@@ -175,7 +283,13 @@
           "strike": true,
           "underline": true,
           "sizeLevel": 0,
-          "children": [{ "type": "text", "value": "x" }]
+          "children": [
+            {
+              "type": "text",
+              "value": "x"
+            }
+          ],
+          "markers": ["-", "/", "_"]
         }
       ]
     },
@@ -191,7 +305,13 @@
           "strike": false,
           "underline": false,
           "sizeLevel": 0,
-          "children": [{ "type": "text", "value": "太字" }]
+          "children": [
+            {
+              "type": "text",
+              "value": "太字"
+            }
+          ],
+          "markers": ["*"]
         }
       ]
     },
@@ -208,9 +328,17 @@
           "underline": false,
           "sizeLevel": 0,
           "children": [
-            { "type": "internalLink", "label": "リンク", "target": "リンク" },
-            { "type": "text", "value": "です" }
-          ]
+            {
+              "type": "internalLink",
+              "label": "リンク",
+              "target": "リンク"
+            },
+            {
+              "type": "text",
+              "value": "です"
+            }
+          ],
+          "markers": ["*"]
         }
       ]
     },
@@ -227,76 +355,153 @@
           "underline": false,
           "sizeLevel": 0,
           "children": [
-            { "type": "internalLink", "label": "* 太字", "target": "* 太字" },
-            { "type": "text", "value": "です" }
-          ]
+            {
+              "type": "internalLink",
+              "label": "* 太字",
+              "target": "* 太字"
+            },
+            {
+              "type": "text",
+              "value": "です"
+            }
+          ],
+          "markers": ["*"]
         }
       ]
     },
     {
       "description": "空の角括弧は素の文字",
       "input": "[]",
-      "expected": [{ "type": "text", "value": "[]" }]
+      "expected": [
+        {
+          "type": "text",
+          "value": "[]"
+        }
+      ]
     },
     {
       "description": "閉じない角括弧は素の文字",
       "input": "foo [ bar",
-      "expected": [{ "type": "text", "value": "foo [ bar" }]
+      "expected": [
+        {
+          "type": "text",
+          "value": "foo [ bar"
+        }
+      ]
     },
     {
       "description": "外側が記法にならないときは先頭の [ だけ素の文字になる",
       "input": "[[そうね] ですね]",
       "expected": [
-        { "type": "text", "value": "[" },
-        { "type": "internalLink", "label": "そうね", "target": "そうね" },
-        { "type": "text", "value": " ですね]" }
+        {
+          "type": "text",
+          "value": "["
+        },
+        {
+          "type": "internalLink",
+          "label": "そうね",
+          "target": "そうね"
+        },
+        {
+          "type": "text",
+          "value": " ですね]"
+        }
       ]
     },
     {
       "description": "角括弧つきの画像 URL は画像",
       "input": "[https://x.com/a.png]",
-      "expected": [{ "type": "image", "src": "https://x.com/a.png" }]
+      "expected": [
+        {
+          "type": "image",
+          "src": "https://x.com/a.png"
+        }
+      ]
     },
     {
       "description": "裸の画像 URL は画像にならない",
       "input": "https://x.com/a.png",
       "expected": [
-        { "type": "externalLink", "label": "https://x.com/a.png", "target": "https://x.com/a.png" }
+        {
+          "type": "externalLink",
+          "label": "https://x.com/a.png",
+          "target": "https://x.com/a.png"
+        }
       ]
     },
     {
       "description": "[[画像 URL]] は大きい画像",
       "input": "[[https://x.com/a.png]]",
-      "expected": [{ "type": "image", "src": "https://x.com/a.png", "large": true }]
+      "expected": [
+        {
+          "type": "image",
+          "src": "https://x.com/a.png",
+          "large": true
+        }
+      ]
     },
     {
       "description": "画像 URL とリンク URL が並ぶとリンク付き画像",
       "input": "[https://google.com https://x.com/a.png]",
-      "expected": [{ "type": "image", "src": "https://x.com/a.png", "link": "https://google.com" }]
+      "expected": [
+        {
+          "type": "image",
+          "src": "https://x.com/a.png",
+          "link": "https://google.com"
+        }
+      ]
     },
     {
       "description": "Gyazo のページ URL は画像になるが src はソースのまま",
       "input": "[https://gyazo.com/503a911fea542532aa5aba0a88eb7b60]",
-      "expected": [{ "type": "image", "src": "https://gyazo.com/503a911fea542532aa5aba0a88eb7b60" }]
+      "expected": [
+        {
+          "type": "image",
+          "src": "https://gyazo.com/503a911fea542532aa5aba0a88eb7b60"
+        }
+      ]
     },
     {
       "description": "#.svg を付けた拡張子なし URL は画像",
       "input": "[https://x.dev/api/status?id=1#.svg]",
-      "expected": [{ "type": "image", "src": "https://x.dev/api/status?id=1#.svg" }]
+      "expected": [
+        {
+          "type": "image",
+          "src": "https://x.dev/api/status?id=1#.svg"
+        }
+      ]
     },
     {
       "description": "拡張子だけの画像は画像",
       "input": "[a.png]",
-      "expected": [{ "type": "image", "src": "a.png" }]
+      "expected": [
+        {
+          "type": "image",
+          "src": "a.png"
+        }
+      ]
     },
     {
       "description": "記法が連続しても間のテキストが失われない",
       "input": "[a]b`c`d#e",
       "expected": [
-        { "type": "internalLink", "label": "a", "target": "a" },
-        { "type": "text", "value": "b" },
-        { "type": "inlineCode", "value": "c" },
-        { "type": "text", "value": "d#e" }
+        {
+          "type": "internalLink",
+          "label": "a",
+          "target": "a"
+        },
+        {
+          "type": "text",
+          "value": "b"
+        },
+        {
+          "type": "inlineCode",
+          "value": "c"
+        },
+        {
+          "type": "text",
+          "value": "d#e"
+        }
       ]
     }
   ],

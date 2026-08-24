@@ -21,12 +21,20 @@ describe('インライン記法', () => {
 
   it('装飾はフラグのぶんだけ要素が入れ子になる', () => {
     expect(line('[*-/_ text]')).toBe(
-      '<span class="decoration"><strong><em><u><s>text</s></u></em></strong></span>',
+      '<span class="decoration deco-* deco-- deco-/ deco-_"><strong><em><u><s>text</s></u></em></strong></span>',
     )
   })
 
   it('見出しの段階は data 属性で出す', () => {
     expect(line('[*** 見出し]')).toContain('data-size-level="2"')
+  })
+
+  it('書かれた装飾記号を deco- の class にする', () => {
+    expect(line('[*-/_ text]')).toContain('class="decoration deco-* deco-- deco-/ deco-_"')
+  })
+
+  it('deco- の class は属性値としてエスケープする', () => {
+    expect(line('[[太字]]')).toContain('class="decoration deco-*"')
   })
 
   it('装飾の中のリンクも描画される', () => {
@@ -79,7 +87,7 @@ describe('ブロック', () => {
     expect(line('> 引用')).toBe('<blockquote class="quote">引用</blockquote>')
   })
 
-  it('コードブロックは本家と同じく 1 行ずつの要素になる', () => {
+  it('コードブロックは 1 行ずつの要素になる', () => {
     expect(toHtml(parse('t\ncode:a.ts\n <b>\n x'))).toContain(
       '<div class="line code-block">' +
         '<code class="code-start"><span class="code-block-start">a.ts</span></code></div>' +

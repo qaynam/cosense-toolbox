@@ -27,10 +27,10 @@
 6. **CSS をこのパッケージに置かない**。既定の見た目は `@cosense-toolbox/style`（別パッケージ）
    の担当。JS のバンドルに CSS 文字列を持たせると、スタイルを使わない利用者まで太る。
    `toHtml` の `style` オプションは**受け取った CSS を差し込むだけ**で、中身は持たない。
-7. **本家 Cosense の資産を持ち込まない**。CSS・画像・フォントを取り込んで再配布しない。
-   本家の CSS は Cosense のエディタ DOM（`.line > .text > 1 文字ごとの `.char-index``）に
+7. **Cosense Web の資産を持ち込まない**。CSS・画像・フォントを取り込んで再配布しない。
+   Cosense Web の CSS は Cosense のエディタ DOM（`.line > .text > 1 文字ごとの `.char-index``）に
    当てたもので、`toHtml` が出す構造には**そもそも当たらない**。
-   見た目を寄せたいときは、本家のテーマ変数（`--page-text-color` 等）を
+   見た目を寄せたいときは、Cosense Web のテーマ変数（`--page-text-color` 等）を
    `var()` の fallback として**参照する**にとどめる。
 
 ---
@@ -90,7 +90,7 @@ core ← inline/ ← block/ ← parse.ts ← index.ts
 schema.ts  → types のみ
 utils/     → types, ast のみ
 compile/   → types, ast, core/ のみ
-plugin/    → 型だけを再エクスポート（実装を持たない）
+extensions/ → 型の再エクスポートと、既製の Extension
 ```
 
 - `utils/` / `compile/` は**パーサー本体（`parse.ts`、`inline/`、`block/`）を import してはいけない。**
@@ -136,10 +136,11 @@ src/
     tokenize.ts         走査ループ。位置の付与はここだけが行う
     constructs/         1 construct = 1 ファイル + index.ts（配列の登録場所）
     bracket-rules/      1 rule = 1 ファイル + index.ts（配列の登録場所）
+    extensions/         既定では有効にしない Extension を作る factory（customDecorations 等）
   block/
     classify.ts         行の役割判定（タグ付きユニオンを返す）
     build.ts            ブロックのグルーピング
-  plugin/index.ts       プラグイン作者向けの型を再エクスポート（実装を持たない）
+  extensions/           拡張を書くための型と、既製の Extension（サブパスのバレル）
   compile/
     create-compiler.ts  ハンドラ機構
     to-html.ts          公式の HTML コンパイラ（pageUrl / iconImageUrl / highlight / classNames / showPads / handlers）
@@ -178,7 +179,7 @@ src/
   - polyfill や prototype 拡張を書かない
 - **class を使わない。** AST は plain object（`JSON.stringify` / `JSON.parse` で往復できること）。
   worklet / postMessage / CLI の `--json` 出力がこの制約に依存している。
-- 重い層はサブパス export に分ける（`./schema` `./utils` `./plugin` `./compile`）。
+- 重い層はサブパス export に分ける（`./schema` `./utils` `./extensions` `./compile`）。
   メインエントリ `index.ts` からは**それらを re-export しない**（したら opt-in の意味が消える）。
 - effect は必ず named import（`import { Option } from 'effect'`）。default import / `import * as` は使わない。
 - **`import { Array } from 'effect'` は使わない。** effect の `Array` モジュールはそれだけで
@@ -209,7 +210,7 @@ src/
 
   例外は 2 つだけ:
   - `./schema` — effect ネイティブに使いたい人向けの opt-in サブパス
-  - `./plugin` の `InlineConstruct` / `BracketRule` — 記法を書くプラグイン作者は
+  - `./extensions` の `InlineConstruct` / `BracketRule` — 記法を書くプラグイン作者は
     `Option` を返す必要がある。`Extension` を経由して `ParseOptions` からも型として参照されるので、
     `dist/index.d.mts` に `effect` からの import 行自体は出る。**シグネチャに出ていなければよい。**
 - `import { Array, String, Number } from 'effect'` はグローバルをシャドウする。
@@ -278,6 +279,6 @@ tsdown が後継として設定互換を保っている。**tsup に戻さない
 リポジトリルートの `biome.json` に従う（single quote / セミコロンなし / 100 桁 / 2 スペース）。
 **リポジトリルートの `biome.json` に依存しているので、単体で切り出す際は一緒に持っていくこと。**
 
-コメントは「なぜそうなっているか」を書く。特に**本家 Cosense の挙動に合わせた結果
+コメントは「なぜそうなっているか」を書く。特に**Cosense Web の挙動に合わせた結果
 直感に反している箇所**（装飾内では相対パス画像がリンクになる、`[[...]]` が `]]` でしか閉じない等）は
 必ず理由をコメントに残す。何をしているかの逐語訳コメントは書かない。

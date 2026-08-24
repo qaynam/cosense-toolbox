@@ -125,16 +125,16 @@ AST を別の形式に変換します。
 | [`toPlainText`](/parser/compile/#toplaintext)       | 記法を外したテキストにする |
 | [`createCompiler`](/parser/compile/#createcompiler) | 独自の形式にする           |
 
-### @cosense-toolbox/parser/plugin
+### @cosense-toolbox/parser/extensions
 
-記法を足すための型だけを持ち、実行時のコードは含みません。
+記法を足すための型と、既製の拡張です。
 
-| 型                                              | 何をするか                         |
-| :---------------------------------------------- | :--------------------------------- |
-| [`InlineConstruct`](/parser/extend/#記法を足す) | 行のどこからでも始まる記法を足す   |
-| [`BracketRule`](/parser/extend/#記法を足す)     | `[...]` の中身の解釈を足す         |
-| [`Extension`](/parser/extend/#記法を足す)       | 上の 2 つをまとめて `parse` に渡す |
-| [`NodeHandlers`](/parser/html/#handlers)        | 出力側のハンドラの型               |
+| 型                                                                | 何をするか                         |
+| :---------------------------------------------------------------- | :--------------------------------- |
+| [`InlineConstruct`](/parser/extend/#記法を足す)                   | 行のどこからでも始まる記法を足す   |
+| [`BracketRule`](/parser/extend/#記法を足す)                       | `[...]` の中身の解釈を足す         |
+| [`Extension`](/parser/extend/#記法を足す)                         | 上の 2 つをまとめて `parse` に渡す |
+| [`customDecorations`](/parser/extend/#文字装飾記法の記号を増やす) | 装飾として読む記号を増やす         |
 
 ### @cosense-toolbox/parser/schema
 

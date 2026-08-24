@@ -87,7 +87,7 @@ const linked = (html: string, link: string | undefined): string =>
 // オプション
 // ---------------------------------------------------------------------------
 
-/** プロジェクト内のページを指すノード。本家ではアイコンもユーザーのページへのリンクになる。 */
+/** プロジェクト内のページを指すノード。Cosense Web ではアイコンもユーザーのページへのリンクになる。 */
 export type PageRefNode = InternalLink | ProjectLink | Hashtag | IconNode
 
 /**
@@ -190,7 +190,7 @@ export interface HtmlRenderOptions {
    * アイコンの画像 URL。null なら `<img>` を出さず、ユーザー名のテキストになる。
    * リンク先のほうは `pageUrl` が決める。
    *
-   * @defaultValue 常に null。本家の画像 URL (`/api/pages/{project}/{user}/icon`) は
+   * @defaultValue 常に null。Cosense Web の画像 URL (`/api/pages/{project}/{user}/icon`) は
    * プロジェクト名を要するが、記法には書かれていないため
    */
   readonly iconImageUrl?: (node: IconNode) => string | null
@@ -199,7 +199,7 @@ export interface HtmlRenderOptions {
   /** 出力する要素に付ける class 名。 */
   readonly classNames?: HtmlClassNames
   /**
-   * インデントを本家と同じ要素として書き出す。深さ 1 段につき `pad` が 1 つ並び、
+   * インデントをCosense Web と同じ要素として書き出す。深さ 1 段につき `pad` が 1 つ並び、
    * その右端に中点が付く。
    *
    * @defaultValue false。深さは行の `data-indent` 属性だけで表す
@@ -284,7 +284,7 @@ export const createHtmlHandlers = (options: HtmlRenderOptions = {}): NodeHandler
   const pageHref = (node: PageRefNode): Option.Option<string> =>
     nonEmpty(safeHref(pageUrl(pageTitleOf(node), node)))
 
-  /** 余白の数がインデントの深さを表し、中点はその右端に付く (本家と同じ形)。 */
+  /** 余白の数がインデントの深さを表し、中点はその右端に付く (Cosense Web と同じ形)。 */
   const indentMark = (indent: number): string => {
     const pad = `<span${attr('class', nonEmpty(cls.pad))}> </span>`
     const dot = `<span${attr('class', nonEmpty(cls.dot))}></span>`
@@ -323,7 +323,7 @@ export const createHtmlHandlers = (options: HtmlRenderOptions = {}): NodeHandler
     },
 
     /**
-     * 1 行 = 1 要素に切る (本家と同じ)。行ごとにインデントを付けられるようにするため。
+     * 1 行 = 1 要素に切る (Cosense Web と同じ)。行ごとにインデントを付けられるようにするため。
      * `highlight` があるときだけ、複数行にまたがるタグを壊さないよう本体をまとめる。
      */
     codeBlock: (node, ctx) => {
@@ -391,7 +391,7 @@ export const createHtmlHandlers = (options: HtmlRenderOptions = {}): NodeHandler
       return linked(`${open} alt=""${attr('data-large', flag(node.large))}>`, node.link)
     },
 
-    // 本家と同じく、そのユーザーのページへのリンクで画像を包む。
+    // Cosense Web と同じく、そのユーザーのページへのリンクで画像を包む。
     icon: (node) => {
       const name = escapeHtml(node.user)
       const src = iconImageUrl(node)
@@ -409,7 +409,10 @@ export const createHtmlHandlers = (options: HtmlRenderOptions = {}): NodeHandler
       `<span${attr('class', nonEmpty(cls.formula))}>${escapeHtml(node.value)}</span>`,
 
     decoration: (node, ctx) => {
-      const open = `<span${attr('class', nonEmpty(cls.decoration))}${attr('data-size-level', positive(node.sizeLevel))}>`
+      // Cosense Web と同じく記号ごとの class も出す。意味を持たない記号を userCSS で
+      // 拾えるようにするためのもので、`classNames.decoration` とは別に常に付く。
+      const names = [cls.decoration, ...node.markers.map((marker) => `deco-${marker}`)]
+      const open = `<span${attr('class', nonEmpty(names.filter(Boolean).join(' ')))}${attr('data-size-level', positive(node.sizeLevel))}>`
       return `${open}${wrapDecoration(node, ctx.children(node).join(''))}</span>`
     },
   }

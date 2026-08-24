@@ -5,7 +5,7 @@ import type { BracketRule } from '../types'
 
 const URLS_RE = /https?:\/\/[^\s\]]+/gi
 
-/** 画像 URL が複数あるとき最後のものを採るのは本家の挙動。 */
+/** 画像 URL が複数あるとき最後のものを採るのはCosense Web の挙動。 */
 const lastImage = (urls: readonly string[]): Option.Option<string> => {
   const images = urls.filter(isImageUrl)
   return Option.fromNullable(images[images.length - 1])
@@ -16,7 +16,7 @@ const linkFor = (urls: readonly string[], src: string): Option.Option<string> =>
   Option.fromNullable(urls.find((url) => url !== src) ?? urls[0])
 
 /**
- * 中身に URL を含む角括弧。本家の挙動に合わせて次の順で決める:
+ * 中身に URL を含む角括弧。Cosense Web の挙動に合わせて次の順で決める:
  *
  * 1. URL 以外の文字が残る → ラベル付き外部リンク。URL が画像でも文字リンクにする
  *    (`[ラベル https://x/a.png]` は画像にならない)。

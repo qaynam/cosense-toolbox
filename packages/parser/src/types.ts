@@ -124,6 +124,8 @@ export interface Decoration extends NodeBase {
   readonly type: 'decoration'
   /** 装飾記号を除いた中身の生テキスト */
   readonly value: string
+  /** 書かれた文字装飾記法の記号を、出現順・重複なしで並べたもの。`[*** x]` なら `['*']` */
+  readonly markers: readonly string[]
   readonly bold: boolean
   readonly italic: boolean
   readonly strike: boolean

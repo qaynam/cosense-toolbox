@@ -141,11 +141,12 @@ describe('装飾', () => {
   })
 
   it('[[...]] は深さを数えず最初の ]] で閉じる', () => {
-    // 本家準拠。`[[強調 [リンク]]]` は `[[強調 [リンク` + `]]` と読まれ、末尾の `]` が余る。
+    // `[[強調 [リンク]]]` は `[[強調 [リンク` + `]]` と読まれ、末尾の `]` が余る。
     expect(nodes('[[強調 [リンク]]]')).toEqual([
       {
         type: 'decoration',
         value: '強調 [リンク',
+        markers: ['*'],
         bold: true,
         italic: false,
         strike: false,
@@ -171,7 +172,7 @@ describe('装飾', () => {
   })
 
   it('装飾の中の装飾は装飾にならずリンクとして解釈される', () => {
-    // 本家準拠: 装飾の入れ子は不可。[* 太字] の部分は内部リンクになる。
+    // 装飾の入れ子は不可なので、[* 太字] の部分は内部リンクになる。
     expect(stripPositions(decorationAt('[* [* 太字]ですね]').children)).toEqual([
       { type: 'internalLink', label: '* 太字', target: '* 太字' },
       { type: 'text', value: 'ですね' },
@@ -179,7 +180,7 @@ describe('装飾', () => {
   })
 
   it('装飾の中では拡張子だけの画像はリンクになる', () => {
-    // 本家準拠: 装飾内の相対パス画像はインライン画像にせずリンク扱い。
+    // 装飾内の相対パス画像はインライン画像にせずリンク扱い。
     expect(stripPositions(decorationAt('[* [a.png]]').children)).toEqual([
       { type: 'internalLink', label: 'a.png', target: 'a.png' },
     ])
@@ -227,6 +228,7 @@ describe('角括弧の対応', () => {
       {
         type: 'decoration',
         value: '下線',
+        markers: ['_'],
         bold: false,
         italic: false,
         strike: false,
@@ -259,7 +261,7 @@ describe('画像', () => {
   })
 
   it('裸の画像 URL は画像にならず外部リンクのままになる', () => {
-    // 本家準拠: 画像になるのは角括弧で囲んだときだけ。
+    // 画像になるのは角括弧で囲んだときだけ。
     expect(first('https://gyazo.com/x.png')).toMatchObject({ type: 'externalLink' })
   })
 

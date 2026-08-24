@@ -9,15 +9,15 @@ description: Extension で記法を足し、declaration merging で独自のノ�
 ここまでは Cosense に元からある記法を扱ってきました。
 このページでは、パーサーが解釈する記法そのものを増やします。
 
-型は `@cosense-toolbox/parser/plugin` から import します。
-このサブパスは型だけを持ち、実行時のコードを含みません。
+必要なものは `@cosense-toolbox/parser/extensions` から import します。
+拡張を使わない場合はこのサブパスに触れないので、バンドルにも入りません。
 
-| 型                | 役割                                     |
-| :---------------- | :--------------------------------------- |
-| `InlineConstruct` | 行の任意の位置から始まる記法を足します   |
-| `BracketRule`     | `[...]` の中身の解釈を足します           |
-| `Extension`       | 上の 2 つをまとめて `parse` に渡す形です |
-| `NodeHandlers`    | 出力側のハンドラの型です                 |
+| export              | 役割                                     |
+| :------------------ | :--------------------------------------- |
+| `InlineConstruct`   | 行の任意の位置から始まる記法を足します   |
+| `BracketRule`       | `[...]` の中身の解釈を足します           |
+| `Extension`         | 上の 2 つをまとめて `parse` に渡す形です |
+| `customDecorations` | 装飾として読む記号を増やす既製の拡張です |
 
 ## 記法を足す
 
@@ -30,7 +30,7 @@ import { parse } from "@cosense-toolbox/parser";
 import type {
   Extension,
   InlineConstruct,
-} from "@cosense-toolbox/parser/plugin";
+} from "@cosense-toolbox/parser/extensions";
 
 const mention: InlineConstruct = (source, index) => {
   if (source[index] !== "@") return Option.none();
@@ -55,6 +55,25 @@ parse("メモ\n@qaynam に確認する", { extensions: [mentions] });
 
 上の例は既存の `internalLink` に寄せているので、描画側は何も変えずに済みます。
 新しい種類のノードにしたい場合は、次の手順が必要です。
+
+## 文字装飾記法の記号を増やす
+
+`[* x]` のように装飾として読む記号は、既定では `*` `/` `-` `_` の 4 つだけです。
+それ以外の記号を使いたい場合は `customDecorations` を渡します。
+
+```ts
+import { parse } from "@cosense-toolbox/parser";
+import { customDecorations } from "@cosense-toolbox/parser/extensions";
+
+const page = parse(source, {
+  extensions: [customDecorations(["=", "~", "|", "%", "&", "'"])],
+});
+```
+
+渡した記号は既定の記号と混ぜられます。
+`[*' x]` は太字になり、`markers` は `['*', "'"]` になります。
+
+[`toHtml`](/parser/html/) はこれを `class="decoration deco-* deco-'"` として書き出すので、記号ごとに CSS を当てられます。
 
 ## 独自のノード型を足す
 

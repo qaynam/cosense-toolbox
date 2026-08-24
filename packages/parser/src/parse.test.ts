@@ -2,9 +2,18 @@
  * ページ全体・行レベルの仕様。ブロック構造 (タイトル / code: / table:) はここで検証する。
  */
 import { describe, expect, it } from 'vitest'
+import { customDecorations } from './extensions'
+import type { Extension } from './inline/types'
 import { parse, parseLine } from './parse'
 import { stripPositions } from './test-helpers'
-import type { CodeBlock, LineBlock, TableBlock, TopLevelBlock } from './types'
+import type { CodeBlock, InlineNode, LineBlock, TableBlock, TopLevelBlock } from './types'
+
+/** 1 行分の先頭のインラインノード。装飾のように行頭から始まる記法を書きやすくする。 */
+const firstInline = (line: string, ...extensions: readonly Extension[]): InlineNode => {
+  const node = parseLine(line, { extensions }).children[0]
+  if (node === undefined) throw new Error(`インラインノードが無い: ${line}`)
+  return node
+}
 
 /** タイトル行を省いて本文だけ書けるようにする (テストの意図をタイトルで濁らせない)。 */
 const body = (...lines: string[]): readonly TopLevelBlock[] =>
@@ -184,5 +193,42 @@ describe('ブロックの境界', () => {
     expect(blocks.map((b) => b.type)).toEqual(['codeBlock', 'table', 'line'])
     expect((blocks[0] as CodeBlock).lines).toHaveLength(1)
     expect((blocks[1] as TableBlock).rows).toHaveLength(1)
+  })
+})
+
+describe('装飾のマーカー', () => {
+  it('公式の装飾記号がそのまま markers に残る', () => {
+    const node = firstInline('[*-/ x]')
+    expect(node).toMatchObject({ type: 'decoration', markers: ['*', '-', '/'] })
+  })
+
+  it('繰り返した記号は 1 つにまとめる', () => {
+    expect(firstInline('[*** 見出し]')).toMatchObject({ markers: ['*'], sizeLevel: 2 })
+  })
+
+  it('既定では公式の記号以外を装飾として扱わない', () => {
+    expect(firstInline("[*'(#%& x]")).toMatchObject({ type: 'internalLink' })
+  })
+})
+
+describe('customDecorations', () => {
+  const ext = customDecorations(["'", '(', '#', '%', '&'])
+
+  it('渡した記号を装飾として解釈する', () => {
+    expect(firstInline('[| x]', ext)).toMatchObject({ type: 'internalLink' })
+    expect(firstInline("[' x]", ext)).toMatchObject({ type: 'decoration', markers: ["'"] })
+  })
+
+  it('公式の記号と混ぜて使える', () => {
+    expect(firstInline("[*'(#%& x]", ext)).toMatchObject({
+      type: 'decoration',
+      bold: true,
+      markers: ['*', "'", '(', '#', '%', '&'],
+    })
+  })
+
+  it('中身の記法は解釈する', () => {
+    const node = firstInline("[' [ページ]]", ext) as { children: readonly { type: string }[] }
+    expect(node.children.map((child) => child.type)).toEqual(['internalLink'])
   })
 })

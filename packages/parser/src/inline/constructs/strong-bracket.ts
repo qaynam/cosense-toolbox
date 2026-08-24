@@ -5,7 +5,7 @@ import type { InlineNodeInit } from '../../types'
 import type { InlineConstruct } from '../types'
 
 /**
- * `[[...]]` — 本家の strong。`]]` で閉じるときだけ成立する
+ * `[[...]]` — Cosense Web の strong。`]]` で閉じるときだけ成立する
  * (深さは数えない。`[[a] b]` のようなケースは bracketConstruct 側で処理される)。
  *
  * 中身が画像 URL なら大きい画像、そうでなければ太字装飾になる。
@@ -28,6 +28,8 @@ export const strongBracketConstruct: InlineConstruct = (source, index, ctx) => {
     node: {
       type: 'decoration',
       value: inner,
+      // `[[x]]` は記号を書かないが、太字なので `[* x]` と同じ扱いにする
+      markers: ['*'],
       bold: true,
       italic: false,
       strike: false,

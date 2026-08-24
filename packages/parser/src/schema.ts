@@ -117,6 +117,7 @@ export const FormulaNodeSchema: Schema.Schema<FormulaNode> = Schema.Struct({
 export const DecorationSchema: Schema.Schema<Decoration> = Schema.Struct({
   type: Schema.Literal('decoration'),
   value: Schema.String,
+  markers: Schema.Array(Schema.String),
   bold: Schema.Boolean,
   italic: Schema.Boolean,
   strike: Schema.Boolean,

@@ -106,11 +106,11 @@ toHtml(page, {
 </a>
 ```
 
-既定が `null` なのは、本家の画像 URL がプロジェクト名を含む (`/api/pages/{project}/{user}/icon`) 一方で、記法にプロジェクト名が書かれていないためです。
+既定が `null` なのは、Cosense Web の画像 URL がプロジェクト名を含む (`/api/pages/{project}/{user}/icon`) 一方で、記法にプロジェクト名が書かれていないためです。
 
 `[/icons/name.icon]` のように別プロジェクトを指す場合、`node.user` には `/icons/name` が入ります。
 
-> **本家のアイコンは別オリジンから読めません**
+> **Cosense Web のアイコンは別オリジンから読めません**
 >
 > `https://scrapbox.io/api/pages/{project}/{user}/icon` は `Cross-Origin-Resource-Policy: same-origin` を返します。
 > scrapbox.io 以外のページの `<img>` からは読めず、`Access-Control-Allow-Origin` も無いので `crossorigin` 属性でも回避できません。
@@ -210,7 +210,7 @@ toHtml(page, {
 showPads?: boolean
 ```
 
-インデントを本家と同じ要素として書き出します。
+インデントをCosense Web と同じ要素として書き出します。
 深さ 1 段につき `pad` が 1 つ並び、その右端に中点が付きます。
 
 ```html
@@ -298,7 +298,7 @@ class 名は接頭辞を持たず、すべて [`classNames`](#classnames) で差
 ページ全体は `<div class="page">` で包まれます。
 インデントの深さは class ではなく `data-indent` 属性で表します。
 中点は要素を持たず、CSS の擬似要素が描きます。
-本家と同じ `.indent-mark` と `.pad` と `.dot` の要素が必要な場合は [`showPads`](#showpads) を渡してください。
+Cosense Web と同じ `.indent-mark` と `.pad` と `.dot` の要素が必要な場合は [`showPads`](#showpads) を渡してください。
 
 ### テーブル
 
@@ -318,7 +318,7 @@ class 名は接頭辞を持たず、すべて [`classNames`](#classnames) で差
 
 ### コードブロック
 
-本家と同じく 1 行を 1 要素に切ります。
+Cosense Web と同じく 1 行を 1 要素に切ります。
 
 ```html
 <div class="line code-block">
@@ -361,26 +361,31 @@ KaTeX に渡したい場合は [`handlers`](#handlers) で差し替えてくだ�
 
 フラグの集合を入れ子の要素に開きます。
 
+書かれた記号は `deco-` を付けた class になります。
+`classNames.decoration` とは別に、常に付きます。
+
 ```html
 <!-- [* 太字] -->
-<span class="decoration">
+<span class="decoration deco-*">
   <strong>太字</strong>
 </span>
 
 <!-- [-/ x] は打消しかつ斜体 -->
-<span class="decoration">
+<span class="decoration deco-- deco-/">
   <em>
     <s>x</s>
   </em>
 </span>
 
 <!-- [*** 見出し] -->
-<span class="decoration" data-size-level="2">
+<span class="decoration deco-*" data-size-level="2">
   <strong>見出し</strong>
 </span>
 ```
 
 見出しの段階は `data-size-level` 属性で表します。
+
+`.` や `%` のように CSS のセレクタで特別な意味を持つ記号は、`.deco-\%` のようにエスケープして書きます。
 
 ## エスケープと URL の検査
 

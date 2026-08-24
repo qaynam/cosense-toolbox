@@ -71,7 +71,7 @@ CSS 変数を定義するだけでよい。定義した変数が最優先にな�
 Cosense と同じく、字下げの右端に中点を出す。`toHtml` の既定の出力には中点にあたる要素が
 無いので `.line[data-indent]::before` で描いている。
 
-`toHtml(page, { showPads: true })` で本家と同じ `.indent-mark` / `.pad` / `.dot` を
+`toHtml(page, { showPads: true })` でCosense Web と同じ `.indent-mark` / `.pad` / `.dot` を
 書き出した場合は、擬似要素を止めて要素側のスタイルを使う。どちらでも見た目は同じ。
 
 ## 名前の衝突を避ける

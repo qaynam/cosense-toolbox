@@ -5,7 +5,7 @@ const URL_RE = /^https?:\/\/[^\s\]]+/i
 
 /**
  * 角括弧で囲まれていない URL。常に外部リンクになり、画像 URL でも画像にはしない
- * (本家準拠。インライン画像になるのは `[https://.../x.png]` の角括弧つきのみ)。
+ * (Cosense Web に合わせている。インライン画像になるのは `[https://.../x.png]` の角括弧つきのみ)。
  */
 export const bareUrlConstruct: InlineConstruct = (source, index) => {
   const head = source[index]
