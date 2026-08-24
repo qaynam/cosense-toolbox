@@ -12,6 +12,19 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 > **beta**：公開 API はまだ変わりうる。安定するまではバージョンを固定して使うほうが安全。
 
+### 0.1.0-beta.1 の変更
+
+beta.0 から上げるときは次の 2 点に注意。
+
+- サブパス `./plugin` を **`./extensions`** に改名した。渡すものが `Extension` で
+  オプション名も `extensions` なのに、置き場所だけ別の語彙だったため。
+  コンパイラを書くための型 (`NodeHandlers` 等) は `./compile` にある。
+- `decoration` ノードに **`markers`** を足した (必須)。書かれた装飾記号が
+  出現順・重複なしで入る。`toHtml` はこれを `deco-*` のような class として出す。
+  装飾ノードを自分で組み立てている拡張は追随が要る。
+
+記号を増やす [`customDecorations`](https://cosense-toolbox.qaynam.dev/parser/extend/) も足した。
+
 ## インストール
 
 ```sh

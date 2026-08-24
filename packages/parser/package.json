@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/parser",
-  "version": "0.1.0-beta.0",
+  "version": "0.1.0-beta.1",
   "description": "Cosense (Scrapbox) notation parser — every node carries its source position. Zero runtime deps except effect.",
   "license": "MIT",
   "type": "module",
