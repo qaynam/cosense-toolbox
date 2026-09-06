@@ -9,6 +9,8 @@ interface Props {
   app?: boolean;
   /** ドキュメントのように 3 カラムを並べる画面で、本文の枠を広げる */
   wide?: boolean;
+  /** トップだけに敷く背景のグラデーションを出す */
+  home?: boolean;
 }
 const {
   title = "Cosense Toolbox",
@@ -16,6 +18,7 @@ const {
   image,
   app = false,
   wide = false,
+  home = false,
 } = Astro.props;
 const fullTitle =
   title === "Cosense Toolbox" ? title : `${title} — Cosense Toolbox`;
@@ -73,7 +76,10 @@ const ogImageURL = new URL(image ?? "/og.png", siteUrl);
       })();
     </script>
   </head>
-  <body class={app ? "is-app" : undefined}>
+  <body
+    class={[app && "is-app", home && "is-home"].filter(Boolean).join(" ") ||
+      undefined}
+  >
     <header class="site-header">
       <div class="wrap">
         <a class="brand" href="/">

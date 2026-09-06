@@ -80,8 +80,11 @@ a {
 /* ---------- header ---------- */
 .site-header {
   border-bottom: 1px solid var(--border-soft);
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(10px);
+  /* backdrop-filter が効かない環境でも文字が読めるよう、不透明側を先に置く */
+  background: var(--bg);
+  background: color-mix(in srgb, var(--bg) 62%, transparent);
+  /* saturate を足すと、背後のグラデーションが曇らずに透ける */
+  backdrop-filter: saturate(180%) blur(18px);
   position: sticky;
   top: 0;
   z-index: 20;
@@ -164,6 +167,65 @@ a {
 }
 
 /* ---------- トップ ---------- */
+
+/* ぼかした mesh gradient。ビューポートより外まで広げて、
+   ぼかしの端がフェードとして見えないようにする。 */
+body.is-home::before {
+  content: "";
+  position: fixed;
+  top: -18vh;
+  right: -12vw;
+  left: -12vw;
+  height: 78vh;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      34rem 24rem at 16% 8%,
+      rgba(110, 138, 243, 0.5),
+      transparent 62%
+    ),
+    radial-gradient(
+      30rem 20rem at 84% 2%,
+      rgba(255, 125, 84, 0.42),
+      transparent 60%
+    ),
+    radial-gradient(
+      26rem 18rem at 58% 34%,
+      rgba(248, 228, 46, 0.24),
+      transparent 62%
+    );
+  filter: blur(64px);
+}
+/* 明るい地では同じ濃さだと色が勝つ */
+:root[data-theme="light"] body.is-home::before {
+  opacity: 0.55;
+}
+/* 中身が短くてもフッタが画面の下に着くようにする。
+   builder は自前で高さを持つので外す。 */
+body:not(.is-app) {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+body:not(.is-app) > main {
+  flex: 1 0 auto;
+}
+
+/* 背景より前に出す。header は sticky + z-index を持っているので触らない
+   (ここで position を上書きすると sticky が壊れる) */
+body.is-home > main,
+body.is-home > .site-footer {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  body.is-home::before {
+    display: none;
+  }
+}
+
 .home-hero {
   display: flex;
   flex-direction: column;
@@ -232,11 +294,26 @@ a {
   height: 38px;
   margin-bottom: 16px;
   border: 1px solid var(--border);
+  border-color: color-mix(in srgb, var(--tool-accent) 32%, transparent);
   border-radius: 10px;
   background: var(--bg-elev);
+  background: color-mix(in srgb, var(--tool-accent) 12%, var(--bg-elev));
   font-family: var(--font-mono);
   font-size: 14px;
-  color: var(--text-dim);
+  color: var(--tool-accent);
+}
+/* 既定はダーク。ライトは背景が明るいので濃い側へ振る */
+[data-accent="blue"] {
+  --tool-accent: #7ea2ff;
+}
+[data-accent="orange"] {
+  --tool-accent: #ff9b6b;
+}
+:root[data-theme="light"] [data-accent="blue"] {
+  --tool-accent: #3f63c4;
+}
+:root[data-theme="light"] [data-accent="orange"] {
+  --tool-accent: #b04a17;
 }
 .tool-card h2 {
   margin: 0 0 8px;
