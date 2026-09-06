@@ -83,7 +83,9 @@ a {
   /* backdrop-filter が効かない環境でも文字が読めるよう、不透明側を先に置く */
   background: var(--bg);
   background: color-mix(in srgb, var(--bg) 62%, transparent);
-  /* saturate を足すと、背後のグラデーションが曇らずに透ける */
+  /* saturate を足すと、背後のグラデーションが曇らずに透ける。
+     -webkit- を手で併記すると Lightning CSS が無印のほうを落とすので、
+     プレフィックスはビルドに任せる。 */
   backdrop-filter: saturate(180%) blur(18px);
   position: sticky;
   top: 0;
@@ -263,7 +265,6 @@ body.is-home > .site-footer {
   }
 }
 
-/* トップの道具一覧 */
 .tool-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));

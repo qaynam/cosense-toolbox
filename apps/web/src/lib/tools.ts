@@ -1,23 +1,22 @@
-/**
- * トップに並べる道具の一覧。ここが並び順とラベルの単一情報源になる。
- * 道具を足したら、対応するページを src/pages/ に作ってからここへ登録する。
- */
 export interface Tool {
-  id: string;
   href: string;
   title: string;
-  /** カードに出る 1〜2 行の説明 */
+  /** カードに出る説明。1〜2 行に収める */
   description: string;
-  /** カードの下に出す補足。件数や状態など */
+  /** カードの下に小さく出す補足 */
   note?: string;
+  /** カードの角に出す字形 */
   icon: string;
   /** アイコンの色。実際の値は global.css の [data-accent] が持つ */
   accent: "blue" | "orange";
 }
 
+/**
+ * トップに並べる道具。ここが並び順とラベルの単一情報源になる。
+ * 道具を足すときは、対応するページを src/pages/ に作ってからここへ登録する。
+ */
 export const TOOLS: Tool[] = [
   {
-    id: "parser",
     href: "/parser/",
     title: "記法パーサー",
     description:
@@ -27,7 +26,6 @@ export const TOOLS: Tool[] = [
     accent: "blue",
   },
   {
-    id: "builder",
     href: "/builder/",
     title: "テーマ作成",
     description:
