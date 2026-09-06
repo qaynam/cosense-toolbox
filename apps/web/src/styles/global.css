@@ -144,22 +144,22 @@ a {
 .site-footer {
   border-top: 1px solid var(--border-soft);
   margin-top: 80px;
-  padding: 30px 0;
+  padding: 26px 0;
   color: var(--text-faint);
   font-size: 13px;
 }
-.site-footer p {
-  margin: 4px 0;
-}
-.site-footer .foot-links {
+/* 狭いと 1 行に収まらないので、折り返しても中央に並ぶようにする */
+.site-footer .wrap {
   display: flex;
-  gap: 16px;
-  margin: 8px 0 6px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
 }
-.site-footer .foot-links a {
+.site-footer a {
   color: var(--text-dim);
 }
-.site-footer .foot-links a:hover {
+.site-footer a:hover {
   color: var(--text);
 }
 
