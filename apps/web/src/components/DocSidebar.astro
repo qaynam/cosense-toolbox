@@ -1,31 +1,10 @@
 ---
 import { PARSER_DOCS } from "../lib/parser-docs";
-import { TOOLS } from "../lib/tools";
 
 const current = Astro.url.pathname;
-/** ツールのページはサブページを持つので、前方一致で「今いる道具」を判定する */
-const inTool = (href: string) => current === href || current.startsWith(href);
 ---
 
 <nav class="doc-nav" aria-label="ドキュメント">
-  <section class="doc-nav-tools">
-    <h2>ツール</h2>
-    <ul>
-      {
-        TOOLS.map((tool) => (
-          <li>
-            <a
-              href={tool.href}
-              aria-current={inTool(tool.href) ? "true" : undefined}
-            >
-              {tool.title}
-            </a>
-          </li>
-        ))
-      }
-    </ul>
-  </section>
-
   <span class="doc-nav-name">@cosense-toolbox/parser</span>
   {
     PARSER_DOCS.map((group) => (

@@ -83,9 +83,7 @@ const ogImageURL = new URL(image ?? "/og.png", siteUrl);
         <div class="header-actions">
           <nav>
             <a href="/parser/">パーサー</a>
-            <a href="/scripts/">userscript</a>
             <a href="/builder/">テーマ作成</a>
-            <a href="/guide/">使い方</a>
             <a href={SITE.github} target="_blank" rel="noopener">GitHub ↗</a>
           </nav>
           <button
@@ -119,9 +117,6 @@ const ogImageURL = new URL(image ?? "/og.png", siteUrl);
         </footer>
       )
     }
-
-    <!-- カード→詳細をギャラリーの上にかぶせるモーダルの差し込み先 -->
-    <div id="modal-root"></div>
 
     <script>
       const THEME_KEY = "cosense-toolbox-theme";
@@ -162,98 +157,9 @@ const ogImageURL = new URL(image ?? "/og.png", siteUrl);
         });
       }
 
-      /* ---------- モーダル（ギャラリーの上にかぶせる） ---------- */
-      function modalRoot() {
-        return document.getElementById("modal-root");
-      }
-      function isOverlayOpen() {
-        const r = modalRoot();
-        return !!(r && r.children.length);
-      }
-      function clearOverlay() {
-        modalRoot()?.replaceChildren();
-        document.documentElement.classList.remove("modal-open");
-      }
-      async function openModal(href: string, push = true) {
-        let html: string;
-        try {
-          const res = await fetch(href);
-          if (!res.ok) throw new Error();
-          html = await res.text();
-        } catch {
-          location.href = href;
-          return;
-        }
-        const doc = new DOMParser().parseFromString(html, "text/html");
-        const scrim = doc.querySelector("[data-modal-scrim]");
-        const root = modalRoot();
-        if (!scrim || !root) {
-          location.href = href;
-          return;
-        }
-        root.replaceChildren(document.importNode(scrim, true));
-        document.documentElement.classList.add("modal-open");
-        root.querySelector<HTMLElement>(".modal-card")?.scrollTo(0, 0);
-        if (push) history.pushState({ csModal: href }, "", href);
-        syncTheme();
-      }
-      function requestClose() {
-        if (isOverlayOpen()) history.back();
-        else location.href = "/scripts/";
-      }
-      window.addEventListener("popstate", () => {
-        const st = history.state as { csModal?: string } | null;
-        if (st && st.csModal) {
-          if (!isOverlayOpen()) openModal(st.csModal, false);
-        } else if (isOverlayOpen()) {
-          clearOverlay();
-        }
-      });
-
       /* ---------- クリック委譲 ---------- */
       document.addEventListener("click", async (e) => {
         const t = e.target as HTMLElement;
-
-        // 遷移させずモーダルにするのは、背景のギャラリーを残すため。
-        // 修飾キー付きと中クリックだけは、別タブで開く既定の動きに任せる。
-        const cardLink = t.closest<HTMLAnchorElement>(".card-link");
-        if (
-          cardLink &&
-          !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) &&
-          (e as MouseEvent).button === 0
-        ) {
-          e.preventDefault();
-          openModal(cardLink.getAttribute("href") || "/");
-          return;
-        }
-
-        if (t.closest("[data-modal-close]")) {
-          e.preventDefault();
-          requestClose();
-          return;
-        }
-        const scrim = t.closest("[data-modal-scrim]");
-        if (scrim && !t.closest(".modal-card")) {
-          e.preventDefault();
-          requestClose();
-          return;
-        }
-
-        const demoToggle = t.closest<HTMLElement>("[data-css-demo-toggle]");
-        if (demoToggle) {
-          const demo = demoToggle.closest<HTMLElement>(".css-demo");
-          const iframe = demo?.querySelector("iframe");
-          if (demo && iframe) {
-            const on = demo.dataset.on !== "true";
-            demo.dataset.on = String(on);
-            demoToggle.setAttribute("aria-pressed", String(on));
-            demoToggle.textContent = on
-              ? "userCSS を解除 ■"
-              : "userCSS を適用 ▶";
-            iframe.contentWindow?.postMessage({ type: "toggle", on }, "*");
-          }
-          return;
-        }
 
         const copyBtn = t.closest<HTMLElement>("[data-copy]");
         if (copyBtn) {
@@ -279,15 +185,6 @@ const ogImageURL = new URL(image ?? "/og.png", siteUrl);
           } catch {}
           syncTheme();
           return;
-        }
-      });
-
-      document.addEventListener("keydown", (e) => {
-        if (
-          e.key === "Escape" &&
-          document.querySelector("[data-modal-scrim]")
-        ) {
-          requestClose();
         }
       });
 

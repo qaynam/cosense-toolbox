@@ -24,14 +24,6 @@ export const TOOLS: Tool[] = [
     icon: "{ }",
   },
   {
-    id: "scripts",
-    href: "/scripts/",
-    title: "userscript / userCSS",
-    description:
-      "自分の Cosense に貼るだけで効くスクリプトとスタイル。テーマ変更から改造まで。",
-    icon: "</>",
-  },
-  {
     id: "builder",
     href: "/builder/",
     title: "テーマ作成",
