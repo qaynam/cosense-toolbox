@@ -104,15 +104,7 @@ a {
   height: 30px;
   display: block;
 }
-.tb-fab img,
-.tb-panel h2 img {
-  display: block;
-}
-.tb-panel h2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -146,40 +138,6 @@ a {
 .icon-btn:hover {
   color: var(--text);
   border-color: var(--text-faint);
-}
-
-.tb-fab {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text);
-  padding: 6px 12px 6px 13px;
-  border-radius: 999px;
-  font-size: 14px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s ease;
-}
-.tb-fab:hover {
-  border-color: var(--text-faint);
-}
-.tb-count {
-  min-width: 19px;
-  height: 19px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: var(--text);
-  color: var(--bg);
-  font-weight: 700;
-  font-size: 11.5px;
-  display: inline-grid;
-  place-items: center;
-}
-.tb-fab[data-empty="true"] .tb-count {
-  background: var(--border);
-  color: var(--text-faint);
 }
 
 /* ---------- footer ---------- */
@@ -369,80 +327,66 @@ a {
   white-space: nowrap;
 }
 
-.card-add {
-  position: absolute;
-  top: 50%;
-  right: 4px;
-  transform: translateY(-50%);
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: 14px;
-  display: grid;
-  place-items: center;
-  z-index: 2;
-  transition: all 0.15s ease;
-  line-height: 1;
-}
-.card-add::before {
-  content: "＋";
-}
-.card-add:hover {
-  border-color: var(--text-faint);
-  color: var(--text);
-}
-.card-add.added {
-  background: var(--text);
-  color: var(--bg);
-  border-color: var(--text);
-}
-.card-add.added::before {
-  content: "✓";
-}
-
 .empty {
   text-align: center;
   color: var(--text-faint);
   padding: 60px 0;
 }
 
-.more {
+/* トップの道具一覧 */
+.tool-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 14px;
-  margin: 48px 0 8px;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 16px;
+  margin: 40px 0 80px;
 }
-.more-card {
+.tool-card {
   display: block;
-  padding: 20px;
+  padding: 22px 22px 24px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-card);
   color: inherit;
+  text-decoration: none;
   transition:
     border-color 0.15s ease,
     background-color 0.15s ease;
 }
-.more-card:hover {
+.tool-card:hover {
   border-color: var(--text-faint);
   background: var(--bg-soft);
 }
-.more-card h2 {
-  margin: 0 0 6px;
-  font-size: 15px;
-  font-weight: 600;
-}
-.more-card p {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.6;
+.tool-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-elev);
+  font-family: var(--font-mono);
+  font-size: 14px;
   color: var(--text-dim);
 }
-
+.tool-card h2 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+.tool-card p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.75;
+}
+.tool-note {
+  display: inline-block;
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-faint);
+}
 /* ---------- buttons ---------- */
 .btn {
   font-family: inherit;
@@ -672,117 +616,6 @@ a {
   border-radius: 0 8px 8px 0;
   margin: 18px 0;
   font-size: 14px;
-}
-
-/* ---------- toolbox drawer ---------- */
-.tb-drawer {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  visibility: hidden;
-}
-.tb-drawer[data-open="true"] {
-  visibility: visible;
-}
-.tb-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.tb-drawer[data-open="true"] .tb-backdrop {
-  opacity: 1;
-}
-.tb-panel {
-  position: absolute;
-  top: 0;
-  right: 0;
-  height: 100%;
-  width: min(390px, 90vw);
-  background: var(--bg-card);
-  border-left: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  transform: translateX(100%);
-  transition: transform 0.22s ease;
-}
-.tb-drawer[data-open="true"] .tb-panel {
-  transform: none;
-}
-.tb-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--border-soft);
-}
-.tb-head h2 {
-  margin: 0;
-  font-size: 16px;
-  letter-spacing: -0.01em;
-}
-.tb-list {
-  list-style: none;
-  margin: 0;
-  padding: 8px;
-  overflow-y: auto;
-  flex: 1;
-}
-.tb-list li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 9px 11px;
-  border-radius: 9px;
-  font-size: 14px;
-}
-.tb-list li:hover {
-  background: var(--bg-elev);
-}
-.tb-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.tb-rm {
-  border: 0;
-  background: none;
-  color: var(--text-faint);
-  cursor: pointer;
-  font-size: 17px;
-  padding: 0 6px;
-  border-radius: 6px;
-  line-height: 1.4;
-}
-.tb-rm:hover {
-  color: var(--text);
-  background: var(--bg-soft);
-}
-.tb-empty {
-  color: var(--text-faint);
-  justify-content: center !important;
-  text-align: center;
-  padding: 44px 12px !important;
-  font-size: 13px;
-  line-height: 1.8;
-}
-.tb-foot {
-  padding: 14px 16px;
-  border-top: 1px solid var(--border-soft);
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-.tb-foot .btn {
-  justify-content: center;
-}
-.tb-hint {
-  font-size: 12px;
-  color: var(--text-faint);
-  margin: 0 0 2px;
-  line-height: 1.6;
 }
 
 /* ---------- theme builder (Figma風の全画面アプリ) ---------- */
@@ -1121,21 +954,6 @@ html.modal-open body {
   color: var(--text-dim);
   margin: 0 0 6px;
 }
-.title-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-  margin: 8px 0 14px;
-}
-.title-row h1 {
-  margin: 0;
-}
-.title-row .btn.add {
-  flex: 0 0 auto;
-  white-space: nowrap;
-  margin-top: 4px;
-}
 .section-label {
   font-size: 11.5px;
   color: var(--text-faint);
@@ -1343,6 +1161,18 @@ html.modal-open body {
   overflow-y: auto;
   font-size: 13.5px;
 }
+/* 道具どうしの移動。ドキュメントの目次より上に置く */
+.doc-nav-tools {
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.doc-nav-tools a[aria-current="true"] {
+  color: var(--text);
+  background: var(--bg-soft);
+  font-weight: 500;
+}
+
 .doc-nav-name {
   display: block;
   margin-bottom: 22px;

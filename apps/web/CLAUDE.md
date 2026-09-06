@@ -39,9 +39,13 @@ userscript の実体は Cosense の **`cosense-toolbox`** プロジェクト（�
 - **Gyazo等の外部画像URLの永続性**が課題
 - Alpine.js は「手書きを楽にするための土台」で、cosense では必須ではない
 
-## 方針：ドキュメントではなく「ギャラリー」
+## 方針：トップは「道具の入り口」
 
-当初Starlightでドキュメントサイトを作ったが、**読み物すぎて選びにくい**という判断で、**素のAstroのギャラリー（ショーケース）に作り替えた**。狙いは「気に入ったものを選んで**コピペで自分のCosenseに貼る**」体験（shadcn/ui のレジストリや vimawesome に近いバフェ型）。**Starlightは撤去済み**。
+トップは userscript の一覧ではなく、**道具（parser / userscript / テーマ作成）をカードで並べる入り口**にしてある。並び順とラベルの単一情報源は `src/lib/tools.ts`。道具を足したら、ページを作ってからここに登録する。
+
+userscript の一覧（カード＋フィルタ＋検索）は `/scripts/` へ移した。狙いは「気に入ったものを選んで**コピペで自分のCosenseに貼る**」体験（shadcn/ui のレジストリや vimawesome に近いバフェ型）。**Starlightは撤去済み**。
+
+**ツールボックス（カート）は廃止した。** 積んで一括コピーする導線をやめ、1本ずつコピーして貼る形に戻している。
 
 ## 技術スタック / コマンド
 
@@ -57,33 +61,29 @@ userscript の実体は Cosense の **`cosense-toolbox`** プロジェクト（�
 
 ## ページ / コンポーネント構成
 
-- `src/pages/index.astro` … **ギャラリー本体**。カードグリッド＋カテゴリフィルタ（すべて/テーマ/ツール/改造/飛び道具/基盤）＋検索。フィルタ/検索は素のJS
+- `src/pages/index.astro` … **トップ**。`TOOLS` を `ToolCard` でグリッド表示するだけ
+- `src/pages/scripts/index.astro` … **ギャラリー本体**。カードグリッド＋カテゴリフィルタ（すべて/テーマ/ツール/改造/飛び道具/基盤）＋検索。フィルタ/検索は素のJS
 - `src/pages/s/[...slug].astro` … 各スクリプトの**詳細ページ**。install snippetのコピー＋デモ枠＋本文＋ソースリンク
 - `src/pages/guide.astro` … 1行インストール解説（旧 how-it-works を移植）
 - `src/components/ScriptCard.astro` … カード（コピーボタン付き）
 - `src/components/CosenseCssDemo.astro` … **A層ライブデモ**。iframe(`srcdoc`/`sandbox`)に疑似Cosenseページ(#111ダーク)を描画し、トグルでuserCSSを適用/解除（`postMessage`でiframe内の`<style>`を有効化）
 - `src/lib/categories.ts` … カテゴリ/グループ/ステータスのラベル・色
 - `src/lib/demos.ts` … A層デモ用のuserCSS（プレビュー幅でも効くよう`@media`を外した版）。現状 line-numbers / section-numbers / code-block-line-numbers / indent-rainbow の4つ
-- `src/layouts/Base.astro` … 共通レイアウト。**ライトモード切替 / ツールボックス（カート）ドロワー / モーダル制御 / ライブデモのトグル**を内蔵。全スクリプトの install 情報を JSON レジストリ(`#tb-registry`)として注入し、**1つの delegated `<script>`** で copy / cart / theme / modal / demo-toggle をまとめて処理。委譲なので、後から `#modal-root` に差し込んだDOMでも全部効く
-- **モーダルは自前のSPAオーバーレイ**（`ClientRouter`/View Transitions は撤去）。理由：カードを開いたときに**背景のギャラリーをそのまま残す**ため。カードの `.card-link` クリックを横取り→ `fetch(href)` で詳細HTMLを取り `[data-modal-scrim]` だけ `#modal-root` に差し込む。`history.pushState` でURLは `/s/<slug>/` に、× / 背景 / Esc / 戻る で閉じる（`popstate` で前進/復元）。直リンク時は `/s/<slug>/` がSSRでそのままモーダル表示（閉じる＝ `/` へ遷移）
-- `src/lib/site.ts` … サイト定数（GitHub URL、ダミーサムネ画像、localStorageキー）
-- `src/pages/s/[...slug].astro` … **Dribbble風モーダルの詳細ページ**。上から 画像 → タイトル → **機能説明(機能ベース。コード/API解説はしない方針)** → **デモ** → インストール(コピー) → **ソース全文アコーディオン**（`<details>` + Astro組み込み `Code`=Shiki, theme github-dark）。背景は dim スクリム、`.modal-dismiss`/×/で `/` に戻る
+- `src/layouts/Base.astro` … 共通レイアウト。**ライトモード切替 / モーダル制御 / ライブデモのトグル**を内蔵。**1つの delegated `<script>`** で copy / theme / modal / demo-toggle をまとめて処理。委譲なので、後から `#modal-root` に差し込んだDOMでも全部効く
+- **モーダルは自前のSPAオーバーレイ**（`ClientRouter`/View Transitions は撤去）。理由：カードを開いたときに**背景のギャラリーをそのまま残す**ため。カードの `.card-link` クリックを横取り→ `fetch(href)` で詳細HTMLを取り `[data-modal-scrim]` だけ `#modal-root` に差し込む。`history.pushState` でURLは `/s/<slug>/` に、× / 背景 / Esc / 戻る で閉じる（`popstate` で前進/復元）。直リンク時は `/s/<slug>/` がSSRでそのままモーダル表示（閉じる＝ `/scripts/` へ遷移）
+- `src/lib/site.ts` … サイト定数（GitHub URL、ダミーサムネ画像、テーマのlocalStorageキー）
+- `src/lib/tools.ts` … トップに並べる道具の一覧。`DocSidebar` の「ツール」節もここを読む
+- `src/pages/s/[...slug].astro` … **Dribbble風モーダルの詳細ページ**。上から 画像 → タイトル → **機能説明(機能ベース。コード/API解説はしない方針)** → **デモ** → インストール(コピー) → **ソース全文アコーディオン**（`<details>` + Astro組み込み `Code`=Shiki, theme github-dark）。背景は dim スクリム、`.modal-dismiss`/×/で `/scripts/` に戻る
 - **デモの方針**: 詳細ページの「デモ」は **Gyazo oEmbed 埋め込み**（`GyazoEmbed.astro` + `src/lib/gyazo.ts`）。各 `.md` の `demo`(Gyazo画像ページURL) を使い、未指定は `SITE.dummyGyazoDemo`。oEmbedをビルド時に解決し、**`html`(iframe等)が返ればそれを `set:html` で出す**（type=photoのときだけ `<img>`）。ネット不可環境では `i.gyazo.com/<id>.png` にフォールバック（メモ化あり）。**テーマ系4本だけは A層ライブデモ(`CosenseCssDemo`)を優先表示**、他は Gyazo
 - **モーダルに差し込むDOMの注意**: `#modal-root` に注入される詳細HTMLは、ギャラリーページに無いスクリプト/スコープCSSは効かない。よって **ライブデモのトグルは Base に集約**、**`.css-demo` 等のスタイルは global.css に置く**（コンポーネントの scoped style/script にしない）。Shikiは inline style、Gyazoは iframe/img なのでそのまま動く
 - `src/sources/<slug>.txt` … 各スクリプトの**実ソースコード全文**（cosense-toolbox から `cosense browsePage` で取得、1段デインデントのみで verbatim）。アコーディオン表示用。`import.meta.glob(..., '?raw', eager)` で読む。**44/50 取得済み**（未取得: shortcut-guide=リファレンスでコード無し / search-create-page=実体archive.js / alpine-js・scrapbox-parser・sugar-high=巨大な外部バンドルのため対象外）
 
-## ツールボックス（カート）の仕組み
-
-「気に入ったものを積んで最後に一括コピー」の中核。カード/詳細の `＋ツールボックス`（`data-toolbox-add=<slug>`）で localStorage(`cosense-toolbox-cart`) に slug を出し入れ。ヘッダの 🧰 でドロワーを開き、「まとめてコピー」で **kind ごとに `code:script.js` / `code:style.css` ブロックへ束ねた1枚のスニペット**を生成してクリップボードへ。`buildSnippet()` 参照。
-
 ## 現状
 
-`bun run build` で **52ページ**生成OK。実装済み：
+`bun run build` で **56ページ**生成OK。実装済み：
 
-- ギャラリー（カード＋フィルタ＋検索）／詳細ページ／使い方ページ
-- **ツールボックス（カート）**：積んで一括コピー
+- トップの道具一覧／ギャラリー（カード＋フィルタ＋検索）／詳細ページ／使い方ページ
 - **ライトモード**：ヘッダのトグルで切替（`is:inline`で描画前にテーマ確定、localStorage永続）
-- **View Transitions**：カードのサムネ↔詳細heroが `transition:name=thumb-<slug>` でモーフ
 - カードのサムネは **ダミー画像**（`SITE.dummyThumb` の Gyazo）。後で各スクリプトのスクショに差し替える想定（`media` フィールドで上書き）
 - テーマ系4本にA層ライブデモ。パレットはCosense(#111)寄り＋星グラデ
 

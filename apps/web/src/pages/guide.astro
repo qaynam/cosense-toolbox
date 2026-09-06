@@ -5,7 +5,7 @@ import { SITE } from "../lib/site";
 
 <Base title="使い方">
   <section class="guide">
-    <a class="back" href="/">← userscript 一覧へ戻る</a>
+    <a class="back" href="/scripts/">← userscript 一覧へ戻る</a>
     <h1>使い方</h1>
     <p>
       Cosense (旧Scrapbox) には <strong>userscript</strong> という仕組みがあります。自分のページに書いた
@@ -38,12 +38,10 @@ import { SITE } from "../lib/site";
  @import url('/api/code/${SITE.cosenseProject}/コードブロックの行番号を表示するUserCSS/style.css');`}</code></pre>
 
     <div class="note">
-      <strong>まとめて入れる場合</strong>は、一覧や詳細ページの <strong
-        >＋</strong
-      > ボタンで気に入ったものを積んでから、 ヘッダの 🧰 を開いて「まとめてコピー」を押します。JavaScript
-      と CSS が
-      <code>code:script.js</code> と <code>code:style.css</code> に振り分けられた状態で1枚のスニペットになるので、
-      そのまま設定ページに貼れます。
+      <strong>複数入れる場合</strong>は、<code>code:script.js</code> と <code
+        >code:style.css</code
+      > のブロックをそれぞれ 1 つだけ作り、その中に <code>import</code> の行を並べます。
+      ブロックを分ける必要はありません。
     </div>
 
     <h2>3. 保存してリロード</h2>

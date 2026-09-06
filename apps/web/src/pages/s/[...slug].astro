@@ -59,12 +59,7 @@ const sourceCode = sources[`../../sources/${entry.id}.txt`] as
             {data.tags.map((t) => <span class="chip ghost">#{t}</span>)}
           </div>
 
-          <div class="title-row">
-            <h1>{data.title}</h1>
-            <button class="btn add" data-toolbox-add={entry.id} type="button"
-              ><span class="label">＋ ツールボックスに追加</span></button
-            >
-          </div>
+          <h1>{data.title}</h1>
 
           <div class="prose">
             <Content />
