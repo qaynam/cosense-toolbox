@@ -4,7 +4,7 @@
 import { fileURLToPath } from 'node:url'
 import { type CompileOptions, compile } from '@cosense-toolbox/cosense-x'
 import type { Plugin } from 'vite'
-import { type Site, idOf, isCosenseFile, scanSite } from './site'
+import { type SiteCache, idOf, isCosenseFile } from './site'
 
 export const GRAPH_MODULE_ID = 'virtual:cosense-x/graph'
 const RESOLVED_GRAPH_MODULE_ID = `\0${GRAPH_MODULE_ID}`
@@ -16,7 +16,8 @@ export type AstroCompileOptions = Omit<
 
 export interface VitePluginOptions {
   readonly root: URL
-  readonly srcDir: URL
+  /** 索引とグラフ。content collection の読み込みと共有する */
+  readonly site: SiteCache
   readonly compile: AstroCompileOptions
   /** すべてのページに渡すコンポーネントを default export するモジュールの絶対パス */
   readonly components: string | undefined
@@ -75,11 +76,7 @@ const toAstroModule = (
 
 export const vitePluginCosense = (options: VitePluginOptions): Plugin => {
   const root = fileURLToPath(options.root)
-  let site: Promise<Site> | undefined
-  const loadSite = (): Promise<Site> => {
-    site ??= scanSite(root, fileURLToPath(options.srcDir), options.compile)
-    return site
-  }
+  const loadSite = options.site.get
 
   return {
     name: '@cosense-toolbox/astro',
@@ -124,7 +121,7 @@ export const vitePluginCosense = (options: VitePluginOptions): Plugin => {
     configureServer(server) {
       const onChange = (file: string) => {
         if (!isCosenseFile(file)) return
-        site = undefined
+        options.site.reset()
         for (const environment of Object.values(server.environments)) {
           const graph = environment.moduleGraph
           for (const [id, module] of graph.idToModuleMap) {

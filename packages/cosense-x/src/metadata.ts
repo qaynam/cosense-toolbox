@@ -2,12 +2,12 @@
  * metadata.ts — ページから一覧や `<head>` に使う情報を集める。
  * frontmatter に同じ項目があれば、そちらを使う。
  */
-import { type LineBlock, type Page, asImageSrc } from '@cosense-toolbox/parser'
+import { type InlineNode, type LineBlock, type Page, asImageSrc } from '@cosense-toolbox/parser'
 import { toPlainText } from '@cosense-toolbox/parser/compile'
 import { firstImage, visit } from '@cosense-toolbox/parser/utils'
 import { parseComponentTag } from './components'
 import type { Frontmatter } from './frontmatter'
-import { normalizeTitle, titleToSlug } from './title'
+import { isRelativePath, normalizeTitle, titleToSlug } from './title'
 
 export interface PageMetadata {
   /** frontmatter の `title`、なければ 1 行目 */
@@ -55,7 +55,24 @@ export interface CollectMetadataOptions {
    * `.csnx` のとき、パースに渡した文字列。コンポーネントの行を説明文から外すのに使う。
    */
   readonly componentsSource?: string
+  /**
+   * 相対パスのリンク (`[./foo.csn]`) の行き先のタイトル。本文と同じく、説明文にも
+   * パスではなくタイトルを出すのに使う。undefined なら書かれたままのテキストにする。
+   */
+  readonly resolveRelativeLink?: (target: string) => string | undefined
 }
+
+/** 相対パスのリンクの表示を、リンク先のタイトルに置き換える。装飾の中も辿る。 */
+const relabel = (
+  nodes: readonly InlineNode[],
+  resolve: (target: string) => string | undefined,
+): InlineNode[] =>
+  nodes.map((node) => {
+    if (node.type === 'decoration') return { ...node, children: relabel(node.children, resolve) }
+    if (node.type !== 'internalLink' || !isRelativePath(node.target)) return node
+    const title = resolve(node.target)
+    return title === undefined ? node : { ...node, label: title }
+  })
 
 /** 本文の冒頭から説明文を作る。検索結果やカードの抜粋に収まる長さで切る。 */
 const describe = (page: Page, options: CollectMetadataOptions): string => {
@@ -69,7 +86,10 @@ const describe = (page: Page, options: CollectMetadataOptions): string => {
   for (const block of page.children) {
     if (length >= DESCRIPTION_MIN) break
     if (block.type !== 'line' || isComponentLine(block)) continue
-    const text = toPlainText(block).trim()
+    const resolve = options.resolveRelativeLink
+    const line =
+      resolve === undefined ? block : { ...block, children: relabel(block.children, resolve) }
+    const text = toPlainText(line).trim()
     if (text === '') continue
     parts.push(text)
     length += text.length

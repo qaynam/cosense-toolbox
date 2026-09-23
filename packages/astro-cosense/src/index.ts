@@ -12,7 +12,7 @@
 import { fileURLToPath } from 'node:url'
 import { readPage } from '@cosense-toolbox/cosense-x/graph'
 import type { AstroIntegration, ContentEntryType, HookParameters } from 'astro'
-import { EXTENSIONS } from './site'
+import { EXTENSIONS, createSiteCache, idOf } from './site'
 import { type AstroCompileOptions, GRAPH_MODULE_ID, vitePluginCosense } from './vite-plugin'
 
 export interface CosenseIntegrationOptions extends AstroCompileOptions {
@@ -70,6 +70,12 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
       'astro:config:setup': (params: HookParameters<'astro:config:setup'>) => {
         const { addPageExtension, addContentEntryType } = params as unknown as HiddenSetupHooks
         const { config, addRenderer, updateConfig } = params
+        const root = fileURLToPath(config.root)
+        const site = createSiteCache(
+          root,
+          fileURLToPath(config.srcDir),
+          options.parseOptions === undefined ? {} : { parseOptions: options.parseOptions },
+        )
 
         addRenderer({
           name: 'astro:jsx',
@@ -79,10 +85,12 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
 
         addContentEntryType({
           extensions: [...EXTENSIONS],
-          getEntryInfo({ fileUrl, contents }) {
-            const filePath = fileURLToPath(fileUrl)
+          async getEntryInfo({ fileUrl, contents }) {
+            // 説明文の中の相対パスのリンクをタイトルにするため、索引を渡して読む。
+            const { index } = await site.get()
             const { frontmatter, metadata, body } = readPage(contents, {
-              filePath,
+              filePath: idOf(root, fileURLToPath(fileUrl)),
+              index,
               ...(options.parseOptions === undefined ? {} : { parseOptions: options.parseOptions }),
             })
             // Cosense では 1 行目がタイトルなので、frontmatter に無くても title などを data に入れる。
@@ -103,7 +111,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
             plugins: [
               vitePluginCosense({
                 root: config.root,
-                srcDir: config.srcDir,
+                site,
                 compile: compileOptions,
                 components:
                   components === undefined

@@ -182,6 +182,11 @@ describe('リンクの解決', () => {
     )
   })
 
+  it('説明文でも、相対パスのリンクはリンク先のタイトルになる', async () => {
+    const { metadata } = await compile('タイトル\n参照: [./notes/b.csnx] と [./none.csn]', base)
+    expect(metadata.description).toBe('参照: Page B と ./none.csn')
+  })
+
   it('索引を渡さなければ、タイトルのリンクはすべてページへのリンクになる', async () => {
     const html = await renderPage('タイトル\n[どこか]', { pageUrl: (page) => `/p/${page.slug}` })
     expect(html).toContain('<a class="link" href="/p/どこか">どこか</a>')

@@ -48,6 +48,11 @@ describe('scanSite', () => {
     expect(graph.backlinks['src/content/posts/notes/c.csnx']).toEqual(['src/content/posts/a.csn'])
   })
 
+  it('説明文の相対パスのリンクは、リンク先のタイトルになる', async () => {
+    const { graph } = await scanSite(root, join(root, 'src'))
+    expect(graph.pages['src/content/posts/a.csn']?.description).toBe('Page B と Page C')
+  })
+
   it('ディレクトリが無ければ空のサイトになる', async () => {
     const { index } = await scanSite(root, join(root, 'missing'))
     expect(index.pages).toEqual({})

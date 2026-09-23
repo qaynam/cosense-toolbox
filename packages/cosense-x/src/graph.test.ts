@@ -52,6 +52,10 @@ describe('scanPages', () => {
     })
   })
 
+  it('説明文の相対パスのリンクは、リンク先のタイトルになる', () => {
+    expect(graph.pages['posts/js.csn']?.description).toBe('言語。TypeScript も参照')
+  })
+
   it('ページの情報に metadata を持つ', () => {
     expect(graph.pages['posts/react.csn']).toEqual({
       id: 'posts/react.csn',

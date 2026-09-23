@@ -6,7 +6,9 @@
  */
 import { type Page, type ParseOptions, normalizeLineEndings, parse } from '@cosense-toolbox/parser'
 import { type Frontmatter, readFrontmatter, splitFrontmatter } from './frontmatter'
-import { type PageMetadata, collectMetadata } from './metadata'
+import type { PageIndex } from './links'
+import { type CollectMetadataOptions, type PageMetadata, collectMetadata } from './metadata'
+import { resolveRelativePath } from './title'
 
 /** `.csn` は素の Cosense 記法、`.csnx` はそれにコンポーネントの行を足したもの。 */
 export type Format = 'csn' | 'csnx'
@@ -21,6 +23,11 @@ export interface ReadOptions {
   readonly filePath?: string
   /** パーサーに渡すオプション。記法の拡張 (`extensions`) を足せる */
   readonly parseOptions?: ParseOptions
+  /**
+   * 手元のページの索引。`filePath` と一緒に渡すと、説明文の中の相対パスのリンク
+   * (`[./foo.csn]`) をリンク先のタイトルにする。
+   */
+  readonly index?: PageIndex
 }
 
 export interface ReadResult {
@@ -37,10 +44,16 @@ export const readPage = (source: string, options: ReadOptions = {}): ReadResult 
   const format = options.format ?? formatOf(options.filePath)
   const head = splitFrontmatter(normalizeLineEndings(source))
   const { data, page } = readFrontmatter(parse(head.body, options.parseOptions), head.data)
-  const metadata = collectMetadata(
-    page,
-    data,
-    format === 'csnx' ? { componentsSource: head.body } : {},
-  )
+  const { index, filePath } = options
+  const metadataOptions: CollectMetadataOptions = {
+    ...(format === 'csnx' ? { componentsSource: head.body } : {}),
+    ...(index === undefined || filePath === undefined
+      ? {}
+      : {
+          resolveRelativeLink: (target: string) =>
+            index.pages[resolveRelativePath(filePath, target)]?.title,
+        }),
+  }
+  const metadata = collectMetadata(page, data, metadataOptions)
   return { format, frontmatter: data, metadata, page, body: head.body }
 }

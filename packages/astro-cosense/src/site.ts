@@ -48,29 +48,56 @@ const listFiles = async (directory: string): Promise<string[]> => {
   return nested.flat().sort()
 }
 
-/** `directory` の下を読んで、索引とグラフを作る。id は `root` からの相対パス。 */
+/**
+ * `directory` の下を読んで、索引とグラフを作る。id は `root` からの相対パス。
+ *
+ * 説明文の中の相対パスのリンクをタイトルにするには索引が要るので、
+ * タイトルだけで索引を作ってから、索引を渡して読み直す。ファイルの読み込みは 1 回だけ。
+ */
 export const scanSite = async (
   root: string,
   directory: string,
   options: Pick<ReadOptions, 'parseOptions'> = {},
 ): Promise<Site> => {
   const files = await listFiles(directory)
-  const pages = await Promise.all(
-    files.map(async (file) => {
-      const id = idOf(root, file)
-      const source = await readFile(file, 'utf8')
-      return { id, metadata: readPage(source, { ...options, filePath: id }).metadata }
+  const sources = await Promise.all(
+    files.map(async (file) => ({ id: idOf(root, file), source: await readFile(file, 'utf8') })),
+  )
+  const index = createIndex(
+    sources.map(({ id, source }) => {
+      const { metadata } = readPage(source, { ...options, filePath: id })
+      return { id, title: metadata.title, slug: metadata.slug, draft: metadata.draft }
     }),
   )
+  const graph = buildGraph(
+    sources.map(({ id, source }) => ({
+      id,
+      metadata: readPage(source, { ...options, filePath: id, index }).metadata,
+    })),
+  )
+  return { index, graph }
+}
+
+/** 索引とグラフを 1 つだけ持ち、Vite のプラグインと content collection で使い回す。 */
+export interface SiteCache {
+  readonly get: () => Promise<Site>
+  /** ファイルが変わったときに捨てる。次の `get` で読み直す */
+  readonly reset: () => void
+}
+
+export const createSiteCache = (
+  root: string,
+  directory: string,
+  options: Pick<ReadOptions, 'parseOptions'> = {},
+): SiteCache => {
+  let site: Promise<Site> | undefined
   return {
-    index: createIndex(
-      pages.map(({ id, metadata }) => ({
-        id,
-        title: metadata.title,
-        slug: metadata.slug,
-        draft: metadata.draft,
-      })),
-    ),
-    graph: buildGraph(pages),
+    get: () => {
+      site ??= scanSite(root, directory, options)
+      return site
+    },
+    reset: () => {
+      site = undefined
+    },
   }
 }

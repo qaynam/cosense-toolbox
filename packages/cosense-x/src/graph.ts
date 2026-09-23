@@ -141,14 +141,26 @@ export interface ScanInput {
   readonly source: string
 }
 
-/** ファイルの中身をまとめて読み、グラフを作る。形式は id の拡張子から決める。 */
+/**
+ * ファイルの中身をまとめて読み、グラフを作る。形式は id の拡張子から決める。
+ *
+ * 2 回に分けて読む。説明文の中の相対パスのリンクをタイトルにするには全ページの索引が要り、
+ * 索引に載せるタイトルは説明文に依存しないので、先にタイトルだけで索引を作れる。
+ */
 export const scanPages = (
   files: readonly ScanInput[],
-  options: Omit<ReadOptions, 'filePath' | 'format'> = {},
-): Graph =>
-  buildGraph(
+  options: Omit<ReadOptions, 'filePath' | 'format' | 'index'> = {},
+): Graph => {
+  const index = createIndex(
+    files.map(({ id, source }) => {
+      const { metadata } = readPage(source, { ...options, filePath: id })
+      return { id, title: metadata.title, slug: metadata.slug, draft: metadata.draft }
+    }),
+  )
+  return buildGraph(
     files.map(({ id, source }) => ({
       id,
-      metadata: readPage(source, { ...options, filePath: id }).metadata,
+      metadata: readPage(source, { ...options, filePath: id, index }).metadata,
     })),
   )
+}
