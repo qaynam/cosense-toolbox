@@ -17,6 +17,9 @@ import '@cosense-toolbox/style'
 > (`.line > .text > 1 文字ごとの .char-index`) に当てたもので `toHtml` の出力には当たらないため、
 > 見た目を寄せた別実装として書き起こしたものです。
 
+Tailwind CSS を使っているなら、この CSS を読み込む代わりに [`@cosense-toolbox/tailwind`](../tailwind) を使える。
+`class="cosense"` を付けた要素の中に、同じスタイルが当たる。
+
 ## 前提
 
 すべてのルールが `.page` の下にスコープされている。`toHtml(page)` の出力はルートに `.page` を持つので

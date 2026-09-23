@@ -12,12 +12,12 @@ const pages = tag.pages.map((id) => graph.pages[id]).filter((page) => page !== u
 ---
 
 <Base title={`#${tag.name}`}>
-  <h1>#{tag.name}</h1>
-  <ul>
+  <h1 class="mb-6 text-2xl font-bold">#{tag.name}</h1>
+  <ul class="list-disc pl-6">
     {
       pages.map((page) => (
         <li>
-          <a href={pageUrl(page)}>{page.title}</a>
+          <a class="text-blue-700 underline" href={pageUrl(page)}>{page.title}</a>
         </li>
       ))
     }

@@ -23,9 +23,15 @@ try {
 ---
 
 <Base title={title}>
-  <p>
-    <a href={`https://scrapbox.io/${project}/${encodeURIComponent(title)}`}>/{project}/{title}</a>
+  <p class="mb-6">
+    <a class="text-blue-700 underline" href={`https://scrapbox.io/${project}/${encodeURIComponent(title)}`}>/{project}/{title}</a>
     をビルド時に取ってきて描画している。
   </p>
-  {html === null ? <p>取得できなかった (オフラインでビルドした)。</p> : <Fragment set:html={html} />}
+  {
+    html === null ? (
+      <p>取得できなかった (オフラインでビルドした)。</p>
+    ) : (
+      <article class="cosense" set:html={html} />
+    )
+  }
 </Base>

@@ -1,0 +1,58 @@
+{
+  "name": "@cosense-toolbox/tailwind",
+  "version": "0.1.0-beta.0",
+  "description": "Tailwind CSS plugin: add class=\"cosense\" and the Cosense notation HTML inside it gets the default look.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "generate": "bun scripts/generate.ts",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "bun run build"
+  },
+  "peerDependencies": {
+    "tailwindcss": ">=4.0.0"
+  },
+  "devDependencies": {
+    "postcss": "^8.5.28",
+    "postcss-selector-parser": "^7.1.6",
+    "tailwindcss": "^4.3.3",
+    "tsdown": "^0.22.14",
+    "typescript": "^6.0.0",
+    "vitest": "^2.1.8"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "beta",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": ["cosense", "scrapbox", "tailwindcss", "tailwind-plugin", "typography"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qaynam/cosense-toolbox.git",
+    "directory": "packages/tailwind"
+  }
+}
