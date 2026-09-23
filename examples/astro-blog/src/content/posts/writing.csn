@@ -1,0 +1,10 @@
+Cosense で書く
+code:frontmatter.yml
+ date: 2026-09-05
+ description: Cosense の記法でブログ記事を書く方法
+frontmatter は Cosense の画面でも書けるよう、code:frontmatter.yml ブロックにも書ける。 #日記 #Cosense
+[はじめての投稿] から来た人向け。
+table:記法
+ [リンク]	内部リンク
+ #タグ	タグ
+ [* 太字]	装飾

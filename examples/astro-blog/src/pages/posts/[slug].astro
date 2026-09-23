@@ -1,0 +1,67 @@
+---
+import { getCollection, render } from 'astro:content'
+import graph from 'virtual:cosense-x/graph'
+import Base from '../../layouts/Base.astro'
+import { pageUrl } from '../../urls'
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts', ({ data }) => !data.draft)
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }))
+}
+
+const { post } = Astro.props
+const { Content } = await render(post)
+
+// グラフの id はプロジェクトのルートからのパスで、content collection の filePath と同じ形。
+const id = post.filePath ?? ''
+const pageLink = (pageId: string) => {
+  const page = graph.pages[pageId]
+  return page ? { href: pageUrl(page), title: page.title } : null
+}
+const backlinks = (graph.backlinks[id] ?? []).map(pageLink).filter((link) => link !== null)
+const twoHop = graph.twoHop[id] ?? []
+---
+
+<Base title={post.data.title} description={post.data.description}>
+  <article>
+    <Content />
+  </article>
+
+  {
+    backlinks.length > 0 && (
+      <section>
+        <h2>このページにリンクしているページ</h2>
+        <ul>
+          {backlinks.map((link) => (
+            <li>
+              <a href={link.href}>{link.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    twoHop.length > 0 && (
+      <section>
+        <h2>2 hop リンク</h2>
+        {twoHop.map((group) => (
+          <div class="two-hop">
+            <h3>{group.via} 経由</h3>
+            <ul>
+              {group.pages.map(pageLink).map(
+                (link) =>
+                  link && (
+                    <li>
+                      <a href={link.href}>{link.title}</a>
+                    </li>
+                  ),
+              )}
+            </ul>
+          </div>
+        ))}
+      </section>
+    )
+  }
+</Base>

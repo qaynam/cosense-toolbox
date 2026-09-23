@@ -1,0 +1,17 @@
+---
+/**
+ * src/pages に置いた .csn / .csnx のレイアウト。frontmatter の `layout` で指定する。
+ */
+import type { PageMetadata } from '@cosense-toolbox/cosense-x'
+import Base from './Base.astro'
+
+interface Props {
+  metadata: PageMetadata
+}
+
+const { metadata } = Astro.props
+---
+
+<Base title={metadata.title} description={metadata.description}>
+  <slot />
+</Base>

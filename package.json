@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "packageManager": "bun@1.3.13",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": ["apps/*", "packages/*", "examples/*"],
   "scripts": {
     "build": "turbo run build",
     "deploy": "bun run --filter '@cosense-toolbox/web' deploy:ci",
