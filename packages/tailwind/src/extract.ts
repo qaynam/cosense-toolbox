@@ -5,7 +5,8 @@
  * 2 か所の見た目が少しずつずれていくので、ここで機械的に変換する。
  * 生成スクリプトとテストの両方から呼ぶ (実行時には使わない)。
  */
-import postcss, { type Declaration, type Rule } from 'postcss'
+import { Either } from 'effect'
+import postcss, { type ChildNode, type Declaration, type Rule } from 'postcss'
 import selectorParser from 'postcss-selector-parser'
 
 /** 同じプロパティを 2 回書いた宣言 (fallback など) は配列にする。 */
@@ -32,85 +33,104 @@ export interface CosenseStyles {
 
 const ROOT = '.page'
 
-const declarationsOf = (rule: Rule): Declarations => {
-  const out: Record<string, string | string[]> = {}
-  rule.each((node) => {
-    if (node.type === 'comment') return
-    if (node.type !== 'decl') {
-      throw new Error(`style.css: ${rule.selector} の中に宣言以外のもの (${node.type}) がある`)
-    }
-    const decl = node as Declaration
-    const value = decl.important ? `${decl.value} !important` : decl.value
-    const current = out[decl.prop]
-    out[decl.prop] =
-      current === undefined
-        ? value
-        : Array.isArray(current)
-          ? [...current, value]
-          : [current, value]
-  })
-  return out
+/** style.css がプラグインに変換できない書き方をしている。 */
+export interface ExtractError {
+  readonly _tag: 'ExtractError'
+  readonly message: string
+}
+
+const fail = (message: string): Either.Either<never, ExtractError> =>
+  Either.left({ _tag: 'ExtractError', message: `style.css: ${message}` })
+
+/** 同じプロパティは、最初に書いた位置に値をまとめる。2 回目からは配列にする。 */
+const declarationsOf = (rule: Rule): Either.Either<Declarations, ExtractError> => {
+  const nodes = rule.nodes.filter((node) => node.type !== 'comment')
+  const other = nodes.find((node) => node.type !== 'decl')
+  if (other !== undefined) {
+    return fail(`${rule.selector} の中に宣言以外のもの (${other.type}) がある`)
+  }
+  const declarations = nodes as Declaration[]
+  const cssValue = (decl: Declaration) => (decl.important ? `${decl.value} !important` : decl.value)
+  const props = [...new Set(declarations.map((decl) => decl.prop))]
+  return Either.right(
+    Object.fromEntries(
+      props.map((prop) => {
+        const values = declarations.filter((decl) => decl.prop === prop).map(cssValue)
+        return [prop, values.length === 1 ? (values[0] as string) : values]
+      }),
+    ),
+  )
 }
 
 /**
  * `.page .line[data-indent]::before` を `{ body: '.line[data-indent]', pseudo: '::before' }` にする。
  * `.page` だけなら body は空文字。
  */
-const splitSelector = (selector: string): StyleSelector => {
-  let result: StyleSelector | undefined
-  selectorParser((root) => {
-    const nodes = root.first.nodes
-    const [head, combinator] = nodes
-    if (head?.type !== 'class' || `.${head.value}` !== ROOT) {
-      throw new Error(`style.css: ${selector} が ${ROOT} の下にない`)
-    }
-    if (nodes.length === 1) {
-      result = { body: '', pseudo: '' }
-      return
-    }
-    // `.page .x` のように子孫として書いたものだけを受け付ける。`.page:hover` や `.page > .x` は
-    // プラグインの class を付けた要素との関係が変わってしまうので、変換せずに止める。
-    if (combinator?.type !== 'combinator' || combinator.value.trim() !== '') {
-      throw new Error(`style.css: ${selector} は「${ROOT} の子孫」として書かれていない`)
-    }
-    const rest = nodes.slice(2)
-    const last = rest[rest.length - 1]
-    const pseudo = last?.type === 'pseudo' && last.value.startsWith('::') ? last : undefined
-    const body = (pseudo === undefined ? rest : rest.slice(0, -1)).map(String).join('').trim()
-    result = { body, pseudo: pseudo === undefined ? '' : pseudo.value }
-  }).processSync(selector)
-  if (result === undefined) throw new Error(`style.css: ${selector} を読めない`)
-  return result
+const splitSelector = (selector: string): Either.Either<StyleSelector, ExtractError> => {
+  const nodes = selectorParser().astSync(selector).first.nodes
+  const [head, combinator] = nodes
+  if (head?.type !== 'class' || `.${head.value}` !== ROOT) {
+    return fail(`${selector} が ${ROOT} の下にない`)
+  }
+  if (nodes.length === 1) return Either.right({ body: '', pseudo: '' })
+  // `.page .x` のように子孫として書いたものだけを受け付ける。`.page:hover` や `.page > .x` は
+  // プラグインの class を付けた要素との関係が変わってしまうので、変換せずに止める。
+  if (combinator?.type !== 'combinator' || combinator.value.trim() !== '') {
+    return fail(`${selector} は「${ROOT} の子孫」として書かれていない`)
+  }
+  const rest = nodes.slice(2)
+  const last = rest[rest.length - 1]
+  const pseudo = last?.type === 'pseudo' && last.value.startsWith('::') ? last : undefined
+  const body = (pseudo === undefined ? rest : rest.slice(0, -1)).map(String).join('').trim()
+  return Either.right({ body, pseudo: pseudo === undefined ? '' : pseudo.value })
 }
 
-export const extractStyles = (css: string): CosenseStyles => {
-  let root: Declarations = {}
-  const rules: StyleRule[] = []
-  // プラグインはセレクタを CSS-in-JS のキーにするので、同じセレクタのルールが 2 つあると後が前を消す。
-  const seen = new Set<string>()
+/** トップレベルのルールひとつ。`.page` 自身へのルールか、その中の要素へのルールか。 */
+type TopLevelRule =
+  | { readonly _tag: 'root'; readonly declarations: Declarations }
+  | { readonly _tag: 'rule'; readonly key: string; readonly rule: StyleRule }
 
-  postcss.parse(css).each((node) => {
-    if (node.type === 'comment') return
-    if (node.type !== 'rule') {
-      throw new Error(
-        `style.css: トップレベルに ${node.type} がある。プラグインへの変換を足す必要がある`,
-      )
+const topLevelRuleOf = (node: ChildNode): Either.Either<TopLevelRule, ExtractError> => {
+  if (node.type !== 'rule') {
+    return fail(`トップレベルに ${node.type} がある。プラグインへの変換を足す必要がある`)
+  }
+  return Either.gen(function* () {
+    const selectors = yield* Either.all(node.selectors.map(splitSelector))
+    const declarations = yield* declarationsOf(node)
+    const roots = selectors.filter((selector) => selector.body === '').length
+    if (roots === 0) {
+      const rule: StyleRule = { selectors, declarations }
+      return { _tag: 'rule', key: node.selectors.join(','), rule } as const
     }
-    const selectors = node.selectors.map(splitSelector)
-    const declarations = declarationsOf(node)
-    const rootCount = selectors.filter((selector) => selector.body === '').length
-    if (rootCount === 0) {
-      const key = node.selectors.join(',')
-      if (seen.has(key)) throw new Error(`style.css: ${key} のルールが 2 つある。1 つにまとめる`)
-      seen.add(key)
-      rules.push({ selectors, declarations })
-      return
-    }
-    if (rootCount !== selectors.length || Object.keys(root).length > 0) {
-      throw new Error(`style.css: ${ROOT} 自身へのルールは 1 つだけにする`)
-    }
-    root = declarations
+    if (roots !== selectors.length) return yield* fail(`${ROOT} 自身へのルールは 1 つだけにする`)
+    return { _tag: 'root', declarations } as const
   })
-
-  return { root, rules }
 }
+
+/** `extractStyles` の、失敗を Either で返す版。 */
+export const extractStylesEither = (css: string): Either.Either<CosenseStyles, ExtractError> =>
+  Either.flatMap(
+    Either.all(
+      postcss
+        .parse(css)
+        .nodes.filter((node) => node.type !== 'comment')
+        .map(topLevelRuleOf),
+    ),
+    (topLevel) => {
+      const roots = topLevel.flatMap((node) => (node._tag === 'root' ? [node.declarations] : []))
+      const rules = topLevel.flatMap((node) => (node._tag === 'rule' ? [node] : []))
+      // プラグインはセレクタを CSS-in-JS のキーにするので、同じセレクタのルールが 2 つあると後が前を消す。
+      const keys = rules.map((node) => node.key)
+      const duplicate = keys.find((key, i) => keys.indexOf(key) !== i)
+      if (duplicate !== undefined) return fail(`${duplicate} のルールが 2 つある。1 つにまとめる`)
+      if (roots.length > 1) return fail(`${ROOT} 自身へのルールは 1 つだけにする`)
+      return Either.right({ root: roots[0] ?? {}, rules: rules.map((node) => node.rule) })
+    },
+  )
+
+/**
+ * style.css を読む。プラグインに変換できない書き方があれば例外を投げる。
+ * 生成スクリプトとテストが呼ぶので、書き方の誤りはそこで止まる。
+ */
+export const extractStyles = (css: string): CosenseStyles =>
+  Either.getOrThrowWith(extractStylesEither(css), (error) => new Error(error.message))
