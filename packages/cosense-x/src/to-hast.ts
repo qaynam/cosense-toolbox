@@ -36,13 +36,16 @@ import {
 
 /**
  * コンポーネントの呼び出し。hast には無いノード型なので、JS にするときに専用の変換を通す。
- * `fallback` はコンポーネントが渡されなかったときに代わりに出す、元の行。
+ * `fallback` / `fallbackEnd` はコンポーネントが渡されなかったときに children の前後に出す、
+ * 元の開始タグと閉じタグの行。
  */
 export interface CosenseComponent extends Parent {
   readonly type: 'cosenseComponent'
   readonly name: string
   readonly attributes: readonly ComponentAttribute[]
   readonly fallback: Element
+  /** 閉じタグの行。自己完結のタグなら null */
+  readonly fallbackEnd: Element | null
   children: ElementContent[]
 }
 
@@ -85,7 +88,11 @@ export interface ToHastOptions {
    * `<Name />` の行をコンポーネントにする (`.csnx`)。
    * 行の生テキストを読むので、パースに渡した文字列を `source` に渡す。
    */
-  readonly components?: { readonly source: string }
+  readonly components?: {
+    readonly source: string
+    /** エラーに出す行番号に足す数。ファイル先頭の YAML を取り除いて渡したときに使う */
+    readonly lineOffset?: number
+  }
 }
 
 const text = (value: string): Text => ({ type: 'text', value })
@@ -289,6 +296,7 @@ export const toHast = (page: Page, options: ToHastOptions = {}): Root => {
     name: node.name,
     attributes: node.attributes,
     fallback: line(node.line),
+    fallbackEnd: node.closeLine === null ? null : line(node.closeLine),
     children: node.children.flatMap(block),
   })
 
@@ -314,7 +322,11 @@ export const toHast = (page: Page, options: ToHastOptions = {}): Root => {
   const blocks: readonly GroupedBlock[] =
     options.components === undefined
       ? page.children
-      : groupComponents(page.children as readonly TopLevelBlock[], options.components.source)
+      : groupComponents(
+          page.children as readonly TopLevelBlock[],
+          options.components.source,
+          options.components.lineOffset,
+        )
 
   const children: RootContent[] = [element('div', withClass(cls.page), blocks.flatMap(block))]
   return { type: 'root', children }

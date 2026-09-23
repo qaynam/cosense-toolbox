@@ -5,7 +5,7 @@
 import { type InlineNode, type LineBlock, type Page, asImageSrc } from '@cosense-toolbox/parser'
 import { toPlainText } from '@cosense-toolbox/parser/compile'
 import { firstImage, visit } from '@cosense-toolbox/parser/utils'
-import { parseComponentTag } from './components'
+import { parseClosingTag, parseComponentTag } from './components'
 import type { Frontmatter } from './frontmatter'
 import { isRelativePath, normalizeTitle, titleToSlug } from './title'
 
@@ -77,9 +77,12 @@ const relabel = (
 /** 本文の冒頭から説明文を作る。検索結果やカードの抜粋に収まる長さで切る。 */
 const describe = (page: Page, options: CollectMetadataOptions): string => {
   const source = options.componentsSource
-  const isComponentLine = (line: LineBlock): boolean =>
-    source !== undefined &&
-    parseComponentTag(source.slice(line.position.start.offset, line.position.end.offset)) !== null
+  /** 開始タグと閉じタグの行。中身の行は説明文に入れる */
+  const isComponentLine = (line: LineBlock): boolean => {
+    if (source === undefined) return false
+    const raw = source.slice(line.position.start.offset, line.position.end.offset)
+    return parseComponentTag(raw) !== null || parseClosingTag(raw) !== null
+  }
 
   const parts: string[] = []
   let length = 0
