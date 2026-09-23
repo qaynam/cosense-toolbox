@@ -13,6 +13,7 @@ import {
   type InlineNode,
   type LineBlock,
   type Page,
+  type ParseOptions,
   type TableBlock,
   type TopLevelBlock,
   asImageSrc,
@@ -33,19 +34,20 @@ import {
   type GroupedBlock,
   groupComponents,
 } from './components'
+import { type InlineComponent, type InlinePart, findInlineComponents } from './inline-components'
 
 /**
  * コンポーネントの呼び出し。hast には無いノード型なので、JS にするときに専用の変換を通す。
  * `fallback` / `fallbackEnd` はコンポーネントが渡されなかったときに children の前後に出す、
- * 元の開始タグと閉じタグの行。
+ * 元の開始タグと閉じタグ。行ごと書いたものは行の要素、行の途中に書いたものはテキスト。
  */
 export interface CosenseComponent extends Parent {
   readonly type: 'cosenseComponent'
   readonly name: string
   readonly attributes: readonly ComponentAttribute[]
-  readonly fallback: Element
-  /** 閉じタグの行。自己完結のタグなら null */
-  readonly fallbackEnd: Element | null
+  readonly fallback: ElementContent
+  /** 閉じタグ。自己完結のタグなら null */
+  readonly fallbackEnd: ElementContent | null
   children: ElementContent[]
 }
 
@@ -85,13 +87,17 @@ export interface ToHastOptions {
    */
   readonly title?: boolean
   /**
-   * `<Name />` の行をコンポーネントにする (`.csnx`)。
+   * `<Name />` のタグをコンポーネントにする (`.csnx`)。行ごと書いたものも、行の途中に書いたものも読む。
    * 行の生テキストを読むので、パースに渡した文字列を `source` に渡す。
    */
   readonly components?: {
     readonly source: string
-    /** エラーに出す行番号に足す数。ファイル先頭の YAML を取り除いて渡したときに使う */
+    /** エラーや警告に出す行番号に足す数。ファイル先頭の YAML を取り除いて渡したときに使う */
     readonly lineOffset?: number
+    /** パーサーに渡したオプション。行の途中のタグの間の文字列を読み直すのに使う */
+    readonly parseOptions?: ParseOptions
+    /** 行の途中の閉じていないタグなどを、テキストに戻したときに呼ぶ */
+    readonly onWarning?: (message: string) => void
   }
 }
 
@@ -247,8 +253,31 @@ export const toHast = (page: Page, options: ToHastOptions = {}): Root => {
       element('span', withClass(cls.dot)),
     ])
 
-  const line = (node: LineBlock): Element => {
-    const body = node.children.flatMap(inline)
+  /** 行の途中のコンポーネント。渡されなかったときはタグをテキストのまま出す */
+  const inlineComponent = (node: InlineComponent): CosenseComponent => ({
+    type: 'cosenseComponent',
+    name: node.name,
+    attributes: node.attributes,
+    fallback: text(node.open),
+    fallbackEnd: node.close === null ? null : text(node.close),
+    children: node.children.flatMap(inlinePart),
+  })
+
+  const inlinePart = (node: InlinePart): ElementContent[] =>
+    node.type === 'inlineComponent' ? [inlineComponent(node)] : inline(node)
+
+  /**
+   * 1 行。`.csnx` なら行の途中のコンポーネントを読む。
+   * タグだけの行 (行ごとのコンポーネントの開始タグと閉じタグ) は `tags: false` で呼び、
+   * 行の途中のタグとして読み直さない。
+   */
+  const line = (node: LineBlock, tags = true): Element => {
+    const components = options.components
+    const parts =
+      tags && components !== undefined
+        ? findInlineComponents(node, components.source, components)
+        : null
+    const body = parts === null ? node.children.flatMap(inline) : parts.flatMap(inlinePart)
     const styled = node.monospace ? [element('code', withClass(cls.monospace), body)] : body
     const quoted = node.quote ? [element('blockquote', withClass(cls.quote), styled)] : styled
     // 空行も 1 行分の高さを保つ。Cosense では空行が段落の区切りとして意味を持つ。
@@ -295,8 +324,8 @@ export const toHast = (page: Page, options: ToHastOptions = {}): Root => {
     type: 'cosenseComponent',
     name: node.name,
     attributes: node.attributes,
-    fallback: line(node.line),
-    fallbackEnd: node.closeLine === null ? null : line(node.closeLine),
+    fallback: line(node.line, false),
+    fallbackEnd: node.closeLine === null ? null : line(node.closeLine, false),
     children: node.children.flatMap(block),
   })
 

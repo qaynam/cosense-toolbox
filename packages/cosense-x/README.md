@@ -62,8 +62,9 @@ export default function CosenseContent(props = {}) {
 ```
 
 - 名前は大文字で始める
-- 開始タグと閉じタグは、それぞれ 1 行まるごとで書く
-- MDX と同じく閉じタグは必須。閉じ忘れや、対応しない閉じタグはコンパイルエラーになる (行番号付き)
+- 開始タグと閉じタグを、それぞれ 1 行まるごとで書くと、間の行が children になる。閉じ忘れや、対応しない閉じタグはコンパイルエラーになる (行番号付き)
+- 行の途中にも書ける (MDX のインラインの JSX と同じ)。`modalを開く <Modal>[画像]</Modal>` のように、同じ行の中で開始タグと閉じタグを対にする。行の途中の閉じていないタグは、文章中の `Array<T>` などとみなしてテキストのまま出し、警告だけ出す
+- インラインコード (`` `<Modal>` ``) やブラケット (`[<Modal>]`) の中のタグは読まない
 - children はインデントでは決めない。中の行は、箇条書きも含めて書いたとおりに出る。開始タグの行が字下げされていれば、中の行をそのぶん浅くする
 - 属性に書けるのは `"文字列"` と `'文字列'`、`{JSON の値}`、値なし (true) だけ。任意の JS の式は評価しない。共有プロジェクトのページをビルド時に実行させないため
 - 書式から外れた行はただのテキスト行になる。`props.components` に無いコンポーネントは、開始タグ・中身・閉じタグの行をそのまま出す
@@ -165,7 +166,7 @@ const page = await fetchPage('help-jp', 'ブラケティング') // { title, tex
 
 | モジュール | API |
 | :--- | :--- |
-| `@cosense-toolbox/cosense-x` | `compile` `toHast` `readPage` `createIndex` `createLinkResolver` `parseComponentTag` `parseClosingTag` `splitFrontmatter` `readFrontmatter` `collectMetadata` `normalizeTitle` `titleToSlug` |
+| `@cosense-toolbox/cosense-x` | `compile` `toHast` `readPage` `createIndex` `createLinkResolver` `parseComponentTag` `parseClosingTag` `findInlineComponents` `splitFrontmatter` `readFrontmatter` `collectMetadata` `normalizeTitle` `titleToSlug` |
 | `@cosense-toolbox/cosense-x/graph` | `scanPages` `buildGraph` `readPage` `createIndex` `normalizeTitle` `titleToSlug` |
 | `@cosense-toolbox/cosense-x/fetch` | `fetchPage` `fetchPageText` |
 
