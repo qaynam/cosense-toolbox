@@ -31,13 +31,9 @@ export interface Site {
 
 const SKIP_DIRECTORIES = new Set(['node_modules', '.astro', 'dist'])
 
+/** `directory` の下の `.csn` / `.csnx`。読めないディレクトリ (まだ無い src/content など) は空とみなす。 */
 const listFiles = async (directory: string): Promise<string[]> => {
-  let entries: import('node:fs').Dirent[]
-  try {
-    entries = await readdir(directory, { withFileTypes: true })
-  } catch {
-    return []
-  }
+  const entries = await readdir(directory, { withFileTypes: true }).catch(() => [])
   const nested = await Promise.all(
     entries.map(async (entry) => {
       const path = join(directory, entry.name)
@@ -90,6 +86,8 @@ export const createSiteCache = (
   directory: string,
   options: Pick<ReadOptions, 'parseOptions'> = {},
 ): SiteCache => {
+  // dev サーバーでファイルが変わるたびに捨てて読み直すので、ここだけは状態を持つ。
+  // モジュールのトップレベルではなく、統合ごとに作るこの関数の中に閉じ込めている。
   let site: Promise<Site> | undefined
   return {
     get: () => {

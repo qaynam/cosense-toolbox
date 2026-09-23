@@ -5,10 +5,11 @@
  * unified 系が入らないよう、この層は JS の生成に関わるものを import しない。
  */
 import { type Page, type ParseOptions, normalizeLineEndings, parse } from '@cosense-toolbox/parser'
-import { type Frontmatter, readFrontmatter, splitFrontmatter } from './frontmatter'
-import type { PageIndex } from './links'
+import { Either, Option, pipe } from 'effect'
+import { type CosenseXError, orThrow } from './errors'
+import { type Frontmatter, readFrontmatterEither, splitFrontmatterEither } from './frontmatter'
+import { type PageIndex, pageByPath } from './links'
 import { type CollectMetadataOptions, type PageMetadata, collectMetadata } from './metadata'
-import { resolveRelativePath } from './title'
 
 /** `.csn` は素の Cosense 記法、`.csnx` はそれにコンポーネントの行を足したもの。 */
 export type Format = 'csn' | 'csnx'
@@ -42,23 +43,47 @@ export interface ReadResult {
   readonly bodyLineOffset: number
 }
 
-export const readPage = (source: string, options: ReadOptions = {}): ReadResult => {
+/** `readPage` の、失敗を Either で返す版。 */
+export const readPageEither = (
+  source: string,
+  options: ReadOptions = {},
+): Either.Either<ReadResult, CosenseXError> => {
   const format = options.format ?? formatOf(options.filePath)
   const normalized = normalizeLineEndings(source)
-  const head = splitFrontmatter(normalized)
-  const { data, page } = readFrontmatter(parse(head.body, options.parseOptions), head.data)
   const { index, filePath } = options
-  const metadataOptions: CollectMetadataOptions = {
-    ...(format === 'csnx' ? { componentsSource: head.body } : {}),
+  const metadataOptions = (body: string): CollectMetadataOptions => ({
+    ...(format === 'csnx' ? { componentsSource: body } : {}),
     ...(index === undefined || filePath === undefined
       ? {}
       : {
           resolveRelativeLink: (target: string) =>
-            index.pages[resolveRelativePath(filePath, target)]?.title,
+            Option.getOrUndefined(
+              Option.map(pageByPath(index, filePath, target), (page) => page.title),
+            ),
         }),
-  }
-  const metadata = collectMetadata(page, data, metadataOptions)
-  const removed = normalized.length - head.body.length
-  const bodyLineOffset = normalized.slice(0, removed).split('\n').length - 1
-  return { format, frontmatter: data, metadata, page, body: head.body, bodyLineOffset }
+  })
+
+  return pipe(
+    splitFrontmatterEither(normalized),
+    Either.flatMap((head) =>
+      Either.map(
+        readFrontmatterEither(parse(head.body, options.parseOptions), head.data),
+        ({ data, page }): ReadResult => {
+          const removed = normalized.slice(0, normalized.length - head.body.length)
+          return {
+            format,
+            frontmatter: data,
+            metadata: collectMetadata(page, data, metadataOptions(head.body)),
+            page,
+            body: head.body,
+            bodyLineOffset: removed.split('\n').length - 1,
+          }
+        },
+      ),
+    ),
+  )
 }
+
+/** ファイルの中身を読む。frontmatter が YAML として読めなければ例外を投げる。 */
+export const readPage = (source: string, options: ReadOptions = {}): ReadResult =>
+  orThrow(readPageEither(source, options))

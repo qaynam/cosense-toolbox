@@ -1,21 +1,3 @@
-import type {
-  Expression,
-  ObjectExpression,
-  Program,
-  Property,
-  SpreadElement,
-  Statement,
-} from 'estree'
-import type {
-  JSXAttribute,
-  JSXElement,
-  JSXExpressionContainer,
-  JSXIdentifier,
-  JSXMemberExpression,
-} from 'estree-jsx'
-import { buildJsx } from 'estree-util-build-jsx'
-import { toJs } from 'estree-util-to-js'
-import { valueToEstree } from 'estree-util-value-to-estree'
 /**
  * compile.ts — `.csn` / `.csnx` を JS モジュールにする。MDX の compile にあたる。
  *
@@ -35,14 +17,34 @@ import { valueToEstree } from 'estree-util-value-to-estree'
  *
  * 要素をすべて `_components` 経由で引くので、`props.components` で `a` や `img` も差し替えられる。
  */
+import { Either, Option, pipe } from 'effect'
+import type {
+  Expression,
+  ObjectExpression,
+  Program,
+  Property,
+  SpreadElement,
+  Statement,
+} from 'estree'
+import type {
+  JSXAttribute,
+  JSXElement,
+  JSXExpressionContainer,
+  JSXIdentifier,
+  JSXMemberExpression,
+} from 'estree-jsx'
+import { buildJsx } from 'estree-util-build-jsx'
+import { toJs } from 'estree-util-to-js'
+import { valueToEstree } from 'estree-util-value-to-estree'
 import type { Root } from 'hast'
 import { type Handle, toEstree } from 'hast-util-to-estree'
 import { type PluggableList, unified } from 'unified'
+import { type CosenseXError, orThrow } from './errors'
 import type { Frontmatter } from './frontmatter'
-import { type LinkOptions, createLinkResolver } from './links'
+import { type LinkOptions, linkResolution, reportLinks } from './links'
 import type { PageMetadata } from './metadata'
-import { type Format, type ReadOptions, readPage } from './read'
-import { type CosenseComponent, type ToHastOptions, toHast } from './to-hast'
+import { type Format, type ReadOptions, type ReadResult, readPageEither } from './read'
+import { type CosenseComponent, type ToHastOptions, toHastEither } from './to-hast'
 
 export interface CompileOptions
   extends LinkOptions,
@@ -147,24 +149,32 @@ const handleComponent: Handle = (node: CosenseComponent, state) => {
 }
 
 /**
- * 小文字の要素名 (`div` など) を `_components.div` に置き換え、使った要素名を集める。
+ * 小文字の要素名 (`div` など) を `_components.div` に置き換え、使った要素名を返す。
+ *
+ * estree はその場で書き換える。後段の `buildJsx` も木をその場で書き換える作りなので、
+ * `compile` の中で作った木にだけ使う。
  */
-const routeThroughComponents = (tree: unknown, used: Set<string>): void => {
-  if (Array.isArray(tree)) {
-    for (const item of tree) routeThroughComponents(item, used)
-    return
+const routeThroughComponents = (tree: unknown): ReadonlySet<string> => {
+  const used = new Set<string>()
+  const walk = (value: unknown): void => {
+    if (Array.isArray(value)) {
+      for (const item of value) walk(item)
+      return
+    }
+    if (value === null || typeof value !== 'object') return
+    const node = value as { type?: string; name?: { type: string; name: string } }
+    if (
+      (node.type === 'JSXOpeningElement' || node.type === 'JSXClosingElement') &&
+      node.name?.type === 'JSXIdentifier' &&
+      /^[a-z]/.test(node.name.name)
+    ) {
+      used.add(node.name.name)
+      node.name = jsxMember(node.name.name) as unknown as { type: string; name: string }
+    }
+    for (const child of Object.values(value)) walk(child)
   }
-  if (tree === null || typeof tree !== 'object') return
-  const node = tree as { type?: string; name?: { type: string; name: string } }
-  if (
-    (node.type === 'JSXOpeningElement' || node.type === 'JSXClosingElement') &&
-    node.name?.type === 'JSXIdentifier' &&
-    /^[a-z]/.test(node.name.name)
-  ) {
-    used.add(node.name.name)
-    node.name = jsxMember(node.name.name) as unknown as { type: string; name: string }
-  }
-  for (const value of Object.values(tree)) routeThroughComponents(value, used)
+  walk(tree)
+  return used
 }
 
 const exportConst = (name: string, value: Expression): Statement =>
@@ -243,33 +253,60 @@ const contentFunction = (body: Expression, used: ReadonlySet<string>): Statement
     },
   }) as unknown as Statement
 
-/** `.csn` / `.csnx` の中身を JS モジュールにする。 */
-export const compile = async (
-  source: string,
-  options: CompileOptions = {},
-): Promise<CompileResult> => {
-  const read = readPage(source, options)
-  const warnings: string[] = []
-  const hast = toHast(read.page, {
-    ...options,
-    resolveLink: createLinkResolver(options, warnings),
-    ...(read.format === 'csnx'
-      ? {
-          components: {
-            source: read.body,
-            lineOffset: read.bodyLineOffset,
-            onWarning: (message: string) => warnings.push(message),
-            ...(options.parseOptions === undefined ? {} : { parseOptions: options.parseOptions }),
-          },
-        }
-      : {}),
+interface Prepared {
+  readonly read: ReadResult
+  readonly hast: Root
+  readonly warnings: readonly string[]
+}
+
+/** ファイルを読んで hast にするまで。失敗しうるのはここだけなので、Either で返す。 */
+const prepare = (source: string, options: CompileOptions): Either.Either<Prepared, CosenseXError> =>
+  Either.flatMap(readPageEither(source, options), (read) => {
+    // toHast はリンクと行の途中のタグを見つけるたびに知らせてくるので、ここで受け取って値にする。
+    const warnings: string[] = []
+    const failures: CosenseXError[] = []
+    const warning = (message: string) => {
+      warnings.push(message)
+    }
+    const resolveLink = reportLinks(linkResolution(options), {
+      warning,
+      failure: (error) => {
+        failures.push(error)
+      },
+    })
+    return pipe(
+      toHastEither(read.page, {
+        ...options,
+        resolveLink,
+        ...(read.format === 'csnx'
+          ? {
+              components: {
+                source: read.body,
+                lineOffset: read.bodyLineOffset,
+                onWarning: warning,
+                ...(options.parseOptions === undefined
+                  ? {}
+                  : { parseOptions: options.parseOptions }),
+              },
+            }
+          : {}),
+      }),
+      Either.flatMap((hast) =>
+        Option.match(Option.fromNullable(failures[0]), {
+          onNone: () => Either.right({ read, hast, warnings }),
+          onSome: Either.left,
+        }),
+      ),
+    )
   })
 
-  const tree =
-    options.rehypePlugins === undefined || options.rehypePlugins.length === 0
-      ? hast
-      : ((await unified().use(options.rehypePlugins).run(hast)) as Root)
+const runRehype = async (hast: Root, plugins: PluggableList | undefined): Promise<Root> =>
+  plugins === undefined || plugins.length === 0
+    ? hast
+    : ((await unified().use(plugins).run(hast)) as Root)
 
+/** hast から JS のモジュールを作る。 */
+const generate = (tree: Root, read: ReadResult, options: CompileOptions): string => {
   const jsxImportSource = options.jsxImportSource ?? 'react'
   const estree = toEstree(tree, {
     elementAttributeNameCase:
@@ -282,8 +319,7 @@ export const compile = async (
     statement?.type === 'ExpressionStatement'
       ? statement.expression
       : { type: 'Literal', value: null }
-  const used = new Set<string>()
-  routeThroughComponents(body, used)
+  const used = routeThroughComponents(body)
 
   const program: Program = {
     type: 'Program',
@@ -295,9 +331,22 @@ export const compile = async (
     ],
   }
   buildJsx(program, { runtime: 'automatic', importSource: jsxImportSource })
+  return toJs(program).value
+}
 
+/**
+ * `.csn` / `.csnx` の中身を JS モジュールにする。
+ * frontmatter が読めない、`.csnx` のタグが対応していない、`unresolved: 'error'` でリンク先が
+ * 見つからない、のいずれかなら reject する。
+ */
+export const compile = async (
+  source: string,
+  options: CompileOptions = {},
+): Promise<CompileResult> => {
+  const { read, hast, warnings } = orThrow(prepare(source, options))
+  const tree = await runRehype(hast, options.rehypePlugins)
   return {
-    code: toJs(program).value,
+    code: generate(tree, read, options),
     format: read.format,
     frontmatter: read.frontmatter,
     metadata: read.metadata,
