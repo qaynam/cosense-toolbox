@@ -26,6 +26,9 @@ export interface PageMetadata {
   readonly draft: boolean
 }
 
+/** 行の途中に書いたコンポーネントのタグ。説明文から取り除く */
+const INLINE_TAG_RE = /<\/?[A-Z][A-Za-z0-9_]*(?:\s[^<>]*)?\/?>/g
+
 const DESCRIPTION_MIN = 120
 const DESCRIPTION_MAX = 160
 
@@ -92,7 +95,11 @@ const describe = (page: Page, options: CollectMetadataOptions): string => {
     const resolve = options.resolveRelativeLink
     const line =
       resolve === undefined ? block : { ...block, children: relabel(block.children, resolve) }
-    const text = toPlainText(line).trim()
+    // 行の途中のタグ (`<Badge />` など) は説明文に出さない。中身の文字は残す。
+    const plain = toPlainText(line)
+    const text = (source === undefined ? plain : plain.replace(INLINE_TAG_RE, ''))
+      .replace(/\s+/g, ' ')
+      .trim()
     if (text === '') continue
     parts.push(text)
     length += text.length

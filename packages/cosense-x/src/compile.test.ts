@@ -112,6 +112,40 @@ describe('.csnx のコンポーネント', () => {
     ).rejects.toThrow(/<Callout> が閉じられていない: 5 行目/)
   })
 
+  it('行の途中の開始タグと閉じタグで挟んだ部分をコンポーネントにする', async () => {
+    const Modal = (props: { children?: unknown }) =>
+      createElement('dialog', { open: true }, props.children as string)
+    const html = await renderPage(
+      'タイトル\nmodalを表示させるぞ <Modal>[https://example.test/a.png]</Modal> 続き',
+      { format: 'csnx' },
+      { components: { Modal } },
+    )
+    expect(html).toContain(
+      '<div class="line">modalを表示させるぞ <dialog open=""><img class="image" src="https://example.test/a.png" alt=""/></dialog> 続き</div>',
+    )
+  })
+
+  it('行の途中のコンポーネントが渡されなければ、タグもテキストとして出す', async () => {
+    const html = await renderPage('タイトル\na <Missing>b</Missing> c', { format: 'csnx' })
+    expect(html).toContain('<div class="line">a &lt;Missing&gt;b&lt;/Missing&gt; c</div>')
+  })
+
+  it('行の途中の閉じていないタグはテキストのまま出し、warnings に積む', async () => {
+    const result = await compile('タイトル\n型は Array<T> です', { format: 'csnx' })
+    expect(result.warnings).toEqual([
+      '<T> が同じ行の中で閉じられていないので、テキストとして出した: 2 行目',
+    ])
+    const html = await renderPage('タイトル\n型は Array<T> です', { format: 'csnx' })
+    expect(html).toContain('<div class="line">型は Array&lt;T&gt; です</div>')
+  })
+
+  it('行の途中のタグは説明文に入れない', async () => {
+    const { metadata } = await compile('タイトル\n新着 <Badge text="new" /> です', {
+      format: 'csnx',
+    })
+    expect(metadata.description).toBe('新着 です')
+  })
+
   it('.csn では <Name /> の行をコンポーネントにしない', async () => {
     const html = await renderPage(
       'タイトル\n<Callout />',

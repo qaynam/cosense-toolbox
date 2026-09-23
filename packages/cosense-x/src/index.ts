@@ -13,6 +13,12 @@ export type {
   ComponentTag,
   GroupedBlock,
 } from './components'
+export { findInlineComponents } from './inline-components'
+export type {
+  FindInlineComponentsOptions,
+  InlineComponent,
+  InlinePart,
+} from './inline-components'
 export { readFrontmatter, splitFrontmatter } from './frontmatter'
 export type { Frontmatter, ReadFrontmatterResult, SplitFrontmatterResult } from './frontmatter'
 export {

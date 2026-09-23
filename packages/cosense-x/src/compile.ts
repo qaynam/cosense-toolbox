@@ -254,7 +254,14 @@ export const compile = async (
     ...options,
     resolveLink: createLinkResolver(options, warnings),
     ...(read.format === 'csnx'
-      ? { components: { source: read.body, lineOffset: read.bodyLineOffset } }
+      ? {
+          components: {
+            source: read.body,
+            lineOffset: read.bodyLineOffset,
+            onWarning: (message: string) => warnings.push(message),
+            ...(options.parseOptions === undefined ? {} : { parseOptions: options.parseOptions }),
+          },
+        }
       : {}),
   })
 
