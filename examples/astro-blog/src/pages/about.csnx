@@ -1,0 +1,9 @@
+---
+layout: ../layouts/Page.astro
+---
+このサイトについて
+このページは src/pages/about.csnx から作られている。
+記事: [はじめての投稿]
+<Callout title="メモ">
+ページとしても .csnx を置ける。
+</Callout>

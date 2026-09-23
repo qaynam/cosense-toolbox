@@ -1,0 +1,25 @@
+---
+import graph from 'virtual:cosense-x/graph'
+import Base from '../../layouts/Base.astro'
+import { pageUrl } from '../../urls'
+
+export function getStaticPaths() {
+  return Object.values(graph.tags).map((tag) => ({ params: { tag: tag.name }, props: { tag } }))
+}
+
+const { tag } = Astro.props
+const pages = tag.pages.map((id) => graph.pages[id]).filter((page) => page !== undefined)
+---
+
+<Base title={`#${tag.name}`}>
+  <h1>#{tag.name}</h1>
+  <ul>
+    {
+      pages.map((page) => (
+        <li>
+          <a href={pageUrl(page)}>{page.title}</a>
+        </li>
+      ))
+    }
+  </ul>
+</Base>

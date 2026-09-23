@@ -13,7 +13,9 @@
       "**/.turbo/**",
       "**/.wrangler/**",
       "**/public/**",
-      "apps/web/**"
+      "apps/web/**",
+      "examples/**/*.astro",
+      "examples/**/*.svelte"
     ]
   },
   "organizeImports": {

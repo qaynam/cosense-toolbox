@@ -1,0 +1,72 @@
+{
+  "name": "@cosense-toolbox/cosense-x",
+  "version": "0.1.0-beta.0",
+  "description": "Compile Cosense (Scrapbox) pages into JSX modules, like MDX for Cosense notation.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "types": "./dist/index.d.mts",
+  "module": "./dist/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./graph": {
+      "types": "./dist/graph.d.mts",
+      "default": "./dist/graph.mjs"
+    },
+    "./fetch": {
+      "types": "./dist/fetch.d.mts",
+      "default": "./dist/fetch.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "bun run build"
+  },
+  "dependencies": {
+    "@cosense-toolbox/parser": "workspace:*",
+    "@types/estree": "^1.0.9",
+    "@types/estree-jsx": "^1.0.5",
+    "@types/hast": "^3.0.4",
+    "effect": "^3.22.1",
+    "estree-util-build-jsx": "^3.0.1",
+    "estree-util-to-js": "^2.0.0",
+    "estree-util-value-to-estree": "^3.5.0",
+    "hast-util-to-estree": "^3.1.3",
+    "unified": "^11.0.5",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "hast-util-from-html": "^2.0.3",
+    "hast-util-to-html": "^9.0.5",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tsdown": "^0.22.14",
+    "typescript": "^6.0.0",
+    "vitest": "^2.1.8"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "beta",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": ["cosense", "scrapbox", "mdx", "jsx", "compiler", "ssg"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qaynam/cosense-toolbox.git",
+    "directory": "packages/cosense-x"
+  }
+}
