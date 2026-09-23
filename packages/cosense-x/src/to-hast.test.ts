@@ -97,7 +97,7 @@ describe('オプション', () => {
   })
 
   it('components を渡すと <Name /> の行はコンポーネントのノードになる', () => {
-    const source = 'タイトル\n<Callout type="warn">\n 中身'
+    const source = 'タイトル\n<Callout type="warn">\n中身\n</Callout>'
     const root = toHast(parse(source), { components: { source } })
     const page = root.children[0]
     expect(page?.type === 'element' && page.children[1]).toMatchObject({

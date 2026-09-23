@@ -87,7 +87,8 @@ const jsxMember = (name: string): JSXMemberExpression => ({
 })
 
 /**
- * コンポーネントの呼び出しを JSX にする。渡されていなければ元の行と children をそのまま出す。
+ * コンポーネントの呼び出しを JSX にする。渡されていなければ、元の開始タグと閉じタグの行を
+ * children の前後に置いてそのまま出す。
  * MDX のように例外にしないのは、Cosense で書いたページを壊さずに表示するため。
  */
 const handleComponent: Handle = (node: CosenseComponent, state) => {
@@ -115,12 +116,17 @@ const handleComponent: Handle = (node: CosenseComponent, state) => {
     children,
   }
   const fallbackLine = state.handle(node.fallback)
+  const fallbackEnd = node.fallbackEnd === null ? null : state.handle(node.fallbackEnd)
   const fallback: Expression = {
     type: 'JSXFragment',
     openingFragment: { type: 'JSXOpeningFragment' },
     closingFragment: { type: 'JSXClosingFragment' },
     // 同じノードを 2 か所に置くと、後段の変換がその場で書き換えたときに両方壊れるので複製する。
-    children: [...(fallbackLine ? [fallbackLine] : []), ...structuredClone(children)],
+    children: [
+      ...(fallbackLine ? [fallbackLine] : []),
+      ...structuredClone(children),
+      ...(fallbackEnd ? [fallbackEnd] : []),
+    ],
   } as Expression
   const container: JSXExpressionContainer = {
     type: 'JSXExpressionContainer',
@@ -247,7 +253,9 @@ export const compile = async (
   const hast = toHast(read.page, {
     ...options,
     resolveLink: createLinkResolver(options, warnings),
-    ...(read.format === 'csnx' ? { components: { source: read.body } } : {}),
+    ...(read.format === 'csnx'
+      ? { components: { source: read.body, lineOffset: read.bodyLineOffset } }
+      : {}),
   })
 
   const tree =

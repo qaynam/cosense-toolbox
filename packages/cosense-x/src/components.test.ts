@@ -1,6 +1,12 @@
 import { parse } from '@cosense-toolbox/parser'
 import { describe, expect, it } from 'vitest'
-import { type ComponentBlock, groupComponents, parseComponentTag } from './components'
+import {
+  type ComponentBlock,
+  type GroupedBlock,
+  groupComponents,
+  parseClosingTag,
+  parseComponentTag,
+} from './components'
 
 describe('parseComponentTag', () => {
   it('/> で閉じたタグは自己完結のコンポーネントになる', () => {
@@ -54,13 +60,41 @@ describe('parseComponentTag', () => {
 
 const group = (source: string) => groupComponents(parse(source).children, source)
 
+const indents = (component: GroupedBlock | undefined) =>
+  (component as ComponentBlock).children.map((block) => block.type === 'line' && block.indent)
+
+describe('parseClosingTag', () => {
+  it('閉じタグの名前を返す', () => {
+    expect(parseClosingTag('</Callout>')).toBe('Callout')
+    expect(parseClosingTag('  </Callout >  ')).toBe('Callout')
+  })
+
+  it('閉じタグでなければ null', () => {
+    expect(parseClosingTag('<Callout>')).toBeNull()
+    expect(parseClosingTag('</callout>')).toBeNull()
+    expect(parseClosingTag('</Callout> の後ろ')).toBeNull()
+  })
+})
+
 describe('groupComponents', () => {
-  it('より深くインデントした後続行を children に取り、深さを揃える', () => {
-    const [, callout, after] = group('タイトル\n<Callout type="warn">\n 注意\n  詳しく\n後ろ')
-    expect(callout?.type).toBe('component')
-    const component = callout as ComponentBlock
-    expect(component.children.map((block) => block.type === 'line' && block.indent)).toEqual([0, 1])
+  it('開始タグから閉じタグまでの行を children に取る', () => {
+    const [, callout, after] = group(
+      'タイトル\n<Callout type="warn">\n注意\n 詳しく\n</Callout>\n後ろ',
+    )
+    expect(callout).toMatchObject({ type: 'component', name: 'Callout' })
+    expect(indents(callout)).toEqual([0, 1])
     expect(after?.type).toBe('line')
+  })
+
+  it('インデントの深さでは children を決めない。閉じタグまでは浅い行も空行も含む', () => {
+    const [, callout, after] = group('タイトル\n<Callout>\n 一段目\n\n二段落目\n</Callout>\n後ろ')
+    expect((callout as ComponentBlock).children).toHaveLength(3)
+    expect(after?.type).toBe('line')
+  })
+
+  it('開始タグの行が字下げされていれば、中の行をその深さぶん浅くする', () => {
+    const [, callout] = group('タイトル\n <Callout>\n 中身\n  深い\n </Callout>')
+    expect(indents(callout)).toEqual([0, 1])
   })
 
   it('自己完結のタグは後続行を取らない', () => {
@@ -70,7 +104,9 @@ describe('groupComponents', () => {
   })
 
   it('children の中のコンポーネントも入れ子にまとめる', () => {
-    const [, outer] = group('タイトル\n<Tabs>\n <Tab label="a">\n  中身\n <Tab label="b">\n  中身')
+    const [, outer] = group(
+      'タイトル\n<Tabs>\n<Tab label="a">\n中身\n</Tab>\n<Tab label="b">\n中身\n</Tab>\n</Tabs>',
+    )
     const tabs = (outer as ComponentBlock).children as ComponentBlock[]
     expect(tabs.map((tab) => [tab.name, tab.children.length])).toEqual([
       ['Tab', 1],
@@ -78,8 +114,20 @@ describe('groupComponents', () => {
     ])
   })
 
+  it('閉じタグの無い開始タグはエラーになる', () => {
+    expect(() => group('タイトル\n<Callout>\n中身')).toThrow(/<Callout> が閉じられていない.*2 行目/)
+  })
+
+  it('対応する開始タグの無い閉じタグはエラーになる', () => {
+    expect(() => group('タイトル\n中身\n</Callout>')).toThrow(/<\/Callout>.*3 行目/)
+  })
+
+  it('入れ子の閉じる順番が違えばエラーになる', () => {
+    expect(() => group('タイトル\n<A>\n<B>\n</A>\n</B>')).toThrow(/<\/A>/)
+  })
+
   it('引用行と等幅行はコンポーネントにしない', () => {
-    const blocks = group('タイトル\n><Counter />\n$ <Counter />')
+    const blocks = group('タイトル\n><Counter />\n$ <Callout>')
     expect(blocks.map((block) => block.type)).toEqual(['title', 'line', 'line'])
   })
 })

@@ -5,7 +5,7 @@
  */
 export { compile } from './compile'
 export type { CompileOptions, CompileResult } from './compile'
-export { groupComponents, parseComponentTag } from './components'
+export { groupComponents, parseClosingTag, parseComponentTag } from './components'
 export type {
   ComponentAttribute,
   ComponentAttributeValue,

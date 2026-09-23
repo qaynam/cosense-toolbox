@@ -84,8 +84,8 @@ describe('.csnx のコンポーネント', () => {
       props.children as string,
     )
 
-  it('コンポーネントに属性と、インデントした後続行を children として渡す', async () => {
-    const source = 'タイトル\n<Callout type="warn" count={2}>\n 注意\n後ろ'
+  it('コンポーネントに属性と、開始タグから閉じタグまでの行を children として渡す', async () => {
+    const source = 'タイトル\n<Callout type="warn" count={2}>\n注意\n</Callout>\n後ろ'
     const html = await renderPage(source, { format: 'csnx' }, { components: { Callout } })
     expect(html).toContain(
       '<aside data-type="warn" data-count="2"><div class="line">注意</div></aside><div class="line">後ろ</div>',
@@ -95,6 +95,21 @@ describe('.csnx のコンポーネント', () => {
   it('コンポーネントが渡されなければ、元の行をテキストとして出す', async () => {
     const html = await renderPage('タイトル\n<Missing a="1" />', { format: 'csnx' })
     expect(html).toContain('<div class="line">&lt;Missing a=&quot;1&quot; /&gt;</div>')
+  })
+
+  it('中身のあるコンポーネントが渡されなければ、開始タグ・中身・閉じタグの行をそのまま出す', async () => {
+    const html = await renderPage('タイトル\n<Missing>\n中身\n</Missing>', { format: 'csnx' })
+    expect(html).toContain(
+      '<div class="line">&lt;Missing&gt;</div><div class="line">中身</div><div class="line">&lt;/Missing&gt;</div>',
+    )
+  })
+
+  it('閉じタグが無ければコンパイルが失敗する。行番号はファイル先頭の YAML も数える', async () => {
+    await expect(
+      compile('---\r\ndate: 2026-01-01\r\n---\r\nタイトル\r\n<Callout>\r\n中身', {
+        format: 'csnx',
+      }),
+    ).rejects.toThrow(/<Callout> が閉じられていない: 5 行目/)
   })
 
   it('.csn では <Name /> の行をコンポーネントにしない', async () => {
@@ -115,8 +130,10 @@ describe('.csnx のコンポーネント', () => {
     expect(html).toContain('<aside data-type="a" data-count="1"></aside>')
   })
 
-  it('コンポーネントの行は説明文に入れない', async () => {
-    const { metadata } = await compile('タイトル\n<Counter />\n本文', { format: 'csnx' })
+  it('コンポーネントの開始タグと閉じタグの行は説明文に入れない', async () => {
+    const { metadata } = await compile('タイトル\n<Counter />\n<Callout>\n本文\n</Callout>', {
+      format: 'csnx',
+    })
     expect(metadata.description).toBe('本文')
   })
 })

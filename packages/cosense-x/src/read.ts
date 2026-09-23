@@ -38,11 +38,14 @@ export interface ReadResult {
   readonly page: Page
   /** ファイル先頭の YAML を取り除いた本文。AST の位置情報はこれが基準になる */
   readonly body: string
+  /** 取り除いた先頭の YAML の行数。本文の行番号をファイルの行番号に直すのに使う */
+  readonly bodyLineOffset: number
 }
 
 export const readPage = (source: string, options: ReadOptions = {}): ReadResult => {
   const format = options.format ?? formatOf(options.filePath)
-  const head = splitFrontmatter(normalizeLineEndings(source))
+  const normalized = normalizeLineEndings(source)
+  const head = splitFrontmatter(normalized)
   const { data, page } = readFrontmatter(parse(head.body, options.parseOptions), head.data)
   const { index, filePath } = options
   const metadataOptions: CollectMetadataOptions = {
@@ -55,5 +58,7 @@ export const readPage = (source: string, options: ReadOptions = {}): ReadResult 
         }),
   }
   const metadata = collectMetadata(page, data, metadataOptions)
-  return { format, frontmatter: data, metadata, page, body: head.body }
+  const removed = normalized.length - head.body.length
+  const bodyLineOffset = normalized.slice(0, removed).split('\n').length - 1
+  return { format, frontmatter: data, metadata, page, body: head.body, bodyLineOffset }
 }

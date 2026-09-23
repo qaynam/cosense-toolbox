@@ -2,8 +2,9 @@
  * components.ts — `.csnx` のコンポーネント記法。
  *
  * 1 行まるごとが `<Name attr="x" />` の行をコンポーネントにする。
- * `/>` で閉じない `<Name>` の行は、それより深くインデントした後続行を children として取る。
- * Cosense ではインデントが入れ子を表すので、閉じタグを書かせない。
+ * 中身を持たせるときは、`<Name>` の行と `</Name>` の行で挟む。間の行が children になる。
+ * MDX と同じく閉じタグを必須にし、閉じ忘れと対応しない閉じタグはエラーにする。
+ * インデントでは children を決めない。中の行の箇条書きを、そのまま書けるようにするため。
  *
  * パーサー本体は変更しない。Cosense の画面ではただのテキスト行に見えるほうが、
  * Cosense で書いて読む人にとって自然だから。認識はパースした後に行の生テキストで行う。
@@ -27,21 +28,26 @@ export interface ComponentAttribute {
 export interface ComponentTag {
   readonly name: string
   readonly attributes: readonly ComponentAttribute[]
-  /** `/>` で閉じていれば true。このときは後続行を children に取らない */
+  /** `/>` で閉じていれば true。このときは閉じタグを持たない */
   readonly selfClosing: boolean
 }
 
-/** 後続行を children に取り込んだコンポーネント。 */
+/** 開始タグから閉じタグまでをまとめたコンポーネント。 */
 export interface ComponentBlock extends ComponentTag {
   readonly type: 'component'
-  /** コンポーネントになった行そのもの。コンポーネントが渡されなかったときにこの行を出す */
+  /**
+   * 開始タグの行と閉じタグの行 (自己完結なら null)。
+   * コンポーネントが渡されなかったときは、これらの行を children と一緒にそのまま出す。
+   */
   readonly line: LineBlock
+  readonly closeLine: LineBlock | null
   readonly children: readonly GroupedBlock[]
 }
 
 export type GroupedBlock = TopLevelBlock | ComponentBlock
 
 const NAME_RE = /^[A-Z][A-Za-z0-9_]*/
+const CLOSING_TAG_RE = /^<\/([A-Z][A-Za-z0-9_]*)\s*>$/
 const ATTRIBUTE_NAME_RE = /^[A-Za-z_][\w:.-]*/
 
 /**
@@ -129,54 +135,100 @@ export const parseComponentTag = (text: string): ComponentTag | null => {
   return { name, attributes, selfClosing }
 }
 
-/** ブロックの深さ。タイトルはインデントを持たない。 */
-const indentOf = (block: GroupedBlock): number =>
-  block.type === 'title' ? 0 : block.type === 'component' ? block.line.indent : block.indent
+/** 行の中身が閉じタグ (`</Name>`) なら、その名前を返す。 */
+export const parseClosingTag = (text: string): string | null =>
+  CLOSING_TAG_RE.exec(text.trim())?.[1] ?? null
 
-/** children に取り込んだブロックを、コンポーネントの中での深さに揃える。 */
-const dedent = (block: TopLevelBlock, amount: number): TopLevelBlock =>
-  block.type === 'title' ? block : { ...block, indent: block.indent - amount }
+/**
+ * 中のブロックを、コンポーネントの中での深さに揃える。開始タグの行が字下げされていれば、
+ * そのぶん浅くする。それより浅い行は 0 に揃える。
+ */
+const dedent = <T extends TopLevelBlock>(block: T, amount: number): T =>
+  block.type === 'title' || amount === 0
+    ? block
+    : { ...block, indent: Math.max(0, block.indent - amount) }
 
 /** 行の生テキスト。インデントも含めて位置情報から切り出す。 */
 const rawTextOfLine = (source: string, line: LineBlock): string =>
   source.slice(line.position.start.offset, line.position.end.offset)
 
+/** 開いている途中のコンポーネント。 */
+interface Frame {
+  readonly tag: ComponentTag
+  readonly line: LineBlock
+  readonly children: GroupedBlock[]
+}
+
 /**
  * ページのブロック列から、コンポーネントの行とその children をまとめる。
  * `source` は位置情報の基準になった文字列 (パースに渡したもの)。
+ *
+ * 閉じタグが無い、または開始タグと対応しないときは例外を投げる。
  */
 export const groupComponents = (
   blocks: readonly TopLevelBlock[],
   source: string,
+  /** エラーに出す行番号に足す数。ファイル先頭の YAML を取り除いたときに、その行数を渡す */
+  lineOffset = 0,
 ): GroupedBlock[] => {
+  // 位置情報は 0 始まりなので 1 を足す。
+  const lineNumberOf = (line: LineBlock): number => line.position.start.line + 1 + lineOffset
   const out: GroupedBlock[] = []
-  let i = 0
-  while (i < blocks.length) {
-    const block = blocks[i] as TopLevelBlock
-    i++
-    const tag =
+  const stack: Frame[] = []
+  const current = (): GroupedBlock[] => stack[stack.length - 1]?.children ?? out
+  /** 一番内側の開始タグの行の深さ。中の行はこのぶん浅くする */
+  const base = (): number => stack[stack.length - 1]?.line.indent ?? 0
+
+  for (const block of blocks) {
+    const raw =
       block.type === 'line' && !block.quote && !block.monospace
-        ? parseComponentTag(rawTextOfLine(source, block))
+        ? rawTextOfLine(source, block)
         : null
-    if (tag === null || block.type !== 'line') {
-      out.push(block)
+    if (raw === null || block.type !== 'line') {
+      current().push(dedent(block, base()))
       continue
     }
 
-    const inner: TopLevelBlock[] = []
-    if (!tag.selfClosing) {
-      // 空行は深さ 0 なので、そこで children が終わる。Cosense の箇条書きと同じ区切り方。
-      while (i < blocks.length && indentOf(blocks[i] as TopLevelBlock) > block.indent) {
-        inner.push(dedent(blocks[i] as TopLevelBlock, block.indent + 1))
-        i++
+    const closing = parseClosingTag(raw)
+    if (closing !== null) {
+      const frame = stack.pop()
+      if (frame === undefined || frame.tag.name !== closing) {
+        const expected = frame === undefined ? '' : ` (<${frame.tag.name}> を閉じる前に閉じている)`
+        throw new Error(
+          `</${closing}> に対応する開始タグが無い: ${lineNumberOf(block)} 行目${expected}`,
+        )
       }
+      current().push({
+        type: 'component',
+        ...frame.tag,
+        line: dedent(frame.line, base()),
+        closeLine: dedent(block, base()),
+        children: frame.children,
+      })
+      continue
     }
-    out.push({
-      type: 'component',
-      ...tag,
-      line: block,
-      children: groupComponents(inner, source),
-    })
+
+    const tag = parseComponentTag(raw)
+    if (tag === null) {
+      current().push(dedent(block, base()))
+    } else if (tag.selfClosing) {
+      current().push({
+        type: 'component',
+        ...tag,
+        line: dedent(block, base()),
+        closeLine: null,
+        children: [],
+      })
+    } else {
+      stack.push({ tag, line: block, children: [] })
+    }
+  }
+
+  const unclosed = stack[stack.length - 1]
+  if (unclosed !== undefined) {
+    throw new Error(
+      `<${unclosed.tag.name}> が閉じられていない: ${lineNumberOf(unclosed.line)} 行目。</${unclosed.tag.name}> の行で閉じる`,
+    )
   }
   return out
 }

@@ -27,7 +27,8 @@ date: 2026-09-01
 はじめての投稿
 [Cosense で書く] の使い方 #日記
 <Callout type="warn">
- インデントした行が children になる`,
+閉じタグまでの行が children になる
+</Callout>`,
   { format: 'csnx', jsxImportSource: 'react' },
 )
 ```
@@ -48,23 +49,27 @@ export default function CosenseContent(props = {}) {
 
 ## コンポーネントの行 (`.csnx`)
 
-1 行まるごとが `<Name ... />` または `<Name ...>` の行を、コンポーネントの呼び出しにする。
+1 行まるごとが `<Name ... />` の行をコンポーネントの呼び出しにする。
+中身を持たせるときは、`<Name ...>` の行と `</Name>` の行で挟む。間の行が children になる。
 
 ```
 <Counter start={10} />
 <Callout type="warn" title="注意">
- この行と
- この行が children になる
+この行と
+ この箇条書きが children になる
+</Callout>
 ここからは Callout の外
 ```
 
 - 名前は大文字で始める
-- `/>` で閉じない行は、それより深くインデントした後続行を children にとる。Cosense ではインデントが入れ子を表すので、閉じタグは書かない
+- 開始タグと閉じタグは、それぞれ 1 行まるごとで書く
+- MDX と同じく閉じタグは必須。閉じ忘れや、対応しない閉じタグはコンパイルエラーになる (行番号付き)
+- children はインデントでは決めない。中の行は、箇条書きも含めて書いたとおりに出る。開始タグの行が字下げされていれば、中の行をそのぶん浅くする
 - 属性に書けるのは `"文字列"` と `'文字列'`、`{JSON の値}`、値なし (true) だけ。任意の JS の式は評価しない。共有プロジェクトのページをビルド時に実行させないため
-- 書式から少しでも外れた行や、`props.components` に無いコンポーネントの行は、ただのテキスト行として出す
+- 書式から外れた行はただのテキスト行になる。`props.components` に無いコンポーネントは、開始タグ・中身・閉じタグの行をそのまま出す
 - Cosense の画面では、ただのテキスト行に見える
 
-`.csn` では、この行もただのテキストになる。
+`.csn` では、これらの行もただのテキストになる。
 
 ## frontmatter
 
@@ -160,7 +165,7 @@ const page = await fetchPage('help-jp', 'ブラケティング') // { title, tex
 
 | モジュール | API |
 | :--- | :--- |
-| `@cosense-toolbox/cosense-x` | `compile` `toHast` `readPage` `createIndex` `createLinkResolver` `parseComponentTag` `splitFrontmatter` `readFrontmatter` `collectMetadata` `normalizeTitle` `titleToSlug` |
+| `@cosense-toolbox/cosense-x` | `compile` `toHast` `readPage` `createIndex` `createLinkResolver` `parseComponentTag` `parseClosingTag` `splitFrontmatter` `readFrontmatter` `collectMetadata` `normalizeTitle` `titleToSlug` |
 | `@cosense-toolbox/cosense-x/graph` | `scanPages` `buildGraph` `readPage` `createIndex` `normalizeTitle` `titleToSlug` |
 | `@cosense-toolbox/cosense-x/fetch` | `fetchPage` `fetchPageText` |
 
