@@ -8,6 +8,7 @@
 import { Either } from 'effect'
 import postcss, { type ChildNode, type Declaration, type Rule } from 'postcss'
 import selectorParser from 'postcss-selector-parser'
+import { type Specificity, compareSpecificity, selectorSpecificity } from './specificity'
 
 /** 同じプロパティを 2 回書いた宣言 (fallback など) は配列にする。 */
 export type Declarations = Readonly<Record<string, string | readonly string[]>>
@@ -19,15 +20,19 @@ export interface StyleSelector {
   readonly pseudo: string
 }
 
+/** セレクタを 1 つだけ持つルール。`a, b { … }` と書いたルールはセレクタごとに分ける。 */
 export interface StyleRule {
-  readonly selectors: readonly StyleSelector[]
+  readonly selector: StyleSelector
   readonly declarations: Declarations
 }
 
 export interface CosenseStyles {
   /** `.page` 自身に当てる宣言 */
   readonly root: Declarations
-  /** `.page` の中の要素に当てるルール。style.css に書かれた順 */
+  /**
+   * `.page` の中の要素に当てるルール。元の詳細度の低い順で、同じ詳細度なら style.css に書かれた順。
+   * プラグインはどのルールも同じ詳細度にするので、この順が勝ち負けを決める。
+   */
   readonly rules: readonly StyleRule[]
 }
 
@@ -66,17 +71,20 @@ const declarationsOf = (rule: Rule): Either.Either<Declarations, ExtractError> =
  * `.page .line[data-indent]::before` を `{ body: '.line[data-indent]', pseudo: '::before' }` にする。
  * `.page` だけなら body は空文字。
  */
-const splitSelector = (selector: string): Either.Either<StyleSelector, ExtractError> => {
-  const nodes = selectorParser().astSync(selector).first.nodes
+const splitSelector = (
+  selector: selectorParser.Selector,
+): Either.Either<StyleSelector, ExtractError> => {
+  const text = String(selector).trim()
+  const nodes = selector.nodes
   const [head, combinator] = nodes
   if (head?.type !== 'class' || `.${head.value}` !== ROOT) {
-    return fail(`${selector} が ${ROOT} の下にない`)
+    return fail(`${text} が ${ROOT} の下にない`)
   }
   if (nodes.length === 1) return Either.right({ body: '', pseudo: '' })
   // `.page .x` のように子孫として書いたものだけを受け付ける。`.page:hover` や `.page > .x` は
   // プラグインの class を付けた要素との関係が変わってしまうので、変換せずに止める。
   if (combinator?.type !== 'combinator' || combinator.value.trim() !== '') {
-    return fail(`${selector} は「${ROOT} の子孫」として書かれていない`)
+    return fail(`${text} は「${ROOT} の子孫」として書かれていない`)
   }
   const rest = nodes.slice(2)
   const last = rest[rest.length - 1]
@@ -85,22 +93,35 @@ const splitSelector = (selector: string): Either.Either<StyleSelector, ExtractEr
   return Either.right({ body, pseudo: pseudo === undefined ? '' : pseudo.value })
 }
 
+/** 並べ替える前のルール。元の詳細度を持つ。 */
+interface RankedRule extends StyleRule {
+  readonly specificity: Specificity
+}
+
 /** トップレベルのルールひとつ。`.page` 自身へのルールか、その中の要素へのルールか。 */
 type TopLevelRule =
   | { readonly _tag: 'root'; readonly declarations: Declarations }
-  | { readonly _tag: 'rule'; readonly key: string; readonly rule: StyleRule }
+  | { readonly _tag: 'rules'; readonly rules: readonly RankedRule[] }
 
 const topLevelRuleOf = (node: ChildNode): Either.Either<TopLevelRule, ExtractError> => {
   if (node.type !== 'rule') {
-    return fail(`トップレベルに ${node.type} がある。プラグインへの変換を足す必要がある`)
+    const what = node.type === 'atrule' ? `@${node.name}` : node.type
+    return fail(`トップレベルに ${what} がある。プラグインへの変換を足す必要がある`)
   }
   return Either.gen(function* () {
-    const selectors = yield* Either.all(node.selectors.map(splitSelector))
+    const parsed = selectorParser().astSync(node.selector).nodes
+    const selectors = yield* Either.all(parsed.map(splitSelector))
     const declarations = yield* declarationsOf(node)
     const roots = selectors.filter((selector) => selector.body === '').length
     if (roots === 0) {
-      const rule: StyleRule = { selectors, declarations }
-      return { _tag: 'rule', key: node.selectors.join(','), rule } as const
+      const rules = selectors.map(
+        (selector, i): RankedRule => ({
+          selector,
+          declarations,
+          specificity: selectorSpecificity(parsed[i] as selectorParser.Selector),
+        }),
+      )
+      return { _tag: 'rules', rules } as const
     }
     if (roots !== selectors.length) return yield* fail(`${ROOT} 自身へのルールは 1 つだけにする`)
     return { _tag: 'root', declarations } as const
@@ -118,13 +139,15 @@ export const extractStylesEither = (css: string): Either.Either<CosenseStyles, E
     ),
     (topLevel) => {
       const roots = topLevel.flatMap((node) => (node._tag === 'root' ? [node.declarations] : []))
-      const rules = topLevel.flatMap((node) => (node._tag === 'rule' ? [node] : []))
-      // プラグインはセレクタを CSS-in-JS のキーにするので、同じセレクタのルールが 2 つあると後が前を消す。
-      const keys = rules.map((node) => node.key)
-      const duplicate = keys.find((key, i) => keys.indexOf(key) !== i)
-      if (duplicate !== undefined) return fail(`${duplicate} のルールが 2 つある。1 つにまとめる`)
       if (roots.length > 1) return fail(`${ROOT} 自身へのルールは 1 つだけにする`)
-      return Either.right({ root: roots[0] ?? {}, rules: rules.map((node) => node.rule) })
+      // Array.prototype.sort は安定なので、同じ詳細度のルールは書いた順のまま残る。
+      const ranked = topLevel
+        .flatMap((node) => (node._tag === 'rules' ? node.rules : []))
+        .sort((a, b) => compareSpecificity(a.specificity, b.specificity))
+      return Either.right({
+        root: roots[0] ?? {},
+        rules: ranked.map(({ selector, declarations }) => ({ selector, declarations })),
+      })
     },
   )
 

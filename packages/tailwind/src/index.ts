@@ -7,10 +7,12 @@
  * @plugin "@cosense-toolbox/tailwind";
  * ```
  *
- * 当てるスタイルは `@cosense-toolbox/style` の style.css と同じもの (`.page` を `.cosense` に移しただけ)。
+ * 当てるスタイルは `@cosense-toolbox/style` の style.css と同じもの。`cosense-link:underline` のような
+ * modifier で、記事の中の特定の記法にだけ utility を当てられる。
  */
-import plugin from 'tailwindcss/plugin'
+import plugin, { type PluginAPI } from 'tailwindcss/plugin'
 import type { Declarations, StyleRule } from './extract'
+import { MODIFIERS, type Modifier } from './modifiers'
 import { styles } from './styles.generated'
 
 export interface CosenseTailwindOptions {
@@ -22,39 +24,54 @@ export interface CosenseTailwindOptions {
   readonly className?: string
 }
 
-type CssInJs = { [key: string]: string | readonly string[] | CssInJs }
+type Components = Parameters<PluginAPI['addComponents']>[0]
+
+/** 生成したデータは readonly なので、Tailwind の可変の型に合わせる (中身は書き換えない)。 */
+const mutable = (declarations: Declarations) => declarations as Record<string, string | string[]>
 
 /**
- * 1 つのルールのセレクタ。`not-cosense` の中を除く条件を、擬似要素より前に付ける。
- *
- * 除く条件は `:where()` に入れて詳細度を増やさない。style.css には、先に書いたルールが
- * 詳細度で後のルールに勝つことを前提にした箇所があるので、元の詳細度の大小をそのまま保つ。
+ * `not-{className}` を付けた要素とその中を除く条件。`:where()` の中なので詳細度を増やさない。
  */
-const selectorOf = (rule: StyleRule, className: string): string => {
-  const not = `:not(:where([class~="not-${className}"],[class~="not-${className}"] *))`
-  return rule.selectors.map(({ body, pseudo }) => `${body}${not}${pseudo}`).join(', ')
-}
+const outside = (className: string): string =>
+  `:not(:where([class~="not-${className}"],[class~="not-${className}"] *))`
 
-const componentOf = (className: string): Record<string, CssInJs> => ({
-  [`.${className}`]: {
-    ...(styles.root as Declarations),
-    // 入れ子のキーは `.cosense` の子孫として展開される。
-    ...Object.fromEntries(
-      styles.rules.map((rule) => [selectorOf(rule, className), rule.declarations]),
-    ),
-  },
-})
+/**
+ * 1 つのルールのセレクタ。本文を `:where()` で包み、どのルールも `.cosense` と同じ詳細度にする。
+ * 除く条件は擬似要素より前に付ける。
+ *
+ * 詳細度を揃えるので、ルールどうしの勝ち負けは並び順だけで決まる。生成したデータは元の詳細度の
+ * 低い順に並んでいるので、style.css と同じ勝ち負けになる。後ろに出る `cosense-link:` などの
+ * modifier や、同じ詳細度の utility が既定のスタイルに勝てるのは、このため。
+ */
+const selectorOf = ({ selector }: StyleRule, className: string): string =>
+  `& :where(${selector.body})${outside(className)}${selector.pseudo}`
+
+/**
+ * ルールごとに別のオブジェクトにする。1 つのオブジェクトのキーにすると、同じセレクタのルールが
+ * 後のもので上書きされてしまうため。Tailwind は並べた順のまま `.cosense` の中に出す。
+ */
+const componentsOf = (className: string): Components => [
+  { [`.${className}`]: mutable(styles.root) },
+  ...styles.rules.map((rule) => ({
+    [`.${className}`]: { [selectorOf(rule, className)]: mutable(rule.declarations) },
+  })),
+]
+
+/** `cosense-link:` なら `.cosense-link\:underline :is(…)` のように、中の対象だけに当てる。 */
+const modifierOf = (modifier: Modifier, className: string): string =>
+  `& :is(:where(${modifier.target})${outside(className)})`
 
 /** Tailwind の型を公開する型定義に書き出せるよう、型を明示する。 */
 type CosensePlugin = ReturnType<typeof plugin.withOptions<CosenseTailwindOptions>>
 
 const cosense: CosensePlugin = plugin.withOptions<CosenseTailwindOptions>(
   (options) =>
-    ({ addComponents }) => {
-      // 生成したデータは readonly なので、Tailwind の可変の型に合わせる (中身は書き換えられない)。
-      addComponents(
-        componentOf(options?.className ?? 'cosense') as Parameters<typeof addComponents>[0],
-      )
+    ({ addComponents, addVariant }) => {
+      const className = options?.className ?? 'cosense'
+      addComponents(componentsOf(className))
+      for (const modifier of MODIFIERS) {
+        addVariant(`${className}-${modifier.name}`, modifierOf(modifier, className))
+      }
     },
 )
 

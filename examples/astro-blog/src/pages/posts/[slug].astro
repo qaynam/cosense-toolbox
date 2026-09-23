@@ -23,7 +23,10 @@ const twoHop = graph.twoHop[id] ?? []
 ---
 
 <Base title={post.data.title} description={post.data.description}>
-  <article class="cosense">
+  <!-- cosense-{記法}: の modifier で、記事の中の記法ごとに utility を当てる -->
+  <article
+    class="cosense cosense-title:text-4xl cosense-hashtag:text-emerald-700 cosense-link:hover:underline cosense-code:bg-amber-50"
+  >
     <Content />
   </article>
 

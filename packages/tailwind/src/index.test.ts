@@ -5,6 +5,7 @@ import { compile } from 'tailwindcss'
 import { describe, expect, it } from 'vitest'
 import { extractStyles } from './extract'
 import cosense from './index'
+import { MODIFIERS } from './modifiers'
 import { styles } from './styles.generated'
 
 const STYLE_CSS = join(import.meta.dirname, '..', '..', 'style', 'style.css')
@@ -61,6 +62,17 @@ const rulesOf = (css: string): [string, string[]][] => {
 
 const NOT = ':not(:where([class~="not-cosense"],[class~="not-cosense"] *))'
 
+/** `.page .x::before` を、プラグインが出す `.cosense :where(.x):not(…)::before` の形にする。 */
+const flattened = (selector: string): string => {
+  if (selector === '.page') return '.cosense'
+  const [, body, pseudo = ''] = /^\.page (.+?)(::[a-z-]+)?$/.exec(selector) ?? []
+  return normalize(`.cosense :where(${body})${NOT}${pseudo}`)
+}
+
+/** 並びを無視して比べるための、並べ替えた写し。 */
+const sorted = (rules: [string, string[]][]): string[] =>
+  rules.map((rule) => JSON.stringify(rule)).sort()
+
 describe('生成したデータ', () => {
   it('style.css から作り直したものと一致する (style.css を直したら bun run generate)', async () => {
     const css = await readFile(STYLE_CSS, 'utf8')
@@ -69,33 +81,33 @@ describe('生成したデータ', () => {
 })
 
 describe('cosense プラグイン', () => {
-  it('style.css のすべてのルールを、.cosense の下に同じ宣言で出す', async () => {
+  it('style.css のすべてのルールを、:where() で包んで .cosense の下に同じ宣言で出す', async () => {
     const expected = rulesOf(await readFile(STYLE_CSS, 'utf8')).map(
-      ([selector, declarations]): [string, string[]] => [
-        normalize(
-          selector === '.page'
-            ? '.cosense'
-            : selector
-                .replace(/^\.page /, '.cosense ')
-                .replace(/(::[a-z-]+)?$/, (pseudo) => `${NOT}${pseudo}`),
-        ),
-        declarations,
-      ],
+      ([selector, declarations]): [string, string[]] => [flattened(selector), declarations],
     )
-    // 順序も含めて一致させる。詳細度が同じルールどうしは、書いた順で勝ち負けが決まるため。
-    expect(rulesOf(await build(['cosense']))).toEqual(expected)
+    expect(sorted(rulesOf(await build(['cosense'])))).toEqual(sorted(expected))
+  })
+
+  it('ルールは生成したデータの順、つまり元の詳細度の低い順に出す', async () => {
+    const selectors = rulesOf(await build(['cosense'])).map(([selector]) => selector)
+    expect(selectors).toEqual([
+      '.cosense',
+      ...styles.rules.map(({ selector }) => flattened(`.page ${selector.body}${selector.pseudo}`)),
+    ])
   })
 
   it('擬似要素のあるセレクタでは、not-cosense の除外を擬似要素より前に入れる', async () => {
     const selectors = rulesOf(await build(['cosense'])).map(([selector]) => selector)
-    expect(selectors).toContain(normalize(`.cosense .line[data-indent]${NOT}::before`))
+    expect(selectors).toContain(normalize(`.cosense :where(.line[data-indent])${NOT}::before`))
   })
 
   it('className を渡すと、class 名と除外の class 名が変わる', async () => {
     const css = await build(['article'], cosense({ className: 'article' }))
     const selectors = rulesOf(css).map(([selector]) => selector)
     expect(selectors).toContain(
-      normalize('.article .line:not(:where([class~="not-article"],[class~="not-article"] *))'),
+      normalize(
+        '.article :where(.line):not(:where([class~="not-article"],[class~="not-article"] *))',
+      ),
     )
     expect(selectors.some((selector) => selector.includes('cosense'))).toBe(false)
   })
@@ -108,5 +120,45 @@ describe('cosense プラグイン', () => {
 
   it('class に cosense が無ければ何も出さない', async () => {
     expect((await build(['flex'])).trim()).not.toContain('.line')
+  })
+})
+
+describe('modifier', () => {
+  it('cosense-link:{utility} は、.cosense の中のリンクだけに utility を当てる', async () => {
+    const rules = rulesOf(await build(['cosense', 'cosense-link:[color:red]']))
+    expect(rules).toContainEqual([
+      normalize(`.cosense-link\\:\\[color\\:red\\] :is(:where(.link)${NOT})`),
+      ['color:red'],
+    ])
+  })
+
+  it('modifier のルールは既定のスタイルより後ろに出る。詳細度が同じなので後ろのものが勝つ', async () => {
+    const selectors = rulesOf(await build(['cosense', 'cosense-link:[color:red]'])).map(
+      ([selector]) => selector,
+    )
+    const modifier = selectors.findIndex((selector) => selector.startsWith('.cosense-link'))
+    expect(modifier).toBeGreaterThan(0)
+    expect(
+      selectors.slice(modifier).filter((selector) => selector.startsWith('.cosense ')),
+    ).toEqual([])
+  })
+
+  it('すべての modifier を使える', async () => {
+    const candidates = MODIFIERS.map(({ name }) => `cosense-${name}:[color:red]`)
+    const selectors = rulesOf(await build(candidates)).map(([selector]) => selector)
+    expect(selectors).toHaveLength(MODIFIERS.length)
+  })
+
+  it('className を渡すと modifier の名前も変わる', async () => {
+    const css = await build(['article-link:[color:red]'], cosense({ className: 'article' }))
+    expect(css).toContain('.article-link\\:\\[color\\:red\\]')
+    expect(css).toContain('not-article')
+  })
+
+  it('README の modifier の表に、すべての modifier と対象が載っている', async () => {
+    const readme = await readFile(join(import.meta.dirname, '..', 'README.md'), 'utf8')
+    for (const { name, target } of MODIFIERS) {
+      expect(readme).toContain(`| \`cosense-${name}:{utility}\` | \`${target}\` |`)
+    }
   })
 })

@@ -27,6 +27,7 @@
   "files": ["dist", "README.md", "LICENSE"],
   "scripts": {
     "generate": "bun scripts/generate.ts",
+    "compare": "bun scripts/compare.ts",
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
@@ -37,8 +38,11 @@
     "tailwindcss": ">=4.0.0"
   },
   "devDependencies": {
+    "@cosense-toolbox/parser": "workspace:*",
+    "@tailwindcss/node": "^4.3.3",
     "effect": "^3.22.1",
     "postcss": "^8.5.28",
+    "playwright-core": "^1.56.1",
     "postcss-selector-parser": "^7.1.6",
     "tailwindcss": "^4.3.3",
     "tsdown": "^0.22.14",
