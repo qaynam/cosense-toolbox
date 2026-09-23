@@ -4,10 +4,11 @@
  * JS の生成 (unified 系) を import しないので、一覧ページやサイトマップを作るだけなら
  * このサブパスだけで済む。
  */
-import { type PageIndex, createIndex, findByTitle } from './links'
+import { Option } from 'effect'
+import { type PageIndex, createIndex, pageByPath, pageByTitle } from './links'
 import type { PageMetadata } from './metadata'
 import { type ReadOptions, readPage } from './read'
-import { isRelativePath, normalizeTitle, resolveRelativePath } from './title'
+import { isRelativePath, normalizeTitle, uniqueTitles } from './title'
 
 export { createIndex, findByTitle } from './links'
 export type { IndexInput, IndexedPage, PageIndex } from './links'
@@ -53,6 +54,15 @@ export interface Graph {
   >
 }
 
+/** 値をキーごとにまとめる。キーの並びも、キーごとの値の並びも出てきた順。 */
+const groupBy = <A>(
+  entries: readonly (readonly [string, A])[],
+): ReadonlyMap<string, readonly A[]> =>
+  entries.reduce(
+    (groups, [key, value]) => groups.set(key, [...(groups.get(key) ?? []), value]),
+    new Map<string, readonly A[]>(),
+  )
+
 /**
  * ページの一覧からリンクグラフを作る。
  *
@@ -64,14 +74,50 @@ export const buildGraph = (inputs: readonly GraphInput[]): Graph => {
   const index: PageIndex = createIndex(
     published.map(({ id, metadata }) => ({ id, title: metadata.title, slug: metadata.slug })),
   )
+  const idOf = (title: string): Option.Option<string> =>
+    Option.map(pageByTitle(index, title), (page) => page.id)
 
-  const pages: Record<string, GraphPage> = {}
-  // ページ id → リンク先の正規化タイトルと、その書き方
-  const targets = new Map<string, Map<string, string>>()
-  const tags: Record<string, { name: string; pages: string[] }> = {}
+  /** ページ id と、そのページのリンク先のタイトル (書かれた形のまま、重複なし・自分を除く) */
+  const outgoing = published.map(({ id, metadata }) => {
+    const self = normalizeTitle(metadata.title)
+    const linked = metadata.links.flatMap((link) =>
+      isRelativePath(link)
+        ? Option.match(pageByPath(index, id, link), {
+            onNone: () => [],
+            onSome: (page) => [page.title],
+          })
+        : [link],
+    )
+    const titles = uniqueTitles([...linked, ...metadata.tags]).filter(
+      (title) => normalizeTitle(title) !== self,
+    )
+    return { id, metadata, titles }
+  })
 
-  for (const { id, metadata } of published) {
-    pages[id] = {
+  // 正規化タイトル → そこへリンクしているページ
+  const incoming = groupBy(
+    outgoing.flatMap(({ id, titles }) =>
+      titles.map((title) => [normalizeTitle(title), id] as const),
+    ),
+  )
+  const incomingOf = (title: string): readonly string[] => incoming.get(normalizeTitle(title)) ?? []
+
+  const tagGroups = groupBy(
+    published.flatMap(({ id, metadata }) =>
+      metadata.tags.map((tag) => [normalizeTitle(tag), { name: tag, id }] as const),
+    ),
+  )
+
+  const entries = outgoing.map(({ id, metadata, titles }) => {
+    const links = titles.flatMap((title) => Option.toArray(idOf(title)))
+    const backlinks = incomingOf(metadata.title)
+    const direct = new Set([id, ...links, ...backlinks])
+    const twoHop = titles.flatMap((via): TwoHopGroup[] => {
+      const viaId = Option.getOrNull(idOf(via))
+      const siblings = incomingOf(via).filter((other) => !direct.has(other) && other !== viaId)
+      return siblings.length === 0 ? [] : [{ via, viaId, pages: siblings }]
+    })
+    const page: GraphPage = {
       id,
       title: metadata.title,
       slug: metadata.slug,
@@ -79,61 +125,21 @@ export const buildGraph = (inputs: readonly GraphInput[]): Graph => {
       image: metadata.image,
       tags: metadata.tags,
     }
-    const out = new Map<string, string>()
-    const self = normalizeTitle(metadata.title)
-    const add = (title: string) => {
-      const key = normalizeTitle(title)
-      if (key !== '' && key !== self && !out.has(key)) out.set(key, title)
-    }
-    for (const link of metadata.links) {
-      if (!isRelativePath(link)) add(link)
-      else {
-        const page = index.pages[resolveRelativePath(id, link)]
-        if (page !== undefined) add(page.title)
-      }
-    }
-    for (const tag of metadata.tags) {
-      add(tag)
-      const key = normalizeTitle(tag)
-      const entry = tags[key] ?? { name: tag, pages: [] }
-      entry.pages.push(id)
-      tags[key] = entry
-    }
-    targets.set(id, out)
+    return { id, page, links, backlinks, twoHop }
+  })
+
+  return {
+    pages: Object.fromEntries(entries.map(({ id, page }) => [id, page])),
+    links: Object.fromEntries(entries.map(({ id, links }) => [id, links])),
+    backlinks: Object.fromEntries(entries.map(({ id, backlinks }) => [id, backlinks])),
+    twoHop: Object.fromEntries(entries.map(({ id, twoHop }) => [id, twoHop])),
+    tags: Object.fromEntries(
+      [...tagGroups].map(([key, group]) => [
+        key,
+        { name: group[0]?.name ?? '', pages: group.map((tag) => tag.id) },
+      ]),
+    ),
   }
-
-  // 正規化タイトル → そこへリンクしているページ
-  const incoming = new Map<string, string[]>()
-  for (const [id, out] of targets) {
-    for (const key of out.keys()) {
-      const list = incoming.get(key) ?? []
-      list.push(id)
-      incoming.set(key, list)
-    }
-  }
-
-  const links: Record<string, string[]> = {}
-  const backlinks: Record<string, string[]> = {}
-  const twoHop: Record<string, TwoHopGroup[]> = {}
-
-  for (const [id, out] of targets) {
-    const page = pages[id] as GraphPage
-    links[id] = [...out.values()]
-      .map((title) => findByTitle(index, title)?.id)
-      .filter((linked): linked is string => linked !== undefined)
-    backlinks[id] = incoming.get(normalizeTitle(page.title)) ?? []
-
-    const direct = new Set([id, ...links[id], ...backlinks[id]])
-    twoHop[id] = [...out.entries()].flatMap(([key, via]): TwoHopGroup[] => {
-      const viaId = findByTitle(index, via)?.id ?? null
-      const siblings = (incoming.get(key) ?? []).filter(
-        (other) => !direct.has(other) && other !== viaId,
-      )
-      return siblings.length === 0 ? [] : [{ via, viaId, pages: siblings }]
-    })
-  }
-
-  return { pages, links, backlinks, twoHop, tags }
 }
 
 export interface ScanInput {

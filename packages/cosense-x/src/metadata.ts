@@ -2,12 +2,13 @@
  * metadata.ts — ページから一覧や `<head>` に使う情報を集める。
  * frontmatter に同じ項目があれば、そちらを使う。
  */
-import { type InlineNode, type LineBlock, type Page, asImageSrc } from '@cosense-toolbox/parser'
+import { type InlineNode, type Page, type TopLevelBlock, asImageSrc } from '@cosense-toolbox/parser'
 import { toPlainText } from '@cosense-toolbox/parser/compile'
-import { firstImage, visit } from '@cosense-toolbox/parser/utils'
-import { parseClosingTag, parseComponentTag } from './components'
+import { collect, firstImage } from '@cosense-toolbox/parser/utils'
+import { Option, pipe } from 'effect'
+import { closingTagOf, componentTagOf, rawTextOfLine } from './components'
 import type { Frontmatter } from './frontmatter'
-import { isRelativePath, normalizeTitle, titleToSlug } from './title'
+import { isRelativePath, titleToSlug, uniqueTitles } from './title'
 
 export interface PageMetadata {
   /** frontmatter の `title`、なければ 1 行目 */
@@ -32,8 +33,9 @@ const INLINE_TAG_RE = /<\/?[A-Z][A-Za-z0-9_]*(?:\s[^<>]*)?\/?>/g
 const DESCRIPTION_MIN = 120
 const DESCRIPTION_MAX = 160
 
-const stringOf = (value: unknown): string | undefined =>
-  typeof value === 'string' && value.trim() !== '' ? value : undefined
+/** 空でない文字列なら、その値。 */
+const stringOf = (value: unknown): Option.Option<string> =>
+  typeof value === 'string' && value.trim() !== '' ? Option.some(value) : Option.none()
 
 const stringsOf = (value: unknown): string[] =>
   Array.isArray(value)
@@ -41,17 +43,6 @@ const stringsOf = (value: unknown): string[] =>
     : typeof value === 'string'
       ? [value]
       : []
-
-/** 大文字小文字や空白と `_` の違いだけの重複は、最初に出てきた書き方を残す。 */
-const uniqueTitles = (titles: readonly string[]): string[] => {
-  const seen = new Set<string>()
-  return titles.filter((title) => {
-    const key = normalizeTitle(title)
-    if (key === '' || seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
-}
 
 export interface CollectMetadataOptions {
   /**
@@ -73,37 +64,48 @@ const relabel = (
   nodes.map((node) => {
     if (node.type === 'decoration') return { ...node, children: relabel(node.children, resolve) }
     if (node.type !== 'internalLink' || !isRelativePath(node.target)) return node
-    const title = resolve(node.target)
-    return title === undefined ? node : { ...node, label: title }
+    return Option.match(Option.fromNullable(resolve(node.target)), {
+      onNone: () => node,
+      onSome: (title) => ({ ...node, label: title }),
+    })
   })
+
+/** 説明文に入れる、1 行ぶんの文字列。入れない行なら None。 */
+const descriptionOfLine = (
+  block: TopLevelBlock,
+  options: CollectMetadataOptions,
+): Option.Option<string> => {
+  const source = options.componentsSource
+  if (block.type !== 'line') return Option.none()
+  // 開始タグと閉じタグの行は入れない。中身の行は入れる。
+  if (source !== undefined) {
+    const raw = rawTextOfLine(source, block)
+    if (Option.isSome(componentTagOf(raw)) || Option.isSome(closingTagOf(raw))) {
+      return Option.none()
+    }
+  }
+  const resolve = options.resolveRelativeLink
+  const line =
+    resolve === undefined ? block : { ...block, children: relabel(block.children, resolve) }
+  // 行の途中のタグ (`<Badge />` など) は説明文に出さない。中身の文字は残す。
+  const plain = toPlainText(line)
+  const text = (source === undefined ? plain : plain.replace(INLINE_TAG_RE, ''))
+    .replace(/\s+/g, ' ')
+    .trim()
+  return text === '' ? Option.none() : Option.some(text)
+}
 
 /** 本文の冒頭から説明文を作る。検索結果やカードの抜粋に収まる長さで切る。 */
 const describe = (page: Page, options: CollectMetadataOptions): string => {
-  const source = options.componentsSource
-  /** 開始タグと閉じタグの行。中身の行は説明文に入れる */
-  const isComponentLine = (line: LineBlock): boolean => {
-    if (source === undefined) return false
-    const raw = source.slice(line.position.start.offset, line.position.end.offset)
-    return parseComponentTag(raw) !== null || parseClosingTag(raw) !== null
-  }
-
-  const parts: string[] = []
-  let length = 0
-  for (const block of page.children) {
-    if (length >= DESCRIPTION_MIN) break
-    if (block.type !== 'line' || isComponentLine(block)) continue
-    const resolve = options.resolveRelativeLink
-    const line =
-      resolve === undefined ? block : { ...block, children: relabel(block.children, resolve) }
-    // 行の途中のタグ (`<Badge />` など) は説明文に出さない。中身の文字は残す。
-    const plain = toPlainText(line)
-    const text = (source === undefined ? plain : plain.replace(INLINE_TAG_RE, ''))
-      .replace(/\s+/g, ' ')
-      .trim()
-    if (text === '') continue
-    parts.push(text)
-    length += text.length
-  }
+  const { parts } = page.children
+    .flatMap((block) => Option.toArray(descriptionOfLine(block, options)))
+    .reduce<{ readonly parts: readonly string[]; readonly length: number }>(
+      (taken, text) =>
+        taken.length >= DESCRIPTION_MIN
+          ? taken
+          : { parts: [...taken.parts, text], length: taken.length + text.length },
+      { parts: [], length: 0 },
+    )
   const joined = parts.join(' ')
   return joined.length > DESCRIPTION_MAX ? `${joined.slice(0, DESCRIPTION_MAX - 1)}…` : joined
 }
@@ -113,26 +115,30 @@ export const collectMetadata = (
   frontmatter: Frontmatter,
   options: CollectMetadataOptions = {},
 ): PageMetadata => {
-  const titleBlock = page.children.find((block) => block.type === 'title')
-  const title = stringOf(frontmatter.title) ?? titleBlock?.value ?? ''
-
-  const links: string[] = []
-  const tags: string[] = [...stringsOf(frontmatter.tags)]
-  visit(page, (node) => {
-    if (node.type === 'internalLink') links.push(node.target)
-    else if (node.type === 'hashtag') tags.push(node.value)
-  })
-
-  const image = firstImage(page)
-
+  const title = pipe(
+    stringOf(frontmatter.title),
+    Option.orElse(() =>
+      Option.fromNullable(page.children.find((block) => block.type === 'title')?.value),
+    ),
+    Option.getOrElse(() => ''),
+  )
+  const image = pipe(
+    stringOf(frontmatter.image),
+    Option.orElse(() =>
+      Option.map(Option.fromNullable(firstImage(page)), (node) => asImageSrc(node.src) ?? node.src),
+    ),
+    Option.getOrNull,
+  )
   return {
     title,
-    slug: stringOf(frontmatter.slug) ?? titleToSlug(title),
-    description: stringOf(frontmatter.description) ?? describe(page, options),
-    image:
-      stringOf(frontmatter.image) ?? (image === null ? null : (asImageSrc(image.src) ?? image.src)),
-    links: uniqueTitles(links),
-    tags: uniqueTitles(tags),
+    slug: Option.getOrElse(stringOf(frontmatter.slug), () => titleToSlug(title)),
+    description: Option.getOrElse(stringOf(frontmatter.description), () => describe(page, options)),
+    image,
+    links: uniqueTitles(collect(page, 'internalLink').map((link) => link.target)),
+    tags: uniqueTitles([
+      ...stringsOf(frontmatter.tags),
+      ...collect(page, 'hashtag').map((tag) => tag.value),
+    ]),
     draft: frontmatter.draft === true,
   }
 }

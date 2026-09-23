@@ -33,7 +33,26 @@ const toAstroModule = (
   options: { components: string | undefined; layout: string | undefined; ssr: boolean },
 ): string => {
   const { components, layout, ssr } = options
-  const lines = [
+  const content =
+    layout === undefined
+      ? ['export const Content = (props = {}) => __cosenseBody(props);']
+      : // src/pages に置いたページを包むレイアウト。`.mdx` の `layout` と同じく、
+        // 本文を default のスロットに入れ、frontmatter などを props で渡す。
+        [
+          `import __CosenseLayout from ${JSON.stringify(layout)};`,
+          "import { jsx as __cosenseJsx } from 'astro/jsx-runtime';",
+          'export const Content = (props = {}) => __cosenseJsx(__CosenseLayout, {',
+          '  file, frontmatter, metadata,',
+          '  children: __cosenseBody(props),',
+          '});',
+        ]
+  const tag = ssr
+    ? [
+        "import { __astro_tag_component__ } from 'astro/runtime/server/index.js';",
+        "__astro_tag_component__(Content, 'astro:jsx');",
+      ]
+    : []
+  return [
     code.replace('export default function CosenseContent', 'function CosenseContent'),
     components === undefined
       ? 'const __cosenseComponents = {};'
@@ -43,35 +62,14 @@ const toAstroModule = (
     '  ...props,',
     '  components: { ...__cosenseComponents, ...props.components },',
     '});',
-  ]
-  if (layout === undefined) {
-    lines.push('export const Content = (props = {}) => __cosenseBody(props);')
-  } else {
-    // src/pages に置いたページを包むレイアウト。`.mdx` の `layout` と同じく、
-    // 本文を default のスロットに入れ、frontmatter などを props で渡す。
-    lines.push(
-      `import __CosenseLayout from ${JSON.stringify(layout)};`,
-      "import { jsx as __cosenseJsx } from 'astro/jsx-runtime';",
-      'export const Content = (props = {}) => __cosenseJsx(__CosenseLayout, {',
-      '  file, frontmatter, metadata,',
-      '  children: __cosenseBody(props),',
-      '});',
-    )
-  }
-  lines.push(
+    ...content,
     'export default Content;',
     "Content[Symbol.for('mdx-component')] = true;",
     // レイアウトがあれば <head> はレイアウトが出す。無ければ Astro に出させる。
     `Content[Symbol.for('astro.needsHeadRendering')] = ${layout === undefined};`,
     `Content.moduleId = ${JSON.stringify(id)};`,
-  )
-  if (ssr) {
-    lines.push(
-      "import { __astro_tag_component__ } from 'astro/runtime/server/index.js';",
-      "__astro_tag_component__(Content, 'astro:jsx');",
-    )
-  }
-  return lines.join('\n')
+    ...tag,
+  ].join('\n')
 }
 
 export const vitePluginCosense = (options: VitePluginOptions): Plugin => {

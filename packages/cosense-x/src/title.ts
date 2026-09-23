@@ -19,6 +19,18 @@ export const normalizeTitle = (title: string): string =>
 export const titleToSlug = (title: string): string =>
   title.trim().replace(/\s+/g, '_').replace(/[/?#]/g, '-')
 
+/**
+ * 同じページを指すタイトルの重複を除く。大文字小文字や空白と `_` の違いだけなら同じページなので、
+ * 最初に出てきた書き方を残す。空のタイトルも除く。
+ */
+export const uniqueTitles = (titles: readonly string[]): string[] => {
+  const keys = titles.map(normalizeTitle)
+  return titles.filter((_, i) => {
+    const key = keys[i] ?? ''
+    return key !== '' && keys.indexOf(key) === i
+  })
+}
+
 /** `[./foo.csn]` のように、ファイルを相対パスで指すリンクか。 */
 export const isRelativePath = (target: string): boolean =>
   target.startsWith('./') || target.startsWith('../')
@@ -29,13 +41,18 @@ export const isRelativePath = (target: string): boolean =>
  * `node:path` を使わないのは、ブラウザや Workers でもコンパイルできるようにするため。
  */
 export const resolveRelativePath = (from: string, relative: string): string => {
-  const absolute = from.startsWith('/')
-  const segments = from.split('/').filter((segment) => segment !== '')
-  segments.pop()
-  for (const segment of relative.split('/')) {
-    if (segment === '' || segment === '.') continue
-    if (segment === '..') segments.pop()
-    else segments.push(segment)
-  }
-  return (absolute ? '/' : '') + segments.join('/')
+  // 基点は `from` のファイルがあるディレクトリ。
+  const directory = from
+    .split('/')
+    .filter((segment) => segment !== '')
+    .slice(0, -1)
+  return (from.startsWith('/') ? '/' : '') + walk(directory, relative.split('/')).join('/')
+}
+
+/** `resolved` から `segments` を 1 段ずつ辿る。`..` で 1 段上がり、`.` と空の段は読み飛ばす。 */
+const walk = (resolved: readonly string[], segments: readonly string[]): readonly string[] => {
+  const [segment, ...rest] = segments
+  if (segment === undefined) return resolved
+  if (segment === '' || segment === '.') return walk(resolved, rest)
+  return walk(segment === '..' ? resolved.slice(0, -1) : [...resolved, segment], rest)
 }
