@@ -25,7 +25,10 @@ const twoHop = graph.twoHop[id] ?? []
 <Base title={post.data.title} description={post.data.description}>
   <!-- cosense-{記法}: の modifier で、記事の中の記法ごとに utility を当てる -->
   <article
-    class="cosense cosense-title:text-4xl cosense-hashtag:text-emerald-700 cosense-link:hover:underline cosense-code:bg-amber-50"
+    class="cosense cosense-title:text-4xl cosense-hashtag:text-emerald-700 cosense-link:hover:underline cosense-code:bg-amber-50 cosense-table:[&_tr:first-child_td]:font-bold cosense-table:[&_td]:whitespace-break-spaces
+cosense-table:[&_td]:border cosense-table:[&_td]:border-slate-300 cosense-table:[&_td]:p-2 cosense-table:[&_td]:text-sm
+cosense-table:[&_caption]:bg-white cosense-table:[&_caption]:text-base cosense-table:[&_caption]:text-slate-500
+    "
   >
     <Content />
   </article>
@@ -33,7 +36,7 @@ const twoHop = graph.twoHop[id] ?? []
   {
     backlinks.length > 0 && (
       <section class="mt-10">
-        <h2 class="mb-2 text-lg font-bold">このページにリンクしているページ</h2>
+        <h2 class="mb-2 text-lg font-bold">1 hope リンク</h2>
         <ul class="list-disc pl-6">
           {backlinks.map((link) => (
             <li>

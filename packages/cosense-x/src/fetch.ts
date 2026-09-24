@@ -12,6 +12,8 @@ export interface FetchOptions {
   readonly fetch?: typeof globalThis.fetch
   /** API の origin。 @defaultValue `https://scrapbox.io` */
   readonly origin?: string
+  /** CosenseのPersonal Access Tokenを渡す */
+  readonly pat?: string
 }
 
 export interface FetchedPage {
@@ -28,7 +30,9 @@ const pageUrl = (project: string, title: string, origin: string): string =>
   `${origin}/api/pages/${encodeURIComponent(project)}/${encodeURIComponent(title)}`
 
 const request = async (url: string, options: FetchOptions): Promise<Response> => {
-  const response = await (options.fetch ?? globalThis.fetch)(url)
+  const response = await (options.fetch ?? globalThis.fetch)(url,
+    options.pat ? { headers: { "x-personal-access-token": options.pat } } : undefined
+  )
   if (!response.ok) {
     const body = await response.text().catch(() => '')
     throw new Error(`Cosense のページを取得できない: ${response.status} ${url}\n${body}`)

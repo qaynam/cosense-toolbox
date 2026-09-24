@@ -2,13 +2,34 @@
 date: 2026-09-10
 tags: [Svelte]
 ---
-コンポーネントを埋め込む
-.csnx では、1 行まるごとが <Name /> の行がコンポーネントになる。 #Cosense
+好きなコンポーネントを埋め込むことができる
+`.csnx`ファイルでは [mdx]の同じようにcosense記法を自分の[JSフレームワーク]と組み合わせて拡張することができる。
+
+例：
+code:component.csnx
+ <Callout type="warn" title="注意">
+  <Callout> から </Callout> までの行が children になる。
+  箇条書きもそのまま書ける。
+  [Cosense で書く] へのリンクも使える。
+  </Callout>
+  <Counter start={10} step={5} />
+
+↓のようにレンダリングされる
+
 <Callout type="warn" title="注意">
 <Callout> から </Callout> までの行が children になる。
  箇条書きもそのまま書ける。
 [Cosense で書く] へのリンクも使える。
 </Callout>
-<Counter start={10} step={5} />
-<Missing />
-渡していないコンポーネントは、元の行がそのまま出る。
+
+もちろんreactiveなコンポーネントも埋め込むことができる。
+<Counter start={1} step={1} />
+
+[** さらに]
+自分でコンポーネントを作ることでリンク記法からあらゆるemebdを埋め込むことが可能
+
+[Youtube]のemebd
+[https://youtu.be/dQw4w9WgXcQ]
+
+[vimeo]のembed
+[https://vimeo.com/62677550]
