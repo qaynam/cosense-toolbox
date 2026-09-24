@@ -25,7 +25,7 @@ code:component.csnx
 もちろんreactiveなコンポーネントも埋め込むことができる。
 <Counter start={1} step={1} />
 
-[** さらに]
+[|**** さらに]
 自分でコンポーネントを作ることでリンク記法からあらゆるemebdを埋め込むことが可能
 
 [Youtube]のemebd
