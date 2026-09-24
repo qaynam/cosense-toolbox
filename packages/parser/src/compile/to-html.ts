@@ -5,7 +5,6 @@
  * (marked の renderer と同じ形)。
  */
 import { Match, Option, String as Str, pipe } from 'effect'
-import { childrenOf } from '../ast'
 import { asImageSrc } from '../core/image-url'
 import type {
   AnyNode,
@@ -17,12 +16,8 @@ import type {
   InternalLink,
   ProjectLink,
 } from '../types'
-import {
-  type CompileContext,
-  type NodeHandler,
-  type NodeHandlers,
-  createCompiler,
-} from './create-compiler'
+import { type NodeHandler, type NodeHandlers, createCompiler } from './create-compiler'
+import { withTableCellLineBreaks } from './table-cell-line-break'
 
 // ---------------------------------------------------------------------------
 // エスケープと属性
@@ -214,14 +209,13 @@ export interface HtmlRenderOptions {
   readonly showPads?: boolean
   /**
    * テーブルのセルの中で、改行として扱う文字列。セルの文字に含まれるこの文字列を `<br>` にする。
-   * Cosense のセルには改行を書けないので、`\n` のような文字の並びを代わりに書くときに使う。
    *
    * 文字列そのままで探す (正規表現としては読まない)。当てるのは text ノードだけで、
    * コードやリンクの表示の中には当てない。
    *
    * @defaultValue null。改行にしない (Cosense Web と同じ)
    */
-  readonly tableCellLineBreak?: string | null
+  readonly tableCellLineBreakMarker?: string | null
 }
 
 export interface HtmlOptions extends HtmlRenderOptions {
@@ -436,43 +430,6 @@ export const createHtmlHandlers = (options: HtmlRenderOptions = {}): NodeHandler
 }
 
 /**
- * セルの中の text ノードを `lineBreak` で区切り、`<br>` でつなぐようにハンドラを包む。
- *
- * セルの中身だけを別のコンパイラで変換する。text のハンドラはセルの中か外かを知らないので、
- * セルの中身に入ったところで text の扱いだけを差し替えたコンパイラに切り替える。
- * 区切った各部分は元の text のハンドラに通すので、エスケープや `handlers.text` の上書きはそのまま効く。
- */
-const withCellLineBreaks = (
-  handlers: NodeHandlers<string>,
-  fallback: NodeHandler<string, AnyNodeType>,
-  lineBreak: string | null | undefined,
-): NodeHandlers<string> => {
-  const { text, tableCell } = handlers
-  if (lineBreak === null || lineBreak === undefined || lineBreak === '' || text === undefined) {
-    return handlers
-  }
-  const compileCell = createCompiler<string>({
-    handlers: {
-      ...handlers,
-      text: (node, ctx) =>
-        node.value
-          .split(lineBreak)
-          .map((value) => text({ ...node, value }, ctx))
-          .join('<br>'),
-    },
-    fallback,
-  })
-  const cellContext: CompileContext<string> = {
-    node: compileCell,
-    children: (node) => childrenOf(node).map(compileCell),
-  }
-  return {
-    ...handlers,
-    tableCell: (node) => (tableCell ?? fallback)(node, cellContext),
-  }
-}
-
-/**
  * ページ (または任意のノード) を HTML 文字列にする。
  *
  * テキストと属性値はエスケープし、`javascript:` のようなスキームの URL は属性ごと落とす。
@@ -484,7 +441,11 @@ export const toHtml = (node: AnyNode, options: HtmlOptions = {}): string => {
   // ハンドラの無いノード (拡張が足した独自ノード) でも中身は落とさない。
   const fallback: NodeHandler<string, AnyNodeType> = (other, ctx) => ctx.children(other).join('')
   const compile = createCompiler<string>({
-    handlers: withCellLineBreaks(handlers, fallback, options.tableCellLineBreak),
+    handlers: withTableCellLineBreaks(handlers, {
+      marker: options.tableCellLineBreakMarker,
+      fallback,
+      joinLines: (lines) => lines.join('<br>'),
+    }),
     fallback,
   })
   const html = compile(node)

@@ -51,7 +51,7 @@ export interface CompileOptions
     Omit<ReadOptions, 'filePath'>,
     Pick<
       ToHastOptions,
-      'classNames' | 'iconImageUrl' | 'showPads' | 'tableCellLineBreak' | 'title'
+      'classNames' | 'iconImageUrl' | 'showPads' | 'tableCellLineBreakMarker' | 'title'
     > {
   /** 形式 (`format`) を省いたときは、このパスの拡張子で決める */
   readonly filePath?: string

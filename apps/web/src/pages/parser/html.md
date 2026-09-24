@@ -41,16 +41,16 @@ toHtml(page);
 
 ## オプション
 
-| オプション                                  | 型                           | 既定                 |
-| :------------------------------------------ | :--------------------------- | :------------------- |
-| [`pageUrl`](#pageurl)                       | `(title, node) => string`    | `/{title}`           |
-| [`iconImageUrl`](#iconimageurl)             | `(node) => string \| null`   | 常に `null`          |
-| [`highlight`](#highlight)                   | `(code, language) => string` | 色付けしない         |
-| [`classNames`](#classnames)                 | `HtmlClassNames`             | `defaultClassNames`  |
-| [`showPads`](#showpads)                     | `boolean`                    | `false`              |
-| [`tableCellLineBreak`](#tablecelllinebreak) | `string \| null`             | `null`               |
-| [`handlers`](#handlers)                     | `NodeHandlers<string>`       | 既定のハンドラ       |
-| [`style`](#style)                           | `string`                     | `<style>` を出さない |
+| オプション                                              | 型                           | 既定                 |
+| :------------------------------------------------------ | :--------------------------- | :------------------- |
+| [`pageUrl`](#pageurl)                                   | `(title, node) => string`    | `/{title}`           |
+| [`iconImageUrl`](#iconimageurl)                         | `(node) => string \| null`   | 常に `null`          |
+| [`highlight`](#highlight)                               | `(code, language) => string` | 色付けしない         |
+| [`classNames`](#classnames)                             | `HtmlClassNames`             | `defaultClassNames`  |
+| [`showPads`](#showpads)                                 | `boolean`                    | `false`              |
+| [`tableCellLineBreakMarker`](#tablecelllinebreakmarker) | `string \| null`             | `null`               |
+| [`handlers`](#handlers)                                 | `NodeHandlers<string>`       | 既定のハンドラ       |
+| [`style`](#style)                                       | `string`                     | `<style>` を出さない |
 
 上の 3 つは、AST から導けない情報を外から渡すためにあります。
 ページをどの URL で配信しているか、アイコン画像がどこにあるか、コードの構文がどう色分けされるかは、どれもソースに書かれていないからです。
@@ -228,10 +228,10 @@ showPads?: boolean
 既定では要素を出さず、深さは `data-indent` 属性だけで表します。
 中点は CSS の擬似要素で描けるので、見た目はどちらでも変わりません。
 
-### tableCellLineBreak
+### tableCellLineBreakMarker
 
 ```ts
-tableCellLineBreak?: string | null
+tableCellLineBreakMarker?: string | null
 ```
 
 テーブルのセルの中で、改行として扱う文字列です。
@@ -239,7 +239,9 @@ tableCellLineBreak?: string | null
 Cosense のセルには改行を書けないので、`\n` のような文字の並びを代わりに書くときに使います。
 
 ```ts
-toHtml(parse("t\ntable:x\n 1 行目\\n2 行目"), { tableCellLineBreak: "\\n" });
+toHtml(parse("t\ntable:x\n 1 行目\\n2 行目"), {
+  tableCellLineBreakMarker: "\\n",
+});
 // → … <td>1 行目<br>2 行目</td> …
 ```
 

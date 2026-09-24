@@ -19,7 +19,8 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
   これまで `toHtml` / `toPlainText` はセルを生の文字列のまま出していたが、リンクを出すようになる。
   セルのノードを自分で組み立てている拡張は追随が要る。
 - `parse` のオプション **`tableCellNotation: 'all'`** を足した。セルの中でも行と同じくすべての記法を読む (Cosense Web には無い振る舞い)。
-- `toHtml` のオプション **`tableCellLineBreak`** を足した。セルの中のこの文字列 (`'\\n'` など) を `<br>` にする。
+- `toHtml` のオプション **`tableCellLineBreakMarker`** を足した。セルの中のこの文字列 (`'\\n'` など) を `<br>` にする。
+  同じ処理を別の形式のコンパイラでも使えるよう、`./compile` から `withTableCellLineBreaks` も公開した。
 
 ### 0.1.0-beta.1 の変更
 

@@ -144,7 +144,8 @@ src/
   extensions/           拡張を書くための型と、既製の Extension（サブパスのバレル）
   compile/
     create-compiler.ts  ハンドラ機構
-    to-html.ts          公式の HTML コンパイラ（pageUrl / iconImageUrl / highlight / classNames / showPads / tableCellLineBreak / handlers）
+    to-html.ts          公式の HTML コンパイラ（pageUrl / iconImageUrl / highlight / classNames / showPads / tableCellLineBreakMarker / handlers）
+    table-cell-line-break.ts  セルの中の改行 (toHtml と cosense-x の toHast が共有する)
     to-plain-text.ts    参照実装
   utils/                visit / links
   fixtures/             conformance.json（記法仕様）

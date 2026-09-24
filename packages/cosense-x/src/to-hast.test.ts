@@ -62,8 +62,8 @@ describe('toHtml と同じ構造の HTML になる', () => {
     expect(hastToHtml(toHast(page))).toBe(normalize(toHtml(page)))
   })
 
-  it("tableCellNotation: 'all' で読んだセルと tableCellLineBreak も toHtml と同じに効く", () => {
-    const options = { tableCellLineBreak: '\\n' }
+  it("tableCellNotation: 'all' で読んだセルと tableCellLineBreakMarker も toHtml と同じに効く", () => {
+    const options = { tableCellLineBreakMarker: '\\n' }
     const page = parse('タイトル\ntable:表\n [* 太\\n字] a\\n\\nb\t`c\\nd` [リンク]\\n', {
       tableCellNotation: 'all',
     })

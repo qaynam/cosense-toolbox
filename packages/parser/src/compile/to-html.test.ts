@@ -1,10 +1,20 @@
 import { Option } from 'effect'
 import { describe, expect, it } from 'vitest'
 import type { InlineConstruct } from '../inline/types'
-import { parse, parseLine } from '../parse'
+import { type ParseOptions, parse, parseLine } from '../parse'
 import type { InlineNodeInit } from '../types'
 import type { NodeHandlers } from './create-compiler'
 import { defaultPageUrl, escapeHtml, safeHref, safeSrc, toHtml } from './to-html'
+
+/**
+ * 表を 1 つだけ持つページを描画する。1 行目は必ずタイトルになるので、
+ * 仮のタイトル `t` を置いてから表を書く。
+ */
+const tableHtml = (
+  row: string,
+  options?: Parameters<typeof toHtml>[1],
+  parseOptions?: ParseOptions,
+): string => toHtml(parse(`t\ntable:x\n ${row}`, parseOptions), options)
 
 /** 1 行を描画して、行を包む div を外した中身だけを見る。 */
 const line = (source: string, options?: Parameters<typeof toHtml>[1]): string =>
@@ -140,39 +150,45 @@ describe('ブロック', () => {
   })
 
   it('セルの中のリンクはリンクになり、ほかの記法は書いたまま出す', () => {
-    expect(toHtml(parse('t\ntable:x\n [リンク] [* 太字]'))).toContain(
+    expect(tableHtml('[リンク] [* 太字]')).toContain(
       '<td><a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> [* 太字]</td>',
     )
   })
 
-  it('tableCellLineBreak を渡すと、セルの中のその文字列を <br> にする', () => {
-    const html = toHtml(parse('t\ntable:x\n 1 行目\\n2 行目\tそのまま'), {
-      tableCellLineBreak: '\\n',
-    })
+  it('tableCellLineBreakMarker を渡すと、セルの中のその文字列を <br> にする', () => {
+    const html = tableHtml('1 行目\\n2 行目\tそのまま', { tableCellLineBreakMarker: '\\n' })
     expect(html).toContain('<td>1 行目<br>2 行目</td><td>そのまま</td>')
   })
 
-  it('tableCellLineBreak は文字列そのままで探し、区切った文字はエスケープする', () => {
-    const html = toHtml(parse('t\ntable:x\n a<br>b<c>.*'), { tableCellLineBreak: '<br>' })
+  it('tableCellLineBreakMarker は文字列そのままで探し、区切った文字はエスケープする', () => {
+    const html = tableHtml('a<br>b<c>.*', { tableCellLineBreakMarker: '<br>' })
     expect(html).toContain('<td>a<br>b&lt;c&gt;.*</td>')
   })
 
-  it('tableCellLineBreak はセルの外と、コードの中には当てない', () => {
+  it('tableCellLineBreakMarker はセルの外と、コードの中には当てない', () => {
     const page = parse('t\na\\nb\ntable:x\n `a\\nb` [* c\\nd]', { tableCellNotation: 'all' })
-    const html = toHtml(page, { tableCellLineBreak: '\\n' })
+    const html = toHtml(page, { tableCellLineBreakMarker: '\\n' })
     expect(html).toContain('<div class="line">a\\nb</div>')
     expect(html).toContain('<code class="code">a\\nb</code>')
     expect(html).toContain('<strong>c<br>d</strong>')
   })
 
-  it('tableCellLineBreak が null なら改行にしない', () => {
-    const html = toHtml(parse('t\ntable:x\n a\\nb'), { tableCellLineBreak: null })
-    expect(html).toContain('<td>a\\nb</td>')
+  it('tableCellLineBreakMarker が null なら改行にしない', () => {
+    expect(tableHtml('a\\nb', { tableCellLineBreakMarker: null })).toContain('<td>a\\nb</td>')
+  })
+
+  it('handlers.tableCell で上書きしても、セルの中の改行は効く', () => {
+    const html = tableHtml('a\\nb', {
+      tableCellLineBreakMarker: '\\n',
+      handlers: {
+        tableCell: (node, ctx) => `<td class="cell">${ctx.children(node).join('')}</td>`,
+      },
+    })
+    expect(html).toContain('<td class="cell">a<br>b</td>')
   })
 
   it("tableCellNotation: 'all' で読んだセルは、行と同じく装飾も出す", () => {
-    const page = parse('t\ntable:x\n [* 太字]', { tableCellNotation: 'all' })
-    expect(toHtml(page)).toContain(
+    expect(tableHtml('[* 太字]', {}, { tableCellNotation: 'all' })).toContain(
       '<td><span class="decoration deco-*"><strong>太字</strong></span></td>',
     )
   })

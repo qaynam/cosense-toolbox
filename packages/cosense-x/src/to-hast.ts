@@ -13,7 +13,6 @@ import {
   type LineBlock,
   type Page,
   type ParseOptions,
-  type TableBlock,
   type TopLevelBlock,
   asImageSrc,
 } from '@cosense-toolbox/parser'
@@ -27,6 +26,7 @@ import {
   defaultPageUrl,
   safeHref,
   safeSrc,
+  withTableCellLineBreaks,
 } from '@cosense-toolbox/parser/compile'
 import { Either, Match, Option, pipe } from 'effect'
 import type { Element, ElementContent, Parent, Properties, Root, Text } from 'hast'
@@ -89,7 +89,7 @@ export interface ToHastOptions {
    *
    * @defaultValue null。改行にしない
    */
-  readonly tableCellLineBreak?: string | null
+  readonly tableCellLineBreakMarker?: string | null
   /**
    * タイトル行を `<h1>` として出すか。レイアウト側でタイトルを出すなら false にする。
    *
@@ -292,19 +292,6 @@ export const toHastEither = (
     ]
   }
 
-  const table = (node: TableBlock): Element => {
-    const caption = node.name === '' ? [] : [element('caption', {}, [text(node.name)])]
-    const rows = node.rows.map((row) =>
-      element(
-        'tr',
-        {},
-        // Cosense のテーブルにヘッダ行の概念は無いので、1 行目も含めてすべて td。
-        row.cells.map((cell) => element('td', {}, cell.children.flatMap(compileCell))),
-      ),
-    )
-    return element('table', withClass(cls.table), [...caption, element('tbody', {}, rows)])
-  }
-
   /**
    * ノード型ごとの変換。parser の `toHtml` と同じ仕組みで、ハンドラの無いノード型
    * (拡張が足した独自ノードなど) は、中身を落とさずに子だけを出す。
@@ -318,7 +305,15 @@ export const toHastEither = (
         : [element('h1', withClass(cls.title), ctx.children(node).flat())],
     line: (node) => [line(node, true)],
     codeBlock,
-    table: (node) => [table(node)],
+    table: (node, ctx) => [
+      element('table', withClass(cls.table), [
+        ...(node.name === '' ? [] : [element('caption', {}, [text(node.name)])]),
+        element('tbody', {}, ctx.children(node).flat()),
+      ]),
+    ],
+    tableRow: (node, ctx) => [element('tr', {}, ctx.children(node).flat())],
+    // Cosense のテーブルにヘッダ行の概念は無いので、1 行目も含めてすべて td。
+    tableCell: (node, ctx) => [element('td', {}, ctx.children(node).flat())],
 
     text: (node) => [text(node.value)],
     internalLink: (node) => pageRef(node, cls.internalLink, node.label),
@@ -349,29 +344,19 @@ export const toHastEither = (
     formula: (node) => [element('span', withClass(cls.formula), [text(node.value)])],
     decoration: (node, ctx) => [decoration(node, ctx.children(node).flat())],
   }
-  const compileNode = createCompiler<ElementContent[]>({ fallback, handlers })
-
-  /**
-   * セルの中身の変換。`tableCellLineBreak` を渡されたら、text ノードをその文字列で区切って
-   * `<br>` を挟む。`toHtml` と同じく text ノードにだけ当て、コードやリンクの表示の中には当てない。
-   */
-  const lineBreak = options.tableCellLineBreak
-  const compileCell =
-    lineBreak === null || lineBreak === undefined || lineBreak === ''
-      ? compileNode
-      : createCompiler<ElementContent[]>({
-          fallback,
-          handlers: {
-            ...handlers,
-            text: (node) =>
-              node.value
-                .split(lineBreak)
-                .flatMap((value, i) => [
-                  ...(i === 0 ? [] : [element('br', {})]),
-                  ...(value === '' ? [] : [text(value)]),
-                ]),
-          },
-        })
+  const compileNode = createCompiler<ElementContent[]>({
+    fallback,
+    // セルの中の改行は toHtml と同じ実装に任せ、形式ごとに挙動がずれないようにする。
+    handlers: withTableCellLineBreaks(handlers, {
+      marker: options.tableCellLineBreakMarker,
+      fallback,
+      joinLines: (lines) =>
+        lines.flatMap((parts, i) => [
+          ...(i === 0 ? [] : [element('br', {})]),
+          ...parts.filter((part) => part.type !== 'text' || part.value !== ''),
+        ]),
+    }),
+  })
 
   const component = (node: ComponentBlock): CosenseComponent => ({
     type: 'cosenseComponent',

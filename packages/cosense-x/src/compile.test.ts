@@ -266,10 +266,10 @@ describe('テーブルのセル', () => {
     )
   })
 
-  it("parseOptions の tableCellNotation: 'all' と tableCellLineBreak を渡せる", async () => {
+  it("parseOptions の tableCellNotation: 'all' と tableCellLineBreakMarker を渡せる", async () => {
     const html = await renderPage('タイトル\ntable:表\n [* 太字]\\n2 行目', {
       parseOptions: { tableCellNotation: 'all' },
-      tableCellLineBreak: '\\n',
+      tableCellLineBreakMarker: '\\n',
     })
     expect(html).toContain(
       '<td><span class="decoration deco-*"><strong>太字</strong></span><br/>2 行目</td>',

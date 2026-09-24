@@ -25,4 +25,6 @@ export type {
   HtmlRenderOptions,
   PageRefNode,
 } from './to-html'
+export { withTableCellLineBreaks } from './table-cell-line-break'
+export type { TableCellLineBreakOptions } from './table-cell-line-break'
 export { toPlainText } from './to-plain-text'
