@@ -9,7 +9,6 @@
  * })
  * ```
  */
-import { cp, rm, stat } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { readPage } from '@cosense-toolbox/cosense-x/graph'
 import type { AstroConfig, AstroIntegration, ContentEntryType, HookParameters } from 'astro'
@@ -32,6 +31,14 @@ export interface CosenseAssetsOptions {
   readonly pat?: string
   /** Cosense の origin。 @defaultValue `https://scrapbox.io` */
   readonly origin?: string
+  /**
+   * リンクした Cosense のファイル (`[https://scrapbox.io/files/x.zip]` など) の扱い。画像は常に取ってくる。
+   * `'keep'` は元の URL のまま (公開プロジェクトならクリックで開ける)、`'download'` は取ってきてサイトに置く。
+   * 非公開プロジェクトのファイルは `'download'` でないと、見に来た人が開けない。
+   *
+   * @defaultValue `'keep'`
+   */
+  readonly links?: 'keep' | 'download'
 }
 
 export interface CosenseIntegrationOptions extends AstroCompileOptions {
@@ -126,6 +133,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
                   ...(assetsOptions.pat === undefined ? {} : { pat: assetsOptions.pat }),
                   ...(assetsOptions.origin === undefined ? {} : { origin: assetsOptions.origin }),
                 },
+                ...(assetsOptions.links === undefined ? {} : { links: assetsOptions.links }),
                 warn: (message) => logger.warn(message),
               })
         // toHtml などで自分で描画するページが、virtual:cosense-x/assets から使う。
@@ -198,18 +206,11 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
         injectTypes({ filename: 'types.d.ts', content: INJECTED_TYPES })
       },
 
-      // 前のビルドで取ってきたファイルが、使わなくなっても出力に残らないようにする。
-      'astro:build:start': async () => {
-        if (assets !== undefined) await rm(assets.cacheDir, { recursive: true, force: true })
-      },
-
+      // 置き場のディレクトリはビルドをまたいで残し、中身の変わらないファイルは取り直さない。
+      // 出力先には、このビルドで使ったファイルだけを写す。
       'astro:build:done': async ({ dir }) => {
         if (assets === undefined || astroConfig === undefined) return
-        const exists = await stat(assets.cacheDir).then(
-          () => true,
-          () => false,
-        )
-        if (exists) await cp(assets.cacheDir, assetsDirOf(astroConfig, dir), { recursive: true })
+        await assets.copyUsedTo(assetsDirOf(astroConfig, dir))
       },
     },
   }

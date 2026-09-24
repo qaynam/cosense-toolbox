@@ -34,7 +34,7 @@ export default defineConfig({
 | `pageUrl` | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス |
 | `tagUrl` `projectUrl` `unresolved` | `compile` の同名のオプションと同じ |
 | `rehypePlugins` `classNames` `showPads` `iconImageUrl` `title` `parseOptions` | 同上 |
-| `assets` | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin? }`、または `false` で無効。既定は有効 |
+| `assets` | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効 |
 
 ## Cosense 上の画像とファイル
 
@@ -51,11 +51,27 @@ cosense({
 })
 ```
 
-- `.csn` / `.csnx` の中の画像とリンクは自動で差し替える
-- ファイル名は元の URL から決まる。同じ URL は何度ビルドしても同じ名前になる
+- `.csn` / `.csnx` の中の画像は自動で差し替える
+- ファイル名は `{元の URL のハッシュ}.{拡張子}`。アイコンは `{ハッシュ}_{ユーザー名}.{拡張子}`
+  - 同じ URL は何度ビルドしても同じ名前になる
+  - ハッシュから元の URL は分からないので、非公開プロジェクトのファイル ID は出ない
+- 取ってきたファイルは Astro のキャッシュのディレクトリに残す
+  - アップロードしたファイルは中身が変わらないので、次のビルドでは取り直さない
+  - アイコンは差し替えられることがあるので、ビルドのたびに取り直す
+  - 出力先には、そのビルドで使ったファイルだけを写す
 - 取れなかったファイルは警告を出し、元の URL のまま出す
 - dev サーバーでは、同じパスで配信する
 - **非公開プロジェクトの画像も、公開するサイトに置かれる**。公開してよいものだけを書くこと
+
+リンクした Cosense のファイル (`[https://scrapbox.io/files/x.zip]` など、`<a href>` になるもの) は、既定では元の URL のまま出す。
+公開プロジェクトならクリックして開ける (Cross-Origin-Resource-Policy は画面の遷移には効かない)。
+非公開プロジェクトのファイルは見に来た人が開けないので、`links: 'download'` で画像と同じくサイトに置く。
+
+```js
+cosense({
+  assets: { pat: process.env.COSENSE_PAT, links: 'download' },
+})
+```
 
 `toHtml` などで自分で描画するページは、`virtual:cosense-x/assets` の `localizeCosenseAssets` に HTML を通す。
 アイコンの URL は `cosenseIconUrl` で作る。

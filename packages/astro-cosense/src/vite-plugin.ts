@@ -157,7 +157,15 @@ export const vitePluginCosense = (options: VitePluginOptions): Plugin => {
       const assets = options.assets
       if (assets !== undefined) {
         server.middlewares.use(assets.publicPath, async (request, response, next) => {
-          const file = join(assets.cacheDir, basename(request.url?.split('?')[0] ?? ''))
+          // アイコンの名前は日本語を含みうるので、URL のエンコードを戻す。basename で置き場の外は読ませない。
+          const name = (() => {
+            try {
+              return decodeURIComponent(basename(request.url?.split('?')[0] ?? ''))
+            } catch {
+              return ''
+            }
+          })()
+          const file = join(assets.cacheDir, basename(name))
           const found = await stat(file)
             .then((s) => s.isFile())
             .catch(() => false)
