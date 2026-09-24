@@ -8,14 +8,14 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
 ---
 
 <Base title="記事一覧">
-  <h1>記事一覧</h1>
-  <ul>
+  <h1 class="mb-6 text-2xl font-bold">記事一覧</h1>
+  <ul class="space-y-4">
     {
       posts.map((post) => (
         <li>
-          <a href={`/posts/${encodeURIComponent(post.id)}/`}>{post.data.title}</a>
-          {post.data.date && <time>{post.data.date.toISOString().slice(0, 10)}</time>}
-          <p>{post.data.description}</p>
+          <a class="text-lg font-bold text-blue-700 underline" href={`/posts/${encodeURIComponent(post.id)}/`}>{post.data.title}</a>
+          {post.data.date && <time class="ml-2 text-sm text-gray-500">{post.data.date.toISOString().slice(0, 10)}</time>}
+          <p class="text-sm text-gray-700">{post.data.description}</p>
         </li>
       ))
     }

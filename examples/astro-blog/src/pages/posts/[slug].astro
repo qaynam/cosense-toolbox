@@ -23,18 +23,21 @@ const twoHop = graph.twoHop[id] ?? []
 ---
 
 <Base title={post.data.title} description={post.data.description}>
-  <article>
+  <!-- cosense-{記法}: の modifier で、記事の中の記法ごとに utility を当てる -->
+  <article
+    class="cosense cosense-title:text-4xl cosense-hashtag:text-emerald-700 cosense-link:hover:underline cosense-code:bg-amber-50"
+  >
     <Content />
   </article>
 
   {
     backlinks.length > 0 && (
-      <section>
-        <h2>このページにリンクしているページ</h2>
-        <ul>
+      <section class="mt-10">
+        <h2 class="mb-2 text-lg font-bold">このページにリンクしているページ</h2>
+        <ul class="list-disc pl-6">
           {backlinks.map((link) => (
             <li>
-              <a href={link.href}>{link.title}</a>
+              <a class="text-blue-700 underline" href={link.href}>{link.title}</a>
             </li>
           ))}
         </ul>
@@ -44,17 +47,17 @@ const twoHop = graph.twoHop[id] ?? []
 
   {
     twoHop.length > 0 && (
-      <section>
-        <h2>2 hop リンク</h2>
+      <section class="mt-10">
+        <h2 class="mb-2 text-lg font-bold">2 hop リンク</h2>
         {twoHop.map((group) => (
           <div class="two-hop">
-            <h3>{group.via} 経由</h3>
-            <ul>
+            <h3 class="mt-3 font-bold">{group.via} 経由</h3>
+            <ul class="list-disc pl-6">
               {group.pages.map(pageLink).map(
                 (link) =>
                   link && (
                     <li>
-                      <a href={link.href}>{link.title}</a>
+                      <a class="text-blue-700 underline" href={link.href}>{link.title}</a>
                     </li>
                   ),
               )}
