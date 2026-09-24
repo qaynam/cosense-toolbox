@@ -8,3 +8,5 @@ table:記法
  [リンク]	内部リンク
  #タグ	タグ
  [* 太字]	装飾
+Cosense にアップロードした画像も書ける。ビルド時に取ってきて、サイトの中 (/_cosense/) に置く。
+[https://scrapbox.io/files/665f0b8c962ee6001c15c172.png]

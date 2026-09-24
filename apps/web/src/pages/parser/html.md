@@ -96,7 +96,7 @@ toHtml(page, {
 ```
 
 ```html
-<a class="link icon" href="/rakusai">
+<a class="link icon" href="/cosense">
   <img
     class="icon"
     src="/api/pages/help-jp/rakusai/icon"
