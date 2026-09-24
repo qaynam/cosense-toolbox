@@ -162,3 +162,47 @@ describe('modifier', () => {
     }
   })
 })
+
+describe('装飾の記号の modifier', () => {
+  /** 出力されたルールのうち、装飾の modifier のもの。 */
+  const decoSelectors = async (candidates: string[], plugin: unknown = cosense) =>
+    rulesOf(await build(candidates, plugin))
+      .map(([selector]) => selector)
+      .filter((selector) => selector.includes('decoration'))
+
+  it('cosense-deco-[|]:{utility} は、その記号の装飾 ([| 文字]) だけに当てる', async () => {
+    expect(await decoSelectors(['cosense-deco-[|]:[color:red]'])).toEqual([
+      normalize(
+        `.cosense-deco-\\[\\|\\]\\:\\[color\\:red\\] :is(:where(.decoration.deco-\\|)${NOT})`,
+      ),
+    ])
+  })
+
+  it('記号を並べると、それらをすべて持つ装飾 ([*/ 文字] など) に当てる', async () => {
+    const [selector] = await decoSelectors(['cosense-deco-[*/]:[color:red]'])
+    expect(selector).toContain(':where(.decoration.deco-\\*.deco-\\/)')
+  })
+
+  it('下線の記号 _ は、Tailwind の決まりどおり [\\_] と書く', async () => {
+    const [selector] = await decoSelectors(['cosense-deco-[\\_]:[color:red]'])
+    expect(selector).toContain(':where(.decoration.deco-_)')
+  })
+
+  it('既定のスタイルより後ろに、同じ詳細度で出る', async () => {
+    const selectors = rulesOf(await build(['cosense', 'cosense-deco-[*]:[color:red]'])).map(
+      ([selector]) => selector,
+    )
+    const modifier = selectors.findIndex((selector) => selector.startsWith('.cosense-deco'))
+    expect(modifier).toBeGreaterThan(0)
+    expect(selectors.slice(modifier).filter((s) => s.startsWith('.cosense '))).toEqual([])
+  })
+
+  it('className を渡すと名前と除外の class 名も変わる', async () => {
+    const [selector] = await decoSelectors(
+      ['article-deco-[!]:[color:red]'],
+      cosense({ className: 'article' }),
+    )
+    expect(selector).toContain('.article-deco-')
+    expect(selector).toContain('not-article')
+  })
+})

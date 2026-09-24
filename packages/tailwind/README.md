@@ -77,6 +77,27 @@ Tailwind v4 の CSS に `@plugin` で足す。
 対象は HTML の要素名ではなく、Cosense の記法で分けている。`toHtml` はリンク・タグ・アイコンのどれにも同じ `<a>` を使うため、要素名では区別できない。
 class 名は `toHtml` の既定 (`classNames` を渡さなかったとき) に合わせている。
 
+### 装飾の記号ごとに調整する
+
+`cosense-deco-[記号]:{utility}` で、その記号の装飾 (`[| 文字]` なら `|`) だけに utility を当てられる。
+`toHtml` は装飾を `<span class="decoration deco-|">` のように記号ごとの class で出すので、それを選ぶ。
+
+```html
+<article class="cosense cosense-deco-[|]:border-l-4 cosense-deco-[|]:pl-3 cosense-deco-[|]:text-slate-600">
+```
+
+- 記号を並べると、それらをすべて持つ装飾に当たる。`cosense-deco-[-/]:` は `[-/ 文字]` など
+- 下線の記号 `_` は `cosense-deco-[\_]:` と書く。Tailwind は `[...]` の中の `_` を空白に変えるため
+- `"` は class 属性の中に書けないので使えない
+- パーサーが既定で装飾として読む記号は `*` `/` `-` `_` の 4 つだけ。`|` などほかの記号の装飾を使うときは、パースのときに [`customDecorations`](https://cosense-toolbox.qaynam.dev/parser/extend/) で記号を足す
+
+```js
+// astro.config.mjs (@cosense-toolbox/astro)
+import { customDecorations } from '@cosense-toolbox/parser/extensions'
+
+cosense({ parseOptions: { extensions: [customDecorations(['|'])] } })
+```
+
 ## 一部だけ外す
 
 `not-cosense` を付けた要素とその中身には、既定のスタイルも modifier も当てない。`.csnx` に埋め込んだコンポーネントを、ページの見た目から切り離したいときに使う。
@@ -110,7 +131,7 @@ class 名は `toHtml` の既定 (`classNames` を渡さなかったとき) に�
 
 | オプション | 既定 | 内容 |
 | :--- | :--- | :--- |
-| `className` | `cosense` | スタイルを当てる class 名。除外の class 名は `not-{className}`、modifier は `{className}-link:` のようになる |
+| `className` | `cosense` | スタイルを当てる class 名。除外の class 名は `not-{className}`、modifier は `{className}-link:` `{className}-deco-[…]:` のようになる |
 
 ## style.css との違い
 
@@ -132,6 +153,8 @@ bun run compare    # style.css とプラグインで、ブラウザの計算済�
 
 `bun run compare` は、parser の記法仕様のページをすべて描画し、style.css で表示したものとプラグインで表示したものの全要素のスタイルを突き合わせる。あわせて、modifier がどれも対象の要素で既定のスタイルに勝つことを確かめる。
 Chromium が要るので、`npx playwright install chromium` で入れるか、手元の Chromium を `CHROMIUM_PATH` で渡す。
+
+`examples/astro-blog` はこのパッケージの `dist/` を読む。プラグインを直したら `bun run build` してから example を動かす。作り直さないと、新しい modifier は Tailwind に知られていない variant として黙って捨てられる。
 
 ## ライセンス
 

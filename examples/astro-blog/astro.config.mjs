@@ -1,10 +1,10 @@
 // @ts-check
 import svelte from '@astrojs/svelte'
 import cosense from '@cosense-toolbox/astro'
+import { customDecorations } from '@cosense-toolbox/parser/extensions'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'astro/config'
 import { pageUrl, tagUrl } from './src/urls.ts'
-import { customDecorations } from '@cosense-toolbox/parser/extensions'
 
 try {
   process.loadEnvFile()

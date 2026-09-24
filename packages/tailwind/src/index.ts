@@ -61,17 +61,34 @@ const componentsOf = (className: string): Components => [
 const modifierOf = (modifier: Modifier, className: string): string =>
   `& :is(:where(${modifier.target})${outside(className)})`
 
+/** class 名に使えない記号を、CSS のセレクタ用にエスケープする。 */
+const escapeClassChar = (char: string): string => (/[A-Za-z0-9_-]/.test(char) ? char : `\\${char}`)
+
+/**
+ * `cosense-deco-[|]:` の `[...]` に書いた記号の装飾。`toHtml` は装飾を
+ * `<span class="decoration deco-|">` のように記号ごとの class で出すので、それを選ぶ。
+ * 記号を並べると (`[-/]`)、それらをすべて持つ装飾に当たる。
+ *
+ * Tailwind は `[...]` の中の `_` を空白に変える。下線の記号 `_` は `[\_]` と書く (Tailwind の決まり)。
+ */
+const decorationOf = (markers: string, className: string): string => {
+  const classes = [...new Set(markers)].map((marker) => `.deco-${escapeClassChar(marker)}`).join('')
+  return `& :is(:where(.decoration${classes})${outside(className)})`
+}
+
 /** Tailwind の型を公開する型定義に書き出せるよう、型を明示する。 */
 type CosensePlugin = ReturnType<typeof plugin.withOptions<CosenseTailwindOptions>>
 
 const cosense: CosensePlugin = plugin.withOptions<CosenseTailwindOptions>(
   (options) =>
-    ({ addComponents, addVariant }) => {
+    ({ addComponents, addVariant, matchVariant }) => {
       const className = options?.className ?? 'cosense'
       addComponents(componentsOf(className))
       for (const modifier of MODIFIERS) {
         addVariant(`${className}-${modifier.name}`, modifierOf(modifier, className))
       }
+      // 記号は `[...]` にそのまま書く (`cosense-deco-[|]:`)。名前を覚えなくて済むようにするため。
+      matchVariant(`${className}-deco`, (markers) => decorationOf(markers, className))
     },
 )
 
