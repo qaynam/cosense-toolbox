@@ -34,6 +34,49 @@ export default defineConfig({
 | `pageUrl` | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス |
 | `tagUrl` `projectUrl` `unresolved` | `compile` の同名のオプションと同じ |
 | `rehypePlugins` `classNames` `showPads` `iconImageUrl` `title` `parseOptions` | 同上 |
+| `assets` | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin? }`、または `false` で無効。既定は有効 |
+
+## Cosense 上の画像とファイル
+
+Cosense にアップロードした画像やファイル (`https://scrapbox.io/files/…`) とアイコン (`/api/pages/…/icon`) は、ビルド時に取ってきて `{base}/_cosense/` に置き、HTML の URL をそこに差し替える。
+
+- これらのファイルは別のサイトの `<img>` からは読めない (`Cross-Origin-Resource-Policy: same-origin`)
+- リダイレクト先の URL は数分で切れる
+- そのため、静的なサイトで表示するにはサイトの中に置くしかない
+
+```js
+cosense({
+  // 非公開プロジェクトの画像を取るときは PAT を渡す。Cosense への要求にだけ付ける
+  assets: { pat: process.env.COSENSE_PAT },
+})
+```
+
+- `.csn` / `.csnx` の中の画像とリンクは自動で差し替える
+- ファイル名は元の URL から決まる。同じ URL は何度ビルドしても同じ名前になる
+- 取れなかったファイルは警告を出し、元の URL のまま出す
+- dev サーバーでは、同じパスで配信する
+- **非公開プロジェクトの画像も、公開するサイトに置かれる**。公開してよいものだけを書くこと
+
+`toHtml` などで自分で描画するページは、`virtual:cosense-x/assets` の `localizeCosenseAssets` に HTML を通す。
+アイコンの URL は `cosenseIconUrl` で作る。
+
+```astro
+---
+import { cosenseIconUrl, fetchPageText } from '@cosense-toolbox/cosense-x/fetch'
+import { parse } from '@cosense-toolbox/parser'
+import { toHtml } from '@cosense-toolbox/parser/compile'
+import { localizeCosenseAssets } from 'virtual:cosense-x/assets'
+
+const project = 'help-jp'
+const text = await fetchPageText(project, 'ブラケティング')
+const html = await localizeCosenseAssets(
+  toHtml(parse(text), { iconImageUrl: (icon) => cosenseIconUrl(project, icon.user) }),
+)
+---
+<article class="cosense" set:html={html} />
+```
+
+差し替えられるのは、ページをビルド時に描画するとき (静的なページと prerender) と dev サーバーだけ。実行時に描画する SSR では元の URL のまま返す。
 
 ## content collection
 

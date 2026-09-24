@@ -1,8 +1,8 @@
 /**
- * `@cosense-toolbox/cosense-x/fetch` — 公開プロジェクトのページを Cosense の API から取ってくる。
+ * `@cosense-toolbox/cosense-x/fetch` — Cosense の API からページや画像を取ってくる。
  *
  * `fetch` を使うのはこのサブパスだけにして、コンパイラ本体は外と通信しないままにしておく。
- * 非公開プロジェクト (トークンが要るもの) はここでは扱わない。
+ * 非公開プロジェクトは `pat` (Personal Access Token) を渡すと読める。
  */
 
 const API_ORIGIN = 'https://scrapbox.io'
@@ -12,7 +12,7 @@ export interface FetchOptions {
   readonly fetch?: typeof globalThis.fetch
   /** API の origin。 @defaultValue `https://scrapbox.io` */
   readonly origin?: string
-  /** CosenseのPersonal Access Tokenを渡す */
+  /** Cosense の Personal Access Token。非公開プロジェクトを読むときに渡す。Cosense 以外には送らない */
   readonly pat?: string
 }
 
@@ -29,10 +29,14 @@ export interface FetchedPage {
 const pageUrl = (project: string, title: string, origin: string): string =>
   `${origin}/api/pages/${encodeURIComponent(project)}/${encodeURIComponent(title)}`
 
+/** Cosense の API に送るヘッダ。PAT はここでだけ付ける。 */
+const headersFor = (options: FetchOptions): Record<string, string> =>
+  options.pat === undefined ? {} : { 'x-personal-access-token': options.pat }
+
 const request = async (url: string, options: FetchOptions): Promise<Response> => {
-  const response = await (options.fetch ?? globalThis.fetch)(url,
-    options.pat ? { headers: { "x-personal-access-token": options.pat } } : undefined
-  )
+  const response = await (options.fetch ?? globalThis.fetch)(url, {
+    headers: headersFor(options),
+  })
   if (!response.ok) {
     const body = await response.text().catch(() => '')
     throw new Error(`Cosense のページを取得できない: ${response.status} ${url}\n${body}`)
@@ -77,4 +81,80 @@ export const fetchPage = async (
     created: isoOf(page.created),
     updated: isoOf(page.updated),
   }
+}
+
+/**
+ * Cosense 上にあるファイルの URL か。アップロードしたファイル (`/files/…`) とアイコン (`/api/pages/…/icon`)。
+ *
+ * これらは `Cross-Origin-Resource-Policy: same-origin` を返すので、別のサイトの `<img>` からは読めない。
+ * リダイレクト先の URL も期限付き (`/files/` は 5 分) なので、静的なサイトには中身を取ってきて置く必要がある。
+ */
+export const isCosenseAssetUrl = (
+  url: string,
+  options: Pick<FetchOptions, 'origin'> = {},
+): boolean => {
+  const origin = options.origin ?? API_ORIGIN
+  if (!url.startsWith(`${origin}/`)) return false
+  const path = url.slice(origin.length)
+  return path.startsWith('/files/') || (path.startsWith('/api/pages/') && path.endsWith('/icon'))
+}
+
+/**
+ * `[user.icon]` の画像の URL (`/api/pages/:project/:user/icon`)。`toHtml` などの `iconImageUrl` に使う。
+ * `[/project/user.icon]` のように別のプロジェクトを指すときは、`user` に `/project/user` が入る。
+ */
+export const cosenseIconUrl = (
+  project: string,
+  user: string,
+  options: Pick<FetchOptions, 'origin'> = {},
+): string => {
+  const path = user.startsWith('/')
+    ? user.split('/').map(encodeURIComponent).join('/')
+    : `/${encodeURIComponent(project)}/${encodeURIComponent(user)}`
+  return `${options.origin ?? API_ORIGIN}/api/pages${path}/icon`
+}
+
+export interface FetchedAsset {
+  readonly data: Uint8Array
+  /** `Content-Type` ヘッダの値。無ければ空文字 */
+  readonly contentType: string
+}
+
+const MAX_REDIRECTS = 5
+
+/**
+ * ファイルの中身を取ってくる。Cosense のファイルは別の場所 (Google Cloud Storage や Gyazo) に
+ * リダイレクトされるので辿る。
+ *
+ * リダイレクトは自分で辿る。`fetch` に任せると、PAT のような独自ヘッダを付けたまま
+ * 別のオリジンにも送ってしまうため。PAT は Cosense (`origin`) への要求にだけ付ける。
+ */
+export const fetchAsset = (url: string, options: FetchOptions = {}): Promise<FetchedAsset> => {
+  const origin = new URL(options.origin ?? API_ORIGIN).origin
+  const fetch = options.fetch ?? globalThis.fetch
+
+  const follow = async (current: string, redirects: number): Promise<FetchedAsset> => {
+    if (redirects > MAX_REDIRECTS) {
+      throw new Error(
+        `Cosense のファイルを取得できない: リダイレクトが ${MAX_REDIRECTS} 回を超えた ${url}`,
+      )
+    }
+    const response = await fetch(current, {
+      redirect: 'manual',
+      headers: new URL(current).origin === origin ? headersFor(options) : {},
+    })
+    const location = response.headers.get('location')
+    if (response.status >= 300 && response.status < 400 && location !== null) {
+      return follow(new URL(location, current).href, redirects + 1)
+    }
+    if (!response.ok) {
+      throw new Error(`Cosense のファイルを取得できない: ${response.status} ${url}`)
+    }
+    return {
+      data: new Uint8Array(await response.arrayBuffer()),
+      contentType: response.headers.get('content-type') ?? '',
+    }
+  }
+
+  return follow(url, 0)
 }

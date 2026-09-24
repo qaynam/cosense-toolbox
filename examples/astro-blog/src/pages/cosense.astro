@@ -1,54 +1,29 @@
 ---
 /**
- * 公開プロジェクトのページを、ビルド時に Cosense の API から取ってきて描画する。
+ * Cosense のページを、ビルド時に API から取ってきて描画する。
  * ネットワークにつながらなければ、このページだけ案内を出して飛ばす。
  */
-import { fetchPageText } from '@cosense-toolbox/cosense-x/fetch'
+import { cosenseIconUrl, fetchPageText } from '@cosense-toolbox/cosense-x/fetch'
 import { parse } from '@cosense-toolbox/parser'
-import { collect } from '@cosense-toolbox/parser/utils'
 import { toHtml } from '@cosense-toolbox/parser/compile'
+import { localizeCosenseAssets } from 'virtual:cosense-x/assets'
 import Base from '../layouts/Base.astro'
-// import { getSecret } from "astro:env/server"
 
 const project = 'qaynam'
 const title = 'MCPについて'
+// 非公開プロジェクトのページを取るときは、.env に Cosense の Personal Access Token を書く。
+const pat = import.meta.env.COSENSE_PAT
 
 let html: string | null = null
 try {
-  const text = await fetchPageText(project, title, {
-    // NOTE: プライベートページから取得する場合は、Cosense の Personal Access Token をわたします。
-    // pat: getSecret("COSENSE_PAT")
-  })
-
-  const encodePath = (path: string) =>
-    path.split("/").map(encodeURIComponent).join("/");
-  async function resolveIconSrc(user: string): Promise<string> {
-    const path = user.startsWith("/")
-      ? encodePath(user)
-      : `/${encodeURIComponent(project)}/${encodeURIComponent(user)}`;
-    const api = `https://scrapbox.io/api/pages${path}/icon`;
-
-    try {
-      const res = await fetch(api, { signal: AbortSignal.timeout(4000) });
-      return res.ok ? res.url : api;
-    } catch {
-      return api;
-    }
-  }
-
-  const page = parse(text)
-  const iconSrcByUser = new Map(
-    await Promise.all(
-      collect(page, "icon").map(
-        async (icon) => [icon.user, await resolveIconSrc(icon.user)] as const,
-      ),
-    ),
-  );
-
-  html = toHtml(page, {
+  const text = await fetchPageText(project, title, pat ? { pat } : {})
+  const rendered = toHtml(parse(text), {
     pageUrl: (target) => `https://scrapbox.io/${project}/${encodeURIComponent(target)}`,
-    iconImageUrl: (target) => iconSrcByUser.get(target.user) ?? null
+    iconImageUrl: (icon) => cosenseIconUrl(project, icon.user),
   })
+  // Cosense 上の画像とアイコンは別のサイトからは読めず、リダイレクト先の URL もすぐ切れるので、
+  // ビルド時に取ってきてサイトの中 (dist/_cosense/) に置いた URL に差し替える。
+  html = await localizeCosenseAssets(rendered)
 } catch (error) {
   console.warn(`[cosense] ${project}/${title} を取得できなかった:`, error)
 }
