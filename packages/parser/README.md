@@ -12,6 +12,13 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 > **beta**：公開 API はまだ変わりうる。安定するまではバージョンを固定して使うほうが安全。
 
+### 次のリリースでの変更
+
+- 記法の拡張 (`InlineConstruct` / `BracketRule`) は、成立しなければ **`null` を返す**普通の関数になった。
+  これまでは effect の `Option` を返す必要があり、拡張を書くのに effect が要った。
+  `Option.none()` は `null` に、`Option.some(x)` は `x` に書き換える。
+- 拡張のルールに渡る文脈から `bracketRules` を外した。拡張から使う場面が無く、中の型が漏れていたため。
+
 ### 0.1.0-beta.1 の変更
 
 beta.0 から上げるときは次の 2 点に注意。

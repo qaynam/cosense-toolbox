@@ -1,5 +1,5 @@
 import { Option } from 'effect'
-import type { BracketRule } from '../types'
+import type { InternalBracketRule } from '../internal-types'
 
 /**
  * `[/project/title]` — 別プロジェクトのページへのリンク。
@@ -8,7 +8,7 @@ import type { BracketRule } from '../types'
  * `[/project]` のようにタイトルが無い書き方も記法としては成立するので、
  * その場合は title を空文字にする (利用側が「プロジェクトそのものへのリンク」と判断できる)。
  */
-export const projectLinkRule: BracketRule = (inner) => {
+export const projectLinkRule: InternalBracketRule = (inner) => {
   if (!inner.startsWith('/')) return Option.none()
 
   const rest = inner.slice(1)
