@@ -154,6 +154,8 @@ bun run compare    # style.css とプラグインで、ブラウザの計算済�
 `bun run compare` は、parser の記法仕様のページをすべて描画し、style.css で表示したものとプラグインで表示したものの全要素のスタイルを突き合わせる。あわせて、modifier がどれも対象の要素で既定のスタイルに勝つことを確かめる。
 Chromium が要るので、`npx playwright install chromium` で入れるか、手元の Chromium を `CHROMIUM_PATH` で渡す。
 
+`examples/astro-blog` はこのパッケージの `dist/` を読む。プラグインを直したら `bun run build` してから example を動かす。作り直さないと、新しい modifier は Tailwind に知られていない variant として黙って捨てられる。
+
 ## ライセンス
 
 MIT。

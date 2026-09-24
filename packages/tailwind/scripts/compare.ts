@@ -15,6 +15,7 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { parse } from '@cosense-toolbox/parser'
 import { type HtmlOptions, toHtml } from '@cosense-toolbox/parser/compile'
+import { customDecorations } from '@cosense-toolbox/parser/extensions'
 import { optimize } from '@tailwindcss/node'
 import { type Page, chromium } from 'playwright-core'
 import { compile } from 'tailwindcss'
@@ -41,6 +42,12 @@ const SAMPLE = [
   '  [*** 大きな見出し] と [[太字]]',
 ].join('\n')
 
+/**
+ * 既定では装飾として読まない記号 (`|`) の装飾。`cosense-deco-[|]:` を確かめるために、
+ * `customDecorations` で記号を足してパースする。
+ */
+const CUSTOM_DECORATION = ['装飾の記号を足す', '[| 縦線] と [|*** 見出し]'].join('\n')
+
 /** 行の途中の記法はまとめて 1 ページにする。 */
 const sources = [
   ...fixtures.page.map(({ input }) => input),
@@ -54,7 +61,10 @@ const options: HtmlOptions[] = [
   { showPads: true, iconImageUrl: () => 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' },
 ]
 
-const bodies = options.flatMap((option) => sources.map((source) => toHtml(parse(source), option)))
+const bodies = options.flatMap((option) => [
+  ...sources.map((source) => toHtml(parse(source), option)),
+  toHtml(parse(CUSTOM_DECORATION, { extensions: [customDecorations(['|'])] }), option),
+])
 
 /** Tailwind に class 名を渡して、`@tailwindcss/vite` と同じく平らにした CSS。 */
 const pluginCss = async (candidates: string[]): Promise<string> => {
@@ -142,6 +152,7 @@ try {
     { variant: 'cosense-deco-[*]', target: '.decoration.deco-\\*' },
     { variant: 'cosense-deco-[-]', target: '.decoration.deco-\\-' },
     { variant: 'cosense-deco-[\\_]', target: '.decoration.deco-_' },
+    { variant: 'cosense-deco-[|]', target: '.decoration.deco-\\|' },
   ]
   for (const modifier of checks) {
     const utility = `${modifier.variant}:[color:${MARK.replaceAll(' ', '')}]`
@@ -174,7 +185,7 @@ try {
     process.exitCode = 1
   } else {
     console.log(
-      `${sources.length * options.length} ページ・${elements} 要素で、計算済みスタイルが一致した。` +
+      `${bodies.length} ページ・${elements} 要素で、計算済みスタイルが一致した。` +
         `modifier ${checks.length} 個が、どれも対象の要素で既定のスタイルに勝った`,
     )
   }
