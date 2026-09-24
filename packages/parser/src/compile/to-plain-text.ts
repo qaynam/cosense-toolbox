@@ -25,7 +25,7 @@ const handlers: NodeHandlers<string> = {
 
   table: (node, ctx) => [node.name, ...ctx.children(node)].join('\n'),
   tableRow: (node, ctx) => ctx.children(node).join('\t'),
-  tableCell: (node) => node.value,
+  tableCell: (node, ctx) => ctx.children(node).join(''),
 
   text: (node) => node.value,
   internalLink: (node) => node.label,

@@ -188,10 +188,17 @@ export interface CodeBlock extends NodeBase {
   readonly lines: readonly CodeLine[]
 }
 
-/** テーブルの 1 セル。中身は生テキスト (インライン記法は利用側で必要に応じて解釈する)。 */
+/**
+ * テーブルの 1 セル。
+ *
+ * `children` はセルの中の記法。Cosense Web と同じく、既定ではリンクの記法だけを読み、
+ * それ以外は書いたままの文字になる (`ParseOptions.tableCellNotation` で変えられる)。
+ */
 export interface TableCell extends NodeBase {
   readonly type: 'tableCell'
+  /** セルに書かれた文字列そのまま */
   readonly value: string
+  readonly children: readonly InlineNode[]
 }
 
 /** テーブルの 1 行。タブ区切りでセルに分割済み。 */

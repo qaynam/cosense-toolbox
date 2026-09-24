@@ -134,6 +134,7 @@ src/
   inline/
     types.ts            InlineConstruct / BracketRule / InlineContext / Extension（型のみ）
     tokenize.ts         走査ループ。位置の付与はここだけが行う
+    table-cell.ts       テーブルのセルの中の記法 (既定ではリンク以外を書いたままの文字に戻す)
     constructs/         1 construct = 1 ファイル + index.ts（配列の登録場所）
     bracket-rules/      1 rule = 1 ファイル + index.ts（配列の登録場所）
     extensions/         既定では有効にしない Extension を作る factory（customDecorations 等）
@@ -143,7 +144,7 @@ src/
   extensions/           拡張を書くための型と、既製の Extension（サブパスのバレル）
   compile/
     create-compiler.ts  ハンドラ機構
-    to-html.ts          公式の HTML コンパイラ（pageUrl / iconImageUrl / highlight / classNames / showPads / handlers）
+    to-html.ts          公式の HTML コンパイラ（pageUrl / iconImageUrl / highlight / classNames / showPads / tableCellLineBreak / handlers）
     to-plain-text.ts    参照実装
   utils/                visit / links
   fixtures/             conformance.json（記法仕様）

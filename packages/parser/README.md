@@ -12,6 +12,15 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 > **beta**：公開 API はまだ変わりうる。安定するまではバージョンを固定して使うほうが安全。
 
+### 次のリリースでの変更
+
+- テーブルのセル `tableCell` に **`children`** を足した (必須)。Cosense Web と同じく、既定ではセルの中のリンクの記法
+  (`[title]` `[https://…]` `[/project/page]` 裸の URL `#tag`) だけを読み、ほかは書いたままの文字になる。
+  これまで `toHtml` / `toPlainText` はセルを生の文字列のまま出していたが、リンクを出すようになる。
+  セルのノードを自分で組み立てている拡張は追随が要る。
+- `parse` のオプション **`tableCellNotation: 'all'`** を足した。セルの中でも行と同じくすべての記法を読む (Cosense Web には無い振る舞い)。
+- `toHtml` のオプション **`tableCellLineBreak`** を足した。セルの中のこの文字列 (`'\\n'` など) を `<br>` にする。
+
 ### 0.1.0-beta.1 の変更
 
 beta.0 から上げるときは次の 2 点に注意。
@@ -69,7 +78,7 @@ toHtml(page)       // → '<div class="page"><h1 class="title">今日のメモ</
 | [パース](https://cosense-toolbox.qaynam.dev/parser/parse/) | `parse` / `parseLine` / `tokenizeInline` / `createParser` |
 | [AST と位置情報](https://cosense-toolbox.qaynam.dev/parser/ast/) | ノードの構造と `position` の意味 |
 | [ヘルパー](https://cosense-toolbox.qaynam.dev/parser/utils/) | `visit` / `find` / `collect` など |
-| [HTML への変換](https://cosense-toolbox.qaynam.dev/parser/html/) | `toHtml` と 7 つのオプション |
+| [HTML への変換](https://cosense-toolbox.qaynam.dev/parser/html/) | `toHtml` と 8 つのオプション |
 | [独自形式への変換](https://cosense-toolbox.qaynam.dev/parser/compile/) | `toPlainText` / `createCompiler` |
 | [記法の拡張](https://cosense-toolbox.qaynam.dev/parser/extend/) | `Extension` と独自のノード型 |
 

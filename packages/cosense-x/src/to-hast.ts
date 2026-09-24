@@ -6,6 +6,7 @@
  * hast にしておけば、rehype のプラグインを通してから JS にできる。
  */
 import {
+  type AnyNodeType,
   type CodeBlock,
   type Decoration,
   type IconNode,
@@ -18,6 +19,8 @@ import {
 } from '@cosense-toolbox/parser'
 import {
   type HtmlClassNames,
+  type NodeHandler,
+  type NodeHandlers,
   type PageRefNode,
   createCompiler,
   defaultClassNames,
@@ -80,6 +83,13 @@ export interface ToHastOptions {
   readonly classNames?: HtmlClassNames
   /** インデントを Cosense Web と同じ要素として書き出す。 */
   readonly showPads?: boolean
+  /**
+   * テーブルのセルの中で改行として扱う文字列。`toHtml` の同じ名前のオプションと同じく、
+   * セルの text ノードに含まれるこの文字列を `<br>` にする。
+   *
+   * @defaultValue null。改行にしない
+   */
+  readonly tableCellLineBreak?: string | null
   /**
    * タイトル行を `<h1>` として出すか。レイアウト側でタイトルを出すなら false にする。
    *
@@ -289,7 +299,7 @@ export const toHastEither = (
         'tr',
         {},
         // Cosense のテーブルにヘッダ行の概念は無いので、1 行目も含めてすべて td。
-        row.cells.map((cell) => element('td', {}, [text(cell.value)])),
+        row.cells.map((cell) => element('td', {}, cell.children.flatMap(compileCell))),
       ),
     )
     return element('table', withClass(cls.table), [...caption, element('tbody', {}, rows)])
@@ -299,47 +309,69 @@ export const toHastEither = (
    * ノード型ごとの変換。parser の `toHtml` と同じ仕組みで、ハンドラの無いノード型
    * (拡張が足した独自ノードなど) は、中身を落とさずに子だけを出す。
    */
-  const compileNode = createCompiler<ElementContent[]>({
-    fallback: (node, ctx) => ctx.children(node).flat(),
-    handlers: {
-      title: (node, ctx) =>
-        options.title === false
-          ? []
-          : [element('h1', withClass(cls.title), ctx.children(node).flat())],
-      line: (node) => [line(node, true)],
-      codeBlock,
-      table: (node) => [table(node)],
+  const fallback: NodeHandler<ElementContent[], AnyNodeType> = (node, ctx) =>
+    ctx.children(node).flat()
+  const handlers: NodeHandlers<ElementContent[]> = {
+    title: (node, ctx) =>
+      options.title === false
+        ? []
+        : [element('h1', withClass(cls.title), ctx.children(node).flat())],
+    line: (node) => [line(node, true)],
+    codeBlock,
+    table: (node) => [table(node)],
 
-      text: (node) => [text(node.value)],
-      internalLink: (node) => pageRef(node, cls.internalLink, node.label),
-      projectLink: (node) => pageRef(node, cls.projectLink, node.label),
-      hashtag: (node) => pageRef(node, cls.hashtag, `#${node.value}`),
-      externalLink: (node) => [
-        element(
-          'a',
-          withClass(cls.externalLink, compact({ href: safeHref(node.target) || undefined })),
-          [text(node.label)],
+    text: (node) => [text(node.value)],
+    internalLink: (node) => pageRef(node, cls.internalLink, node.label),
+    projectLink: (node) => pageRef(node, cls.projectLink, node.label),
+    hashtag: (node) => pageRef(node, cls.hashtag, `#${node.value}`),
+    externalLink: (node) => [
+      element(
+        'a',
+        withClass(cls.externalLink, compact({ href: safeHref(node.target) || undefined })),
+        [text(node.label)],
+      ),
+    ],
+    inlineCode: (node) => [element('code', withClass(cls.inlineCode), [text(node.value)])],
+    image: (node) => {
+      // Gyazo のページ URL のように、書かれたままでは <img> に入らない URL をここで直す。
+      const src = safeSrc(asImageSrc(node.src) ?? node.src)
+      const img = element(
+        'img',
+        withClass(
+          cls.image,
+          compact({ src: src || undefined, alt: '', dataLarge: node.large ? 'true' : undefined }),
         ),
-      ],
-      inlineCode: (node) => [element('code', withClass(cls.inlineCode), [text(node.value)])],
-      image: (node) => {
-        // Gyazo のページ URL のように、書かれたままでは <img> に入らない URL をここで直す。
-        const src = safeSrc(asImageSrc(node.src) ?? node.src)
-        const img = element(
-          'img',
-          withClass(
-            cls.image,
-            compact({ src: src || undefined, alt: '', dataLarge: node.large ? 'true' : undefined }),
-          ),
-        )
-        const href = node.link === undefined ? null : safeHref(node.link)
-        return [href ? element('a', { href }, [img]) : img]
-      },
-      icon,
-      formula: (node) => [element('span', withClass(cls.formula), [text(node.value)])],
-      decoration: (node, ctx) => [decoration(node, ctx.children(node).flat())],
+      )
+      const href = node.link === undefined ? null : safeHref(node.link)
+      return [href ? element('a', { href }, [img]) : img]
     },
-  })
+    icon,
+    formula: (node) => [element('span', withClass(cls.formula), [text(node.value)])],
+    decoration: (node, ctx) => [decoration(node, ctx.children(node).flat())],
+  }
+  const compileNode = createCompiler<ElementContent[]>({ fallback, handlers })
+
+  /**
+   * セルの中身の変換。`tableCellLineBreak` を渡されたら、text ノードをその文字列で区切って
+   * `<br>` を挟む。`toHtml` と同じく text ノードにだけ当て、コードやリンクの表示の中には当てない。
+   */
+  const lineBreak = options.tableCellLineBreak
+  const compileCell =
+    lineBreak === null || lineBreak === undefined || lineBreak === ''
+      ? compileNode
+      : createCompiler<ElementContent[]>({
+          fallback,
+          handlers: {
+            ...handlers,
+            text: (node) =>
+              node.value
+                .split(lineBreak)
+                .flatMap((value, i) => [
+                  ...(i === 0 ? [] : [element('br', {})]),
+                  ...(value === '' ? [] : [text(value)]),
+                ]),
+          },
+        })
 
   const component = (node: ComponentBlock): CosenseComponent => ({
     type: 'cosenseComponent',

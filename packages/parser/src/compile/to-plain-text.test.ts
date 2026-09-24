@@ -32,6 +32,12 @@ describe('toPlainText', () => {
   it('テーブルをタブ区切りで出す', () => {
     expect(toPlainText(parse('タイトル\ntable:t\n あ\tい'))).toBe('タイトル\nt\nあ\tい')
   })
+
+  it('セルの中のリンクは、行と同じく表示の文字にする', () => {
+    expect(toPlainText(parse('タイトル\ntable:t\n [リンク]\t#tag'))).toBe(
+      'タイトル\nt\nリンク\ttag',
+    )
+  })
 })
 
 describe('createCompiler', () => {

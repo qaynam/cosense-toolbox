@@ -41,19 +41,20 @@ toHtml(page);
 
 ## オプション
 
-| オプション                      | 型                           | 既定                 |
-| :------------------------------ | :--------------------------- | :------------------- |
-| [`pageUrl`](#pageurl)           | `(title, node) => string`    | `/{title}`           |
-| [`iconImageUrl`](#iconimageurl) | `(node) => string \| null`   | 常に `null`          |
-| [`highlight`](#highlight)       | `(code, language) => string` | 色付けしない         |
-| [`classNames`](#classnames)     | `HtmlClassNames`             | `defaultClassNames`  |
-| [`showPads`](#showpads)         | `boolean`                    | `false`              |
-| [`handlers`](#handlers)         | `NodeHandlers<string>`       | 既定のハンドラ       |
-| [`style`](#style)               | `string`                     | `<style>` を出さない |
+| オプション                                  | 型                           | 既定                 |
+| :------------------------------------------ | :--------------------------- | :------------------- |
+| [`pageUrl`](#pageurl)                       | `(title, node) => string`    | `/{title}`           |
+| [`iconImageUrl`](#iconimageurl)             | `(node) => string \| null`   | 常に `null`          |
+| [`highlight`](#highlight)                   | `(code, language) => string` | 色付けしない         |
+| [`classNames`](#classnames)                 | `HtmlClassNames`             | `defaultClassNames`  |
+| [`showPads`](#showpads)                     | `boolean`                    | `false`              |
+| [`tableCellLineBreak`](#tablecelllinebreak) | `string \| null`             | `null`               |
+| [`handlers`](#handlers)                     | `NodeHandlers<string>`       | 既定のハンドラ       |
+| [`style`](#style)                           | `string`                     | `<style>` を出さない |
 
 上の 3 つは、AST から導けない情報を外から渡すためにあります。
 ページをどの URL で配信しているか、アイコン画像がどこにあるか、コードの構文がどう色分けされるかは、どれもソースに書かれていないからです。
-残りの 4 つは出力の見た目と構造を調整します。
+残りの 5 つは出力の見た目と構造を調整します。
 
 ### pageUrl
 
@@ -227,6 +228,25 @@ showPads?: boolean
 既定では要素を出さず、深さは `data-indent` 属性だけで表します。
 中点は CSS の擬似要素で描けるので、見た目はどちらでも変わりません。
 
+### tableCellLineBreak
+
+```ts
+tableCellLineBreak?: string | null
+```
+
+テーブルのセルの中で、改行として扱う文字列です。
+セルの文字に含まれるこの文字列を `<br>` にします。
+Cosense のセルには改行を書けないので、`\n` のような文字の並びを代わりに書くときに使います。
+
+```ts
+toHtml(parse("t\ntable:x\n 1 行目\\n2 行目"), { tableCellLineBreak: "\\n" });
+// → … <td>1 行目<br>2 行目</td> …
+```
+
+渡した文字列はそのまま探します。正規表現としては読みません。
+当てるのは `text` ノードだけで、コードやリンクの表示の中には当てません。
+既定の `null` では改行にしません (Cosense Web と同じ)。
+
 ### handlers
 
 ```ts
@@ -315,6 +335,8 @@ Cosense Web と同じ `.indent-mark` と `.pad` と `.dot` の要素が必要な
   </tbody>
 </table>
 ```
+
+セルの中のリンクの記法は、行と同じく `<a>` になります。
 
 ### コードブロック
 

@@ -180,7 +180,7 @@ const page = await fetchPage('help-jp', 'ブラケティング') // { title, tex
 | `rehypePlugins` | hast に当てる rehype プラグイン |
 | `index` `filePath` `pageUrl` `tagUrl` `projectUrl` `unresolved` | リンクの解決 |
 | `title` | false ならタイトル行 (`<h1>`) を出さない |
-| `classNames` `showPads` `iconImageUrl` | `toHtml` の同名のオプションと同じ |
+| `classNames` `showPads` `iconImageUrl` `tableCellLineBreak` | `toHtml` の同名のオプションと同じ |
 | `parseOptions` | パーサーに渡すオプション (記法の拡張など) |
 
 ## 仕組み

@@ -57,6 +57,21 @@ describe('toHtml と同じ構造の HTML になる', () => {
     expect(hastToHtml(toHast(page, options))).toBe(normalize(toHtml(page, options)))
   })
 
+  it.each(fixtures.tableCell.map((fixture) => fixture.input))('表のセル: %s', (cell) => {
+    const page = parse(`タイトル\ntable:表\n ${cell}\t[リンク]`)
+    expect(hastToHtml(toHast(page))).toBe(normalize(toHtml(page)))
+  })
+
+  it("tableCellNotation: 'all' で読んだセルと tableCellLineBreak も toHtml と同じに効く", () => {
+    const options = { tableCellLineBreak: '\\n' }
+    const page = parse('タイトル\ntable:表\n [* 太\\n字] a\\n\\nb\t`c\\nd` [リンク]\\n', {
+      tableCellNotation: 'all',
+    })
+    const html = hastToHtml(toHast(page, options))
+    expect(html).toBe(normalize(toHtml(page, options)))
+    expect(html).toContain('<br>')
+  })
+
   it('iconImageUrl も toHtml と同じに効く', () => {
     const options = { iconImageUrl: () => 'https://x.test/icon.png' }
     const page = parse('タイトル\n[user.icon]')

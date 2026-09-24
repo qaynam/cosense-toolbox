@@ -138,6 +138,44 @@ describe('ブロック', () => {
       '<table class="table"><caption>名前</caption><tbody><tr><td>あ</td><td>い</td></tr></tbody></table>',
     )
   })
+
+  it('セルの中のリンクはリンクになり、ほかの記法は書いたまま出す', () => {
+    expect(toHtml(parse('t\ntable:x\n [リンク] [* 太字]'))).toContain(
+      '<td><a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> [* 太字]</td>',
+    )
+  })
+
+  it('tableCellLineBreak を渡すと、セルの中のその文字列を <br> にする', () => {
+    const html = toHtml(parse('t\ntable:x\n 1 行目\\n2 行目\tそのまま'), {
+      tableCellLineBreak: '\\n',
+    })
+    expect(html).toContain('<td>1 行目<br>2 行目</td><td>そのまま</td>')
+  })
+
+  it('tableCellLineBreak は文字列そのままで探し、区切った文字はエスケープする', () => {
+    const html = toHtml(parse('t\ntable:x\n a<br>b<c>.*'), { tableCellLineBreak: '<br>' })
+    expect(html).toContain('<td>a<br>b&lt;c&gt;.*</td>')
+  })
+
+  it('tableCellLineBreak はセルの外と、コードの中には当てない', () => {
+    const page = parse('t\na\\nb\ntable:x\n `a\\nb` [* c\\nd]', { tableCellNotation: 'all' })
+    const html = toHtml(page, { tableCellLineBreak: '\\n' })
+    expect(html).toContain('<div class="line">a\\nb</div>')
+    expect(html).toContain('<code class="code">a\\nb</code>')
+    expect(html).toContain('<strong>c<br>d</strong>')
+  })
+
+  it('tableCellLineBreak が null なら改行にしない', () => {
+    const html = toHtml(parse('t\ntable:x\n a\\nb'), { tableCellLineBreak: null })
+    expect(html).toContain('<td>a\\nb</td>')
+  })
+
+  it("tableCellNotation: 'all' で読んだセルは、行と同じく装飾も出す", () => {
+    const page = parse('t\ntable:x\n [* 太字]', { tableCellNotation: 'all' })
+    expect(toHtml(page)).toContain(
+      '<td><span class="decoration deco-*"><strong>太字</strong></span></td>',
+    )
+  })
 })
 
 describe('画像', () => {

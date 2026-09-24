@@ -128,6 +128,45 @@ describe('位置情報', () => {
   })
 })
 
+/** 1 行のテーブル。セルの中身は行と同じ記法の断片から作り、タブだけ取り除く。 */
+const tableArb = fc
+  .array(
+    lineArb.map((cell) => cell.replace(/\t/g, '')),
+    { minLength: 1, maxLength: 4 },
+  )
+  .map((cells) => `t\ntable:x\n ${cells.join('\t')}`)
+
+describe('テーブルのセル', () => {
+  it.each(['link', 'all'] as const)(
+    "tableCellNotation: '%s' でも、子ノードは重なりも隙間もなくセルを覆い、テキストは書いたまま",
+    (tableCellNotation) => {
+      fc.assert(
+        fc.property(tableArb, (source) => {
+          visit(parse(source, { tableCellNotation }), 'tableCell', (cell) => {
+            expect(cell.children.map((n) => rawTextOf(source, n)).join('')).toBe(cell.value)
+            for (const [index, child] of cell.children.entries()) {
+              const previous = cell.children[index - 1]
+              if (previous) expect(child.position.start.offset).toBe(previous.position.end.offset)
+              if (child.type === 'text') expect(child.value).toBe(rawTextOf(source, child))
+            }
+          })
+        }),
+      )
+    },
+  )
+
+  it('既定ではリンク・外部リンク・別プロジェクトへのリンク・タグ以外のノードを作らない', () => {
+    const links = new Set(['text', 'internalLink', 'externalLink', 'projectLink', 'hashtag'])
+    fc.assert(
+      fc.property(tableArb, (source) => {
+        visit(parse(source), 'tableCell', (cell) => {
+          for (const child of cell.children) expect(links.has(child.type)).toBe(true)
+        })
+      }),
+    )
+  })
+})
+
 describe('ラウンドトリップ', () => {
   it('記法ノードの生テキストを単体で解析すると同じノードになる', () => {
     // text ノードは前後の文脈で意味が変わりうる (`[a]#tag` の `#tag` など) ので対象外。

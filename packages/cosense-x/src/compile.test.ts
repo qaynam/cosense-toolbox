@@ -254,3 +254,25 @@ describe('rehype プラグイン', () => {
     expect(html).toContain('<div class="page" lang="ja">')
   })
 })
+
+describe('テーブルのセル', () => {
+  it('セルの中のリンクは索引で解決し、グラフのリンクにも入る', async () => {
+    const index = createIndex([{ id: 'b.csn', title: 'B', slug: 'b' }])
+    const source = 'タイトル\ntable:表\n [B]\t[* 太字]'
+    const result = await compile(source, { index })
+    expect(result.metadata.links).toEqual(['B'])
+    expect(await renderPage(source, { index })).toContain(
+      '<td><a class="link" href="/b">B</a></td><td>[* 太字]</td>',
+    )
+  })
+
+  it("parseOptions の tableCellNotation: 'all' と tableCellLineBreak を渡せる", async () => {
+    const html = await renderPage('タイトル\ntable:表\n [* 太字]\\n2 行目', {
+      parseOptions: { tableCellNotation: 'all' },
+      tableCellLineBreak: '\\n',
+    })
+    expect(html).toContain(
+      '<td><span class="decoration deco-*"><strong>太字</strong></span><br/>2 行目</td>',
+    )
+  })
+})

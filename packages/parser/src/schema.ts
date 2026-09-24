@@ -166,6 +166,7 @@ export const CodeBlockSchema: Schema.Schema<CodeBlock> = Schema.Struct({
 export const TableCellSchema: Schema.Schema<TableCell> = Schema.Struct({
   type: Schema.Literal('tableCell'),
   value: Schema.String,
+  children: Schema.Array(InlineNodeSchema),
   ...withPosition,
 })
 

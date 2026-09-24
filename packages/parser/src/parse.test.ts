@@ -155,6 +155,31 @@ describe('table: ブロック', () => {
     expect(table.rows.map((r) => r.cells.length)).toEqual([3, 1])
   })
 
+  it('セルの value は書いたままの文字を保つ', () => {
+    const table = blockAt(body('table:data', ' [* 太字]\t[リンク]'), 0, 'table')
+    expect(table.rows[0]?.cells.map((c) => c.value)).toEqual(['[* 太字]', '[リンク]'])
+  })
+
+  it("tableCellNotation: 'all' なら、セルの中でも行と同じくすべての記法を読む", () => {
+    const page = parse('title\ntable:data\n [* 太字]\t`code` [リンク]', {
+      tableCellNotation: 'all',
+    })
+    const table = blockAt(page.children.slice(1), 0, 'table')
+    expect(stripPositions(table.rows[0]?.cells.map((c) => c.children))).toEqual([
+      stripPositions(parseLine('[* 太字]').children),
+      stripPositions(parseLine('`code` [リンク]').children),
+    ])
+  })
+
+  it("tableCellNotation: 'all' なら、拡張の記法もセルの中で読む", () => {
+    const extensions = [customDecorations(['!'])]
+    const page = parse('title\ntable:data\n [! 目印]', { tableCellNotation: 'all', extensions })
+    const table = blockAt(page.children.slice(1), 0, 'table')
+    expect(table.rows[0]?.cells[0]?.children[0]?.type).toBe(
+      firstInline('[! 目印]', ...extensions).type,
+    )
+  })
+
   it('同じインデントの行でテーブルが終わる', () => {
     const blocks = body('table:data', ' a\tb', '通常行')
     expect(blocks).toHaveLength(2)
