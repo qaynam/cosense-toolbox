@@ -7,7 +7,7 @@ import { cosenseIconUrl, fetchPageText } from '@cosense-toolbox/cosense-x/fetch'
 import { parse } from '@cosense-toolbox/parser'
 import { escapeHtml, toHtml } from '@cosense-toolbox/parser/compile'
 import { localizeCosenseAssets } from 'virtual:cosense-x/assets'
-import { cosenseHighlightOptions } from 'virtual:cosense-x/highlight'
+import { createHighlighter } from 'shiki'
 import Base from '../layouts/Base.astro'
 import { shiki } from '../highlighter'
 
@@ -16,12 +16,19 @@ const title = 'MCPについて'
 // 非公開プロジェクトのページを取るときは、.env に Cosense の Personal Access Token を書く。
 const pat = import.meta.env.COSENSE_PAT
 
+// コードブロックの色付け。toHtml は highlight を同期で呼ぶので、使う言語は先に読み込んでおく。
+const theme = 'github-light'
+const shiki = await createHighlighter({ themes: [theme], langs: ['js', 'ts', 'json', 'sh'] })
+
 let html: string | null = null
 try {
   const text = await fetchPageText(project, title, pat ? { pat } : {})
   const rendered = toHtml(parse(text), {
-    // コードブロックを .csn / .csnx と同じ shiki の設定で色付けする。
-    ...(await cosenseHighlightOptions(text)),
+    // structure: 'inline' で、toHtml が包む code の中身だけを返す。
+    highlight: (code, lang) =>
+      shiki.getLoadedLanguages().includes(lang)
+        ? shiki.codeToHtml(code, { lang, theme, structure: 'inline' })
+        : escapeHtml(code),
     pageUrl: (target) => `https://scrapbox.io/${project}/${encodeURIComponent(target)}`,
     iconImageUrl: (icon) => cosenseIconUrl(project, icon.user),
     highlight: (code, lang) =>

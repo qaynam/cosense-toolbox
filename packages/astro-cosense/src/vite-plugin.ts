@@ -8,15 +8,13 @@ import { fileURLToPath } from 'node:url'
 import { type CompileOptions, compile } from '@cosense-toolbox/cosense-x'
 import type { Plugin } from 'vite'
 import { ASSET_STORE_KEY, type AssetStore } from './assets'
-import { type CodeHighlighter, HIGHLIGHTER_KEY } from './highlight'
+import type { CodeHighlighter } from './highlight'
 import { type SiteCache, idOf, isCosenseFile } from './site'
 
 export const GRAPH_MODULE_ID = 'virtual:cosense-x/graph'
 const RESOLVED_GRAPH_MODULE_ID = `\0${GRAPH_MODULE_ID}`
 export const ASSETS_MODULE_ID = 'virtual:cosense-x/assets'
 const RESOLVED_ASSETS_MODULE_ID = `\0${ASSETS_MODULE_ID}`
-export const HIGHLIGHT_MODULE_ID = 'virtual:cosense-x/highlight'
-const RESOLVED_HIGHLIGHT_MODULE_ID = `\0${HIGHLIGHT_MODULE_ID}`
 
 /**
  * `toHtml` などで自分で描画するページから、Cosense 上のファイルを置くための関数。
@@ -27,17 +25,6 @@ const RESOLVED_HIGHLIGHT_MODULE_ID = `\0${HIGHLIGHT_MODULE_ID}`
 const ASSETS_MODULE = `const store = () => globalThis[Symbol.for(${JSON.stringify(ASSET_STORE_KEY)})];
 export const cosenseAsset = (url) => store()?.resolve(url) ?? Promise.resolve(url);
 export const localizeCosenseAssets = (html) => store()?.localizeHtml(html) ?? Promise.resolve(html);
-`
-
-/**
- * `toHtml` で自分で描画するページから、`.csn` / `.csnx` と同じ設定で色付けするための関数。
- * 置き場と同じく、統合が `globalThis` に置いた色付けを使う。色付けしない設定なら空のオプションを返す。
- */
-const HIGHLIGHT_MODULE = `const highlighter = () => globalThis[Symbol.for(${JSON.stringify(HIGHLIGHTER_KEY)})];
-export const cosenseHighlightOptions = async (text) => {
-  const prepare = highlighter()?.prepareHtml;
-  return prepare === undefined ? {} : { highlight: await prepare(text) };
-};
 `
 
 /** dev サーバーで返す Content-Type。ビルドでは静的なホスティングが拡張子から決める。 */
@@ -132,13 +119,11 @@ export const vitePluginCosense = (options: VitePluginOptions): Plugin => {
     resolveId(id) {
       if (id === GRAPH_MODULE_ID) return RESOLVED_GRAPH_MODULE_ID
       if (id === ASSETS_MODULE_ID) return RESOLVED_ASSETS_MODULE_ID
-      if (id === HIGHLIGHT_MODULE_ID) return RESOLVED_HIGHLIGHT_MODULE_ID
       return undefined
     },
 
     async load(id) {
       if (id === RESOLVED_ASSETS_MODULE_ID) return ASSETS_MODULE
-      if (id === RESOLVED_HIGHLIGHT_MODULE_ID) return HIGHLIGHT_MODULE
       if (id !== RESOLVED_GRAPH_MODULE_ID) return undefined
       const { graph } = await loadSite()
       return `export const graph = ${JSON.stringify(graph)};\nexport default graph;`
@@ -148,7 +133,7 @@ export const vitePluginCosense = (options: VitePluginOptions): Plugin => {
       filter: { id: /\.csnx?$/ },
       async handler(code, id) {
         const { index } = await loadSite()
-        const highlight = await options.highlighter?.prepare(code)
+        const highlight = await options.highlighter?.(code)
         const result = await compile(code, {
           ...options.compile,
           ...(highlight === undefined ? {} : { highlight }),
