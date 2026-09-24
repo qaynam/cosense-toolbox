@@ -135,8 +135,16 @@ try {
   // modifier で当てた utility が、対象のすべての要素で既定のスタイルに勝つか。
   // 既定のスタイルが色を決めている要素が多いので、color で確かめる。
   const MARK = 'rgb(1, 2, 3)'
-  for (const modifier of MODIFIERS) {
-    const utility = `cosense-${modifier.name}:[color:${MARK.replaceAll(' ', '')}]`
+  // 名前の決まった modifier と、記号を書く装飾の modifier (`cosense-deco-[*]:`)。
+  // 記法仕様のページに出てくる記号の装飾で確かめる。
+  const checks = [
+    ...MODIFIERS.map(({ name, target }) => ({ variant: `cosense-${name}`, target })),
+    { variant: 'cosense-deco-[*]', target: '.decoration.deco-\\*' },
+    { variant: 'cosense-deco-[-]', target: '.decoration.deco-\\-' },
+    { variant: 'cosense-deco-[\\_]', target: '.decoration.deco-_' },
+  ]
+  for (const modifier of checks) {
+    const utility = `${modifier.variant}:[color:${MARK.replaceAll(' ', '')}]`
     const page = await browser.newPage()
     await page.setContent(
       documentOf(
@@ -167,7 +175,7 @@ try {
   } else {
     console.log(
       `${sources.length * options.length} ページ・${elements} 要素で、計算済みスタイルが一致した。` +
-        `modifier ${MODIFIERS.length} 個が、どれも対象の要素で既定のスタイルに勝った`,
+        `modifier ${checks.length} 個が、どれも対象の要素で既定のスタイルに勝った`,
     )
   }
 } finally {
