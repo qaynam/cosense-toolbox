@@ -219,10 +219,11 @@ export interface HtmlOptions extends HtmlRenderOptions {
 }
 
 /**
- * ファイル名から言語名を推測する。拡張子があればそれ、無ければファイル名全体。
+ * コードブロックのファイル名から言語名を推測する。拡張子があればそれ、無ければファイル名全体。
  * Cosense では `code:python` のように言語名だけを書くこともできるため。
+ * `highlight` に渡る言語名はこれで決めている。
  */
-const languageOf = (filename: string): string => {
+export const codeLanguageOf = (filename: string): string => {
   const dot = filename.lastIndexOf('.')
   return (dot > 0 ? filename.slice(dot + 1) : filename).toLowerCase()
 }
@@ -345,7 +346,9 @@ export const createHtmlHandlers = (options: HtmlRenderOptions = {}): NodeHandler
         const className = [cls.codeBody, cls.codeHighlight]
           .filter((name) => name !== undefined)
           .join(' ')
-        return header + codeBody(className, highlight(rawCodeOf(node), languageOf(node.filename)))
+        return (
+          header + codeBody(className, highlight(rawCodeOf(node), codeLanguageOf(node.filename)))
+        )
       }
 
       return (

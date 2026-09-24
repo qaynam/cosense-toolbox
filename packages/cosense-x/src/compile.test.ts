@@ -254,3 +254,21 @@ describe('rehype プラグイン', () => {
     expect(html).toContain('<div class="page" lang="ja">')
   })
 })
+
+describe('コードブロックの色付け', () => {
+  it('highlight が返した要素を JS にして描画する', async () => {
+    const html = await renderPage('タイトル\ncode:a.ts\n const a = 1', {
+      highlight: (code, language) => [
+        {
+          type: 'element',
+          tagName: 'span',
+          properties: { className: [`token-${language}`] },
+          children: [{ type: 'text', value: code }],
+        },
+      ],
+    })
+    expect(html).toContain(
+      '<code class="code-body highlight"><span class="token-ts">const a = 1</span></code>',
+    )
+  })
+})

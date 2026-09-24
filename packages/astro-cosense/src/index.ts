@@ -13,11 +13,19 @@ import { fileURLToPath } from 'node:url'
 import { readPage } from '@cosense-toolbox/cosense-x/graph'
 import type { AstroConfig, AstroIntegration, ContentEntryType, HookParameters } from 'astro'
 import { ASSET_STORE_KEY, type AssetStore, createAssetStore, rehypeCosenseAssets } from './assets'
+import {
+  type CodeHighlighter,
+  HIGHLIGHTER_KEY,
+  type SyntaxHighlightOption,
+  astroShikiHighlighter,
+  customHighlighter,
+} from './highlight'
 import { EXTENSIONS, createSiteCache, idOf } from './site'
 import {
   ASSETS_MODULE_ID,
   type AstroCompileOptions,
   GRAPH_MODULE_ID,
+  HIGHLIGHT_MODULE_ID,
   vitePluginCosense,
 } from './vite-plugin'
 
@@ -60,6 +68,17 @@ export interface CosenseIntegrationOptions extends AstroCompileOptions {
    * @defaultValue `{}` (有効)
    */
   readonly assets?: CosenseAssetsOptions | false
+  /**
+   * コードブロックの色付け。
+   *
+   * - `'astro'`: `.md` / `.mdx` と同じく、Astro の `markdown.syntaxHighlight` と `markdown.shikiConfig` に従う。
+   *   shiki のときだけ色付けし、prism には対応していない
+   * - `false`: 色付けしない
+   * - 関数: `(code, language) => hast | null` で自分で色付けする
+   *
+   * @defaultValue `'astro'`
+   */
+  readonly syntaxHighlight?: SyntaxHighlightOption
 }
 
 /** `{base}/_cosense/`。base の末尾の `/` の有無を吸収する。 */
@@ -99,6 +118,15 @@ declare module '${ASSETS_MODULE_ID}' {
   /** HTML の src / href のうち、Cosense 上のファイルを指すものを差し替える (toHtml の出力に使う) */
   export const localizeCosenseAssets: (html: string) => Promise<string>;
 }
+declare module '${HIGHLIGHT_MODULE_ID}' {
+  /**
+   * toHtml に渡すオプションのうち、コードブロックの色付け。.csn / .csnx と同じ設定で色付けする。
+   * 色付けしない設定なら空。\`toHtml(page, { ...(await cosenseHighlightOptions(text)), ... })\` のように使う
+   */
+  export const cosenseHighlightOptions: (
+    text: string,
+  ) => Promise<{ highlight?: (code: string, language: string) => string }>;
+}
 ${EXTENSIONS.map(
   (extension) => `
 declare module '*${extension}' {
@@ -112,7 +140,12 @@ declare module '*${extension}' {
 `
 
 export default function cosense(options: CosenseIntegrationOptions = {}): AstroIntegration {
-  const { components, assets: assetsOptions = {}, ...compileOptions } = options
+  const {
+    components,
+    assets: assetsOptions = {},
+    syntaxHighlight = 'astro',
+    ...compileOptions
+  } = options
   // config:setup で作る。ビルドの始まりと終わりのフックからも使う。
   let assets: AssetStore | undefined
   let astroConfig: AstroConfig | undefined
@@ -136,8 +169,17 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
                 ...(assetsOptions.links === undefined ? {} : { links: assetsOptions.links }),
                 warn: (message) => logger.warn(message),
               })
-        // toHtml などで自分で描画するページが、virtual:cosense-x/assets から使う。
-        Object.assign(globalThis, { [Symbol.for(ASSET_STORE_KEY)]: assets })
+        const highlighter: CodeHighlighter | undefined =
+          syntaxHighlight === false
+            ? undefined
+            : syntaxHighlight === 'astro'
+              ? astroShikiHighlighter(config.markdown)
+              : customHighlighter(syntaxHighlight)
+        // toHtml などで自分で描画するページが、virtual:cosense-x/assets と virtual:cosense-x/highlight から使う。
+        Object.assign(globalThis, {
+          [Symbol.for(ASSET_STORE_KEY)]: assets,
+          [Symbol.for(HIGHLIGHTER_KEY)]: highlighter,
+        })
         const site = createSiteCache(
           root,
           fileURLToPath(config.srcDir),
@@ -191,6 +233,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
                         ],
                       },
                 assets,
+                highlighter,
                 components:
                   components === undefined
                     ? undefined

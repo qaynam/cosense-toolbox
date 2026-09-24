@@ -4,7 +4,7 @@ import type { InlineConstruct } from '../inline/types'
 import { parse, parseLine } from '../parse'
 import type { InlineNodeInit } from '../types'
 import type { NodeHandlers } from './create-compiler'
-import { defaultPageUrl, escapeHtml, safeHref, safeSrc, toHtml } from './to-html'
+import { codeLanguageOf, defaultPageUrl, escapeHtml, safeHref, safeSrc, toHtml } from './to-html'
 
 /** 1 行を描画して、行を包む div を外した中身だけを見る。 */
 const line = (source: string, options?: Parameters<typeof toHtml>[1]): string =>
@@ -126,6 +126,12 @@ describe('ブロック', () => {
       },
     })
     expect(seen).toEqual(['python'])
+  })
+
+  it('codeLanguageOf は highlight に渡すのと同じ言語名を返す', () => {
+    expect(codeLanguageOf('hello.js')).toBe('js')
+    expect(codeLanguageOf('python')).toBe('python')
+    expect(codeLanguageOf('Main.JAVA')).toBe('java')
   })
 
   it('highlight が無ければ 1 行ずつのまま', () => {

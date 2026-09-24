@@ -19,6 +19,7 @@ import {
 import {
   type HtmlClassNames,
   type PageRefNode,
+  codeLanguageOf,
   createCompiler,
   defaultClassNames,
   defaultPageUrl,
@@ -66,6 +67,18 @@ export interface ResolvedLink {
   readonly label?: string
 }
 
+/**
+ * コードブロックの中身を色付けする。`toHtml` の `highlight` の hast 版。
+ *
+ * `language` はファイル名から推測した名前 (`code:hello.js` なら `js`、`code:python` なら `python`)。
+ * null を返すと色付けせず、1 行ずつのまま出す。知らない言語のときに使う。
+ *
+ * shiki の `codeToHast` のように `pre > code` を返したときは、code の中身を使い、
+ * pre の class と style (テーマの背景色や文字色) をコードブロックの code に移す。
+ * 行の要素 (`div.line`) の中に置くので、pre そのものは出さない。
+ */
+export type HastHighlighter = (code: string, language: string) => Root | ElementContent[] | null
+
 export interface ToHastOptions {
   /**
    * ページを指す記法 (`[title]` / `[/proj/page]` / `#tag` / `[user.icon]`) の遷移先。
@@ -80,6 +93,11 @@ export interface ToHastOptions {
   readonly classNames?: HtmlClassNames
   /** インデントを Cosense Web と同じ要素として書き出す。 */
   readonly showPads?: boolean
+  /**
+   * コードブロックの中身の色付け。渡すと、本体は 1 行 1 要素ではなく 1 つの要素にまとまる。
+   * ハイライタの出力が複数行にまたがる要素を含みうるため (`toHtml` と同じ)。
+   */
+  readonly highlight?: HastHighlighter
   /**
    * タイトル行を `<h1>` として出すか。レイアウト側でタイトルを出すなら false にする。
    *
@@ -123,6 +141,53 @@ const positive = (value: number): Properties[string] => (value > 0 ? value : und
 
 const compact = (properties: Properties): Properties =>
   Object.fromEntries(Object.entries(properties).filter(([, value]) => value !== undefined))
+
+/** 色付けした本体と、コードブロックの code に足す class と style。 */
+interface HighlightedBody {
+  readonly children: ElementContent[]
+  readonly className: readonly string[]
+  readonly style: string | undefined
+}
+
+const isElement = (node: unknown, tagName: string): node is Element =>
+  typeof node === 'object' &&
+  node !== null &&
+  (node as Element).type === 'element' &&
+  (node as Element).tagName === tagName
+
+/** 空白だけのテキストを除いた、ただ 1 つの子。 */
+const onlyChild = (children: readonly unknown[]): unknown => {
+  const meaningful = children.filter(
+    (child) => !((child as Text).type === 'text' && (child as Text).value.trim() === ''),
+  )
+  return meaningful.length === 1 ? meaningful[0] : undefined
+}
+
+/**
+ * ハイライタの出力をコードブロックの code の中身にする。
+ * `pre > code` (shiki や lowlight を rehype で通した形) なら pre を剥がし、
+ * pre に付いたテーマの class と style を引き継ぐ。
+ */
+const highlightedBody = (result: Root | ElementContent[]): HighlightedBody => {
+  const children = Array.isArray(result) ? result : result.children
+  const pre = onlyChild(children)
+  if (isElement(pre, 'pre')) {
+    const code = onlyChild(pre.children)
+    if (isElement(code, 'code')) {
+      // hast の決まりでは className の配列だが、shiki は class を文字列で付ける。
+      const className = pre.properties.className ?? pre.properties.class
+      const style = pre.properties.style
+      return {
+        children: code.children,
+        className: Array.isArray(className)
+          ? className.map(String)
+          : classList(typeof className === 'string' ? className : undefined),
+        style: typeof style === 'string' ? style : undefined,
+      }
+    }
+  }
+  return { children: children as ElementContent[], className: [], style: undefined }
+}
 
 const DECORATION_TAGS: readonly (readonly [(node: Decoration) => boolean, string])[] = [
   [(node) => node.strike, 's'],
@@ -270,6 +335,25 @@ export const toHastEither = (
       element('div', withClass(classes, compact({ dataIndent: positive(indent) })), [child])
     const filename = element('span', withClass(cls.codeFilename), [text(node.filename)])
     const header = blockLine(node.indent, element('code', withClass(cls.codeStart), [filename]))
+    const highlighted = pipe(
+      Option.fromNullable(options.highlight),
+      Option.flatMapNullable((highlight) =>
+        highlight(
+          node.lines.map((codeLine) => codeLine.value).join('\n'),
+          codeLanguageOf(node.filename),
+        ),
+      ),
+      Option.map(highlightedBody),
+    )
+    if (Option.isSome(highlighted)) {
+      const { children, className, style } = highlighted.value
+      const names = [cls.codeBody, cls.codeHighlight, ...className].filter(Boolean).join(' ')
+      // 本体はヘッダより 1 段深い。ひと塊なので、それより深い字下げは中身のほうに残る。
+      return [
+        header,
+        blockLine(node.indent + 1, element('code', withClass(names, compact({ style })), children)),
+      ]
+    }
     return [
       header,
       // 本体はヘッダより 1 段深い。それより深い字下げは値のほうに残っている。

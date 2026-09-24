@@ -195,7 +195,34 @@ const { data, contentType } = await fetchAsset('https://scrapbox.io/files/xxx.pn
 | `index` `filePath` `pageUrl` `tagUrl` `projectUrl` `unresolved` | リンクの解決 |
 | `title` | false ならタイトル行 (`<h1>`) を出さない |
 | `classNames` `showPads` `iconImageUrl` | `toHtml` の同名のオプションと同じ |
+| `highlight` | コードブロックの色付け。`(code, language) => hast \| null`。下を参照 |
 | `parseOptions` | パーサーに渡すオプション (記法の拡張など) |
+
+### コードブロックの色付け
+
+`highlight` は `toHtml` の同名のオプションの hast 版。HTML の文字列ではなく hast を返す。
+shiki の `codeToHast` の結果はそのまま返してよい。`pre > code` の形なら、code の中身を使い、pre の class と style (テーマの背景色や文字色) をコードブロックに移す。
+
+```ts
+import { compile } from '@cosense-toolbox/cosense-x'
+import { createHighlighter } from 'shiki'
+
+const shiki = await createHighlighter({ themes: ['github-light'], langs: ['js', 'ts'] })
+
+await compile(source, {
+  // 読み込んでいない言語は null を返して、色付けせずに出す
+  highlight: (code, language) =>
+    shiki.getLoadedLanguages().includes(language)
+      ? shiki.codeToHast(code, { lang: language, theme: 'github-light' })
+      : null,
+})
+```
+
+- `language` はファイル名から推測した名前。`code:hello.js` なら `js`、`code:python` なら `python`。`@cosense-toolbox/parser/compile` の `codeLanguageOf` と同じ
+- 渡すと、コードブロックの本体は 1 行 1 要素ではなく 1 つの要素にまとまる。ハイライタの出力が複数行にまたがる要素を含みうるため
+- `null` を返すと、色付けせず 1 行ずつのまま出す
+- `highlight` は同期で呼ぶ。shiki のように言語を非同期で読み込むものは、先に読み込んでおく
+- `pre > code` を探して剥がすので、rehype のハイライタ (`@shikijs/rehype` など) はそのままでは当たらない。`highlight` を使う
 
 ## 仕組み
 

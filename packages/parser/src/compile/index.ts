@@ -10,6 +10,7 @@ export type {
   NodeHandlers,
 } from './create-compiler'
 export {
+  codeLanguageOf,
   createHtmlHandlers,
   defaultClassNames,
   defaultPageUrl,

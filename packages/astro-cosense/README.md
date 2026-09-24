@@ -34,6 +34,7 @@ export default defineConfig({
 | `pageUrl` | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス |
 | `tagUrl` `projectUrl` `unresolved` | `compile` の同名のオプションと同じ |
 | `rehypePlugins` `classNames` `showPads` `iconImageUrl` `title` `parseOptions` | 同上 |
+| `syntaxHighlight` | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け) |
 | `assets` | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効 |
 
 ## Cosense 上の画像とファイル
@@ -93,6 +94,45 @@ const html = await localizeCosenseAssets(
 ```
 
 差し替えられるのは、ページをビルド時に描画するとき (静的なページと prerender) と dev サーバーだけ。実行時に描画する SSR では元の URL のまま返す。
+
+## コードブロックの色付け
+
+`.csn` / `.csnx` のコードブロック (`code:hello.js`) は、`.md` / `.mdx` と同じく Astro の `markdown.syntaxHighlight` と `markdown.shikiConfig` の設定で shiki が色付けする。
+`components` に登録しなくてよい。
+
+```js
+export default defineConfig({
+  markdown: { shikiConfig: { theme: 'github-light' } },
+  integrations: [cosense()],
+})
+```
+
+- 言語はファイル名の拡張子から決める。`code:hello.js` なら `js`、`code:python` なら `python`
+- shiki が知らない言語と `excludeLangs` の言語は、色付けせずに出す
+- `theme` / `themes` / `defaultColor` / `langs` / `langAlias` / `transformers` を使う。`wrap` は使わない。長い行は `@cosense-toolbox/style` が折り返す
+- `markdown.syntaxHighlight` が `'prism'` のときは色付けしない (相当するものが無い)
+
+`syntaxHighlight: false` で色付けをやめる。関数を渡すと、shiki の代わりにそれで色付けする。形は `compile` の `highlight` と同じ。
+
+```js
+cosense({
+  syntaxHighlight: (code, language) => myHighlighter(code, language), // hast か null を返す
+})
+```
+
+`toHtml` で自分で描画するページは、`virtual:cosense-x/highlight` の `cosenseHighlightOptions` で同じ設定の色付けを得る。
+ページのテキストを渡すと、そこに出てくる言語を読み込んでから `{ highlight }` を返す。色付けしない設定なら `{}`。
+
+```astro
+---
+import { parse } from '@cosense-toolbox/parser'
+import { toHtml } from '@cosense-toolbox/parser/compile'
+import { cosenseHighlightOptions } from 'virtual:cosense-x/highlight'
+
+const html = toHtml(parse(text), { ...(await cosenseHighlightOptions(text)) })
+---
+<article class="cosense" set:html={html} />
+```
 
 ## content collection
 

@@ -124,6 +124,8 @@ highlight?: (code: string, language: string) => string
 
 コードブロックの中身を色付けします。
 シグネチャは markdown-it の同名オプションと同じなので、たいていのハイライタがそのまま嵌ります。
+`language` はファイル名から推測した名前で、`code:hello.js` なら `js`、`code:python` なら `python` です。
+同じ決めかたの関数を `codeLanguageOf` として `@cosense-toolbox/parser/compile` から出しています。
 
 ```ts
 import hljs from "highlight.js";

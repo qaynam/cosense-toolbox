@@ -13,4 +13,6 @@ cosense-x で書いたブログ記事です。 #日記
  箇条書き 2
   深い箇条書き
 code:hello.js
- console.log('hello')
+ function hello(name) {
+   console.log(`hello ${name}`)
+ }

@@ -29,7 +29,9 @@
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
-    "@cosense-toolbox/cosense-x": "workspace:*"
+    "@cosense-toolbox/cosense-x": "workspace:*",
+    "@cosense-toolbox/parser": "workspace:*",
+    "shiki": "^4.2.0"
   },
   "peerDependencies": {
     "astro": "^7.0.0"
