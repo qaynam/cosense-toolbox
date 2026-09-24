@@ -121,21 +121,45 @@ cosense({
 ```
 
 `toHtml` で自分で描画するページは、`toHtml` の `highlight` に shiki を直接渡す。
-`highlight` は同期で呼ばれるので、使う言語は先に読み込んでおく。`structure: 'inline'` にすると、`toHtml` が包む `code` の中身だけを返す。
+テーマなどの設定を 1 つのファイルにまとめ、`astro.config.mjs` とページの両方から読むと、`.md` / `.csn` と見た目が揃う。
+
+```ts
+// src/shiki.ts
+import { escapeHtml } from '@cosense-toolbox/parser/compile'
+import type { ShikiConfig } from 'astro'
+import { createHighlighter } from 'shiki'
+
+export const shikiConfig = { theme: 'github-light' } satisfies Partial<ShikiConfig>
+
+/** toHtml は highlight を同期で呼ぶので、使う言語は先に読み込んでおく */
+export const createCodeHighlight = async (langs: string[]) => {
+  const shiki = await createHighlighter({ themes: [shikiConfig.theme], langs })
+  // structure: 'inline' で、toHtml が包む code の中身だけを返す
+  return (code: string, lang: string) =>
+    shiki.getLoadedLanguages().includes(lang)
+      ? shiki.codeToHtml(code, { lang, theme: shikiConfig.theme, structure: 'inline' })
+      : escapeHtml(code)
+}
+```
+
+```js
+// astro.config.mjs
+import { shikiConfig } from './src/shiki.ts'
+
+export default defineConfig({
+  markdown: { shikiConfig },
+  integrations: [cosense()],
+})
+```
 
 ```astro
 ---
 import { parse } from '@cosense-toolbox/parser'
-import { escapeHtml, toHtml } from '@cosense-toolbox/parser/compile'
-import { createHighlighter } from 'shiki'
+import { toHtml } from '@cosense-toolbox/parser/compile'
+import { createCodeHighlight } from '../shiki'
 
-const shiki = await createHighlighter({ themes: ['github-light'], langs: ['js', 'ts'] })
-const html = toHtml(parse(text), {
-  highlight: (code, lang) =>
-    shiki.getLoadedLanguages().includes(lang)
-      ? shiki.codeToHtml(code, { lang, theme: 'github-light', structure: 'inline' })
-      : escapeHtml(code),
-})
+const highlight = await createCodeHighlight(['js', 'ts'])
+const html = toHtml(parse(text), { highlight })
 ---
 <article class="cosense" set:html={html} />
 ```
