@@ -5,10 +5,11 @@
  */
 import { cosenseIconUrl, fetchPageText } from '@cosense-toolbox/cosense-x/fetch'
 import { parse } from '@cosense-toolbox/parser'
-import { toHtml } from '@cosense-toolbox/parser/compile'
+import { escapeHtml, toHtml } from '@cosense-toolbox/parser/compile'
 import { localizeCosenseAssets } from 'virtual:cosense-x/assets'
 import { cosenseHighlightOptions } from 'virtual:cosense-x/highlight'
 import Base from '../layouts/Base.astro'
+import { shiki } from '../highlighter'
 
 const project = 'qaynam'
 const title = 'MCPについて'
@@ -23,6 +24,10 @@ try {
     ...(await cosenseHighlightOptions(text)),
     pageUrl: (target) => `https://scrapbox.io/${project}/${encodeURIComponent(target)}`,
     iconImageUrl: (icon) => cosenseIconUrl(project, icon.user),
+    highlight: (code, lang) =>
+        shiki.getLoadedLanguages().includes(lang)
+          ? shiki.codeToHtml(code, { lang, theme: 'github-light', structure: 'inline' })
+          : escapeHtml(code),
   })
   // Cosense 上の画像とアイコンは別のサイトからは読めず、リダイレクト先の URL もすぐ切れるので、
   // ビルド時に取ってきてサイトの中 (dist/_cosense/) に置いた URL に差し替える。

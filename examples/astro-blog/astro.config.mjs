@@ -13,7 +13,7 @@ try {
 export default defineConfig({
   vite: { plugins: [tailwindcss()] },
   // .csn / .csnx のコードブロックも、.md と同じこの設定で shiki が色付けする。
-  markdown: { shikiConfig: { theme: 'github-light' } },
+  markdown: { shikiConfig: { theme: 'catppuccin-latte' } },
   integrations: [
     svelte(),
     cosense({
