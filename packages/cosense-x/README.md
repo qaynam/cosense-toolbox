@@ -166,7 +166,7 @@ Cosense 上の画像やファイル (`https://scrapbox.io/files/…` とアイ�
 ```ts
 import { cosenseIconUrl, fetchAsset, isCosenseAssetUrl } from '@cosense-toolbox/cosense-x/fetch'
 
-cosenseIconUrl('help-jp', 'rakusai') // → https://scrapbox.io/api/pages/help-jp/rakusai/icon
+cosenseIconUrl('help-jp', 'cosense') // → https://scrapbox.io/api/pages/help-jp/cosense/icon
 isCosenseAssetUrl('https://scrapbox.io/files/xxx.png') // → true
 const { data, contentType } = await fetchAsset('https://scrapbox.io/files/xxx.png', { pat })
 ```

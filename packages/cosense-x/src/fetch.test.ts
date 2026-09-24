@@ -48,7 +48,7 @@ describe('fetchPage', () => {
 describe('isCosenseAssetUrl', () => {
   it('Cosense にアップロードしたファイルとアイコンの API は Cosense 上のファイル', () => {
     expect(isCosenseAssetUrl('https://scrapbox.io/files/665f0b8c962ee6001c15c172.png')).toBe(true)
-    expect(isCosenseAssetUrl('https://scrapbox.io/api/pages/help-jp/rakusai/icon')).toBe(true)
+    expect(isCosenseAssetUrl('https://scrapbox.io/api/pages/help-jp/cosense/icon')).toBe(true)
   })
 
   it('ページや外部の画像は対象にしない', () => {
