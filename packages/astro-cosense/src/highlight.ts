@@ -5,14 +5,11 @@
  * `markdown.shikiConfig` をそのまま使う。
  */
 import type { HastHighlighter } from '@cosense-toolbox/cosense-x'
-import { codeLanguageOf, escapeHtml } from '@cosense-toolbox/parser/compile'
+import { codeLanguageOf } from '@cosense-toolbox/parser/compile'
 import type { AstroConfig } from 'astro'
 import { type BundledLanguage, bundledLanguages, createHighlighter } from 'shiki'
 
 type MarkdownConfig = AstroConfig['markdown']
-
-/** `toHtml` の `highlight` に渡す形。 */
-export type HtmlHighlighter = (code: string, language: string) => string
 
 /**
  * `.csn` / `.csnx` のコードブロックの色付け。
@@ -20,18 +17,11 @@ export type HtmlHighlighter = (code: string, language: string) => string
  */
 export type SyntaxHighlightOption = 'astro' | false | HastHighlighter
 
-export interface CodeHighlighter {
-  /**
-   * `source` のコードブロックの言語を読み込んでから、色付けする関数を返す。
-   * `compile` や `toHtml` は色付けを同期で呼ぶので、言語は先に読み込んでおく。
-   */
-  readonly prepare: (source: string) => Promise<HastHighlighter>
-  /** `prepare` の `toHtml` 版。利用者が hast の色付けを渡したときは無い */
-  readonly prepareHtml?: (source: string) => Promise<HtmlHighlighter>
-}
-
-/** ほかのモジュール (virtual:cosense-x/highlight) と色付けを共有するための globalThis のキー。 */
-export const HIGHLIGHTER_KEY = '@cosense-toolbox/astro/highlighter'
+/**
+ * `source` のコードブロックの言語を読み込んでから、色付けする関数を返す。
+ * `compile` は色付けを同期で呼ぶので、言語は先に読み込んでおく。
+ */
+export type CodeHighlighter = (source: string) => Promise<HastHighlighter>
 
 /** 行頭 (字下げの後) の `code:ファイル名` からコードブロックを見つける。 */
 const CODE_BLOCK = /^[ \t]*code:(.+)$/gm
@@ -72,8 +62,7 @@ export const astroShikiHighlighter = (markdown: MarkdownConfig): CodeHighlighter
   }
   const resolve = (language: string): string => langAlias[language] ?? language
 
-  /** 読み込めた言語だけを色付けする。知らない言語は null (色付けせず 1 行ずつのまま) にする。 */
-  const load = async (source: string) => {
+  return async (source) => {
     const highlighter = await highlighterOf()
     const loaded = new Set(highlighter.getLoadedLanguages())
     const wanted = codeLanguagesIn(source)
@@ -82,39 +71,18 @@ export const astroShikiHighlighter = (markdown: MarkdownConfig): CodeHighlighter
       .filter((language): language is BundledLanguage => language in bundledLanguages)
     if (wanted.length > 0) await highlighter.loadLanguage(...wanted)
     const available = new Set(highlighter.getLoadedLanguages())
-    return {
-      highlighter,
-      languageOf: (language: string): string | null => {
-        const resolved = resolve(language)
-        return excluded.has(resolved) || !available.has(resolved) ? null : resolved
-      },
+    // 読み込めた言語だけを色付けする。知らない言語は null (色付けせず 1 行ずつのまま) にする。
+    return (code, language) => {
+      const lang = resolve(language)
+      return excluded.has(lang) || !available.has(lang)
+        ? null
+        : highlighter.codeToHast(code, { lang, ...themed, transformers })
     }
-  }
-
-  return {
-    prepare: async (source) => {
-      const { highlighter, languageOf } = await load(source)
-      return (code, language) => {
-        const lang = languageOf(language)
-        return lang === null
-          ? null
-          : highlighter.codeToHast(code, { lang, ...themed, transformers })
-      }
-    },
-    prepareHtml: async (source) => {
-      const { highlighter, languageOf } = await load(source)
-      return (code, language) => {
-        const lang = languageOf(language)
-        // toHtml は戻り値を code の中身として埋め込むので、pre と code を出さない形 (inline) にする。
-        return lang === null
-          ? escapeHtml(code)
-          : highlighter.codeToHtml(code, { lang, ...themed, transformers, structure: 'inline' })
-      }
-    },
   }
 }
 
 /** 利用者が渡した色付けをそのまま使う。 */
-export const customHighlighter = (highlight: HastHighlighter): CodeHighlighter => ({
-  prepare: async () => highlight,
-})
+export const customHighlighter =
+  (highlight: HastHighlighter): CodeHighlighter =>
+  async () =>
+    highlight

@@ -53,7 +53,7 @@ describe('astroShikiHighlighter', () => {
   })
 
   it('ページに出てくる言語を読み込み、shiki の hast を返す', async () => {
-    const highlight = await astroShikiHighlighter(markdownOf())?.prepare(PAGE)
+    const highlight = await astroShikiHighlighter(markdownOf())?.(PAGE)
     const pre = preOf(highlight?.('const a = 1', 'js'))
     expect(pre?.tagName).toBe('pre')
     expect(String(pre?.properties.class)).toContain('github-light')
@@ -61,22 +61,14 @@ describe('astroShikiHighlighter', () => {
 
   it('知らない言語と excludeLangs の言語は色付けしない', async () => {
     const source = 'タイトル\ncode:a.unknownlang\n x\ncode:b.math\n y'
-    const highlight = await astroShikiHighlighter(markdownOf())?.prepare(source)
+    const highlight = await astroShikiHighlighter(markdownOf())?.(source)
     expect(highlight?.('x', 'unknownlang')).toBeNull()
     expect(highlight?.('y', 'math')).toBeNull()
   })
 
   it('langAlias で言語名を読み替える', async () => {
     const markdown = markdownOf({ shikiConfig: { langAlias: { mylang: 'python' } } })
-    const highlight = await astroShikiHighlighter(markdown)?.prepare('t\ncode:a.mylang\n pass')
+    const highlight = await astroShikiHighlighter(markdown)?.('t\ncode:a.mylang\n pass')
     expect(preOf(highlight?.('pass', 'mylang'))?.tagName).toBe('pre')
-  })
-
-  it('toHtml 向けには pre と code を含まない HTML を返す', async () => {
-    const highlight = await astroShikiHighlighter(markdownOf())?.prepareHtml?.(PAGE)
-    const html = highlight?.('const a = 1', 'js') ?? ''
-    expect(html).toContain('<span style="color:')
-    expect(html).not.toContain('<pre')
-    expect(highlight?.('<b>', 'unknownlang')).toBe('&lt;b&gt;')
   })
 })

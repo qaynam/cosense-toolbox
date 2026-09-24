@@ -38,6 +38,7 @@
         "@cosense-toolbox/tailwind": "workspace:*",
         "@tailwindcss/vite": "^4.3.3",
         "astro": "7.2.3",
+        "shiki": "^4.2.0",
         "svelte": "^5.57.1",
         "tailwindcss": "^4.3.3",
       },

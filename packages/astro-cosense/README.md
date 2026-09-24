@@ -120,16 +120,22 @@ cosense({
 })
 ```
 
-`toHtml` で自分で描画するページは、`virtual:cosense-x/highlight` の `cosenseHighlightOptions` で同じ設定の色付けを得る。
-ページのテキストを渡すと、そこに出てくる言語を読み込んでから `{ highlight }` を返す。色付けしない設定なら `{}`。
+`toHtml` で自分で描画するページは、`toHtml` の `highlight` に shiki を直接渡す。
+`highlight` は同期で呼ばれるので、使う言語は先に読み込んでおく。`structure: 'inline'` にすると、`toHtml` が包む `code` の中身だけを返す。
 
 ```astro
 ---
 import { parse } from '@cosense-toolbox/parser'
-import { toHtml } from '@cosense-toolbox/parser/compile'
-import { cosenseHighlightOptions } from 'virtual:cosense-x/highlight'
+import { escapeHtml, toHtml } from '@cosense-toolbox/parser/compile'
+import { createHighlighter } from 'shiki'
 
-const html = toHtml(parse(text), { ...(await cosenseHighlightOptions(text)) })
+const shiki = await createHighlighter({ themes: ['github-light'], langs: ['js', 'ts'] })
+const html = toHtml(parse(text), {
+  highlight: (code, lang) =>
+    shiki.getLoadedLanguages().includes(lang)
+      ? shiki.codeToHtml(code, { lang, theme: 'github-light', structure: 'inline' })
+      : escapeHtml(code),
+})
 ---
 <article class="cosense" set:html={html} />
 ```
