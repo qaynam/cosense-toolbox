@@ -162,7 +162,7 @@ const simpleTargetRules = (allowImagePath: boolean): Rule[] => [
   // `[a.png]`, but not inside emphasis: there Cosense links to a page of that name.
   ...(allowImagePath ? [{ name: SCOPES.image, match: raw`\[[^\[\]]*${IMAGE_EXT}\]` }] : []),
   { name: SCOPES.projectLink, match: raw`\[/[^\[\]]*\]` },
-  { name: SCOPES.link, match: raw`\[(?=[^\[\]]*\S)[^\[\]]+\]` },
+  { name: SCOPES.link, match: raw`\[(?=[^\[\]]*[^\s\[\]])[^\[\]]+\]` },
 ]
 
 const inlineCode: Rule = { name: SCOPES.code, match: '`[^`]*`' }
