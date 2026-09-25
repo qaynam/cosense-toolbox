@@ -8,15 +8,13 @@ import { parse } from '@cosense-toolbox/parser'
 import { toHtml } from '@cosense-toolbox/parser/compile'
 import { localizeCosenseAssets } from 'virtual:cosense-x/assets'
 import Base from '../layouts/Base.astro'
-import { shiki } from '../highlighter'
+import { createCodeHighlight } from '../shiki'
 
 const project = 'qaynam'
 const title = 'MCPについて'
 // 非公開プロジェクトのページを取るときは、.env に Cosense の Personal Access Token を書く。
 const pat = import.meta.env.COSENSE_PAT
-
-// コードブロックの色付け。.csn / .csnx と同じ設定 (src/shiki.ts) を使う。
-const highlight = await createCodeHighlight(['js', 'ts', 'json', 'sh'])
+const highlight = await createCodeHighlight()
 
 let html: string | null = null
 try {
@@ -25,13 +23,7 @@ try {
     highlight,
     pageUrl: (target) => `https://scrapbox.io/${project}/${encodeURIComponent(target)}`,
     iconImageUrl: (icon) => cosenseIconUrl(project, icon.user),
-    highlight: (code, lang) =>
-        shiki.getLoadedLanguages().includes(lang)
-          ? shiki.codeToHtml(code, { lang, theme: 'github-light', structure: 'inline' })
-          : escapeHtml(code),
   })
-  // Cosense 上の画像とアイコンは別のサイトからは読めず、リダイレクト先の URL もすぐ切れるので、
-  // ビルド時に取ってきてサイトの中 (dist/_cosense/) に置いた URL に差し替える。
   html = await localizeCosenseAssets(rendered)
 } catch (error) {
   console.warn(`[cosense] ${project}/${title} を取得できなかった:`, error)
