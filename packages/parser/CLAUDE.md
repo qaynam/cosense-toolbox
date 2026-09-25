@@ -158,7 +158,7 @@ src/
                         （pageUrl / iconImageUrl / highlight / classNames / showPads / handlers / extensions）
     to-html.ts          toHast の出力を文字列にする近道（highlight は HTML の文字列も受け付ける / style）
     code-line-numbers.ts       描画の拡張。コードブロックの行番号
-    table-cell-line-breaks.ts  描画の拡張。セルの中の文字列を <br> にする
+    table-cell-line-breaks.ts  描画の拡張。セルの中の text ノードの文字列を <br> にする
   utils/                visit / links
   fixtures/             conformance.json（記法仕様）
 ```

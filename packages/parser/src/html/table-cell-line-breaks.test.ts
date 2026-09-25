@@ -63,6 +63,29 @@ describe('tableCellLineBreaks', () => {
     expect(html).toContain('<strong>a<br>b</strong>')
   })
 
+  it('数式の class を消しても、数式には当てない', () => {
+    const html = tableHtml('[$ \\nu]', { ...withBreaks('\\n'), classNames: { formula: '' } })
+    expect(html).toContain('<span>\\nu</span>')
+  })
+
+  it('handlers で数式・コード・リンクの出力を置き換えても、その中には当てない', () => {
+    const span = (value: string): Element => ({
+      type: 'element',
+      tagName: 'span',
+      properties: {},
+      children: [{ type: 'text', value }],
+    })
+    const html = tableHtml('[$ \\nu] `a\\nb` [x\\ny]', {
+      ...withBreaks('\\n'),
+      handlers: {
+        formula: (node) => span(node.value),
+        inlineCode: (node) => span(node.value),
+        internalLink: (node) => span(node.label),
+      },
+    })
+    expect(html).toContain('<td><span>\\nu</span> <span>a\\nb</span> <span>x\\ny</span></td>')
+  })
+
   it('セルの外には当てない', () => {
     expect(toHtml(parse('t\na\\nb'), withBreaks('\\n'))).toContain('<div class="line">a\\nb</div>')
   })
