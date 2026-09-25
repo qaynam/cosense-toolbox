@@ -7,7 +7,7 @@
 import type { HastHighlighter, RenderOptions } from '@cosense-toolbox/cosense-x'
 import { codeLanguageOf } from '@cosense-toolbox/parser/compile'
 import type { AstroConfig } from 'astro'
-import { Option, pipe } from 'effect'
+import { Effect, Match, Option, pipe } from 'effect'
 import { type BundledLanguage, bundledLanguages, createHighlighter } from 'shiki'
 
 type MarkdownConfig = AstroConfig['markdown']
@@ -34,56 +34,75 @@ export const codeLanguagesIn = (source: string): string[] => [
   ),
 ]
 
-const isShiki = (setting: MarkdownConfig['syntaxHighlight']): boolean =>
-  setting === 'shiki' || (typeof setting === 'object' && setting.type === 'shiki')
+/** shiki を使う設定なら、色付けしない言語 (`excludeLangs`) の一覧。shiki を使わない設定なら None。 */
+const shikiExclusionsOf = (
+  setting: MarkdownConfig['syntaxHighlight'],
+): Option.Option<readonly string[]> =>
+  Match.value(setting).pipe(
+    Match.when('shiki', () => Option.some([])),
+    Match.when({ type: 'shiki' }, (config) => Option.some(config.excludeLangs ?? [])),
+    Match.orElse(() => Option.none()),
+  )
 
-const excludedLanguagesOf = (setting: MarkdownConfig['syntaxHighlight']): readonly string[] =>
-  typeof setting === 'object' ? (setting.excludeLangs ?? []) : []
+type Shiki = Awaited<ReturnType<typeof createHighlighter>>
 
 /**
  * Astro の Markdown の設定で色付けする。shiki を使わない設定 (`false` や `'prism'`) なら undefined。
  * prism には相当するものが無いので、色付けしない。
  */
-export const astroShikiHighlighter = (markdown: MarkdownConfig): CodeHighlighter | undefined => {
-  if (!isShiki(markdown.syntaxHighlight)) return undefined
-  const { langs, langAlias, theme, themes, defaultColor, transformers } = markdown.shikiConfig
-  const excluded = new Set(excludedLanguagesOf(markdown.syntaxHighlight))
-  const themed =
-    Object.keys(themes).length > 0
-      ? { themes, ...(defaultColor === undefined ? {} : { defaultColor }) }
-      : { theme }
-  // 最初に色付けするときに作る。色付けしないサイトで shiki を読み込まないため。
-  let created: ReturnType<typeof createHighlighter> | undefined
-  const highlighterOf = () => {
-    created ??= createHighlighter({
-      themes: Object.keys(themes).length > 0 ? Object.values(themes) : [theme],
-      langs,
-    })
-    return created
-  }
-  const resolve = (language: string): string => langAlias[language] ?? language
+export const astroShikiHighlighter = (markdown: MarkdownConfig): CodeHighlighter | undefined =>
+  pipe(
+    shikiExclusionsOf(markdown.syntaxHighlight),
+    Option.map((excluded) => shikiHighlighter(markdown.shikiConfig, new Set(excluded))),
+    Option.getOrUndefined,
+  )
 
-  return async (source) => {
-    const highlighter = await highlighterOf()
+const shikiHighlighter = (
+  { langs, langAlias, theme, themes, defaultColor, transformers }: MarkdownConfig['shikiConfig'],
+  excluded: ReadonlySet<string>,
+): CodeHighlighter => {
+  const multiple = Object.keys(themes).length > 0
+  const themed = multiple
+    ? { themes, ...(defaultColor === undefined ? {} : { defaultColor }) }
+    : { theme }
+  // 最初に色付けするときに 1 度だけ作る。色付けしないサイトで shiki を読み込まないため。
+  const shiki = Effect.runSync(
+    Effect.cached(
+      Effect.promise(() =>
+        createHighlighter({ themes: multiple ? Object.values(themes) : [theme], langs }),
+      ),
+    ),
+  )
+  const resolve = (language: string): string =>
+    Option.getOrElse(Option.fromNullable(langAlias[language]), () => language)
+
+  /** ページに出てくる言語のうち、読み込んでいないものを読み込む。shiki が知らない言語は飛ばす。 */
+  const loadLanguagesIn = (source: string) => (highlighter: Shiki) => {
     const loaded = new Set(highlighter.getLoadedLanguages())
     const wanted = codeLanguagesIn(source)
       .map(resolve)
       .filter((language) => !excluded.has(language) && !loaded.has(language))
       .filter((language): language is BundledLanguage => language in bundledLanguages)
-    if (wanted.length > 0) await highlighter.loadLanguage(...wanted)
-    const available = new Set(highlighter.getLoadedLanguages())
-    // 読み込めた言語だけを色付けする。知らない言語は null (色付けせず 1 行ずつのまま) にする。
-    return (code, language) => {
-      const lang = resolve(language)
-      return excluded.has(lang) || !available.has(lang)
-        ? null
-        : highlighter.codeToHast(code, {
-            lang,
-            ...themed,
-            transformers,
-          })
-    }
+    return pipe(
+      Effect.promise(() => highlighter.loadLanguage(...wanted)),
+      Effect.when(() => wanted.length > 0),
+    )
   }
+
+  /** 読み込めた言語だけを色付けする。知らない言語は null (色付けせず 1 行ずつのまま) にする。 */
+  const highlightWith = (highlighter: Shiki): HastHighlighter => {
+    const available = new Set(highlighter.getLoadedLanguages())
+    return (code, language) =>
+      pipe(
+        Option.some(resolve(language)),
+        Option.filter((lang) => !excluded.has(lang) && available.has(lang)),
+        Option.map((lang) => highlighter.codeToHast(code, { lang, ...themed, transformers })),
+        Option.getOrNull,
+      )
+  }
+
+  return (source) =>
+    pipe(shiki, Effect.tap(loadLanguagesIn(source)), Effect.map(highlightWith), Effect.runPromise)
 }
 
 /** 利用者が渡した色付けをそのまま使う。 */

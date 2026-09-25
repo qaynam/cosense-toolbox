@@ -2,8 +2,19 @@ import { codeLineNumbers } from '@cosense-toolbox/parser/compile'
 import type { AstroConfig } from 'astro'
 import { Option } from 'effect'
 import type { Element, Root } from 'hast'
-import { describe, expect, it } from 'vitest'
+import { createHighlighter } from 'shiki'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { astroShikiHighlighter, codeLanguagesIn, renderOptionsWith } from './highlight'
+
+// shiki を作った回数を数えるため、本物の createHighlighter を包む。
+vi.mock('shiki', async (importOriginal) => {
+  const shiki = await importOriginal<typeof import('shiki')>()
+  return { ...shiki, createHighlighter: vi.fn(shiki.createHighlighter) }
+})
+
+beforeEach(() => {
+  vi.mocked(createHighlighter).mockClear()
+})
 
 type MarkdownConfig = AstroConfig['markdown']
 
@@ -66,6 +77,39 @@ describe('astroShikiHighlighter', () => {
     const highlight = await astroShikiHighlighter(markdownOf())?.(source)
     expect(highlight?.('x', 'unknownlang')).toBeNull()
     expect(highlight?.('y', 'math')).toBeNull()
+  })
+
+  it("syntaxHighlight が文字列の 'shiki' でも色付けする", async () => {
+    const highlight = await astroShikiHighlighter(markdownOf({ syntaxHighlight: 'shiki' }))?.(PAGE)
+    expect(preOf(highlight?.('const a = 1', 'js'))?.tagName).toBe('pre')
+  })
+
+  it('別のページで読み込んだ言語でも、excludeLangs にあれば色付けしない', async () => {
+    const markdown = markdownOf({ syntaxHighlight: { type: 'shiki', excludeLangs: ['js'] } })
+    const highlighter = astroShikiHighlighter(markdown)
+    // javascript を読み込むと、別名の js も shiki に読み込まれる。
+    await highlighter?.('t\ncode:a.javascript\n x')
+    const highlight = await highlighter?.(PAGE)
+    expect(highlight?.('const a = 1', 'js')).toBeNull()
+  })
+
+  it('色付けするまでは shiki を作らない', () => {
+    astroShikiHighlighter(markdownOf())
+    expect(createHighlighter).not.toHaveBeenCalled()
+  })
+
+  it('何ページ色付けしても、shiki は 1 度だけ作る', async () => {
+    const highlighter = astroShikiHighlighter(markdownOf())
+    await Promise.all([highlighter?.(PAGE), highlighter?.('t\ncode:a.py\n pass')])
+    await highlighter?.(PAGE)
+    expect(createHighlighter).toHaveBeenCalledTimes(1)
+  })
+
+  it('後のページで初めて出てくる言語も読み込む', async () => {
+    const highlighter = astroShikiHighlighter(markdownOf())
+    await highlighter?.(PAGE)
+    const highlight = await highlighter?.('t\ncode:a.py\n pass')
+    expect(preOf(highlight?.('pass', 'py'))?.tagName).toBe('pre')
   })
 
   it('langAlias で言語名を読み替える', async () => {

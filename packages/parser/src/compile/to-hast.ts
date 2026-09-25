@@ -373,19 +373,28 @@ const contentsOf = (result: Root | HastContent[]): ElementContent[] =>
 const isBlank = (node: ElementContent): boolean => node.type === 'text' && node.value.trim() === ''
 
 /** 空白だけのテキストを除いた、ただ 1 つの子。 */
-const onlyChildOf = (children: readonly ElementContent[]): Option.Option<ElementContent> => {
-  const meaningful = children.filter((child) => !isBlank(child))
-  return meaningful.length === 1 ? Option.fromNullable(meaningful[0]) : Option.none()
-}
+const onlyChildOf = (children: readonly ElementContent[]): Option.Option<ElementContent> =>
+  pipe(
+    Option.some(children.filter((child) => !isBlank(child))),
+    Option.filter((meaningful) => meaningful.length === 1),
+    Option.flatMapNullable((meaningful) => meaningful[0]),
+  )
 
 const elementNamed =
   (tagName: string) =>
   (node: ElementContent): Option.Option<Element> =>
-    node.type === 'element' && node.tagName === tagName ? Option.some(node) : Option.none()
+    Option.liftPredicate(
+      node,
+      (content): content is Element => content.type === 'element' && content.tagName === tagName,
+    )
 
 /** hast の決まりでは className は配列だが、shiki は class を文字列で付ける。どちらも読む。 */
 const classesOf = (value: Properties[string]): string[] =>
-  Array.isArray(value) ? value.map(String) : typeof value === 'string' ? classList(value) : []
+  Match.value(value).pipe(
+    Match.when(Array.isArray, (names) => names.map(String)),
+    Match.when(Match.string, classList),
+    Match.orElse(() => []),
+  )
 
 /**
  * ハイライタの出力をコードブロックの code の中身にする。
@@ -421,11 +430,13 @@ const linesOf = (
   children: readonly ElementContent[],
   count: number,
 ): Option.Option<readonly Element[]> => {
-  const lines = children.filter((child) => !isBlank(child))
   const isLine = (child: ElementContent): child is Element =>
     child.type === 'element' &&
     classesOf(child.properties.className ?? child.properties.class).includes('line')
-  return lines.length === count && lines.every(isLine) ? Option.some(lines) : Option.none()
+  return Option.liftPredicate(
+    children.filter((child) => !isBlank(child)),
+    (lines): lines is Element[] => lines.length === count && lines.every(isLine),
+  )
 }
 
 /** style.css がコードブロックの背景と文字の色に使う変数。 */
@@ -440,15 +451,28 @@ const THEME_VARIABLES: Readonly<Record<string, string>> = {
  * 変数なら、テーマの色は既定として出しつつ、普通の CSS で塗り替えられる。
  */
 const themeStyleOf = (style: string | undefined): string | undefined =>
-  style
-    ?.split(';')
-    .filter((declaration) => declaration.trim() !== '')
-    .map((declaration) => {
-      const colon = declaration.indexOf(':')
+  pipe(
+    Option.fromNullable(style),
+    Option.map((declarations) =>
+      declarations
+        .split(';')
+        .flatMap((declaration) => Option.toArray(themeDeclarationOf(declaration)))
+        .join(';'),
+    ),
+    Option.getOrUndefined,
+  )
+
+/** `name: value` の 1 つ。`:` の無い壊れた宣言は落とす。 */
+const themeDeclarationOf = (declaration: string): Option.Option<string> =>
+  pipe(
+    Option.some(declaration.indexOf(':')),
+    Option.filter((colon) => colon > 0),
+    Option.map((colon) => {
       const name = declaration.slice(0, colon).trim()
-      return `${THEME_VARIABLES[name] ?? name}:${declaration.slice(colon + 1).trim()}`
-    })
-    .join(';')
+      const variable = Option.getOrElse(Option.fromNullable(THEME_VARIABLES[name]), () => name)
+      return `${variable}:${declaration.slice(colon + 1).trim()}`
+    }),
+  )
 
 /**
  * 1 行 = 1 要素に切る (Cosense Web と同じ)。行ごとにインデントを付けられるようにするため。

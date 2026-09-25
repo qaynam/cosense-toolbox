@@ -124,9 +124,33 @@ describe('コードブロックの色付け (highlight)', () => {
     )
   })
 
-  it('行の数が合わない出力は、行に分けずにひと塊のまま出す', () => {
-    const html = toHtml(parse(SOURCE), { highlight: () => shikiOf(['const a = 1']) })
+  it('テーマの style に `:` の無い宣言が混じっていたら、その宣言だけを落とす', () => {
+    const style = ' background-color : #fff ;broken; color:#111;'
+    expect(toHtml(parse(SOURCE), { highlight: () => shikiOf(['a', 'b'], style) })).toContain(
+      'style="--cosense-code-bg:#fff;--cosense-code-text:#111"',
+    )
+  })
+
+  it.each([
+    ['少ない', ['const a = 1']],
+    ['多い', ['a', 'b', 'c']],
+  ])('行の要素がソースの行より%s出力は、行に分けずにひと塊のまま出す', (_, lines) => {
+    const html = toHtml(parse(SOURCE), { highlight: () => shikiOf(lines) })
     expect(html.match(/<code class="code-body/g)).toHaveLength(1)
+  })
+
+  it('pre の隣にほかの要素があれば、pre を剥がさずに出す', () => {
+    const pre = tag('pre', [tag('code', [italic('x')])])
+    expect(toHtml(parse(SOURCE), { highlight: () => [pre, italic('y')] })).toContain(
+      '<code class="code-body highlight"><pre><code><i>x</i></code></pre><i>y</i></code>',
+    )
+  })
+
+  it('pre > code でない入れ子は、剥がさずにそのまま出す', () => {
+    const outer = tag('div', [tag('span', [italic('x')])])
+    expect(toHtml(parse(SOURCE), { highlight: () => [outer] })).toContain(
+      '<code class="code-body highlight"><div><span><i>x</i></span></div></code>',
+    )
   })
 
   it('pre > code 以外の root は、その中身をそのまま code に入れる', () => {
