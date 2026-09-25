@@ -31,3 +31,6 @@ knowledge/
 
 # Turborepo
 .turbo/
+
+# Zed local settings
+.zed/
