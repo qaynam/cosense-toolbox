@@ -49,7 +49,10 @@ import { type CosenseComponent, type ToHastOptions, toHastEither } from './to-ha
 export interface CompileOptions
   extends LinkOptions,
     Omit<ReadOptions, 'filePath'>,
-    Pick<ToHastOptions, 'classNames' | 'highlight' | 'iconImageUrl' | 'showPads' | 'title'> {
+    Pick<
+      ToHastOptions,
+      'classNames' | 'handlers' | 'highlight' | 'iconImageUrl' | 'showPads' | 'title'
+    > {
   /** 形式 (`format`) を省いたときは、このパスの拡張子で決める */
   readonly filePath?: string
   /**

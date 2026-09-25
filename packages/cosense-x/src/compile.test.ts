@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { defaultHastHandlers } from '@cosense-toolbox/parser/compile'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
@@ -270,5 +271,24 @@ describe('コードブロックの色付け', () => {
     expect(html).toContain(
       '<code class="code-body highlight"><span class="token-ts">const a = 1</span></code>',
     )
+  })
+})
+
+describe('handlers', () => {
+  it('handlers で記法ごとの出力を差し替えられる。既定の出力を包むときは defaultHastHandlers を呼ぶ', async () => {
+    const html = await renderPage('タイトル\n[https://x.test/a.png] と `code`', {
+      handlers: {
+        image: (node, ctx) => ({
+          type: 'element',
+          tagName: 'figure',
+          properties: {},
+          children: defaultHastHandlers.image(node, ctx),
+        }),
+      },
+    })
+    expect(html).toContain(
+      '<figure><img class="image" src="https://x.test/a.png" alt=""/></figure>',
+    )
+    expect(html).toContain('<code class="code">code</code>')
   })
 })
