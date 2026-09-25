@@ -237,7 +237,14 @@ describe('ctx.ancestors (祖先のノード)', () => {
   it('描き始めのノードの祖先は空', () => {
     const seen: string[][] = []
     toHast(parseLine('a'), {
-      extensions: [{ line: (output, _node, ctx) => (seen.push(types(ctx.ancestors)), output) }],
+      extensions: [
+        {
+          line: (output, _node, ctx) => {
+            seen.push(types(ctx.ancestors))
+            return output
+          },
+        },
+      ],
     })
     expect(seen).toEqual([[]])
   })
