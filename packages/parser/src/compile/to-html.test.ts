@@ -1,4 +1,3 @@
-import { Option } from 'effect'
 import { describe, expect, it } from 'vitest'
 import type { InlineConstruct } from '../inline/types'
 import { parse, parseLine } from '../parse'
@@ -270,13 +269,13 @@ describe('差し替え', () => {
 describe('独自記法', () => {
   /** `@user` を独自ノードにする拡張。実際のプラグインは InlineNodeMap を declaration merging で拡張する。 */
   const mentionConstruct: InlineConstruct = (source, index) => {
-    if (source[index] !== '@') return Option.none()
+    if (source[index] !== '@') return null
     const name = source.slice(index + 1).match(/^[A-Za-z0-9_-]+/)?.[0]
-    if (name === undefined) return Option.none()
-    return Option.some({
+    if (name === undefined) return null
+    return {
       node: { type: 'mention', user: name } as unknown as InlineNodeInit,
       length: name.length + 1,
-    })
+    }
   }
   const extensions = [{ constructs: [mentionConstruct] }]
 

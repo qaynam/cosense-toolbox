@@ -137,7 +137,8 @@ src/
     scan.ts             括弧の対応探索・タグ境界判定・行頭空白
     image-url.ts        isImageUrl（構造の判定）/ asImageSrc（表示用の変換）
   inline/
-    types.ts            InlineConstruct / BracketRule / InlineContext / Extension（型のみ）
+    types.ts            InlineConstruct / BracketRule / InlineContext / Extension（公開の型のみ。effect を import しない）
+    internal-types.ts   パッケージの中のルールの型（Option で返す）。公開しない
     tokenize.ts         走査ループ。位置の付与はここだけが行う
     constructs/         1 construct = 1 ファイル + index.ts（配列の登録場所）
     bracket-rules/      1 rule = 1 ファイル + index.ts（配列の登録場所）
@@ -212,14 +213,10 @@ src/
   検証コマンド（何もヒットしなければ OK）:
 
   ```sh
-  bun run build && grep -nE "Option\.|Either\.|Effect\.|Schema\." dist/index.d.mts dist/utils.d.mts dist/compile.d.mts
+  bun run build && grep -nE "Option\.|Either\.|Effect\.|Schema\." dist/index.d.mts dist/utils.d.mts dist/compile.d.mts dist/extensions.d.mts
   ```
 
-  例外は 2 つだけ:
-  - `./schema` — effect ネイティブに使いたい人向けの opt-in サブパス
-  - `./extensions` の `InlineConstruct` / `BracketRule` — 記法を書くプラグイン作者は
-    `Option` を返す必要がある。`Extension` を経由して `ParseOptions` からも型として参照されるので、
-    `dist/index.d.mts` に `effect` からの import 行自体は出る。**シグネチャに出ていなければよい。**
+  例外は `./schema` だけ (effect ネイティブに使いたい人向けの opt-in サブパス)。
 - `import { Array, String, Number } from 'effect'` はグローバルをシャドウする。
   **必ずエイリアスする**（`import { Array as Arr } from 'effect'`）。
 - オプション引数は常に「全フィールド optional な readonly object」。

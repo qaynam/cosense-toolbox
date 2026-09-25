@@ -2,7 +2,7 @@ import { Option } from 'effect'
 import { isImageUrl } from '../../core/image-url'
 import { shiftOrigin } from '../../core/position'
 import type { InlineNodeInit } from '../../types'
-import type { InlineConstruct } from '../types'
+import type { InternalConstruct } from '../internal-types'
 
 /**
  * `[[...]]` — Cosense Web の strong。`]]` で閉じるときだけ成立する
@@ -10,7 +10,7 @@ import type { InlineConstruct } from '../types'
  *
  * 中身が画像 URL なら大きい画像、そうでなければ太字装飾になる。
  */
-export const strongBracketConstruct: InlineConstruct = (source, index, ctx) => {
+export const strongBracketConstruct: InternalConstruct = (source, index, ctx) => {
   if (source[index] !== '[' || source[index + 1] !== '[') return Option.none()
 
   const end = source.indexOf(']]', index + 2)
