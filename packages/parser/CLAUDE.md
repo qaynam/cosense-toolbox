@@ -210,12 +210,6 @@ src/
   ```
 
   例外は `./schema` だけ (effect ネイティブに使いたい人向けの opt-in サブパス)。
-- **記法の拡張 (`./extensions`) も effect を要求しない。** `InlineConstruct` / `BracketRule` は
-  成立しなければ null を返す普通の関数にしてある。パッケージの中のルールは `Option` で書き
-  (`inline/internal-types.ts`)、拡張のルールは `resolveExtensions` で `Option.fromNullable` に包んでから試す。
-  中の型は公開の型 (`inline/types.ts`) と別のファイルに置き、公開の型のファイルでは effect を import しない。
-  バンドルの都合で `dist/index.d.mts` に使われない `effect` の import 行が残ることはあるが、
-  **シグネチャに出ていなければよい。**
 - `import { Array, String, Number } from 'effect'` はグローバルをシャドウする。
   **必ずエイリアスする**（`import { Array as Arr } from 'effect'`）。
 - オプション引数は常に「全フィールド optional な readonly object」。
