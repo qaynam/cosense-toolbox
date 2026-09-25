@@ -193,15 +193,12 @@ const { data, contentType } = await fetchAsset('https://scrapbox.io/files/xxx.pn
 | `elementAttributeNameCase` | `'react'` なら `className`、`'html'` なら `class`。既定は `jsxImportSource` から決める |
 | `rehypePlugins` | hast に当てる rehype プラグイン |
 | `index` `filePath` `pageUrl` `tagUrl` `projectUrl` `unresolved` | リンクの解決 |
-| `title` | false ならタイトル行 (`<h1>`) を出さない |
-| `classNames` `showPads` `iconImageUrl` | parser の `toHast` / `toHtml` の同名のオプションと同じ |
-| `handlers` | 記法ごとの出力の差し替え。parser の `toHast` の `handlers` と同じ。cosense-x のリンクの解決やコンポーネントより後に重ねる |
-| `highlight` | コードブロックの色付け。`(code, language) => hast \| null`。下を参照 |
+| `renderOptions` | 描画の設定。parser の `toHast` のオプションがそのまま渡る (`extensions` `handlers` `highlight` `classNames` `showPads` `iconImageUrl`)。加えて `title: false` でタイトル行 (`<h1>`) を出さない |
 | `parseOptions` | パーサーに渡すオプション (記法の拡張など) |
 
 ### コードブロックの色付け
 
-`highlight` は parser の `toHast` の同名のオプションと同じで、HTML の文字列ではなく hast を返す。
+`renderOptions.highlight` は parser の `toHast` の同名のオプションと同じで、HTML の文字列ではなく hast を返す。
 shiki の `codeToHast` の結果はそのまま返してよい。`pre > code` の形なら、code の中身を使い、pre の class とテーマの背景色・文字色 (`--cosense-code-bg` / `--cosense-code-text` の変数にして) をコードブロックに移す。行ごとの `span.line` は 1 行ずつの要素に入れ直す。
 
 ```ts
@@ -211,18 +208,20 @@ import { createHighlighter } from 'shiki'
 const shiki = await createHighlighter({ themes: ['github-light'], langs: ['js', 'ts'] })
 
 await compile(source, {
-  // 読み込んでいない言語は null を返して、色付けせずに出す
-  highlight: (code, language) =>
-    shiki.getLoadedLanguages().includes(language)
-      ? shiki.codeToHast(code, { lang: language, theme: 'github-light' })
-      : null,
+  renderOptions: {
+    // 読み込んでいない言語は null を返して、色付けせずに出す
+    highlight: (code, language) =>
+      shiki.getLoadedLanguages().includes(language)
+        ? shiki.codeToHast(code, { lang: language, theme: 'github-light' })
+        : null,
+  },
 })
 ```
 
 - `language` はファイル名から推測した名前。`code:hello.js` なら `js`、`code:python` なら `python`。`@cosense-toolbox/parser/compile` の `codeLanguageOf` と同じ
 - 行をまたぐ出力 (highlight.js など) は、本体を 1 つの要素にまとめる。行で切ると要素が壊れるため
 - 例外を投げたブロックは、色付けせずに出す
-- 行番号は `handlers: codeLineNumbers()` で付ける (`@cosense-toolbox/parser/compile`)
+- 行番号は `renderOptions: { extensions: [codeLineNumbers()] }` で付ける (`@cosense-toolbox/parser/compile`)
 - `null` を返すと、色付けせず 1 行ずつのまま出す
 - `highlight` は同期で呼ぶ。shiki のように言語を非同期で読み込むものは、先に読み込んでおく
 - `pre > code` を探して剥がすので、rehype のハイライタ (`@shikijs/rehype` など) はそのままでは当たらない。`highlight` を使う

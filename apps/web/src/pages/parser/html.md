@@ -1,7 +1,7 @@
 ---
 layout: ../../layouts/Doc.astro
 title: HTML への変換
-description: toHast / toHtml の出力と、pageUrl / iconImageUrl / highlight / classNames / showPads / handlers / style
+description: toHast / toHtml の出力と、pageUrl / iconImageUrl / highlight / classNames / showPads / handlers / extensions / style
 ---
 
 # HTML への変換
@@ -59,11 +59,12 @@ toHast(page); // { type: 'root', children: [{ type: 'element', tagName: 'div', .
 | [`classNames`](#classnames)     | `HtmlClassNames`             | `defaultClassNames`  |
 | [`showPads`](#showpads)         | `boolean`                    | `false`              |
 | [`handlers`](#handlers)         | `HastHandlers`               | 既定のハンドラ       |
+| [`extensions`](#extensions)     | `RenderExtension[]`          | なし                 |
 | [`style`](#style)               | `string`                     | `<style>` を出さない |
 
 上の 3 つは、AST から導けない情報を外から渡すためにあります。
 ページをどの URL で配信しているか、アイコン画像がどこにあるか、コードの構文がどう色分けされるかは、どれもソースに書かれていないからです。
-残りの 4 つは出力の見た目と構造を調整します。
+残りの 5 つは出力の見た目と構造を調整します。
 
 ### pageUrl
 
@@ -289,24 +290,7 @@ handlers: {
 }
 ```
 
-既定の出力を包みたいときは、`defaultHastHandlers` の同じ型のハンドラを呼びます。
-既定のハンドラはオプションを `ctx.options` から読むので、オプションを渡し直さなくて済みます。
-
-```ts
-import { defaultHastHandlers, toHtml } from "@cosense-toolbox/parser/compile";
-
-toHtml(page, {
-  pageUrl: (title) => `/wiki/${title}`,
-  handlers: {
-    image: (node, ctx) => ({
-      type: "element",
-      tagName: "figure",
-      properties: {},
-      children: defaultHastHandlers.image(node, ctx),
-    }),
-  },
-});
-```
+既定の出力を包んだり、属性を足したりするだけなら、`handlers` で作り直さずに次の [`extensions`](#extensions) を使います。
 
 拡張が足した独自のノード型も、`InlineNodeMap` を declaration merging で拡張してあればここのキーになります。
 ハンドラを書かなかった独自ノードは、子があればその中身が出力されます。
@@ -314,6 +298,43 @@ toHtml(page, {
 `classNames` の設定は `ctx.options.classNames` から読めます。
 
 差し替えたハンドラでは既定の URL の検査が効かないので、[エスケープと URL の検査](#エスケープと-url-の検査)を必ずご確認ください。
+
+### extensions
+
+```ts
+extensions?: RenderExtension[]
+```
+
+`handlers` が出力を**作る**のに対して、`extensions` はできた出力に**手を加えます**。
+拡張はノード型ごとの関数を持ち、その型のここまでの出力を受け取って、新しい出力を返します。
+vite の `transform` と同じく、前の段の出力をもらって加工するだけの関数です。
+
+```ts
+toHtml(page, {
+  extensions: [
+    {
+      // 画像を <figure> で包む。output は既定 (または handlers) の出力
+      image: (output) => ({ type: "element", tagName: "figure", properties: {}, children: output }),
+    },
+  ],
+});
+```
+
+関数は `(output, node, ctx)` を受け取るので、AST のノードやオプションを見て加工できます。
+
+1 つのノードは次の順で描かれます。
+
+1. 既定のハンドラ (`handlers` にその型があれば、そちらで置き換え)
+2. `extensions` を並べた順に通す。前の拡張の出力が次の拡張に渡る
+
+同じノード型に触る拡張どうしも、並べるだけで重なります。
+拡張が例外を投げたときは握りつぶさずにそのまま上がるので、書き間違いに気づけます。
+
+用意している拡張は次のとおりです。
+
+| 拡張 | 内容 |
+| :--- | :--- |
+| `codeLineNumbers()` | コードブロックの本体行に行番号 (`data-line`) と桁数 (`data-line-digits`) を付けます。番号の表示は `@cosense-toolbox/style` が持ちます |
 
 ### style
 
@@ -389,17 +410,18 @@ Cosense Web と同じく 1 行を 1 要素に切ります。
 
 [`highlight`](#highlight) を渡し、その出力が行ごとに分かれていないときだけ、本体が 1 つの `<code class="code-body highlight">` にまとまります。
 
-行番号が要るときは、`handlers` に `codeLineNumbers()` を渡します。
-本体行に 1 から数えた `data-line` が付き、`@cosense-toolbox/style` がそれを見て行の左に番号を出します。
+行番号が要るときは、[`extensions`](#extensions) に `codeLineNumbers()` を渡します。
+本体行に 1 から数えた `data-line` と、番号の桁数の `data-line-digits` が付きます。
+`@cosense-toolbox/style` はそれを見て、行の左に番号の欄を取って番号を出します。
 
 ```ts
 import { codeLineNumbers, toHtml } from "@cosense-toolbox/parser/compile";
 
-toHtml(page, { handlers: codeLineNumbers() });
-// <div class="line code-block" data-indent="1" data-line="1">…</div>
+toHtml(page, { extensions: [codeLineNumbers()] });
+// <div class="line code-block" data-indent="1" data-line="1" data-line-digits="1">…</div>
 ```
 
-ほかの `handlers` と一緒に使うときは、`{ ...codeLineNumbers(), formula: … }` のように重ねます。
+ほかの拡張とは、配列に並べるだけで重なります。
 
 ### インライン
 
@@ -473,7 +495,6 @@ KaTeX に渡したい場合は [`handlers`](#handlers) で差し替えてくだ�
 | `safeSrc(url)`          | src 版です。`data:` 画像は許します                                            |
 | `defaultPageUrl(title)` | `pageUrl` の既定の実装です                                                    |
 | `defaultClassNames`     | 既定の class 名です                                                           |
-| `defaultHastHandlers`   | 既定のハンドラ一式です                                                        |
 
 外部リンクを別タブで開く例を示します。
 
