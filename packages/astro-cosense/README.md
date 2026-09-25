@@ -170,16 +170,21 @@ const html = toHtml(parse(text), { highlight })
 ### 行番号
 
 行番号の要素は出さないので、CSS カウンタで付ける (shiki にも行番号のオプションは無い)。
+付けたいページだけで効くよう、`line-numbers` のような class を付けた要素の中に限る。
+
+```html
+<article class="cosense line-numbers">…</article>
+```
 
 ```css
 /* shiki で色付けしたブロックは行ごとの span.line を、色付けしていないブロックは 1 行ずつの div を数える */
-.cosense .code-body.highlight,
-.cosense .line.code-block:has(> .code-start) {
+.line-numbers .code-body.highlight,
+.line-numbers .line.code-block:has(> .code-start) {
   counter-reset: line;
 }
 
-.cosense .code-body.highlight > .line::before,
-.cosense .line.code-block > .code-body:not(.highlight)::before {
+.line-numbers .code-body.highlight > .line::before,
+.line-numbers .line.code-block > .code-body:not(.highlight)::before {
   counter-increment: line;
   content: counter(line);
   display: inline-block;
