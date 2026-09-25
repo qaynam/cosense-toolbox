@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeTokens, encodeTokens, LEGEND, TOKEN_TYPES } from './tokens'
+import { LEGEND, TOKEN_TYPES, computeTokens, encodeTokens } from './tokens'
 
 const typesOn = (text: string, line: number, options = {}) =>
   computeTokens(text, options)
@@ -19,9 +19,7 @@ describe('computeTokens', () => {
   })
 
   it('applies every marker in one run, as Cosense does', () => {
-    expect(typesOn('T\n[-* 太字で打ち消し]', 1)).toEqual(
-      expect.arrayContaining(['strike', 'bold']),
-    )
+    expect(typesOn('T\n[-* 太字で打ち消し]', 1)).toEqual(expect.arrayContaining(['strike', 'bold']))
   })
 
   it('grades emphasis by asterisk count', () => {
@@ -81,9 +79,7 @@ describe('encodeTokens', () => {
   })
 
   it('sends only types the client is expected to know', () => {
-    const data = encodeTokens(
-      TOKEN_TYPES.map((type, i) => ({ line: i, char: 0, length: 1, type })),
-    )
+    const data = encodeTokens(TOKEN_TYPES.map((type, i) => ({ line: i, char: 0, length: 1, type })))
     for (let i = 3; i < data.length; i += 5) {
       expect(data[i]).toBeLessThan(LEGEND.length)
       expect(LEGEND[data[i] as number]).toBeTypeOf('string')

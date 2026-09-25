@@ -189,7 +189,11 @@ export const computeTokens = (text: string, options: ComputeTokensOptions = {}):
         tokens.push(spanToken('title', shift(node.position)))
         return 'skip'
       case 'codeBlock':
-        pushLineSpan('codeBlock', node.position.start.line + offset, node.position.end.line + offset)
+        pushLineSpan(
+          'codeBlock',
+          node.position.start.line + offset,
+          node.position.end.line + offset,
+        )
         return 'skip'
       case 'table':
         pushLineSpan('table', node.position.start.line + offset, node.position.end.line + offset)
@@ -238,7 +242,13 @@ export const encodeTokens = (tokens: readonly RawToken[]): number[] => {
   for (const token of sorted) {
     const deltaLine = token.line - prevLine
     const deltaStartChar = deltaLine === 0 ? token.char - prevChar : token.char
-    data.push(deltaLine, deltaStartChar, token.length, LEGEND_INDEX.get(LSP_TYPE[token.type]) ?? 0, 0)
+    data.push(
+      deltaLine,
+      deltaStartChar,
+      token.length,
+      LEGEND_INDEX.get(LSP_TYPE[token.type]) ?? 0,
+      0,
+    )
     prevLine = token.line
     prevChar = token.char
   }

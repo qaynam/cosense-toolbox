@@ -1,16 +1,16 @@
 #!/usr/bin/env node
+import { appendFileSync } from 'node:fs'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import {
-  createConnection,
   type InitializeResult,
   ProposedFeatures,
   type SemanticTokens,
   type SemanticTokensParams,
-  TextDocuments,
   TextDocumentSyncKind,
+  TextDocuments,
+  createConnection,
 } from 'vscode-languageserver/node'
-import { appendFileSync } from 'node:fs'
-import { computeTokens, encodeTokens, LEGEND } from './tokens'
+import { LEGEND, computeTokens, encodeTokens } from './tokens'
 
 // TEMPORARY: whether the editor asks for tokens at all is the one thing that cannot be
 // seen from outside. Remove once the Zed side is settled.
