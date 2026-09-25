@@ -280,6 +280,7 @@ toHtml(page, {
 | `ctx.children(node)` | 子ノードの変換結果を、平らな配列で返します |
 | `ctx.node(node)` | ノード 1 つを変換します |
 | `ctx.options` | 既定値を埋めたオプション (`pageUrl` や `classNames` など) です |
+| `ctx.ancestors` | 今描いているノードの祖先です。根から親までの順に並びます |
 
 HTML の文字列をそのまま入れたいときは、`raw` ノードを返します。
 `toHtml` はこれをエスケープせずに埋め込みます。
@@ -351,8 +352,21 @@ toHtml(parse("t\ntable:x\n 1 行目\\n2 行目"), {
 ```
 
 `marker` は文字列そのままで探します。正規表現としては読みません。
-当てるのはセルの中の文字だけで、コード・数式・リンクの表示の中には当てません (数式の `\nu` などを壊さないため)。
-装飾の中には当てます。
+当てるのはセルの中の地の文 (AST の `text` ノード) だけです。
+コード・数式・リンクの表示は `text` ノードではないので、その中には当てません (数式の `\nu` などを壊さないため)。
+`classNames` や `handlers` で出力を変えても同じです。装飾の中身は `text` ノードなので当てます。
+
+どのノードの中にあるかは `ctx.ancestors` で見ています。自分で書く拡張でも、同じように場所で出力を変えられます。
+
+```ts
+// 引用の中の画像だけを <figure> で包む
+{
+  image: (output, _node, ctx) =>
+    ctx.ancestors.some((node) => node.type === "line" && node.quote)
+      ? { type: "element", tagName: "figure", properties: {}, children: output }
+      : output,
+}
+```
 
 ### style
 

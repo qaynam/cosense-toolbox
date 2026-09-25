@@ -1,6 +1,7 @@
 import fc from 'fast-check'
 import type { Element, ElementContent, Root } from 'hast'
 import { describe, expect, it } from 'vitest'
+import { tableCellNotation } from '../extensions'
 import { parse, parseLine } from '../parse'
 import type { AnyNode } from '../types'
 import { codeLineNumbers } from './code-line-numbers'
@@ -195,6 +196,58 @@ describe('handlers (置き換え)', () => {
       },
     })
     expect(seen).toEqual(['my-link', '/%E3%83%AA%E3%83%B3%E3%82%AF'])
+  })
+})
+
+describe('ctx.ancestors (祖先のノード)', () => {
+  const SOURCE = 't\ntable:x\n [* a]'
+  const types = (nodes: readonly AnyNode[]): string[] => nodes.map((node) => node.type)
+
+  it('拡張には、根から親までのノードが並んで渡る', () => {
+    const seen: string[][] = []
+    toHast(parse(SOURCE, { extensions: [tableCellNotation()] }), {
+      extensions: [
+        {
+          text: (output, _node, ctx) => {
+            seen.push(types(ctx.ancestors))
+            return output
+          },
+        },
+      ],
+    })
+    expect(seen).toEqual([
+      ['page', 'title'],
+      ['page', 'table', 'tableRow', 'tableCell', 'decoration'],
+    ])
+  })
+
+  it('handlers にも同じく渡り、ctx.node で描いた子にも続く', () => {
+    const seen: string[][] = []
+    toHast(parse(SOURCE, { extensions: [tableCellNotation()] }), {
+      handlers: {
+        tableCell: (node, ctx) => node.children.flatMap((child) => ctx.node(child)),
+        text: (node, ctx) => {
+          seen.push(types(ctx.ancestors))
+          return { type: 'text', value: node.value }
+        },
+      },
+    })
+    expect(seen).toContainEqual(['page', 'table', 'tableRow', 'tableCell', 'decoration'])
+  })
+
+  it('描き始めのノードの祖先は空', () => {
+    const seen: string[][] = []
+    toHast(parseLine('a'), {
+      extensions: [
+        {
+          line: (output, _node, ctx) => {
+            seen.push(types(ctx.ancestors))
+            return output
+          },
+        },
+      ],
+    })
+    expect(seen).toEqual([[]])
   })
 })
 
