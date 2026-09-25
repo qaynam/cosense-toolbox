@@ -5,6 +5,9 @@
   "description": "Language server for .csn and .csnx: semantic tokens for Cosense notation.",
   "license": "MIT",
   "bin": { "cosense-language-server": "./dist/main.mjs" },
+  "exports": {
+    "./tokens": { "types": "./dist/tokens.d.mts", "default": "./dist/tokens.mjs" }
+  },
   "files": ["dist"],
   "scripts": {
     "build": "tsdown",
