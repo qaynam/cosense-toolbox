@@ -7,7 +7,7 @@ import type { ShikiConfig } from 'astro'
 import { createHighlighter } from 'shiki'
 
 export const shikiConfig = {
-  theme: 'github-light',
+  theme: 'catppuccin-latte',
 } satisfies Partial<ShikiConfig>
 
 const defaultLangs = [
