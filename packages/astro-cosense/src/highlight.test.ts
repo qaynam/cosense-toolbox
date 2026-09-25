@@ -1,7 +1,9 @@
+import { codeLineNumbers } from '@cosense-toolbox/parser/compile'
 import type { AstroConfig } from 'astro'
+import { Option } from 'effect'
 import type { Element, Root } from 'hast'
 import { describe, expect, it } from 'vitest'
-import { astroShikiHighlighter, codeLanguagesIn } from './highlight'
+import { astroShikiHighlighter, codeLanguagesIn, renderOptionsWith } from './highlight'
 
 type MarkdownConfig = AstroConfig['markdown']
 
@@ -70,5 +72,27 @@ describe('astroShikiHighlighter', () => {
     const markdown = markdownOf({ shikiConfig: { langAlias: { mylang: 'python' } } })
     const highlight = await astroShikiHighlighter(markdown)?.('t\ncode:a.mylang\n pass')
     expect(preOf(highlight?.('pass', 'mylang'))?.tagName).toBe('pre')
+  })
+})
+
+describe('renderOptionsWith', () => {
+  const highlight = () => null
+
+  it('色付けしない設定なら、利用者の renderOptions をそのまま使う', () => {
+    const extensions = [codeLineNumbers()]
+    expect(renderOptionsWith({ extensions }, Option.none())).toEqual({ extensions })
+  })
+
+  it('色付けするときは highlight を足し、利用者のほかの設定は残す', () => {
+    const extensions = [codeLineNumbers()]
+    expect(renderOptionsWith({ extensions, showPads: true }, Option.some(highlight))).toEqual({
+      extensions,
+      showPads: true,
+      highlight,
+    })
+  })
+
+  it('renderOptions が無くても色付けは渡る', () => {
+    expect(renderOptionsWith(undefined, Option.some(highlight))).toEqual({ highlight })
   })
 })

@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { defaultHastHandlers } from '@cosense-toolbox/parser/compile'
+import { codeLineNumbers } from '@cosense-toolbox/parser/compile'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
@@ -256,39 +256,73 @@ describe('rehype プラグイン', () => {
   })
 })
 
-describe('コードブロックの色付け', () => {
+describe('renderOptions (parser の toHast に渡る描画の設定)', () => {
+  const SOURCE = 'タイトル\n[https://x.test/a.png] と `code` と [リンク]\ncode:a.ts\n const a = 1'
+
   it('highlight が返した要素を JS にして描画する', async () => {
-    const html = await renderPage('タイトル\ncode:a.ts\n const a = 1', {
-      highlight: (code, language) => [
-        {
-          type: 'element',
-          tagName: 'span',
-          properties: { className: [`token-${language}`] },
-          children: [{ type: 'text', value: code }],
-        },
-      ],
+    const html = await renderPage(SOURCE, {
+      renderOptions: {
+        highlight: (code, language) => [
+          {
+            type: 'element',
+            tagName: 'span',
+            properties: { className: [`token-${language}`] },
+            children: [{ type: 'text', value: code }],
+          },
+        ],
+      },
     })
     expect(html).toContain(
       '<code class="code-body highlight"><span class="token-ts">const a = 1</span></code>',
     )
   })
-})
 
-describe('handlers', () => {
-  it('handlers で記法ごとの出力を差し替えられる。既定の出力を包むときは defaultHastHandlers を呼ぶ', async () => {
-    const html = await renderPage('タイトル\n[https://x.test/a.png] と `code`', {
-      handlers: {
-        image: (node, ctx) => ({
-          type: 'element',
-          tagName: 'figure',
-          properties: {},
-          children: defaultHastHandlers.image(node, ctx),
-        }),
+  it('handlers で記法ごとの出力を置き換えられる', async () => {
+    const html = await renderPage(SOURCE, {
+      renderOptions: {
+        handlers: {
+          inlineCode: (node) => ({
+            type: 'element',
+            tagName: 'kbd',
+            properties: {},
+            children: [{ type: 'text', value: node.value }],
+          }),
+        },
       },
     })
-    expect(html).toContain(
-      '<figure><img class="image" src="https://x.test/a.png" alt=""/></figure>',
-    )
-    expect(html).toContain('<code class="code">code</code>')
+    expect(html).toContain('<kbd>code</kbd>')
+  })
+
+  it('extensions は cosense-x の描画 (リンクの解決を含む) の出力を受け取って加工する', async () => {
+    const html = await renderPage(SOURCE, {
+      pageUrl: (page) => `/p/${page.slug}`,
+      index: createIndex([{ id: 'a.csn', title: 'リンク', slug: 'link' }]),
+      renderOptions: {
+        extensions: [
+          {
+            internalLink: (output) => ({
+              type: 'element',
+              tagName: 'mark',
+              properties: {},
+              children: output,
+            }),
+          },
+        ],
+      },
+    })
+    expect(html).toContain('<mark><a class="link" href="/p/link">リンク</a></mark>')
+  })
+
+  it('codeLineNumbers で本体行に行番号が付く', async () => {
+    const html = await renderPage(SOURCE, { renderOptions: { extensions: [codeLineNumbers()] } })
+    expect(html).toContain('data-line="1" data-line-digits="1"')
+  })
+
+  it('classNames と title も renderOptions で渡す', async () => {
+    const html = await renderPage(SOURCE, {
+      renderOptions: { title: false, classNames: { inlineCode: 'my-code' } },
+    })
+    expect(html).not.toContain('<h1')
+    expect(html).toContain('<code class="my-code">code</code>')
   })
 })

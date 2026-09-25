@@ -21,7 +21,7 @@ try {
   const text = await fetchPageText(project, title, pat ? { pat } : {})
   const rendered = toHtml(parse(text), {
     highlight,
-    handlers: codeLineNumbers(),
+    extensions: [codeLineNumbers()],
     pageUrl: (target) => `https://scrapbox.io/${project}/${encodeURIComponent(target)}`,
     iconImageUrl: (icon) => cosenseIconUrl(project, icon.user),
   })

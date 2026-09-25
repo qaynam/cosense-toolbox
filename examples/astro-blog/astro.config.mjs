@@ -25,8 +25,8 @@ export default defineConfig({
         extensions: [customDecorations(['|', '!', '~', '#'])],
       },
       unresolved: 'warn',
-      // コードブロックの本体行に行番号 (data-line) を付ける。表示は @cosense-toolbox/tailwind が持つ。
-      handlers: codeLineNumbers(),
+      // 描画の設定。parser の toHast に渡る。行番号 (data-line) を付け、表示は @cosense-toolbox/tailwind が持つ。
+      renderOptions: { extensions: [codeLineNumbers()] },
       assets: { pat: process.env.COSENSE_PAT },
     }),
   ],

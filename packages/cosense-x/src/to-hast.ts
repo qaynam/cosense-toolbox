@@ -100,6 +100,15 @@ export interface ToHastOptions extends Omit<HastOptions, 'pageUrl'> {
   }
 }
 
+/**
+ * 利用者が決める描画の設定。リンクの解決とコンポーネントは cosense-x が組み立てて渡すので含めない。
+ * `compile` の `renderOptions` と Astro 統合の `renderOptions` はこの形。
+ */
+export type RenderOptions = Pick<
+  ToHastOptions,
+  'classNames' | 'extensions' | 'handlers' | 'highlight' | 'iconImageUrl' | 'showPads' | 'title'
+>
+
 const text = (value: string): Text => ({ type: 'text', value })
 
 const classList = (name: string | undefined): string[] =>

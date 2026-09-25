@@ -4,9 +4,10 @@
  * `.md` / `.mdx` のコードブロックと見た目を揃えるため、`markdown.syntaxHighlight` と
  * `markdown.shikiConfig` をそのまま使う。
  */
-import type { HastHighlighter } from '@cosense-toolbox/cosense-x'
+import type { HastHighlighter, RenderOptions } from '@cosense-toolbox/cosense-x'
 import { codeLanguageOf } from '@cosense-toolbox/parser/compile'
 import type { AstroConfig } from 'astro'
+import { Option, pipe } from 'effect'
 import { type BundledLanguage, bundledLanguages, createHighlighter } from 'shiki'
 
 type MarkdownConfig = AstroConfig['markdown']
@@ -90,3 +91,23 @@ export const customHighlighter =
   (highlight: HastHighlighter): CodeHighlighter =>
   async () =>
     highlight
+
+/**
+ * 利用者が統合に渡す描画の設定。色付けは統合が `syntaxHighlight` から作って渡すので含めない。
+ */
+export type AstroRenderOptions = Omit<RenderOptions, 'highlight'>
+
+/**
+ * 利用者の `renderOptions` に、統合が作った色付けを足す。色付けしない設定なら何も足さない。
+ */
+export const renderOptionsWith = (
+  renderOptions: AstroRenderOptions | undefined,
+  highlight: Option.Option<HastHighlighter>,
+): RenderOptions =>
+  pipe(
+    highlight,
+    Option.match({
+      onNone: (): RenderOptions => ({ ...renderOptions }),
+      onSome: (value): RenderOptions => ({ ...renderOptions, highlight: value }),
+    }),
+  )
