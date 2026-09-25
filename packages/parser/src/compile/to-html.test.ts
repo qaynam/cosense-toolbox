@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { tableCellNotation } from '../extensions'
 import type { InlineConstruct } from '../inline/types'
 import { type ParseOptions, parse, parseLine } from '../parse'
 import type { InlineNodeInit } from '../types'
@@ -161,40 +162,8 @@ describe('ブロック', () => {
     )
   })
 
-  it('tableCellLineBreakMarker を渡すと、セルの中のその文字列を <br> にする', () => {
-    const html = tableHtml('1 行目\\n2 行目\tそのまま', { tableCellLineBreakMarker: '\\n' })
-    expect(html).toContain('<td>1 行目<br>2 行目</td><td>そのまま</td>')
-  })
-
-  it('tableCellLineBreakMarker は文字列そのままで探し、区切った文字はエスケープする', () => {
-    const html = tableHtml('a<br>b<c>.*', { tableCellLineBreakMarker: '<br>' })
-    expect(html).toContain('<td>a<br>b&lt;c&gt;.*</td>')
-  })
-
-  it('tableCellLineBreakMarker はセルの外と、コードの中には当てない', () => {
-    const page = parse('t\na\\nb\ntable:x\n `a\\nb` [* c\\nd]', { tableCellNotation: 'all' })
-    const html = toHtml(page, { tableCellLineBreakMarker: '\\n' })
-    expect(html).toContain('<div class="line">a\\nb</div>')
-    expect(html).toContain('<code class="code">a\\nb</code>')
-    expect(html).toContain('<strong>c<br>d</strong>')
-  })
-
-  it('tableCellLineBreakMarker が null なら改行にしない', () => {
-    expect(tableHtml('a\\nb', { tableCellLineBreakMarker: null })).toContain('<td>a\\nb</td>')
-  })
-
-  it('handlers.tableCell で上書きしても、セルの中の改行は効く', () => {
-    const html = tableHtml('a\\nb', {
-      tableCellLineBreakMarker: '\\n',
-      handlers: {
-        tableCell: (node, ctx) => `<td class="cell">${ctx.children(node).join('')}</td>`,
-      },
-    })
-    expect(html).toContain('<td class="cell">a<br>b</td>')
-  })
-
-  it("tableCellNotation: 'all' で読んだセルは、行と同じく装飾も出す", () => {
-    expect(tableHtml('[* 太字]', {}, { tableCellNotation: 'all' })).toContain(
+  it('拡張 tableCellNotation() で読んだセルは、行と同じく装飾も出す', () => {
+    expect(tableHtml('[* 太字]', {}, { extensions: [tableCellNotation()] })).toContain(
       '<td><span class="decoration deco-*"><strong>太字</strong></span></td>',
     )
   })

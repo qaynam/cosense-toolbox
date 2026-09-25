@@ -37,6 +37,7 @@ export type {
   RenderTransform,
   ResolvedHastOptions,
 } from './to-hast'
+export { tableCellLineBreaks } from './table-cell-line-breaks'
 export { escapeHtml, toHtml } from './to-html'
 export type { Highlighter, HtmlOptions } from './to-html'
 export { toPlainText } from './to-plain-text'

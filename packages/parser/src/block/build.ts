@@ -75,20 +75,19 @@ const codeLine = (line: SourceLine, headerIndent: number): CodeLine => ({
 })
 
 const tableCells = (line: SourceLine, tokenize: TokenizeLine): readonly TableCell[] => {
-  const indent = indentOf(line.text)
   const origin = lineOrigin(line)
-  const cells: TableCell[] = []
-  let start = indent
-  for (const value of line.text.slice(indent).split('\t')) {
-    cells.push({
+  const indent = indentOf(line.text)
+  const values = line.text.slice(indent).split('\t')
+  return values.map((value, index) => {
+    // 前にあるセルと、その区切りのタブ 1 文字ずつのぶんだけ右から始まる。
+    const start = indent + values.slice(0, index).reduce((sum, cell) => sum + cell.length + 1, 0)
+    return {
       type: 'tableCell',
       value,
       children: tokenize(value, shiftOrigin(origin, start)),
       position: spanAt(origin, start, start + value.length),
-    })
-    start += value.length + 1 // タブ 1 文字ぶん進める
-  }
-  return cells
+    }
+  })
 }
 
 const tableRow = (line: SourceLine, tokenize: TokenizeLine): TableRow => ({

@@ -550,7 +550,7 @@ export const defaultHastHandlers = {
   },
   tableRow: (node, ctx) => [element('tr', {}, ctx.children(node))],
   // Cosense のテーブルにヘッダ行の概念は無いので、1 行目も含めてすべて td。
-  tableCell: (node) => [element('td', {}, [text(node.value)])],
+  tableCell: (node, ctx) => [element('td', {}, ctx.children(node))],
 
   text: (node) => [text(node.value)],
 

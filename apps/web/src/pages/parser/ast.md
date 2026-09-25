@@ -27,7 +27,7 @@ Page
 `TitleBlock` と `LineBlock` の `children` に入るのが、インラインノードです。
 テーブルのセル (`TableCell`) の `children` にも入ります。
 ただしセルの中では Cosense Web と同じく、既定ではリンクの記法 (`internalLink` / `externalLink` / `projectLink` / `hashtag`) だけを読み、ほかの記法は書いたままの `text` になります。
-行と同じくすべての記法を読みたいときは、`parse` に `tableCellNotation: "all"` を渡してください。
+行と同じく記法を読みたいときは、`parse` の `extensions` に [`tableCellNotation()`](/parser/extend/#テーブルのセルの中で記法を読む) を渡してください。
 10 種類あり、すべて `type` で判別できます。
 
 | type           | 記法                                                                 |

@@ -185,6 +185,21 @@ cosense({ renderOptions: { extensions: [codeLineNumbers()] } })
 - shiki で色付けしたブロックも、色付けしないブロックと同じく 1 行ずつの要素になるので番号が付く
 - 行をまたぐ出力を返すハイライタ (highlight.js など) でひと塊になったブロックには付かない
 
+### テーブルのセル
+
+セルの中は Cosense Web と同じく、リンクの記法だけを読む。行と同じく記法を読みたいときはパースの拡張 `tableCellNotation()` を、セルの中の `\n` のような文字の並びを改行にしたいときは描画の拡張 `tableCellLineBreaks()` を渡す。
+
+```js
+// astro.config.mjs
+import { tableCellLineBreaks } from '@cosense-toolbox/parser/compile'
+import { tableCellNotation } from '@cosense-toolbox/parser/extensions'
+
+cosense({
+  parseOptions: { extensions: [tableCellNotation()] },
+  renderOptions: { extensions: [tableCellLineBreaks('\\n')] },
+})
+```
+
 ## content collection
 
 ```ts

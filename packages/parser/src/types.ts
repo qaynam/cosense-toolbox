@@ -192,7 +192,7 @@ export interface CodeBlock extends NodeBase {
  * テーブルの 1 セル。
  *
  * `children` はセルの中の記法。Cosense Web と同じく、既定ではリンクの記法だけを読み、
- * それ以外は書いたままの文字になる (`ParseOptions.tableCellNotation` で変えられる)。
+ * それ以外は書いたままの文字になる (拡張 `tableCellNotation` で変えられる)。
  */
 export interface TableCell extends NodeBase {
   readonly type: 'tableCell'

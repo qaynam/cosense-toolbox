@@ -5,6 +5,7 @@
  * コンパイラを書くための型 (`NodeHandlers` 等) は `./compile` にある。
  */
 export { customDecorations } from './custom-decoration'
+export { tableCellNotation } from './table-cell-notation'
 export type { Origin } from '../core/position'
 export type {
   BracketRule,

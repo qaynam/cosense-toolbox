@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { codeLineNumbers } from '@cosense-toolbox/parser/compile'
+import { codeLineNumbers, tableCellLineBreaks } from '@cosense-toolbox/parser/compile'
+import { tableCellNotation } from '@cosense-toolbox/parser/extensions'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
@@ -324,5 +325,27 @@ describe('renderOptions (parser の toHast に渡る描画の設定)', () => {
     })
     expect(html).not.toContain('<h1')
     expect(html).toContain('<code class="my-code">code</code>')
+  })
+})
+
+describe('テーブルのセル', () => {
+  it('セルの中のリンクは索引で解決し、グラフのリンクにも入る', async () => {
+    const index = createIndex([{ id: 'b.csn', title: 'B', slug: 'b' }])
+    const source = 'タイトル\ntable:表\n [B]\t[* 太字]'
+    const result = await compile(source, { index })
+    expect(result.metadata.links).toEqual(['B'])
+    expect(await renderPage(source, { index })).toContain(
+      '<td><a class="link" href="/b">B</a></td><td>[* 太字]</td>',
+    )
+  })
+
+  it('parseOptions の tableCellNotation と renderOptions の tableCellLineBreaks を渡せる', async () => {
+    const html = await renderPage('タイトル\ntable:表\n [* 太字]\\n2 行目', {
+      parseOptions: { extensions: [tableCellNotation()] },
+      renderOptions: { extensions: [tableCellLineBreaks('\\n')] },
+    })
+    expect(html).toContain(
+      '<td><span class="decoration deco-*"><strong>太字</strong></span><br/>2 行目</td>',
+    )
   })
 })

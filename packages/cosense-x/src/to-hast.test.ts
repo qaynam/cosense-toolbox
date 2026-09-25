@@ -1,5 +1,6 @@
 import { parse } from '@cosense-toolbox/parser'
-import { escapeHtml, toHtml } from '@cosense-toolbox/parser/compile'
+import { escapeHtml, tableCellLineBreaks, toHtml } from '@cosense-toolbox/parser/compile'
+import { tableCellNotation } from '@cosense-toolbox/parser/extensions'
 import type { Element, Root } from 'hast'
 import { fromHtml } from 'hast-util-from-html'
 import { toHtml as hastToHtmlRaw } from 'hast-util-to-html'
@@ -62,10 +63,10 @@ describe('toHtml と同じ構造の HTML になる', () => {
     expect(hastToHtml(toHast(page))).toBe(normalize(toHtml(page)))
   })
 
-  it("tableCellNotation: 'all' で読んだセルと tableCellLineBreakMarker も toHtml と同じに効く", () => {
-    const options = { tableCellLineBreakMarker: '\\n' }
+  it('tableCellNotation で読んだセルと tableCellLineBreaks も toHtml と同じに効く', () => {
+    const options = { extensions: [tableCellLineBreaks('\\n')] }
     const page = parse('タイトル\ntable:表\n [* 太\\n字] a\\n\\nb\t`c\\nd` [リンク]\\n', {
-      tableCellNotation: 'all',
+      extensions: [tableCellNotation()],
     })
     const html = hastToHtml(toHast(page, options))
     expect(html).toBe(normalize(toHtml(page, options)))

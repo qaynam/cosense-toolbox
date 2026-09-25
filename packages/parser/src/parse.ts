@@ -2,7 +2,7 @@
  * parse.ts — ページ全文の入口。
  */
 import { type SourceLine, buildBlocks, buildLineBlock } from './block/build'
-import { keepOnlyLinks } from './inline/table-cell'
+import { keepInTableCellOf, keepNotation } from './inline/table-cell'
 import { resolveExtensions, tokenizeInlineWith } from './inline/tokenize'
 import type { Extension } from './inline/types'
 import type { LineBlock, Page } from './types'
@@ -18,16 +18,6 @@ export const normalizeLineEndings = (source: string): string => source.replace(/
 export interface ParseOptions {
   /** 記法の拡張。既定のルールより先に試される */
   readonly extensions?: readonly Extension[]
-  /**
-   * テーブルのセルの中で読む記法。
-   *
-   * - `'link'`：Cosense Web と同じく、リンクの記法 (`[title]` / `[https://…]` / `[/project/page]` /
-   *   裸の URL / `#tag`) だけを読む。それ以外は書いたままの文字になる
-   * - `'all'`：行と同じく、装飾やコードなどもすべて読む (拡張の記法も含む)。Cosense Web には無い振る舞い
-   *
-   * @defaultValue `'link'`
-   */
-  readonly tableCellNotation?: 'link' | 'all'
 }
 
 const toSourceLines = (source: string): readonly SourceLine[] => {
@@ -50,16 +40,15 @@ export const parse = (source: string, options?: ParseOptions): Page => {
   const normalized = normalizeLineEndings(source)
   const lines = toSourceLines(normalized)
   const rules = resolveExtensions(options?.extensions)
+  const keepInTableCell = keepInTableCellOf(options?.extensions)
   const last = lines[lines.length - 1]
 
   return {
     type: 'page',
     children: buildBlocks(lines, {
       line: (text, origin) => tokenizeInlineWith(text, origin, rules),
-      tableCell: (text, origin) => {
-        const nodes = tokenizeInlineWith(text, origin, rules)
-        return options?.tableCellNotation === 'all' ? nodes : keepOnlyLinks(nodes, text, origin)
-      },
+      tableCell: (text, origin) =>
+        keepNotation(tokenizeInlineWith(text, origin, rules), text, origin, keepInTableCell),
     }),
     position: {
       start: { line: 0, column: 0, offset: 0 },

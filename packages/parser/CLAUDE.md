@@ -140,6 +140,7 @@ src/
     types.ts            InlineConstruct / BracketRule / InlineContext / Extension（公開の型のみ。effect を import しない）
     internal-types.ts   パッケージの中のルールの型（Option で返す）。公開しない
     tokenize.ts         走査ループ。位置の付与はここだけが行う
+    table-cell.ts       テーブルのセルの中の記法 (既定ではリンク以外を書いたままの文字に戻す)
     constructs/         1 construct = 1 ファイル + index.ts（配列の登録場所）
     bracket-rules/      1 rule = 1 ファイル + index.ts（配列の登録場所）
     extensions/         既定では有効にしない Extension を作る factory（customDecorations 等）
@@ -152,6 +153,7 @@ src/
     to-hast.ts          公式の hast コンパイラ。描画の規則はここだけに持つ
                         （pageUrl / iconImageUrl / highlight / classNames / showPads / handlers）
     to-html.ts          toHast の出力を文字列にする近道（highlight は HTML の文字列も受け付ける / style）
+    table-cell-line-breaks.ts  描画の拡張。セルの中の文字列を <br> にする
     to-plain-text.ts    参照実装
   utils/                visit / links
   fixtures/             conformance.json（記法仕様）

@@ -335,6 +335,24 @@ toHtml(page, {
 | 拡張 | 内容 |
 | :--- | :--- |
 | `codeLineNumbers()` | コードブロックの本体行に行番号 (`data-line`) と桁数 (`data-line-digits`) を付けます。番号の表示は `@cosense-toolbox/style` が持ちます |
+| `tableCellLineBreaks(marker)` | テーブルのセルの中の `marker` を `<br>` にします |
+
+#### tableCellLineBreaks
+
+Cosense のセルには改行を書けないので、`\n` のような文字の並びを代わりに書いておき、描画のときに改行にします。
+
+```ts
+import { tableCellLineBreaks, toHtml } from "@cosense-toolbox/parser/compile";
+
+toHtml(parse("t\ntable:x\n 1 行目\\n2 行目"), {
+  extensions: [tableCellLineBreaks("\\n")],
+});
+// → … <td>1 行目<br>2 行目</td> …
+```
+
+`marker` は文字列そのままで探します。正規表現としては読みません。
+当てるのはセルの中の文字だけで、コード・数式・リンクの表示の中には当てません (数式の `\nu` などを壊さないため)。
+装飾の中には当てます。
 
 ### style
 
@@ -389,6 +407,9 @@ Cosense Web と同じ `.indent-mark` と `.pad` と `.dot` の要素が必要な
   </tbody>
 </table>
 ```
+
+セルの中のリンクの記法は、行と同じく `<a>` になります。
+ほかの記法は、既定では書いたままの文字です ([`tableCellNotation`](/parser/extend/#テーブルのセルの中で記法を読む) で変えられます)。
 
 ### コードブロック
 
