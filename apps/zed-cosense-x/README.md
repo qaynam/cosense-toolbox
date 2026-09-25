@@ -17,20 +17,29 @@
 2. Zed で `zed: install dev extension` を実行し、このディレクトリを選ぶ。
    Rust が要る（Zed が `cargo` と `rustup target add wasm32-wasip1` を呼ぶ）。
 
-3. **semantic tokens を有効にする。Zed の既定は `"off"` なので、これをしないと色が付かない。**
-   `settings.json` に次を足す。
+3. **`settings.json` に次を足す。** どちらも拡張の側からは既定値を変えられない。
 
    ```jsonc
    {
      "languages": {
-       "Cosense":   { "semantic_tokens": "full" },
-       "Cosense X": { "semantic_tokens": "full" }
+       "Cosense": {
+         "semantic_tokens": "full",
+         "remove_trailing_whitespace_on_save": false
+       },
+       "Cosense X": {
+         "semantic_tokens": "full",
+         "remove_trailing_whitespace_on_save": false
+       }
      }
    }
    ```
 
-   `"full"` は tree-sitter を使わず semantic tokens だけで色を決める。この拡張には
-   grammar が無いので、この指定でよい。
+   - `semantic_tokens`: Zed の既定は `"off"` なので、これをしないと色が付かない。
+     `"full"` は tree-sitter を使わず semantic tokens だけで色を決める。この拡張には
+     grammar が無いので、この指定でよい。
+   - `remove_trailing_whitespace_on_save`: Zed は既定で、保存時に行末の空白を消す。
+     Cosense ではインデントの空白だけの行もコードブロックや表の一部で、空白を消すと
+     本当の空行になり、そこでブロックが終わってしまう。
 
 ## 色を変える
 
