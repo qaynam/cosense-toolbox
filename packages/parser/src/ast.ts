@@ -29,10 +29,11 @@ export const childrenOf = (node: AnyNode): readonly AnyNode[] => {
       return node.cells
     case 'line':
       return node.children
+    case 'tableCell':
+      return node.children
     case 'decoration':
       return node.children
     case 'codeLine':
-    case 'tableCell':
     case 'text':
     case 'internalLink':
     case 'externalLink':

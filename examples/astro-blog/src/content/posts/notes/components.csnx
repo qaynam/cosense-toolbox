@@ -34,6 +34,9 @@ code:component.csnx
 [vimeo]のembed
 [https://vimeo.com/62677550]
 
+[x]のembed
+[https://x.com/elonmusk/status/1401251430015582209]
+
 そして装飾記法を拡張することで、さらにカスタマイズも可能
   [! 注意文言]を書きたい時
   [~ 警告文]を書きたい時

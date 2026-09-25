@@ -470,6 +470,7 @@ export const styles: CosenseStyles = {
       },
       declarations: {
         display: 'block',
+        'min-height': '1.7em',
         'line-height': '1.7em',
         'tab-size': '4',
         background: 'var(--cosense-code-bg, var(--code-bg, rgba(0, 0, 0, 0.04)))',
@@ -506,11 +507,86 @@ export const styles: CosenseStyles = {
     },
     {
       selector: {
+        body: '.line.code-block[data-line-digits="1"]',
+        pseudo: '',
+      },
+      declarations: {
+        '--cosense-line-digits': '1',
+      },
+    },
+    {
+      selector: {
+        body: '.line.code-block[data-line-digits="2"]',
+        pseudo: '',
+      },
+      declarations: {
+        '--cosense-line-digits': '2',
+      },
+    },
+    {
+      selector: {
+        body: '.line.code-block[data-line-digits="3"]',
+        pseudo: '',
+      },
+      declarations: {
+        '--cosense-line-digits': '3',
+      },
+    },
+    {
+      selector: {
+        body: '.line.code-block[data-line-digits="4"]',
+        pseudo: '',
+      },
+      declarations: {
+        '--cosense-line-digits': '4',
+      },
+    },
+    {
+      selector: {
+        body: '.line.code-block[data-line-digits="5"]',
+        pseudo: '',
+      },
+      declarations: {
+        '--cosense-line-digits': '5',
+      },
+    },
+    {
+      selector: {
         body: '.line.code-block:not(:has(> .code-start))',
         pseudo: '::before',
       },
       declarations: {
         content: 'none',
+      },
+    },
+    {
+      selector: {
+        body: '.line.code-block[data-line]',
+        pseudo: '::before',
+      },
+      declarations: {
+        content: 'attr(data-line)',
+        top: '0',
+        left: 'calc(var(--cosense-indent, 1.5em) * (var(--cosense-depth, 1) - 1))',
+        width: 'calc(0.6em + var(--cosense-line-digits, 5) * 1ch)',
+        height: 'auto',
+        display: 'flex',
+        'justify-content': 'flex-end',
+        'white-space': 'nowrap',
+        'border-radius': '0',
+        background: 'none',
+        'font-family': 'var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)',
+        'line-height': '1.7em',
+        color: 'var(--cosense-line-number, rgba(0, 0, 0, 0.35))',
+      },
+    },
+    {
+      selector: {
+        body: '.line.code-block[data-line] > .code-body',
+        pseudo: '',
+      },
+      declarations: {
+        'padding-left': 'calc(0.6em + (var(--cosense-line-digits, 5) + 1) * 1ch)',
       },
     },
   ],

@@ -1,7 +1,7 @@
 /**
  * `@cosense-toolbox/parser` — Cosense (Scrapbox) 記法パーサー。
  *
- * `./utils` `./compile` `./schema` `./plugin` は opt-in のサブパスなので、
+ * `./utils` `./compile` `./html` `./schema` `./extensions` は opt-in のサブパスなので、
  * ここからは re-export しない。パースだけを使う利用者のバンドルに
  * それらが入らないようにするため。
  */

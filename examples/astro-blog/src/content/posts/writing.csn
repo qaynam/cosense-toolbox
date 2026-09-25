@@ -2,11 +2,18 @@ Cosense で書く
 code:frontmatter.yml
  date: 2026-09-05
  description: Cosense の記法でブログ記事を書く方法
-frontmatter は Cosense の画面でも書けるよう、code:frontmatter.yml ブロックにも書ける。 #日記 #Cosense
-[はじめての投稿] から来た人向け。
-table:記法
- [リンク]	内部リンク
- #タグ	タグ
+[frontmatter] も対応している。
+code:code
+ ---
+ ---
+
+のような点線を書くか、最初の`code:frontmatter.yml`のように書くと、Cosense の画面でも frontmatter が書ける。
+
+拡張すると、テーブ内で装飾記法が使える
+table:テーブ内で装飾記法を使う
+ [リンク]	内部\nリンク
+ #タグ	[_ タグ]
  [* 太字]	装飾
-Cosense にアップロードした画像も書ける。ビルド時に取ってきて、サイトの中 (/_cosense/) に置く。
-[https://scrapbox.io/files/665f0b8c962ee6001c15c172.png]
+ [** 箇条書き]	箇条書き
+ [-- コメント]	コメント
+ [https://scrapbox.io/files/665f0b8c962ee6001c15c172.png]	画像

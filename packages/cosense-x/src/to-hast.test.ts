@@ -1,6 +1,7 @@
 import { parse } from '@cosense-toolbox/parser'
-import { toHtml } from '@cosense-toolbox/parser/compile'
-import type { Root } from 'hast'
+import { tableCellNotation } from '@cosense-toolbox/parser/extensions'
+import { escapeHtml, tableCellLineBreaks, toHtml } from '@cosense-toolbox/parser/html'
+import type { Element, Root } from 'hast'
 import { fromHtml } from 'hast-util-from-html'
 import { toHtml as hastToHtmlRaw } from 'hast-util-to-html'
 import { describe, expect, it } from 'vitest'
@@ -57,6 +58,21 @@ describe('toHtml と同じ構造の HTML になる', () => {
     expect(hastToHtml(toHast(page, options))).toBe(normalize(toHtml(page, options)))
   })
 
+  it.each(fixtures.tableCell.map((fixture) => fixture.input))('表のセル: %s', (cell) => {
+    const page = parse(`タイトル\ntable:表\n ${cell}\t[リンク]`)
+    expect(hastToHtml(toHast(page))).toBe(normalize(toHtml(page)))
+  })
+
+  it('tableCellNotation で読んだセルと tableCellLineBreaks も toHtml と同じに効く', () => {
+    const options = { extensions: [tableCellLineBreaks('\\n')] }
+    const page = parse('タイトル\ntable:表\n [* 太\\n字] a\\n\\nb\t`c\\nd` [リンク]\\n', {
+      extensions: [tableCellNotation()],
+    })
+    const html = hastToHtml(toHast(page, options))
+    expect(html).toBe(normalize(toHtml(page, options)))
+    expect(html).toContain('<br>')
+  })
+
   it('iconImageUrl も toHtml と同じに効く', () => {
     const options = { iconImageUrl: () => 'https://x.test/icon.png' }
     const page = parse('タイトル\n[user.icon]')
@@ -106,5 +122,80 @@ describe('オプション', () => {
       attributes: [{ name: 'type', value: 'warn' }],
       children: [{ type: 'element', tagName: 'div', children: [{ value: '中身' }] }],
     })
+  })
+})
+
+describe('コードブロックの色付け (highlight)', () => {
+  const SOURCE = 'タイトル\ncode:hello.js\n const a = 1\n   return <a>'
+  const italic = (code: string): Element => ({
+    type: 'element',
+    tagName: 'i',
+    properties: {},
+    children: [{ type: 'text', value: code }],
+  })
+
+  it('本体がひと塊になり、toHtml に同じ色付けを渡したときと同じ HTML になる', () => {
+    const page = parse(SOURCE)
+    expect(hastToHtml(toHast(page, { highlight: (code) => [italic(code)] }))).toBe(
+      normalize(toHtml(page, { highlight: (code) => `<i>${escapeHtml(code)}</i>` })),
+    )
+  })
+
+  it('言語名はファイル名の拡張子から、toHtml と同じ決め方で渡る', () => {
+    const seen: string[] = []
+    render('タイトル\ncode:Main.JAVA\n x\ncode:python\n y', {
+      highlight: (_code, language) => {
+        seen.push(language)
+        return null
+      },
+    })
+    expect(seen).toEqual(['java', 'python'])
+  })
+
+  it('null を返すと色付けせず、1 行ずつのまま出す', () => {
+    expect(render(SOURCE, { highlight: () => null })).toBe(render(SOURCE))
+  })
+
+  it('pre > code の形 (shiki など) なら code の中身を使い、pre の class とテーマの色 (変数にして) を引き継ぐ', () => {
+    const shikiLike: Root = {
+      type: 'root',
+      children: [
+        {
+          type: 'element',
+          tagName: 'pre',
+          // shiki は className ではなく class を文字列で付ける。
+          properties: {
+            class: 'shiki github-light',
+            style: 'background-color:#fff;color:#24292e',
+            tabindex: '0',
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'code',
+              properties: {},
+              children: [
+                {
+                  type: 'element',
+                  tagName: 'span',
+                  properties: { class: 'line' },
+                  children: [{ type: 'text', value: 'const a = 1' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    expect(render(SOURCE, { highlight: () => shikiLike })).toContain(
+      '<code class="code-body highlight shiki github-light" style="--cosense-code-bg:#fff;--cosense-code-text:#24292e"><span class="line">const a = 1</span></code>',
+    )
+  })
+
+  it('pre > code 以外の root は、その中身をそのまま code に入れる', () => {
+    const root: Root = { type: 'root', children: [italic('x')] }
+    expect(render(SOURCE, { highlight: () => root })).toContain(
+      '<code class="code-body highlight"><i>x</i></code>',
+    )
   })
 })

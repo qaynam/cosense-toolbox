@@ -551,5 +551,146 @@
       "input": "t\n\n本文",
       "expected": ["title", "line", "line"]
     }
+  ],
+  "tableCell": [
+    {
+      "description": "記法が無ければテキストノード 1 つ",
+      "input": "あいう",
+      "expected": [
+        {
+          "type": "text",
+          "value": "あいう"
+        }
+      ]
+    },
+    {
+      "description": "空のセルは子を持たない",
+      "input": "",
+      "expected": []
+    },
+    {
+      "description": "[title] はリンク",
+      "input": "[リンク]",
+      "expected": [
+        {
+          "type": "internalLink",
+          "label": "リンク",
+          "target": "リンク"
+        }
+      ]
+    },
+    {
+      "description": "リンクの前後の文字はテキストのまま",
+      "input": "前 [リンク] 後",
+      "expected": [
+        {
+          "type": "text",
+          "value": "前 "
+        },
+        {
+          "type": "internalLink",
+          "label": "リンク",
+          "target": "リンク"
+        },
+        {
+          "type": "text",
+          "value": " 後"
+        }
+      ]
+    },
+    {
+      "description": "URL を含む角括弧は外部リンク",
+      "input": "[ラベル https://a.test]",
+      "expected": [
+        {
+          "type": "externalLink",
+          "label": "ラベル",
+          "target": "https://a.test"
+        }
+      ]
+    },
+    {
+      "description": "裸の URL は外部リンク",
+      "input": "https://a.test/x",
+      "expected": [
+        {
+          "type": "externalLink",
+          "label": "https://a.test/x",
+          "target": "https://a.test/x"
+        }
+      ]
+    },
+    {
+      "description": "[/project/page] は別プロジェクトへのリンク",
+      "input": "[/proj/page]",
+      "expected": [
+        {
+          "type": "projectLink",
+          "label": "/proj/page",
+          "target": "/proj/page",
+          "project": "proj",
+          "title": "page"
+        }
+      ]
+    },
+    {
+      "description": "#tag はハッシュタグ",
+      "input": "#tag",
+      "expected": [
+        {
+          "type": "hashtag",
+          "value": "tag"
+        }
+      ]
+    },
+    {
+      "description": "装飾は読まず、書いたままの文字にする",
+      "input": "[* 太字]",
+      "expected": [
+        {
+          "type": "text",
+          "value": "[* 太字]"
+        }
+      ]
+    },
+    {
+      "description": "[[...]] も装飾にしない",
+      "input": "[[強調]]",
+      "expected": [
+        {
+          "type": "text",
+          "value": "[[強調]]"
+        }
+      ]
+    },
+    {
+      "description": "装飾の中のリンクだけはリンクになり、装飾の記号は文字のまま残る",
+      "input": "[* [リンク] だ]",
+      "expected": [
+        {
+          "type": "text",
+          "value": "[* "
+        },
+        {
+          "type": "internalLink",
+          "label": "リンク",
+          "target": "リンク"
+        },
+        {
+          "type": "text",
+          "value": " だ]"
+        }
+      ]
+    },
+    {
+      "description": "コード・数式・アイコン・画像は読まず、書いたままの文字にする",
+      "input": "`code` [$ x] [a.icon] [https://a.test/b.png]",
+      "expected": [
+        {
+          "type": "text",
+          "value": "`code` [$ x] [a.icon] [https://a.test/b.png]"
+        }
+      ]
+    }
   ]
 }

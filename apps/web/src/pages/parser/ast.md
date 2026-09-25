@@ -15,7 +15,7 @@ description: ブロックとインラインノードの構造、position の意�
 Page
 ├─ TitleBlock   1 行目。value に生テキスト、children にインラインノード
 ├─ CodeBlock    code:filename とその配下 (CodeLine[])
-├─ TableBlock   table:name とその配下 (TableRow[] → TableCell[])
+├─ TableBlock   table:name とその配下 (TableRow[] → TableCell[]。セルは value と children)
 └─ LineBlock    通常の行 (indent / quote / monospace + InlineNode[])
 ```
 
@@ -25,6 +25,9 @@ Page
 ## インラインノード
 
 `TitleBlock` と `LineBlock` の `children` に入るのが、インラインノードです。
+テーブルのセル (`TableCell`) の `children` にも入ります。
+ただしセルの中では Cosense Web と同じく、既定ではリンクの記法 (`internalLink` / `externalLink` / `projectLink` / `hashtag`) だけを読み、ほかの記法は書いたままの `text` になります。
+行と同じく記法を読みたいときは、`parse` の `extensions` に [`tableCellNotation()`](/parser/extend/#テーブルのセルの中で記法を読む) を渡してください。
 10 種類あり、すべて `type` で判別できます。
 
 | type           | 記法                                                                 |

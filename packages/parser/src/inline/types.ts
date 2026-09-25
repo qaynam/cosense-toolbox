@@ -70,4 +70,10 @@ export interface Extension {
   readonly constructs?: readonly InlineConstruct[]
   /** `[...]` の中身の解釈ルール。角括弧記法のバリエーションを足すときはこちら */
   readonly bracketRules?: readonly BracketRule[]
+  /**
+   * テーブルのセルの中でも記法として残すノード。true を返したノードは残し、
+   * どの拡張も残さないノードは書いたままの文字に戻す。リンクの記法は拡張に依らず常に残す
+   * (Cosense Web と同じ)。セルの中を行と同じく読むだけなら `tableCellNotation` を使う
+   */
+  readonly keepInTableCell?: (node: InlineNode) => boolean
 }

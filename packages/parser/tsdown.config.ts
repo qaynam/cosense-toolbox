@@ -7,6 +7,7 @@ export default defineConfig({
     utils: 'src/utils/index.ts',
     extensions: 'src/extensions/index.ts',
     compile: 'src/compile/index.ts',
+    html: 'src/html/index.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,

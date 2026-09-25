@@ -6,6 +6,8 @@ import { Either } from 'effect'
 import fc from 'fast-check'
 import { describe, expect, it } from 'vitest'
 import { childrenOf, rawTextOf } from './ast'
+import { tableCellNotation } from './extensions'
+import type { Extension } from './inline/types'
 import { parse, parseLine } from './parse'
 import { decodePage } from './schema'
 import { stripPositions } from './test-helpers'
@@ -122,6 +124,46 @@ describe('位置情報', () => {
             )
           }
           expect(decoration.children.map((n) => rawTextOf(text, n)).join('')).toBe(decoration.value)
+        })
+      }),
+    )
+  })
+})
+
+/** 1 行のテーブル。セルの中身は行と同じ記法の断片から作り、タブだけ取り除く。 */
+const tableArb = fc
+  .array(
+    lineArb.map((cell) => cell.replace(/\t/g, '')),
+    { minLength: 1, maxLength: 4 },
+  )
+  .map((cells) => `t\ntable:x\n ${cells.join('\t')}`)
+
+describe('テーブルのセル', () => {
+  it.each<[string, readonly Extension[]]>([
+    ['既定', []],
+    ['tableCellNotation()', [tableCellNotation()]],
+    ["tableCellNotation(['decoration'])", [tableCellNotation(['decoration'])]],
+  ])('%s でも、子ノードは重なりも隙間もなくセルを覆い、テキストは書いたまま', (_, extensions) => {
+    fc.assert(
+      fc.property(tableArb, (source) => {
+        visit(parse(source, { extensions }), 'tableCell', (cell) => {
+          expect(cell.children.map((n) => rawTextOf(source, n)).join('')).toBe(cell.value)
+          for (const [index, child] of cell.children.entries()) {
+            const previous = cell.children[index - 1]
+            if (previous) expect(child.position.start.offset).toBe(previous.position.end.offset)
+            if (child.type === 'text') expect(child.value).toBe(rawTextOf(source, child))
+          }
+        })
+      }),
+    )
+  })
+
+  it('既定ではリンク・外部リンク・別プロジェクトへのリンク・タグ以外のノードを作らない', () => {
+    const links = new Set(['text', 'internalLink', 'externalLink', 'projectLink', 'hashtag'])
+    fc.assert(
+      fc.property(tableArb, (source) => {
+        visit(parse(source), 'tableCell', (cell) => {
+          for (const child of cell.children) expect(links.has(child.type)).toBe(true)
         })
       }),
     )

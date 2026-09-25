@@ -6,10 +6,11 @@ description: toPlainText と createCompiler
 
 # 独自形式への変換
 
-前のページの `toHtml` は、これから説明する `createCompiler` の上に作られています。
-同じ仕組みで、HTML 以外の形式も出せます。
+前のページの `toHtml` は、hast を通して HTML を作ります。
+HTML 以外の形式は、ノード型ごとのハンドラで出力を組み立てる `createCompiler` で出せます。
 
 いずれも `@cosense-toolbox/parser/compile` から import します。
+HTML 系の出力 (`toHast` / `toHtml`) は `@cosense-toolbox/parser/html` にあり、この入口からは読み込まれません。
 この層はパーサー本体を import しないので、変換だけを使う側のバンドルにパーサーは入りません。
 
 ## toPlainText
@@ -29,7 +30,7 @@ toPlainText(parse("タイトル\n[* 太字] と [リンク]"));
 ```
 
 インデントは半角 2 文字、引用は `> ` として残ります。
-コードブロックとテーブルは中身がそのまま出ます。
+コードブロックは中身がそのまま、テーブルはタブ区切りで出ます。セルの中のリンクは、行と同じく表示の文字になります。
 
 全文検索のインデックス作成や、抜粋の生成に使えます。
 
@@ -39,8 +40,8 @@ toPlainText(parse("タイトル\n[* 太字] と [リンク]"));
 createCompiler<Out>(options: { handlers; fallback }): (node) => Out
 ```
 
-HTML とテキスト以外を出すときに使います。
-`toHtml` も `toPlainText` もこれで書かれています。
+HTML 系 (hast / HTML の文字列) とテキスト以外を出すときに使います。
+`toPlainText` はこれで書かれています。HTML 系は `toHast` を使ってください。
 
 ```ts
 import { createCompiler } from "@cosense-toolbox/parser/compile";
@@ -55,8 +56,8 @@ const toMarkdown = createCompiler<string>({
 });
 ```
 
-`handlers` の書きかたは [`toHtml` の handlers](/parser/html/#handlers) と同じです。
-違いは、既定のハンドラに重ねるのではなく、一式を自分で用意する点です。
+`handlers` の書きかたは [`toHtml` の handlers](/parser/html/#handlers) と同じ `(node, ctx)` です。
+違いは、既定のハンドラに重ねるのではなく一式を自分で用意する点と、`ctx.children(node)` が子ごとの結果の配列を返す点です。
 ハンドラの無いノード型には `fallback` が使われます。
 
 `handlers` の型はノード型のマップから導出されるので、ノード型が増えても型が追随します。

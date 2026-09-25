@@ -2,6 +2,7 @@
  * parse.ts — ページ全文の入口。
  */
 import { type SourceLine, buildBlocks, buildLineBlock } from './block/build'
+import { keepInTableCellOf, keepNotation } from './inline/table-cell'
 import { resolveExtensions, tokenizeInlineWith } from './inline/tokenize'
 import type { Extension } from './inline/types'
 import type { LineBlock, Page } from './types'
@@ -39,11 +40,16 @@ export const parse = (source: string, options?: ParseOptions): Page => {
   const normalized = normalizeLineEndings(source)
   const lines = toSourceLines(normalized)
   const rules = resolveExtensions(options?.extensions)
+  const keepInTableCell = keepInTableCellOf(options?.extensions)
   const last = lines[lines.length - 1]
 
   return {
     type: 'page',
-    children: buildBlocks(lines, (text, origin) => tokenizeInlineWith(text, origin, rules)),
+    children: buildBlocks(lines, {
+      line: (text, origin) => tokenizeInlineWith(text, origin, rules),
+      tableCell: (text, origin) =>
+        keepNotation(tokenizeInlineWith(text, origin, rules), text, origin, keepInTableCell),
+    }),
     position: {
       start: { line: 0, column: 0, offset: 0 },
       end: {

@@ -14,7 +14,7 @@ description: Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に
 ```ts
 import { parse } from "@cosense-toolbox/parser";
 import { collectLinks } from "@cosense-toolbox/parser/utils";
-import { toHtml } from "@cosense-toolbox/parser/compile";
+import { toHtml } from "@cosense-toolbox/parser/html";
 
 const page = parse(`今日のメモ
 [プロジェクトA] の進捗を確認する
@@ -115,13 +115,23 @@ AST から欲しいものを取り出します。
 | [`firstImage`](/parser/utils/#firstimage)     | 最初の画像ノードを返す       |
 | [`rawTextOf`](/parser/utils/#rawtextof)       | ノードの生テキストを切り出す |
 
+### @cosense-toolbox/parser/html
+
+AST を HTML 系の出力 (hast と HTML の文字列) にします。
+
+| API                                                              | 何をするか                           |
+| :--------------------------------------------------------------- | :----------------------------------- |
+| [`toHtml`](/parser/html/)                                        | HTML の文字列にする                  |
+| [`toHast`](/parser/html/#tohast)                                 | hast にする                          |
+| [`codeLineNumbers`](/parser/html/#extensions)                    | 描画の拡張。コードブロックの行番号   |
+| [`tableCellLineBreaks`](/parser/html/#tablecelllinebreaks)       | 描画の拡張。テーブルのセルの中の改行 |
+
 ### @cosense-toolbox/parser/compile
 
-AST を別の形式に変換します。
+AST を HTML 以外の形式に変換します。
 
 | API                                                 | 何をするか                 |
 | :-------------------------------------------------- | :------------------------- |
-| [`toHtml`](/parser/html/)                           | HTML にする                |
 | [`toPlainText`](/parser/compile/#toplaintext)       | 記法を外したテキストにする |
 | [`createCompiler`](/parser/compile/#createcompiler) | 独自の形式にする           |
 

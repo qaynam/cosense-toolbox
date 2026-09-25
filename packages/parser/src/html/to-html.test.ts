@@ -1,9 +1,21 @@
 import { describe, expect, it } from 'vitest'
+import { tableCellNotation } from '../extensions'
 import type { InlineConstruct } from '../inline/types'
-import { parse, parseLine } from '../parse'
+import { type ParseOptions, parse, parseLine } from '../parse'
 import type { InlineNodeInit } from '../types'
-import type { NodeHandlers } from './create-compiler'
-import { defaultPageUrl, escapeHtml, safeHref, safeSrc, toHtml } from './to-html'
+import type { HastHandlers } from './to-hast'
+import { codeLanguageOf, defaultPageUrl, safeHref, safeSrc } from './to-hast'
+import { escapeHtml, toHtml } from './to-html'
+
+/**
+ * 表を 1 つだけ持つページを描画する。1 行目は必ずタイトルになるので、
+ * 仮のタイトル `t` を置いてから表を書く。
+ */
+const tableHtml = (
+  row: string,
+  options?: Parameters<typeof toHtml>[1],
+  parseOptions?: ParseOptions,
+): string => toHtml(parse(`t\ntable:x\n ${row}`, parseOptions), options)
 
 /** 1 行を描画して、行を包む div を外した中身だけを見る。 */
 const line = (source: string, options?: Parameters<typeof toHtml>[1]): string =>
@@ -90,7 +102,7 @@ describe('ブロック', () => {
     expect(toHtml(parse('t\ncode:a.ts\n <b>\n x'))).toContain(
       '<div class="line code-block">' +
         '<code class="code-start"><span class="code-block-start">a.ts</span></code></div>' +
-        '<div class="line code-block" data-indent="1"><code class="code-body">&lt;b&gt;</code></div>' +
+        '<div class="line code-block" data-indent="1"><code class="code-body">&lt;b></code></div>' +
         '<div class="line code-block" data-indent="1"><code class="code-body">x</code></div>',
     )
   })
@@ -101,7 +113,7 @@ describe('ブロック', () => {
     )
   })
 
-  it('highlight を渡すと本体がひと塊になり、言語名が拡張子から渡る', () => {
+  it('highlight が返した文字列は、HTML としてそのまま本体に入る', () => {
     const seen: string[] = []
     const html = toHtml(parse('t\ncode:a.ts\n const a = 1\n const b = 2'), {
       highlight: (code, language) => {
@@ -127,6 +139,12 @@ describe('ブロック', () => {
     expect(seen).toEqual(['python'])
   })
 
+  it('codeLanguageOf は highlight に渡すのと同じ言語名を返す', () => {
+    expect(codeLanguageOf('hello.js')).toBe('js')
+    expect(codeLanguageOf('python')).toBe('python')
+    expect(codeLanguageOf('Main.JAVA')).toBe('java')
+  })
+
   it('highlight が無ければ 1 行ずつのまま', () => {
     const html = toHtml(parse('t\ncode:a.ts\n const a = 1\n const b = 2'))
     expect(html.match(/<code class="code-body">/g)).toHaveLength(2)
@@ -135,6 +153,18 @@ describe('ブロック', () => {
   it('テーブルは caption 付きの table になる', () => {
     expect(toHtml(parse('t\ntable:名前\n あ\tい'))).toContain(
       '<table class="table"><caption>名前</caption><tbody><tr><td>あ</td><td>い</td></tr></tbody></table>',
+    )
+  })
+
+  it('セルの中のリンクはリンクになり、ほかの記法は書いたまま出す', () => {
+    expect(tableHtml('[リンク] [* 太字]')).toContain(
+      '<td><a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> [* 太字]</td>',
+    )
+  })
+
+  it('拡張 tableCellNotation() で読んだセルは、行と同じく装飾も出す', () => {
+    expect(tableHtml('[* 太字]', {}, { extensions: [tableCellNotation()] })).toContain(
+      '<td><span class="decoration deco-*"><strong>太字</strong></span></td>',
     )
   })
 })
@@ -157,11 +187,14 @@ describe('画像', () => {
 
 describe('エスケープと URL の安全性', () => {
   it('テキストの HTML はエスケープされる', () => {
-    expect(line('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;')
+    // `>` だけではタグにならないので、`<` と `&` をエスケープすれば足りる。
+    expect(line('<script>alert(1)</script>')).toBe('&lt;script>alert(1)&lt;/script>')
   })
 
   it('リンクのラベルと href はエスケープされる', () => {
-    expect(line('["><script>]')).toContain('&quot;&gt;&lt;script&gt;')
+    const html = line('["><script>]')
+    expect(html).toContain('>">&lt;script></a>')
+    expect(html).toContain('href="/%22%3E%3Cscript%3E"')
   })
 
   it('href に script が動く URL が来たら属性ごと落とす', () => {
@@ -203,10 +236,24 @@ describe('エスケープと URL の安全性', () => {
 describe('差し替え', () => {
   it('handlers に書いた型だけが上書きされ、残りは既定のまま', () => {
     const html = toHtml(parseLine('[リンク] と `code`'), {
-      handlers: { internalLink: (node) => `<x-link>${node.target}</x-link>` },
+      handlers: {
+        internalLink: (node) => ({
+          type: 'element',
+          tagName: 'x-link',
+          properties: {},
+          children: [{ type: 'text', value: node.target }],
+        }),
+      },
     })
     expect(html).toContain('<x-link>リンク</x-link>')
     expect(html).toContain('<code class="code">code</code>')
+  })
+
+  it('handlers が返した raw ノードは HTML としてそのまま入る', () => {
+    const html = toHtml(parseLine('[$ x^2]'), {
+      handlers: { formula: (node) => ({ type: 'raw', value: `<math>${node.value}</math>` }) },
+    })
+    expect(html).toBe('<div class="line"><math>x^2</math></div>')
   })
 
   it('classNames は指定したキーだけを差し替える', () => {
@@ -259,8 +306,13 @@ describe('独自記法', () => {
     const html = toHtml(parseLine('hi @qaynam', { extensions }), {
       // declaration merging をしていれば、このキャストは要らない。
       handlers: {
-        mention: (node: { user: string }) => `<mention>${escapeHtml(node.user)}</mention>`,
-      } as NodeHandlers<string>,
+        mention: (node: { user: string }) => ({
+          type: 'element',
+          tagName: 'mention',
+          properties: {},
+          children: [{ type: 'text', value: node.user }],
+        }),
+      } as HastHandlers,
     })
     expect(html).toContain('<mention>qaynam</mention>')
   })
