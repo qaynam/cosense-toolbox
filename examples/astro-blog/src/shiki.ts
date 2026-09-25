@@ -60,13 +60,13 @@ export const createCodeHighlight = async (
   langs: string[] = defaultLangs,
 ): Promise<(code: string, lang: string) => string> => {
   const shiki = await createHighlighter({ themes: [shikiConfig.theme], langs })
-  // structure: 'inline' で、toHtml が包む code の中身だけを返す。
+  // toHtml は戻り値を code で包むので、外側の <pre><code> だけを剥がす。
+  // structure: 'inline' にしないのは、行番号 (global.css) に使う行ごとの span.line を残すため。
   return (code, lang) =>
     shiki.getLoadedLanguages().includes(lang)
-      ? shiki.codeToHtml(code, {
-          lang,
-          theme: shikiConfig.theme,
-          structure: 'inline',
-        })
+      ? shiki
+          .codeToHtml(code, { lang, theme: shikiConfig.theme })
+          .replace(/^<pre[^>]*><code>/, '')
+          .replace(/<\/code><\/pre>$/, '')
       : escapeHtml(code)
 }

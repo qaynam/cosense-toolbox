@@ -134,10 +134,13 @@ export const shikiConfig = { theme: 'github-light' } satisfies Partial<ShikiConf
 /** toHtml は highlight を同期で呼ぶので、使う言語は先に読み込んでおく */
 export const createCodeHighlight = async (langs: string[]) => {
   const shiki = await createHighlighter({ themes: [shikiConfig.theme], langs })
-  // structure: 'inline' で、toHtml が包む code の中身だけを返す
+  // toHtml が code で包むので、外側の <pre><code> だけを剥がす。行ごとの span.line は残す
   return (code: string, lang: string) =>
     shiki.getLoadedLanguages().includes(lang)
-      ? shiki.codeToHtml(code, { lang, theme: shikiConfig.theme, structure: 'inline' })
+      ? shiki
+          .codeToHtml(code, { lang, theme: shikiConfig.theme })
+          .replace(/^<pre[^>]*><code>/, '')
+          .replace(/<\/code><\/pre>$/, '')
       : escapeHtml(code)
 }
 ```
@@ -163,6 +166,33 @@ const html = toHtml(parse(text), { highlight })
 ---
 <article class="cosense" set:html={html} />
 ```
+
+### 行番号
+
+行番号の要素は出さないので、CSS カウンタで付ける (shiki にも行番号のオプションは無い)。
+
+```css
+/* shiki で色付けしたブロックは行ごとの span.line を、色付けしていないブロックは 1 行ずつの div を数える */
+.cosense .code-body.highlight,
+.cosense .line.code-block:has(> .code-start) {
+  counter-reset: line;
+}
+
+.cosense .code-body.highlight > .line::before,
+.cosense .line.code-block > .code-body:not(.highlight)::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: 2em;
+  margin-right: 1em;
+  text-align: right;
+  color: #94a3b8;
+  user-select: none; /* コピーしたときに番号が入らないように */
+}
+```
+
+- 色付けしていないブロック (shiki が知らない言語) は、まとめる親の要素が無い。ヘッダ行 (ファイル名) でカウンタを戻すと、後ろに並ぶ本体行で数えられる
+- `toHtml` に shiki の `structure: 'inline'` の出力を渡すと、行が `span.line` にならず `<br>` で区切られるので、行番号は付かない。上の `createCodeHighlight` のように、外側の `<pre><code>` だけを剥がす
 
 ## content collection
 
