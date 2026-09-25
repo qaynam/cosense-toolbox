@@ -1,6 +1,9 @@
 /**
  * `@cosense-toolbox/parser/compile` — AST を別の形式に変換する。
  * パースはしない (この層はパーサー本体を import しない)。
+ *
+ * HTML 系の出力 (hast / HTML の文字列) は `toHast` が描画の規則を持ち、`toHtml` はそれを文字列にする。
+ * HTML 以外の形式 (プレーンテキストなど) は `createCompiler` で AST から直接作る。
  */
 export { createCompiler } from './create-compiler'
 export type {
@@ -10,21 +13,30 @@ export type {
   NodeHandlers,
 } from './create-compiler'
 export {
-  createHtmlHandlers,
+  codeLanguageOf,
+  codeLineNumbers,
   defaultClassNames,
+  defaultHastHandlers,
   defaultPageUrl,
-  escapeHtml,
   safeHref,
   safeSrc,
-  toHtml,
-} from './to-html'
+  toHast,
+} from './to-hast'
 export type {
-  Highlighter,
+  HastContent,
+  HastContext,
+  HastHandler,
+  HastHandlers,
+  HastHighlighter,
+  HastOptions,
+  HastRenderOptions,
   HtmlClassNames,
-  HtmlOptions,
-  HtmlRenderOptions,
   PageRefNode,
-} from './to-html'
-export { withTableCellLineBreaks } from './table-cell-line-break'
-export type { TableCellLineBreakOptions } from './table-cell-line-break'
+  RawNode,
+  RenderExtension,
+  RenderTransform,
+  ResolvedHastOptions,
+} from './to-hast'
+export { escapeHtml, toHtml } from './to-html'
+export type { Highlighter, HtmlOptions } from './to-html'
 export { toPlainText } from './to-plain-text'

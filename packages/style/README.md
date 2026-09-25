@@ -55,6 +55,7 @@ CSS 変数を定義するだけでよい。定義した変数が最優先にな�
 | `--cosense-font-size` | `15px` | — |
 | `--cosense-line-height` | `1.87` | — |
 | `--cosense-code-font` | `ui-monospace, …` | — |
+| `--cosense-line-number` | `rgba(0,0,0,.35)` | — |
 | `--cosense-indent` | `1.5em` | — |
 
 「本体テーマの変数」の列は fallback として参照している。Cosense のテーマ変数を持つページに
@@ -76,6 +77,11 @@ Cosense と同じく、字下げの右端に中点を出す。`toHtml` の既定
 
 `toHtml(page, { showPads: true })` でCosense Web と同じ `.indent-mark` / `.pad` / `.dot` を
 書き出した場合は、擬似要素を止めて要素側のスタイルを使う。どちらでも見た目は同じ。
+
+## コードブロックの行番号
+
+`@cosense-toolbox/parser/compile` の `codeLineNumbers()` を描画の拡張 (`extensions`) に渡すと、本体行に `data-line` と `data-line-digits` が付き、このスタイルが行の左に番号の欄を取って番号を出す。
+欄の幅はブロックの最後の番号の桁数で決まる。番号は選択の対象にならないので、コードをコピーしても入らない。色は `--cosense-line-number` で変える。
 
 ## 名前の衝突を避ける
 

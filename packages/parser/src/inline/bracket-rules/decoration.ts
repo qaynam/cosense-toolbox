@@ -1,6 +1,8 @@
 import { Option } from 'effect'
 import { shiftOrigin } from '../../core/position'
-import type { BracketRule } from '../types'
+import type { InlineNodeInit } from '../../types'
+import type { InternalBracketRule } from '../internal-types'
+import type { BracketRuleContext } from '../types'
 
 /** 意味を持つ文字装飾記法の記号。 */
 export const OFFICIAL_MARKERS = '*/-_'
@@ -20,7 +22,13 @@ const uniqueChars = (marks: string): readonly string[] => [...new Set(marks)]
  * そのため子の走査は allowDecoration=false で行う。
  * 例: `[* [* 太字]ですね]` の内側は装飾ではなく内部リンクになる。
  */
-export const buildDecorationRule = (markerChars: string): BracketRule => {
+/**
+ * 文脈は拡張に渡るものと同じ形 (`BracketRuleContext`) だけを使う。
+ * `customDecorations` が拡張のルールとしても使うため。
+ */
+export const buildDecorationRule = (
+  markerChars: string,
+): ((inner: string, ctx: BracketRuleContext) => Option.Option<InlineNodeInit>) => {
   const pattern = new RegExp(`^([${escapeForCharClass(markerChars)}]+)\\s+([\\s\\S]+)$`)
 
   return (inner, ctx) => {
@@ -51,4 +59,4 @@ export const buildDecorationRule = (markerChars: string): BracketRule => {
 }
 
 /** `[* 太字]` `[/ 斜体]` `[- 打消し]` `[_ 下線]` とその複合 (`[-/ x]`)。 */
-export const decorationRule: BracketRule = buildDecorationRule(OFFICIAL_MARKERS)
+export const decorationRule: InternalBracketRule = buildDecorationRule(OFFICIAL_MARKERS)

@@ -33,7 +33,10 @@ export default defineConfig({
 | `components` | すべてのページに渡すコンポーネントを default export するモジュールの、プロジェクトのルートからのパス |
 | `pageUrl` | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス |
 | `tagUrl` `projectUrl` `unresolved` | `compile` の同名のオプションと同じ |
-| `rehypePlugins` `classNames` `showPads` `iconImageUrl` `title` `parseOptions` | 同上 |
+| `parseOptions` | パースの設定。parser の `parse` のオプション (`extensions` など) がそのまま渡る |
+| `renderOptions` | 描画の設定。parser の `toHast` のオプション (`extensions` `handlers` `classNames` `showPads` `iconImageUrl`) と `title` がそのまま渡る。色付けは `syntaxHighlight` で決める |
+| `rehypePlugins` | `compile` の同名のオプションと同じ |
+| `syntaxHighlight` | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け) |
 | `assets` | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効 |
 
 ## Cosense 上の画像とファイル
@@ -93,6 +96,94 @@ const html = await localizeCosenseAssets(
 ```
 
 差し替えられるのは、ページをビルド時に描画するとき (静的なページと prerender) と dev サーバーだけ。実行時に描画する SSR では元の URL のまま返す。
+
+## コードブロックの色付け
+
+`.csn` / `.csnx` のコードブロック (`code:hello.js`) は、`.md` / `.mdx` と同じく Astro の `markdown.syntaxHighlight` と `markdown.shikiConfig` の設定で shiki が色付けする。
+`components` に登録しなくてよい。
+
+```js
+export default defineConfig({
+  markdown: { shikiConfig: { theme: 'github-light' } },
+  integrations: [cosense()],
+})
+```
+
+- 言語はファイル名の拡張子から決める。`code:hello.js` なら `js`、`code:python` なら `python`
+- shiki が知らない言語と `excludeLangs` の言語は、色付けせずに出す
+- `theme` / `themes` / `defaultColor` / `langs` / `langAlias` / `transformers` を使う。`wrap` は使わない。長い行は `@cosense-toolbox/style` が折り返す
+- `markdown.syntaxHighlight` が `'prism'` のときは色付けしない (相当するものが無い)
+
+`syntaxHighlight: false` で色付けをやめる。関数を渡すと、shiki の代わりにそれで色付けする。形は `compile` の `renderOptions.highlight` と同じ。
+
+```js
+cosense({
+  syntaxHighlight: (code, language) => myHighlighter(code, language), // hast か null を返す
+})
+```
+
+`toHtml` で自分で描画するページは、`toHtml` の `highlight` に shiki を直接渡す。
+テーマなどの設定を 1 つのファイルにまとめ、`astro.config.mjs` とページの両方から読むと、`.md` / `.csn` と見た目が揃う。
+
+```ts
+// src/shiki.ts
+import type { HastHighlighter } from '@cosense-toolbox/parser/compile'
+import type { ShikiConfig } from 'astro'
+import { createHighlighter } from 'shiki'
+
+export const shikiConfig = { theme: 'github-light' } satisfies Partial<ShikiConfig>
+
+/** toHtml は highlight を同期で呼ぶので、使う言語は先に読み込んでおく */
+export const createCodeHighlight = async (langs: string[]): Promise<HastHighlighter> => {
+  const shiki = await createHighlighter({ themes: [shikiConfig.theme], langs })
+  // shiki の hast はそのまま返してよい。<pre><code> は剥がされ、テーマの色はコードブロックに移る
+  return (code, lang) =>
+    shiki.getLoadedLanguages().includes(lang)
+      ? shiki.codeToHast(code, { lang, theme: shikiConfig.theme })
+      : null // 読み込んでいない言語は色付けしない
+}
+```
+
+```js
+// astro.config.mjs
+import { shikiConfig } from './src/shiki.ts'
+
+export default defineConfig({
+  markdown: { shikiConfig },
+  integrations: [cosense()],
+})
+```
+
+```astro
+---
+import { parse } from '@cosense-toolbox/parser'
+import { toHtml } from '@cosense-toolbox/parser/compile'
+import { createCodeHighlight } from '../shiki'
+
+const highlight = await createCodeHighlight(['js', 'ts'])
+const html = toHtml(parse(text), { highlight })
+---
+<article class="cosense" set:html={html} />
+```
+
+### 行番号
+
+`@cosense-toolbox/parser/compile` の `codeLineNumbers()` を描画の拡張 (`renderOptions.extensions`) に渡すと、コードブロックの本体行に行番号 (`data-line`) が付く。
+番号の表示は `@cosense-toolbox/style` と `@cosense-toolbox/tailwind` が持っていて、行の左の余白に出す。本文の位置は変わらず、コピーしたときに番号は入らない。
+
+```js
+// astro.config.mjs
+import { codeLineNumbers } from '@cosense-toolbox/parser/compile'
+
+cosense({ renderOptions: { extensions: [codeLineNumbers()] } })
+```
+
+`toHtml` で描画するページは、`toHtml(page, { extensions: [codeLineNumbers()] })` のように渡す。
+
+- 番号の色は `--cosense-line-number` で変えられる
+- エディタと同じく、本文の左に番号の欄を取る。欄の幅はブロックの最後の番号の桁数で決まり、同じブロックの行はそろう
+- shiki で色付けしたブロックも、色付けしないブロックと同じく 1 行ずつの要素になるので番号が付く
+- 行をまたぐ出力を返すハイライタ (highlight.js など) でひと塊になったブロックには付かない
 
 ## content collection
 

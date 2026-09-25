@@ -1,7 +1,7 @@
 import { Option, pipe } from 'effect'
 import { isImageUrl } from '../../core/image-url'
 import type { InlineNodeInit } from '../../types'
-import type { BracketRule } from '../types'
+import type { InternalBracketRule } from '../internal-types'
 
 const URLS_RE = /https?:\/\/[^\s\]]+/gi
 
@@ -25,7 +25,7 @@ const linkFor = (urls: readonly string[], src: string): Option.Option<string> =>
  *    - 画像が無ければ 先頭 = リンク先 / 2 番目 = 表示テキスト。
  * 3. URL が 1 つだけ → 画像なら画像、違えば裸の外部リンク。
  */
-export const urlRule: BracketRule = (inner) => {
+export const urlRule: InternalBracketRule = (inner) => {
   const urls = inner.match(URLS_RE) ?? []
   if (urls.length === 0) return Option.none()
 

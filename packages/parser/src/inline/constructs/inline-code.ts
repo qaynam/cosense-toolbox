@@ -1,8 +1,8 @@
 import { Option } from 'effect'
-import type { InlineConstruct } from '../types'
+import type { InternalConstruct } from '../internal-types'
 
 /** バッククォートで囲んだインラインコード。閉じるバッククォートが無ければ成立しない。 */
-export const inlineCodeConstruct: InlineConstruct = (source, index) => {
+export const inlineCodeConstruct: InternalConstruct = (source, index) => {
   if (source[index] !== '`') return Option.none()
 
   const end = source.indexOf('`', index + 1)

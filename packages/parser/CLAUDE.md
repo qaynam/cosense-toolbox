@@ -22,7 +22,12 @@
 4. **自己完結**。ワークスペース内の他パッケージ（`@cosense/*`）を import しない。
    `tsconfig.json` も `extends` せず内容を直接持つ。ディレクトリを別リポにコピーしただけで
    `bun install && bun run build && bun run test` が通る状態を常に維持する。
-5. **runtime dependency は `effect` のみ**。他は増やさない。
+5. **runtime dependency は `effect` と、`./compile` が使う hast の標準の部品だけ**。他は増やさない。
+   - `effect`：パーサー本体を含むすべての層で使う
+   - `hast-util-to-html` と `@types/hast`：`./compile` の `toHast` / `toHtml` だけが使う。
+     HTML 系の出力 (HTML の文字列・JSX・rehype) を hast 1 つにまとめ、hast を文字列にする処理は
+     unified の標準に任せるため (属性名の変換やエスケープを自前で持たない)
+   - `parse` だけを使う人のバンドルには入らないこと (§4 の tree-shaking の確認) を保つ
    （`tsdown` / `vitest` / `typescript` / `fast-check` は devDependencies なので対象外。）
 6. **CSS をこのパッケージに置かない**。既定の見た目は `@cosense-toolbox/style`（別パッケージ）
    の担当。JS のバンドルに CSS 文字列を持たせると、スタイルを使わない利用者まで太る。
@@ -132,9 +137,9 @@ src/
     scan.ts             括弧の対応探索・タグ境界判定・行頭空白
     image-url.ts        isImageUrl（構造の判定）/ asImageSrc（表示用の変換）
   inline/
-    types.ts            InlineConstruct / BracketRule / InlineContext / Extension（型のみ）
+    types.ts            InlineConstruct / BracketRule / InlineContext / Extension（公開の型のみ。effect を import しない）
+    internal-types.ts   パッケージの中のルールの型（Option で返す）。公開しない
     tokenize.ts         走査ループ。位置の付与はここだけが行う
-    table-cell.ts       テーブルのセルの中の記法 (既定ではリンク以外を書いたままの文字に戻す)
     constructs/         1 construct = 1 ファイル + index.ts（配列の登録場所）
     bracket-rules/      1 rule = 1 ファイル + index.ts（配列の登録場所）
     extensions/         既定では有効にしない Extension を作る factory（customDecorations 等）
@@ -143,9 +148,10 @@ src/
     build.ts            ブロックのグルーピング
   extensions/           拡張を書くための型と、既製の Extension（サブパスのバレル）
   compile/
-    create-compiler.ts  ハンドラ機構
-    to-html.ts          公式の HTML コンパイラ（pageUrl / iconImageUrl / highlight / classNames / showPads / tableCellLineBreakMarker / handlers）
-    table-cell-line-break.ts  セルの中の改行 (toHtml と cosense-x の toHast が共有する)
+    create-compiler.ts  ハンドラ機構 (HTML 以外の形式を AST から直接作るとき用)
+    to-hast.ts          公式の hast コンパイラ。描画の規則はここだけに持つ
+                        （pageUrl / iconImageUrl / highlight / classNames / showPads / handlers）
+    to-html.ts          toHast の出力を文字列にする近道（highlight は HTML の文字列も受け付ける / style）
     to-plain-text.ts    参照実装
   utils/                visit / links
   fixtures/             conformance.json（記法仕様）
@@ -207,14 +213,10 @@ src/
   検証コマンド（何もヒットしなければ OK）:
 
   ```sh
-  bun run build && grep -nE "Option\.|Either\.|Effect\.|Schema\." dist/index.d.mts dist/utils.d.mts dist/compile.d.mts
+  bun run build && grep -nE "Option\.|Either\.|Effect\.|Schema\." dist/index.d.mts dist/utils.d.mts dist/compile.d.mts dist/extensions.d.mts
   ```
 
-  例外は 2 つだけ:
-  - `./schema` — effect ネイティブに使いたい人向けの opt-in サブパス
-  - `./extensions` の `InlineConstruct` / `BracketRule` — 記法を書くプラグイン作者は
-    `Option` を返す必要がある。`Extension` を経由して `ParseOptions` からも型として参照されるので、
-    `dist/index.d.mts` に `effect` からの import 行自体は出る。**シグネチャに出ていなければよい。**
+  例外は `./schema` だけ (effect ネイティブに使いたい人向けの opt-in サブパス)。
 - `import { Array, String, Number } from 'effect'` はグローバルをシャドウする。
   **必ずエイリアスする**（`import { Array as Arr } from 'effect'`）。
 - オプション引数は常に「全フィールド optional な readonly object」。

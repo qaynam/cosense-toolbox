@@ -9,13 +9,8 @@ import { Option } from 'effect'
 import { type Origin, spanAt } from '../core/position'
 import type { InlineNode, InlineNodeInit, Position } from '../types'
 import { inlineConstructs } from './constructs'
-import type {
-  BracketRule,
-  ConstructMatch,
-  Extension,
-  InlineConstruct,
-  InlineContext,
-} from './types'
+import type { InternalBracketRule, InternalConstruct, ScanContext } from './internal-types'
+import type { BracketRule, ConstructMatch, Extension, InlineConstruct } from './types'
 
 export interface TokenizeInlineOptions {
   /** 装飾記法を解釈するか (既定: true)。装飾の中身を解析するときだけ false になる */
@@ -32,22 +27,32 @@ export interface TokenizeInlineOptions {
 
 /** 走査に渡せる形まで並べ終えたルール。`constructs` は先頭から順に試される。 */
 export interface ResolvedExtensions {
-  readonly constructs: readonly InlineConstruct[]
-  readonly bracketRules: readonly BracketRule[]
+  readonly constructs: readonly InternalConstruct[]
+  readonly bracketRules: readonly InternalBracketRule[]
 }
+
+/** 拡張のルールは null で返すので、中のルールと同じく Option で返す形に包む。 */
+const fromConstruct =
+  (construct: InlineConstruct): InternalConstruct =>
+  (source, index, ctx) =>
+    Option.fromNullable(construct(source, index, ctx))
+
+const fromBracketRule =
+  (rule: BracketRule): InternalBracketRule =>
+  (inner, ctx) =>
+    Option.fromNullable(rule(inner, ctx))
 
 /** 拡張のルールを既定のルールの前に並べる。拡張が既定の記法を上書きできるのはこの順序による。 */
 export const resolveExtensions = (extensions?: readonly Extension[]): ResolvedExtensions => {
   if (extensions === undefined || extensions.length === 0) {
     return { constructs: inlineConstructs, bracketRules: [] }
   }
-  const constructs: InlineConstruct[] = []
-  const bracketRules: BracketRule[] = []
-  for (const extension of extensions) {
-    if (extension.constructs) constructs.push(...extension.constructs)
-    if (extension.bracketRules) bracketRules.push(...extension.bracketRules)
+  const constructs = extensions.flatMap((extension) => extension.constructs ?? [])
+  const bracketRules = extensions.flatMap((extension) => extension.bracketRules ?? [])
+  return {
+    constructs: [...constructs.map(fromConstruct), ...inlineConstructs],
+    bracketRules: bracketRules.map(fromBracketRule),
   }
-  return { constructs: [...constructs, ...inlineConstructs], bracketRules }
 }
 
 /**
@@ -59,19 +64,19 @@ const withPosition = (node: InlineNodeInit, position: Position): InlineNode =>
 
 /** ジェネレータにしているのは、最初に成立した時点で残りのルールを評価しないため。 */
 function* attempts(
-  constructs: readonly InlineConstruct[],
+  constructs: readonly InternalConstruct[],
   source: string,
   index: number,
-  ctx: InlineContext,
+  ctx: ScanContext,
 ) {
   for (const construct of constructs) yield construct(source, index, ctx)
 }
 
 const firstMatch = (
-  constructs: readonly InlineConstruct[],
+  constructs: readonly InternalConstruct[],
   source: string,
   index: number,
-  ctx: InlineContext,
+  ctx: ScanContext,
 ): Option.Option<ConstructMatch> => Option.firstSomeOf(attempts(constructs, source, index, ctx))
 
 const scan = (
@@ -81,7 +86,7 @@ const scan = (
   rules: ResolvedExtensions,
 ): readonly InlineNode[] => {
   const out: InlineNode[] = []
-  const ctx: InlineContext = {
+  const ctx: ScanContext = {
     allowDecoration,
     origin,
     bracketRules: rules.bracketRules,

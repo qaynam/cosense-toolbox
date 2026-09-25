@@ -25,7 +25,6 @@ description: Extension で記法を足し、declaration merging で独自のノ�
 既定のルールより先に試されるので、既存の記法を上書きすることもできます。
 
 ```ts
-import { Option } from "effect";
 import { parse } from "@cosense-toolbox/parser";
 import type {
   Extension,
@@ -33,13 +32,13 @@ import type {
 } from "@cosense-toolbox/parser/extensions";
 
 const mention: InlineConstruct = (source, index) => {
-  if (source[index] !== "@") return Option.none();
+  if (source[index] !== "@") return null;
   const match = source.slice(index + 1).match(/^[A-Za-z0-9_-]+/);
-  if (!match) return Option.none();
-  return Option.some({
+  if (!match) return null;
+  return {
     node: { type: "internalLink", label: `@${match[0]}`, target: match[0] },
     length: match[0].length + 1,
-  });
+  };
 };
 
 const mentions: Extension = { constructs: [mention] };
@@ -47,7 +46,8 @@ const mentions: Extension = { constructs: [mention] };
 parse("メモ\n@qaynam に確認する", { extensions: [mentions] });
 ```
 
-`Option.none()` を返すと、その位置では成立しなかったことになり、次のルールが試されます。
+`null` を返すと、その位置では成立しなかったことになり、次のルールが試されます。
+拡張は普通の関数で書けるので、`effect` を入れる必要はありません。
 `position` は走査ループが付けるので、返す必要はありません。
 
 `[...]` の中身の解釈を足す場合は `bracketRules` を使います。
@@ -92,7 +92,7 @@ declare module "@cosense-toolbox/parser" {
 
 ```ts
 import { parse } from "@cosense-toolbox/parser";
-import { escapeHtml, toHtml } from "@cosense-toolbox/parser/compile";
+import { toHtml } from "@cosense-toolbox/parser/compile";
 
 // mention が { type: 'mention', user } を返すようにしておく
 const page = parse("メモ\n@qaynam に確認する", {
@@ -101,8 +101,12 @@ const page = parse("メモ\n@qaynam に確認する", {
 
 toHtml(page, {
   handlers: {
-    mention: (node) =>
-      `<a href="/u/${node.user}">@${escapeHtml(node.user)}</a>`,
+    mention: (node) => ({
+      type: "element",
+      tagName: "a",
+      properties: { href: `/u/${encodeURIComponent(node.user)}` },
+      children: [{ type: "text", value: `@${node.user}` }],
+    }),
   },
 });
 ```
