@@ -6,9 +6,10 @@ import { stat } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { type CompileOptions, compile } from '@cosense-toolbox/cosense-x'
+import { Option } from 'effect'
 import type { Plugin } from 'vite'
 import { ASSET_STORE_KEY, type AssetStore } from './assets'
-import type { CodeHighlighter } from './highlight'
+import { type AstroRenderOptions, type CodeHighlighter, renderOptionsWith } from './highlight'
 import { type SiteCache, idOf, isCosenseFile } from './site'
 
 export const GRAPH_MODULE_ID = 'virtual:cosense-x/graph'
@@ -41,10 +42,23 @@ const CONTENT_TYPES: Readonly<Record<string, string>> = {
   '.mp3': 'audio/mpeg',
 }
 
-export type AstroCompileOptions = Omit<
-  CompileOptions,
-  'filePath' | 'format' | 'index' | 'jsxImportSource' | 'elementAttributeNameCase' | 'highlight'
->
+export interface AstroCompileOptions
+  extends Omit<
+    CompileOptions,
+    | 'filePath'
+    | 'format'
+    | 'index'
+    | 'jsxImportSource'
+    | 'elementAttributeNameCase'
+    | 'renderOptions'
+  > {
+  /**
+   * 描画の設定。parser の `toHast` のオプションがそのまま渡る
+   * (`extensions` / `handlers` / `classNames` / `showPads` / `iconImageUrl` / `title`)。
+   * コードブロックの色付けは `syntaxHighlight` で決める。
+   */
+  readonly renderOptions?: AstroRenderOptions
+}
 
 export interface VitePluginOptions {
   readonly root: URL
@@ -133,10 +147,10 @@ export const vitePluginCosense = (options: VitePluginOptions): Plugin => {
       filter: { id: /\.csnx?$/ },
       async handler(code, id) {
         const { index } = await loadSite()
-        const highlight = await options.highlighter?.(code)
+        const highlight = Option.fromNullable(await options.highlighter?.(code))
         const result = await compile(code, {
           ...options.compile,
-          ...(highlight === undefined ? {} : { highlight }),
+          renderOptions: renderOptionsWith(options.compile.renderOptions, highlight),
           filePath: idOf(root, id),
           index,
           jsxImportSource: 'astro',

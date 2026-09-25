@@ -5,7 +5,8 @@
  */
 import { cosenseIconUrl, fetchPageText } from '@cosense-toolbox/cosense-x/fetch'
 import { parse } from '@cosense-toolbox/parser'
-import { toHtml } from '@cosense-toolbox/parser/compile'
+import { codeLineNumbers, toHtml } from '@cosense-toolbox/parser/compile'
+import { customDecorations } from '@cosense-toolbox/parser/extensions'
 import { localizeCosenseAssets } from 'virtual:cosense-x/assets'
 import Base from '../layouts/Base.astro'
 import { createCodeHighlight } from '../shiki'
@@ -19,8 +20,11 @@ const highlight = await createCodeHighlight()
 let html: string | null = null
 try {
   const text = await fetchPageText(project, title, pat ? { pat } : {})
-  const rendered = toHtml(parse(text), {
+  const rendered = toHtml(parse(text, {
+    extensions: [customDecorations(["|", "!", "~"])]
+  }), {
     highlight,
+    extensions: [codeLineNumbers()],
     pageUrl: (target) => `https://scrapbox.io/${project}/${encodeURIComponent(target)}`,
     iconImageUrl: (icon) => cosenseIconUrl(project, icon.user),
   })

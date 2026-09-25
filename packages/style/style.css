@@ -188,6 +188,8 @@
  */
 .page .line.code-block > code {
   display: block;
+  /* 空の行も 1 行ぶんの高さを保つ。中身が無いと行の箱ができず、高さが 0 になるため。 */
+  min-height: 1.7em;
   line-height: 1.7em;
   tab-size: 4;
   background: var(--cosense-code-bg, var(--code-bg, rgba(0, 0, 0, 0.04)));
@@ -215,6 +217,56 @@
 /* 中点が付くのはヘッダ行だけ (Cosense Web では本体行に dot が無い)。 */
 .page .line.code-block:not(:has(> .code-start))::before {
   content: none;
+}
+
+/*
+ * 行番号。codeLineNumbers() の拡張を渡したときだけ、本体行に data-line と data-line-digits が付く。
+ *
+ * エディタと同じく、本文の左に番号の欄を取る。欄の幅はブロックの最後の番号の桁数 (data-line-digits) で決め、
+ * 同じブロックの行はすべて同じ位置から本文が始まる。番号は行の要素の擬似要素なので本文の文字には混ざらず、
+ * attr() の中身は選択されないので、コードをコピーしても番号は入らない。
+ * 桁数を calc に持ち込む手段 (attr() の type 指定) がまだ広く使えないので、インデントと同じく桁数ごとに変数を置く。
+ */
+.page .line.code-block[data-line-digits="1"] {
+  --cosense-line-digits: 1;
+}
+.page .line.code-block[data-line-digits="2"] {
+  --cosense-line-digits: 2;
+}
+.page .line.code-block[data-line-digits="3"] {
+  --cosense-line-digits: 3;
+}
+.page .line.code-block[data-line-digits="4"] {
+  --cosense-line-digits: 4;
+}
+.page .line.code-block[data-line-digits="5"] {
+  --cosense-line-digits: 5;
+}
+
+/*
+ * 番号の欄の幅は「0.6em + 桁数ぶんの数字」。ch はコードの書体の数字 1 つぶんなので、欄と本文の両方で同じ書体を使う。
+ * 本文は欄の右に数字 1 つぶんの間を空けて始める。
+ */
+.page .line.code-block[data-line] > .code-body {
+  padding-left: calc(0.6em + (var(--cosense-line-digits, 5) + 1) * 1ch);
+}
+
+.page .line.code-block[data-line]::before {
+  content: attr(data-line);
+  top: 0;
+  /* ブロックの左端 (ヘッダ行と同じ位置) から、番号の欄の幅だけを使う。 */
+  left: calc(var(--cosense-indent, 1.5em) * (var(--cosense-depth, 1) - 1));
+  width: calc(0.6em + var(--cosense-line-digits, 5) * 1ch);
+  height: auto;
+  display: flex;
+  justify-content: flex-end;
+  white-space: nowrap;
+  border-radius: 0;
+  background: none;
+  font-family: var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace);
+  /* 文字の大きさを変えると、欄の幅の ch と em が本文とずれるので変えない。 */
+  line-height: 1.7em;
+  color: var(--cosense-line-number, rgba(0, 0, 0, 0.35));
 }
 
 /* ---------------------------------------------------------------------------

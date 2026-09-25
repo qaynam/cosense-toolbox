@@ -33,7 +33,9 @@ export default defineConfig({
 | `components` | すべてのページに渡すコンポーネントを default export するモジュールの、プロジェクトのルートからのパス |
 | `pageUrl` | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス |
 | `tagUrl` `projectUrl` `unresolved` | `compile` の同名のオプションと同じ |
-| `rehypePlugins` `classNames` `showPads` `iconImageUrl` `title` `parseOptions` | 同上 |
+| `parseOptions` | パースの設定。parser の `parse` のオプション (`extensions` など) がそのまま渡る |
+| `renderOptions` | 描画の設定。parser の `toHast` のオプション (`extensions` `handlers` `classNames` `showPads` `iconImageUrl`) と `title` がそのまま渡る。色付けは `syntaxHighlight` で決める |
+| `rehypePlugins` | `compile` の同名のオプションと同じ |
 | `syntaxHighlight` | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け) |
 | `assets` | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効 |
 
@@ -112,7 +114,7 @@ export default defineConfig({
 - `theme` / `themes` / `defaultColor` / `langs` / `langAlias` / `transformers` を使う。`wrap` は使わない。長い行は `@cosense-toolbox/style` が折り返す
 - `markdown.syntaxHighlight` が `'prism'` のときは色付けしない (相当するものが無い)
 
-`syntaxHighlight: false` で色付けをやめる。関数を渡すと、shiki の代わりにそれで色付けする。形は `compile` の `highlight` と同じ。
+`syntaxHighlight: false` で色付けをやめる。関数を渡すと、shiki の代わりにそれで色付けする。形は `compile` の `renderOptions.highlight` と同じ。
 
 ```js
 cosense({
@@ -125,23 +127,20 @@ cosense({
 
 ```ts
 // src/shiki.ts
-import { escapeHtml } from '@cosense-toolbox/parser/compile'
+import type { HastHighlighter } from '@cosense-toolbox/parser/compile'
 import type { ShikiConfig } from 'astro'
 import { createHighlighter } from 'shiki'
 
 export const shikiConfig = { theme: 'github-light' } satisfies Partial<ShikiConfig>
 
 /** toHtml は highlight を同期で呼ぶので、使う言語は先に読み込んでおく */
-export const createCodeHighlight = async (langs: string[]) => {
+export const createCodeHighlight = async (langs: string[]): Promise<HastHighlighter> => {
   const shiki = await createHighlighter({ themes: [shikiConfig.theme], langs })
-  // toHtml が code で包むので、外側の <pre><code> だけを剥がす。行ごとの span.line は残す
-  return (code: string, lang: string) =>
+  // shiki の hast はそのまま返してよい。<pre><code> は剥がされ、テーマの色はコードブロックに移る
+  return (code, lang) =>
     shiki.getLoadedLanguages().includes(lang)
-      ? shiki
-          .codeToHtml(code, { lang, theme: shikiConfig.theme })
-          .replace(/^<pre[^>]*><code>/, '')
-          .replace(/<\/code><\/pre>$/, '')
-      : escapeHtml(code)
+      ? shiki.codeToHast(code, { lang, theme: shikiConfig.theme })
+      : null // 読み込んでいない言語は色付けしない
 }
 ```
 
@@ -169,35 +168,22 @@ const html = toHtml(parse(text), { highlight })
 
 ### 行番号
 
-行番号の要素は出さないので、CSS カウンタで付ける (shiki にも行番号のオプションは無い)。
-付けたいページだけで効くよう、`line-numbers` のような class を付けた要素の中に限る。
+`@cosense-toolbox/parser/compile` の `codeLineNumbers()` を描画の拡張 (`renderOptions.extensions`) に渡すと、コードブロックの本体行に行番号 (`data-line`) が付く。
+番号の表示は `@cosense-toolbox/style` と `@cosense-toolbox/tailwind` が持っていて、行の左の余白に出す。本文の位置は変わらず、コピーしたときに番号は入らない。
 
-```html
-<article class="cosense line-numbers">…</article>
+```js
+// astro.config.mjs
+import { codeLineNumbers } from '@cosense-toolbox/parser/compile'
+
+cosense({ renderOptions: { extensions: [codeLineNumbers()] } })
 ```
 
-```css
-/* shiki で色付けしたブロックは行ごとの span.line を、色付けしていないブロックは 1 行ずつの div を数える */
-.line-numbers .code-body.highlight,
-.line-numbers .line.code-block:has(> .code-start) {
-  counter-reset: line;
-}
+`toHtml` で描画するページは、`toHtml(page, { extensions: [codeLineNumbers()] })` のように渡す。
 
-.line-numbers .code-body.highlight > .line::before,
-.line-numbers .line.code-block > .code-body:not(.highlight)::before {
-  counter-increment: line;
-  content: counter(line);
-  display: inline-block;
-  width: 2em;
-  margin-right: 1em;
-  text-align: right;
-  color: #94a3b8;
-  user-select: none; /* コピーしたときに番号が入らないように */
-}
-```
-
-- 色付けしていないブロック (shiki が知らない言語) は、まとめる親の要素が無い。ヘッダ行 (ファイル名) でカウンタを戻すと、後ろに並ぶ本体行で数えられる
-- `toHtml` に shiki の `structure: 'inline'` の出力を渡すと、行が `span.line` にならず `<br>` で区切られるので、行番号は付かない。上の `createCodeHighlight` のように、外側の `<pre><code>` だけを剥がす
+- 番号の色は `--cosense-line-number` で変えられる
+- エディタと同じく、本文の左に番号の欄を取る。欄の幅はブロックの最後の番号の桁数で決まり、同じブロックの行はそろう
+- shiki で色付けしたブロックも、色付けしないブロックと同じく 1 行ずつの要素になるので番号が付く
+- 行をまたぐ出力を返すハイライタ (highlight.js など) でひと塊になったブロックには付かない
 
 ## content collection
 

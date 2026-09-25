@@ -1,28 +1,3 @@
 @import "tailwindcss";
 /* class="cosense" を付けた要素の中に、Cosense 記法の既定の見た目を当てる。 */
 @plugin "@cosense-toolbox/tailwind";
-
-/*
- * コードブロックの行番号。class="line-numbers" を付けた要素の中でだけ出す (記事のページで付けている)。
- * CSS カウンタで数える。
- * shiki で色付けしたブロックは、行ごとの span.line を数える。
- * 色付けしていないブロック (shiki が知らない言語) は 1 行ずつの div なので、
- * ヘッダ行 (ファイル名) で数え直し、後ろに並ぶ本体行で数える。
- */
-.line-numbers .code-body.highlight,
-.line-numbers .line.code-block:has(> .code-start) {
-  counter-reset: line;
-}
-
-.line-numbers .code-body.highlight > .line::before,
-.line-numbers .line.code-block > .code-body:not(.highlight)::before {
-  counter-increment: line;
-  content: counter(line);
-  display: inline-block;
-  width: 2em;
-  margin-right: 1em;
-  text-align: right;
-  color: var(--color-slate-400);
-  /* コピーしたときに番号が入らないように。 */
-  user-select: none;
-}

@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest'
 import type { InlineConstruct } from '../inline/types'
 import { parse, parseLine } from '../parse'
 import type { InlineNodeInit } from '../types'
-import type { NodeHandlers } from './create-compiler'
-import { codeLanguageOf, defaultPageUrl, escapeHtml, safeHref, safeSrc, toHtml } from './to-html'
+import type { HastHandlers } from './to-hast'
+import { codeLanguageOf, defaultPageUrl, safeHref, safeSrc } from './to-hast'
+import { escapeHtml, toHtml } from './to-html'
 
 /** 1 行を描画して、行を包む div を外した中身だけを見る。 */
 const line = (source: string, options?: Parameters<typeof toHtml>[1]): string =>
@@ -91,7 +92,7 @@ describe('ブロック', () => {
     expect(toHtml(parse('t\ncode:a.ts\n <b>\n x'))).toContain(
       '<div class="line code-block">' +
         '<code class="code-start"><span class="code-block-start">a.ts</span></code></div>' +
-        '<div class="line code-block" data-indent="1"><code class="code-body">&lt;b&gt;</code></div>' +
+        '<div class="line code-block" data-indent="1"><code class="code-body">&lt;b></code></div>' +
         '<div class="line code-block" data-indent="1"><code class="code-body">x</code></div>',
     )
   })
@@ -102,7 +103,7 @@ describe('ブロック', () => {
     )
   })
 
-  it('highlight を渡すと本体がひと塊になり、言語名が拡張子から渡る', () => {
+  it('highlight が返した文字列は、HTML としてそのまま本体に入る', () => {
     const seen: string[] = []
     const html = toHtml(parse('t\ncode:a.ts\n const a = 1\n const b = 2'), {
       highlight: (code, language) => {
@@ -164,11 +165,14 @@ describe('画像', () => {
 
 describe('エスケープと URL の安全性', () => {
   it('テキストの HTML はエスケープされる', () => {
-    expect(line('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;')
+    // `>` だけではタグにならないので、`<` と `&` をエスケープすれば足りる。
+    expect(line('<script>alert(1)</script>')).toBe('&lt;script>alert(1)&lt;/script>')
   })
 
   it('リンクのラベルと href はエスケープされる', () => {
-    expect(line('["><script>]')).toContain('&quot;&gt;&lt;script&gt;')
+    const html = line('["><script>]')
+    expect(html).toContain('>">&lt;script></a>')
+    expect(html).toContain('href="/%22%3E%3Cscript%3E"')
   })
 
   it('href に script が動く URL が来たら属性ごと落とす', () => {
@@ -210,10 +214,24 @@ describe('エスケープと URL の安全性', () => {
 describe('差し替え', () => {
   it('handlers に書いた型だけが上書きされ、残りは既定のまま', () => {
     const html = toHtml(parseLine('[リンク] と `code`'), {
-      handlers: { internalLink: (node) => `<x-link>${node.target}</x-link>` },
+      handlers: {
+        internalLink: (node) => ({
+          type: 'element',
+          tagName: 'x-link',
+          properties: {},
+          children: [{ type: 'text', value: node.target }],
+        }),
+      },
     })
     expect(html).toContain('<x-link>リンク</x-link>')
     expect(html).toContain('<code class="code">code</code>')
+  })
+
+  it('handlers が返した raw ノードは HTML としてそのまま入る', () => {
+    const html = toHtml(parseLine('[$ x^2]'), {
+      handlers: { formula: (node) => ({ type: 'raw', value: `<math>${node.value}</math>` }) },
+    })
+    expect(html).toBe('<div class="line"><math>x^2</math></div>')
   })
 
   it('classNames は指定したキーだけを差し替える', () => {
@@ -266,8 +284,13 @@ describe('独自記法', () => {
     const html = toHtml(parseLine('hi @qaynam', { extensions }), {
       // declaration merging をしていれば、このキャストは要らない。
       handlers: {
-        mention: (node: { user: string }) => `<mention>${escapeHtml(node.user)}</mention>`,
-      } as NodeHandlers<string>,
+        mention: (node: { user: string }) => ({
+          type: 'element',
+          tagName: 'mention',
+          properties: {},
+          children: [{ type: 'text', value: node.user }],
+        }),
+      } as HastHandlers,
     })
     expect(html).toContain('<mention>qaynam</mention>')
   })

@@ -5,26 +5,23 @@
  * `@cosense-toolbox/style` がそのまま当たるようにするため。
  * hast にしておけば、rehype のプラグインを通してから JS にできる。
  */
-import {
-  type CodeBlock,
-  type Decoration,
-  type IconNode,
-  type LineBlock,
-  type Page,
-  type ParseOptions,
-  type TableBlock,
-  type TopLevelBlock,
-  asImageSrc,
+import type {
+  IconNode,
+  LineBlock,
+  Page,
+  ParseOptions,
+  TopLevelBlock,
 } from '@cosense-toolbox/parser'
 import {
-  type HtmlClassNames,
+  type HastContext,
+  type HastHandlers,
+  type HastOptions,
   type PageRefNode,
-  codeLanguageOf,
-  createCompiler,
-  defaultClassNames,
+  defaultHastHandlers,
   defaultPageUrl,
   safeHref,
   safeSrc,
+  toHast as toHastOf,
 } from '@cosense-toolbox/parser/compile'
 import { Either, Match, Option, pipe } from 'effect'
 import type { Element, ElementContent, Parent, Properties, Root, Text } from 'hast'
@@ -36,6 +33,8 @@ import {
 } from './components'
 import { type CosenseXError, orThrow } from './errors'
 import { type InlineComponent, type InlinePart, inlineComponentsOf } from './inline-components'
+
+export type { HastHighlighter } from '@cosense-toolbox/parser/compile'
 
 /**
  * コンポーネントの呼び出し。hast には無いノード型なので、JS にするときに専用の変換を通す。
@@ -68,18 +67,11 @@ export interface ResolvedLink {
 }
 
 /**
- * コードブロックの中身を色付けする。`toHtml` の `highlight` の hast 版。
- *
- * `language` はファイル名から推測した名前 (`code:hello.js` なら `js`、`code:python` なら `python`)。
- * null を返すと色付けせず、1 行ずつのまま出す。知らない言語のときに使う。
- *
- * shiki の `codeToHast` のように `pre > code` を返したときは、code の中身を使い、
- * pre の class と style (テーマの背景色や文字色) をコードブロックの code に移す。
- * 行の要素 (`div.line`) の中に置くので、pre そのものは出さない。
+ * parser の `toHast` のオプションに、リンクの解決とコンポーネントを足したもの。
+ * 描画の規則 (要素と class 名) は parser の `toHast` が持ち、ここでは差分だけを足す。
+ * `@cosense-toolbox/style` や `toHtml` の出力とずれないようにするため。
  */
-export type HastHighlighter = (code: string, language: string) => Root | ElementContent[] | null
-
-export interface ToHastOptions {
+export interface ToHastOptions extends Omit<HastOptions, 'pageUrl'> {
   /**
    * ページを指す記法 (`[title]` / `[/proj/page]` / `#tag` / `[user.icon]`) の遷移先。
    * null を返すとリンクにせず、テキストとして出す。
@@ -87,17 +79,6 @@ export interface ToHastOptions {
    * @defaultValue `toHtml` と同じく `/{title}`
    */
   readonly resolveLink?: (node: PageRefNode) => ResolvedLink | null
-  /** アイコンの画像 URL。null なら `<img>` を出さず、ユーザー名のテキストになる。 */
-  readonly iconImageUrl?: (node: IconNode) => string | null
-  /** 出力する要素に付ける class 名。指定したキーだけが既定を上書きする。 */
-  readonly classNames?: HtmlClassNames
-  /** インデントを Cosense Web と同じ要素として書き出す。 */
-  readonly showPads?: boolean
-  /**
-   * コードブロックの中身の色付け。渡すと、本体は 1 行 1 要素ではなく 1 つの要素にまとまる。
-   * ハイライタの出力が複数行にまたがる要素を含みうるため (`toHtml` と同じ)。
-   */
-  readonly highlight?: HastHighlighter
   /**
    * タイトル行を `<h1>` として出すか。レイアウト側でタイトルを出すなら false にする。
    *
@@ -119,6 +100,15 @@ export interface ToHastOptions {
   }
 }
 
+/**
+ * 利用者が決める描画の設定。リンクの解決とコンポーネントは cosense-x が組み立てて渡すので含めない。
+ * `compile` の `renderOptions` と Astro 統合の `renderOptions` はこの形。
+ */
+export type RenderOptions = Pick<
+  ToHastOptions,
+  'classNames' | 'extensions' | 'handlers' | 'highlight' | 'iconImageUrl' | 'showPads' | 'title'
+>
+
 const text = (value: string): Text => ({ type: 'text', value })
 
 const classList = (name: string | undefined): string[] =>
@@ -130,73 +120,13 @@ const element = (
   children: ElementContent[] = [],
 ): Element => ({ type: 'element', tagName, properties, children })
 
-/** 空の class は属性ごと出さない。`toHtml` で class 名を空文字にしたときと同じ振る舞い。 */
+/** 空の class は属性ごと出さない。parser の `toHast` で class 名を空文字にしたときと同じ振る舞い。 */
 const withClass = (className: string | undefined, properties: Properties = {}): Properties => {
   const names = classList(className)
   return names.length === 0 ? properties : { className: names, ...properties }
 }
 
-/** 0 は既定値なので属性にしない。 */
-const positive = (value: number): Properties[string] => (value > 0 ? value : undefined)
-
-const compact = (properties: Properties): Properties =>
-  Object.fromEntries(Object.entries(properties).filter(([, value]) => value !== undefined))
-
-/** 色付けした本体と、コードブロックの code に足す class と style。 */
-interface HighlightedBody {
-  readonly children: ElementContent[]
-  readonly className: readonly string[]
-  readonly style: string | undefined
-}
-
-const isElement = (node: unknown, tagName: string): node is Element =>
-  typeof node === 'object' &&
-  node !== null &&
-  (node as Element).type === 'element' &&
-  (node as Element).tagName === tagName
-
-/** 空白だけのテキストを除いた、ただ 1 つの子。 */
-const onlyChild = (children: readonly unknown[]): unknown => {
-  const meaningful = children.filter(
-    (child) => !((child as Text).type === 'text' && (child as Text).value.trim() === ''),
-  )
-  return meaningful.length === 1 ? meaningful[0] : undefined
-}
-
-/**
- * ハイライタの出力をコードブロックの code の中身にする。
- * `pre > code` (shiki や lowlight を rehype で通した形) なら pre を剥がし、
- * pre に付いたテーマの class と style を引き継ぐ。
- */
-const highlightedBody = (result: Root | ElementContent[]): HighlightedBody => {
-  const children = Array.isArray(result) ? result : result.children
-  const pre = onlyChild(children)
-  if (isElement(pre, 'pre')) {
-    const code = onlyChild(pre.children)
-    if (isElement(code, 'code')) {
-      // hast の決まりでは className の配列だが、shiki は class を文字列で付ける。
-      const className = pre.properties.className ?? pre.properties.class
-      const style = pre.properties.style
-      return {
-        children: code.children,
-        className: Array.isArray(className)
-          ? className.map(String)
-          : classList(typeof className === 'string' ? className : undefined),
-        style: typeof style === 'string' ? style : undefined,
-      }
-    }
-  }
-  return { children: children as ElementContent[], className: [], style: undefined }
-}
-
-const DECORATION_TAGS: readonly (readonly [(node: Decoration) => boolean, string])[] = [
-  [(node) => node.strike, 's'],
-  [(node) => node.underline, 'u'],
-  [(node) => node.italic, 'em'],
-  [(node) => node.bold, 'strong'],
-]
-
-/** 記法に書かれたページタイトル。parser の `toHtml` と同じ。 */
+/** 記法に書かれたページタイトル。parser の `toHast` と同じ。 */
 const pageTitleOf = (node: PageRefNode): string =>
   Match.value(node).pipe(
     Match.when({ type: 'hashtag' }, (tag) => tag.value),
@@ -214,9 +144,7 @@ export const toHastEither = (
   page: Page,
   options: ToHastOptions = {},
 ): Either.Either<Root, CosenseXError> => {
-  const cls: HtmlClassNames = { ...defaultClassNames, ...options.classNames }
-  const resolveLink = options.resolveLink ?? defaultResolveLink
-  const iconImageUrl = options.iconImageUrl ?? (() => null)
+  const { resolveLink = defaultResolveLink, title, components, handlers, ...rest } = options
 
   /** 解決できて、安全な URL になったリンク。 */
   const resolve = (node: PageRefNode): Option.Option<ResolvedLink> =>
@@ -231,228 +159,131 @@ export const toHastEither = (
       ),
     )
 
-  /** 解決できたらリンク、できなければテキスト。 */
+  /**
+   * 解決できたらリンク、できなければテキスト。
+   * parser の既定 (href の無い <a>) と違い、索引に無いページへのリンクを文字に戻せるようにする。
+   */
   const pageRef = (
     node: PageRefNode,
     className: string | undefined,
     label: string,
-  ): ElementContent[] => [
+  ): ElementContent =>
     Option.match(resolve(node), {
       onNone: () => text(label),
       onSome: (resolved) =>
         element('a', withClass(className, { href: resolved.href }), [
           text(resolved.label ?? label),
         ]),
-    }),
-  ]
+    })
 
   // Cosense Web と同じく、そのユーザーのページへのリンクで画像を包む。
-  const icon = (node: IconNode): ElementContent[] => {
-    const body: ElementContent = pipe(
-      Option.fromNullable(iconImageUrl(node)),
-      Option.flatMap((src) => Option.fromNullable(safeSrc(src))),
-      Option.filter((src) => src !== ''),
-      Option.match({
-        onNone: () => text(node.user),
-        onSome: (src) =>
-          element('img', withClass(cls.icon, { src, alt: node.user, title: node.user })),
-      }),
+  const icon = (node: IconNode, ctx: HastContext): ElementContent[] => {
+    const cls = ctx.options.classNames
+    const src = pipe(
+      Option.fromNullable(ctx.options.iconImageUrl(node)),
+      Option.flatMap((url) => Option.fromNullable(safeSrc(url))),
+      Option.filter((url) => url !== ''),
     )
+    const href = resolve(node)
     const className = [cls.internalLink, cls.icon].filter(Boolean).join(' ')
-    const one = Option.match(resolve(node), {
-      onNone: () => (): ElementContent => structuredClone(body),
-      onSome: (resolved) => (): ElementContent =>
-        element('a', withClass(className, { href: resolved.href }), [structuredClone(body)]),
+    // 連打の数だけ出す。要素を共有しないよう、1 つずつ作る。
+    return Array.from({ length: node.count }, () => {
+      const body: ElementContent = Option.match(src, {
+        onNone: () => text(node.user),
+        onSome: (url) =>
+          element('img', withClass(cls.icon, { src: url, alt: node.user, title: node.user })),
+      })
+      return Option.match(href, {
+        onNone: () => body,
+        onSome: (resolved) => element('a', withClass(className, { href: resolved.href }), [body]),
+      })
     })
-    return Array.from({ length: node.count }, one)
   }
-
-  const decoration = (node: Decoration, children: ElementContent[]): Element => {
-    const inner = DECORATION_TAGS.filter(([isOn]) => isOn(node)).reduce<ElementContent[]>(
-      (wrapped, [, tag]) => [element(tag, {}, wrapped)],
-      children,
-    )
-    // Cosense Web と同じく記号ごとの class も出す。意味を持たない記号を CSS で拾えるようにするため。
-    const names = [...classList(cls.decoration), ...node.markers.map((marker) => `deco-${marker}`)]
-    const properties = compact({
-      className: names.length === 0 ? undefined : names,
-      dataSizeLevel: positive(node.sizeLevel),
-    })
-    return element('span', properties, inner)
-  }
-
-  const indentMark = (indent: number): Element =>
-    element('span', withClass(cls.indentMark), [
-      ...Array.from({ length: indent }, () => element('span', withClass(cls.pad), [text(' ')])),
-      element('span', withClass(cls.dot)),
-    ])
 
   /** 行の途中のコンポーネント。渡されなかったときはタグをテキストのまま出す */
-  const inlineComponent = (node: InlineComponent): CosenseComponent => ({
+  const inlineComponent = (node: InlineComponent, ctx: HastContext): CosenseComponent => ({
     type: 'cosenseComponent',
     name: node.name,
     attributes: node.attributes,
     fallback: text(node.open),
     fallbackEnd: node.close === null ? null : text(node.close),
-    children: node.children.flatMap(inlinePart),
+    children: node.children.flatMap((part) => inlinePart(part, ctx)),
   })
 
-  const inlinePart = (node: InlinePart): ElementContent[] =>
-    node.type === 'inlineComponent' ? [inlineComponent(node)] : compileNode(node)
+  const inlinePart = (node: InlinePart, ctx: HastContext): ElementContent[] =>
+    node.type === 'inlineComponent' ? [inlineComponent(node, ctx)] : ctx.node(node)
 
   /**
    * 1 行。`.csnx` なら行の途中のコンポーネントを読む。
-   * タグだけの行 (行ごとのコンポーネントの開始タグと閉じタグ) は `tags: false` で呼び、
-   * 行の途中のタグとして読み直さない。
+   * 行の包み方 (引用・等幅・空行・インデント) は parser の既定の `line` に任せ、中身だけを差し替える。
    */
-  const line = (node: LineBlock, tags: boolean): Element => {
-    const components = options.components
+  const line = (node: LineBlock, ctx: HastContext): ElementContent[] => {
     const found =
-      tags && components !== undefined
-        ? inlineComponentsOf(node, components.source, components)
-        : Option.none()
-    const body = Option.match(found, {
-      onNone: () => node.children.flatMap(compileNode),
+      components === undefined
+        ? Option.none()
+        : inlineComponentsOf(node, components.source, components)
+    return Option.match(found, {
+      onNone: () => defaultHastHandlers.line(node, ctx),
       onSome: ({ parts, warnings }) => {
         for (const warning of warnings) components?.onWarning?.(warning)
-        return parts.flatMap(inlinePart)
+        const body = parts.flatMap((part) => inlinePart(part, ctx))
+        return defaultHastHandlers.line(node, { ...ctx, children: () => body })
       },
     })
-    const styled = node.monospace ? [element('code', withClass(cls.monospace), body)] : body
-    const quoted = node.quote ? [element('blockquote', withClass(cls.quote), styled)] : styled
-    // 空行も 1 行分の高さを保つ。Cosense では空行が段落の区切りとして意味を持つ。
-    const inner = quoted.length === 0 ? [element('br', {})] : quoted
-    const mark = options.showPads === true && node.indent > 0 ? [indentMark(node.indent)] : []
-    return element('div', withClass(cls.line, compact({ dataIndent: positive(node.indent) })), [
-      ...mark,
-      ...inner,
-    ])
-  }
-
-  const codeBlock = (node: CodeBlock): Element[] => {
-    const classes = [cls.line, cls.codeBlock].filter(Boolean).join(' ')
-    const blockLine = (indent: number, child: Element): Element =>
-      element('div', withClass(classes, compact({ dataIndent: positive(indent) })), [child])
-    const filename = element('span', withClass(cls.codeFilename), [text(node.filename)])
-    const header = blockLine(node.indent, element('code', withClass(cls.codeStart), [filename]))
-    const highlighted = pipe(
-      Option.fromNullable(options.highlight),
-      Option.flatMapNullable((highlight) =>
-        highlight(
-          node.lines.map((codeLine) => codeLine.value).join('\n'),
-          codeLanguageOf(node.filename),
-        ),
-      ),
-      Option.map(highlightedBody),
-    )
-    if (Option.isSome(highlighted)) {
-      const { children, className, style } = highlighted.value
-      const names = [cls.codeBody, cls.codeHighlight, ...className].filter(Boolean).join(' ')
-      // 本体はヘッダより 1 段深い。ひと塊なので、それより深い字下げは中身のほうに残る。
-      return [
-        header,
-        blockLine(node.indent + 1, element('code', withClass(names, compact({ style })), children)),
-      ]
-    }
-    return [
-      header,
-      // 本体はヘッダより 1 段深い。それより深い字下げは値のほうに残っている。
-      ...node.lines.map((codeLine) =>
-        blockLine(
-          node.indent + 1,
-          element('code', withClass(cls.codeBody), [text(codeLine.value)]),
-        ),
-      ),
-    ]
-  }
-
-  const table = (node: TableBlock): Element => {
-    const caption = node.name === '' ? [] : [element('caption', {}, [text(node.name)])]
-    const rows = node.rows.map((row) =>
-      element(
-        'tr',
-        {},
-        // Cosense のテーブルにヘッダ行の概念は無いので、1 行目も含めてすべて td。
-        row.cells.map((cell) => element('td', {}, [text(cell.value)])),
-      ),
-    )
-    return element('table', withClass(cls.table), [...caption, element('tbody', {}, rows)])
   }
 
   /**
-   * ノード型ごとの変換。parser の `toHtml` と同じ仕組みで、ハンドラの無いノード型
-   * (拡張が足した独自ノードなど) は、中身を落とさずに子だけを出す。
+   * 行ごとのコンポーネント。開始タグと閉じタグだけの行は、行の途中のタグとして読み直さないよう
+   * parser の既定の `line` で出す。
    */
-  const compileNode = createCompiler<ElementContent[]>({
-    fallback: (node, ctx) => ctx.children(node).flat(),
-    handlers: {
-      title: (node, ctx) =>
-        options.title === false
-          ? []
-          : [element('h1', withClass(cls.title), ctx.children(node).flat())],
-      line: (node) => [line(node, true)],
-      codeBlock,
-      table: (node) => [table(node)],
-
-      text: (node) => [text(node.value)],
-      internalLink: (node) => pageRef(node, cls.internalLink, node.label),
-      projectLink: (node) => pageRef(node, cls.projectLink, node.label),
-      hashtag: (node) => pageRef(node, cls.hashtag, `#${node.value}`),
-      externalLink: (node) => [
-        element(
-          'a',
-          withClass(cls.externalLink, compact({ href: safeHref(node.target) || undefined })),
-          [text(node.label)],
-        ),
-      ],
-      inlineCode: (node) => [element('code', withClass(cls.inlineCode), [text(node.value)])],
-      image: (node) => {
-        // Gyazo のページ URL のように、書かれたままでは <img> に入らない URL をここで直す。
-        const src = safeSrc(asImageSrc(node.src) ?? node.src)
-        const img = element(
-          'img',
-          withClass(
-            cls.image,
-            compact({ src: src || undefined, alt: '', dataLarge: node.large ? 'true' : undefined }),
-          ),
-        )
-        const href = node.link === undefined ? null : safeHref(node.link)
-        return [href ? element('a', { href }, [img]) : img]
-      },
-      icon,
-      formula: (node) => [element('span', withClass(cls.formula), [text(node.value)])],
-      decoration: (node, ctx) => [decoration(node, ctx.children(node).flat())],
-    },
-  })
-
-  const component = (node: ComponentBlock): CosenseComponent => ({
+  const component = (node: ComponentBlock, ctx: HastContext): CosenseComponent => ({
     type: 'cosenseComponent',
     name: node.name,
     attributes: node.attributes,
-    fallback: line(node.line, false),
-    fallbackEnd: node.closeLine === null ? null : line(node.closeLine, false),
-    children: node.children.flatMap(block),
+    fallback: tagLine(node.line, ctx),
+    fallbackEnd: node.closeLine === null ? null : tagLine(node.closeLine, ctx),
+    children: node.children.flatMap((child) => block(child, ctx)),
   })
 
-  const block = (node: GroupedBlock): ElementContent[] =>
-    node.type === 'component' ? [component(node)] : compileNode(node)
+  /** タグだけの行の要素。既定の `line` は行ごとに要素を 1 つ返すので、それを取り出す。 */
+  const tagLine = (node: LineBlock, ctx: HastContext): ElementContent =>
+    pipe(
+      Option.fromNullable(defaultHastHandlers.line(node, ctx)[0]),
+      Option.getOrElse(() => text('')),
+    )
+
+  const block = (node: GroupedBlock, ctx: HastContext): ElementContent[] =>
+    node.type === 'component' ? [component(node, ctx)] : ctx.node(node)
 
   const blocks: Either.Either<readonly GroupedBlock[], CosenseXError> =
-    options.components === undefined
+    components === undefined
       ? Either.right(page.children)
       : groupComponentsEither(
           page.children as readonly TopLevelBlock[],
-          options.components.source,
-          options.components.lineOffset,
+          components.source,
+          components.lineOffset,
         )
 
-  return Either.map(
-    blocks,
-    (grouped): Root => ({
-      type: 'root',
-      children: [element('div', withClass(cls.page), grouped.flatMap(block))],
-    }),
-  )
+  return Either.map(blocks, (grouped): Root => {
+    const cosenseHandlers: HastHandlers = {
+      // コンポーネントは複数の行をまたぐので、ページの子をまとめ直したものを出す。
+      page: (_node, ctx) => [
+        element(
+          'div',
+          withClass(ctx.options.classNames.page),
+          grouped.flatMap((child) => block(child, ctx)),
+        ),
+      ],
+      ...(title === false ? { title: () => [] } : {}),
+      line,
+      internalLink: (node, ctx) => [pageRef(node, ctx.options.classNames.internalLink, node.label)],
+      projectLink: (node, ctx) => [pageRef(node, ctx.options.classNames.projectLink, node.label)],
+      hashtag: (node, ctx) => [pageRef(node, ctx.options.classNames.hashtag, `#${node.value}`)],
+      icon,
+    }
+    // 利用者の handlers は最後に重ねるので、cosense-x が差し替えたものも上書きできる。
+    return toHastOf(page, { ...rest, handlers: { ...cosenseHandlers, ...handlers } })
+  })
 }
 
 /**

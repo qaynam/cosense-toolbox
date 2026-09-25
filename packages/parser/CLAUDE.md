@@ -22,7 +22,12 @@
 4. **自己完結**。ワークスペース内の他パッケージ（`@cosense/*`）を import しない。
    `tsconfig.json` も `extends` せず内容を直接持つ。ディレクトリを別リポにコピーしただけで
    `bun install && bun run build && bun run test` が通る状態を常に維持する。
-5. **runtime dependency は `effect` のみ**。他は増やさない。
+5. **runtime dependency は `effect` と、`./compile` が使う hast の標準の部品だけ**。他は増やさない。
+   - `effect`：パーサー本体を含むすべての層で使う
+   - `hast-util-to-html` と `@types/hast`：`./compile` の `toHast` / `toHtml` だけが使う。
+     HTML 系の出力 (HTML の文字列・JSX・rehype) を hast 1 つにまとめ、hast を文字列にする処理は
+     unified の標準に任せるため (属性名の変換やエスケープを自前で持たない)
+   - `parse` だけを使う人のバンドルには入らないこと (§4 の tree-shaking の確認) を保つ
    （`tsdown` / `vitest` / `typescript` / `fast-check` は devDependencies なので対象外。）
 6. **CSS をこのパッケージに置かない**。既定の見た目は `@cosense-toolbox/style`（別パッケージ）
    の担当。JS のバンドルに CSS 文字列を持たせると、スタイルを使わない利用者まで太る。
@@ -142,8 +147,10 @@ src/
     build.ts            ブロックのグルーピング
   extensions/           拡張を書くための型と、既製の Extension（サブパスのバレル）
   compile/
-    create-compiler.ts  ハンドラ機構
-    to-html.ts          公式の HTML コンパイラ（pageUrl / iconImageUrl / highlight / classNames / showPads / handlers）
+    create-compiler.ts  ハンドラ機構 (HTML 以外の形式を AST から直接作るとき用)
+    to-hast.ts          公式の hast コンパイラ。描画の規則はここだけに持つ
+                        （pageUrl / iconImageUrl / highlight / classNames / showPads / handlers）
+    to-html.ts          toHast の出力を文字列にする近道（highlight は HTML の文字列も受け付ける / style）
     to-plain-text.ts    参照実装
   utils/                visit / links
   fixtures/             conformance.json（記法仕様）

@@ -92,7 +92,7 @@ declare module "@cosense-toolbox/parser" {
 
 ```ts
 import { parse } from "@cosense-toolbox/parser";
-import { escapeHtml, toHtml } from "@cosense-toolbox/parser/compile";
+import { toHtml } from "@cosense-toolbox/parser/compile";
 
 // mention が { type: 'mention', user } を返すようにしておく
 const page = parse("メモ\n@qaynam に確認する", {
@@ -101,8 +101,12 @@ const page = parse("メモ\n@qaynam に確認する", {
 
 toHtml(page, {
   handlers: {
-    mention: (node) =>
-      `<a href="/u/${node.user}">@${escapeHtml(node.user)}</a>`,
+    mention: (node) => ({
+      type: "element",
+      tagName: "a",
+      properties: { href: `/u/${encodeURIComponent(node.user)}` },
+      children: [{ type: "text", value: `@${node.user}` }],
+    }),
   },
 });
 ```
