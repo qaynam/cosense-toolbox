@@ -1,7 +1,7 @@
 import type { Element, ElementContent, Root } from 'hast'
 import { describe, expect, it } from 'vitest'
 import { parse, parseLine } from '../parse'
-import { defaultHastHandlers, toHast } from './to-hast'
+import { codeLineNumbers, defaultHastHandlers, toHast } from './to-hast'
 import { toHtml } from './to-html'
 
 const italic = (value: string): Element => ({
@@ -75,40 +75,56 @@ describe('コードブロックの色付け (highlight)', () => {
     expect(toHtml(parse(SOURCE), { highlight: () => null })).toBe(toHtml(parse(SOURCE)))
   })
 
-  it('pre > code の形 (shiki など) なら code の中身を使い、pre の class と style を引き継ぐ', () => {
-    const shikiLike: Root = {
-      type: 'root',
-      children: [
-        {
-          type: 'element',
-          tagName: 'pre',
-          // shiki は className ではなく class を文字列で付ける。
-          properties: {
-            class: 'shiki github-light',
-            style: 'background-color:#fff;color:#24292e',
-            tabindex: '0',
+  /** shiki の codeToHast と同じ形。行ごとの span.line を改行のテキストでつなぐ。 */
+  const shikiOf = (lines: string[], style = 'background-color:#fff;color:#24292e'): Root => ({
+    type: 'root',
+    children: [
+      {
+        type: 'element',
+        tagName: 'pre',
+        // shiki は className ではなく class を文字列で付ける。
+        properties: { class: 'shiki github-light', style, tabindex: '0' },
+        children: [
+          {
+            type: 'element',
+            tagName: 'code',
+            properties: {},
+            children: lines.flatMap((value, index): ElementContent[] => [
+              ...(index === 0 ? [] : [{ type: 'text' as const, value: '\n' }]),
+              {
+                type: 'element',
+                tagName: 'span',
+                properties: { class: 'line' },
+                children: [{ type: 'text', value }],
+              },
+            ]),
           },
-          children: [
-            {
-              type: 'element',
-              tagName: 'code',
-              properties: {},
-              children: [
-                {
-                  type: 'element',
-                  tagName: 'span',
-                  properties: { class: 'line' },
-                  children: [{ type: 'text', value: 'const a = 1' }],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    }
-    expect(toHtml(parse(SOURCE), { highlight: () => shikiLike })).toContain(
-      '<code class="code-body highlight shiki github-light" style="background-color:#fff;color:#24292e"><span class="line">const a = 1</span></code>',
+        ],
+      },
+    ],
+  })
+
+  it('shiki のように行ごとに分かれた出力は、色付けしないときと同じく 1 行ずつの要素に入れ直す', () => {
+    const html = toHtml(parse(SOURCE), {
+      highlight: () => shikiOf(['const a = 1', '  return <a>']),
+    })
+    const open =
+      '<div class="line code-block" data-indent="1"><code class="code-body highlight shiki github-light" style="--cosense-code-bg:#fff;--cosense-code-text:#24292e">'
+    expect(html).toContain(
+      `${open}<span class="line">const a = 1</span></code></div>${open}<span class="line">  return &lt;a></span></code></div>`,
     )
+  })
+
+  it('テーマの背景色と文字色は style.css の変数にして渡し、ほかの変数はそのまま残す', () => {
+    const style = 'background-color:#fff;--shiki-dark-bg:#000;color:#111;--shiki-dark:#eee'
+    expect(toHtml(parse(SOURCE), { highlight: () => shikiOf(['a', 'b'], style) })).toContain(
+      'style="--cosense-code-bg:#fff;--shiki-dark-bg:#000;--cosense-code-text:#111;--shiki-dark:#eee"',
+    )
+  })
+
+  it('行の数が合わない出力は、行に分けずにひと塊のまま出す', () => {
+    const html = toHtml(parse(SOURCE), { highlight: () => shikiOf(['const a = 1']) })
+    expect(html.match(/<code class="code-body/g)).toHaveLength(1)
   })
 
   it('pre > code 以外の root は、その中身をそのまま code に入れる', () => {
@@ -151,5 +167,39 @@ describe('既定のハンドラを包む', () => {
     expect(html).toBe(
       '<div class="line"><b><a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> と 太字</b></div>',
     )
+  })
+})
+
+describe('codeLineNumbers', () => {
+  const SOURCE = 'タイトル\ncode:a.js\n one\n two'
+  const numbers = (html: string): string[] =>
+    [...html.matchAll(/<div class="line code-block"[^>]*data-line="(\d+)"/g)].map((m) => m[1] ?? '')
+
+  it('コードブロックの本体行に、1 から数えた data-line を付ける。ヘッダ行には付けない', () => {
+    const html = toHtml(parse(SOURCE), { handlers: codeLineNumbers() })
+    expect(numbers(html)).toEqual(['1', '2'])
+    expect(html).toContain('<div class="line code-block"><code class="code-start">')
+  })
+
+  it('色付けして 1 行ずつに入れ直したブロックにも付く', () => {
+    const html = toHtml(parse(SOURCE), {
+      handlers: codeLineNumbers(),
+      highlight: (code) =>
+        code.split('\n').map((value) => ({
+          type: 'element' as const,
+          tagName: 'span',
+          properties: { className: ['line'] },
+          children: [{ type: 'text' as const, value }],
+        })),
+    })
+    expect(numbers(html)).toEqual(['1', '2'])
+  })
+
+  it('ひと塊にまとめたブロックには付けない (行と番号が対応しないため)', () => {
+    const html = toHtml(parse(SOURCE), {
+      handlers: codeLineNumbers(),
+      highlight: (code) => [italic(code)],
+    })
+    expect(numbers(html)).toEqual([])
   })
 })

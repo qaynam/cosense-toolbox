@@ -140,7 +140,7 @@ describe('コードブロックの色付け (highlight)', () => {
     expect(render(SOURCE, { highlight: () => null })).toBe(render(SOURCE))
   })
 
-  it('pre > code の形 (shiki など) なら code の中身を使い、pre の class と style を引き継ぐ', () => {
+  it('pre > code の形 (shiki など) なら code の中身を使い、pre の class とテーマの色 (変数にして) を引き継ぐ', () => {
     const shikiLike: Root = {
       type: 'root',
       children: [
@@ -172,7 +172,7 @@ describe('コードブロックの色付け (highlight)', () => {
       ],
     }
     expect(render(SOURCE, { highlight: () => shikiLike })).toContain(
-      '<code class="code-body highlight shiki github-light" style="background-color:#fff;color:#24292e"><span class="line">const a = 1</span></code>',
+      '<code class="code-body highlight shiki github-light" style="--cosense-code-bg:#fff;--cosense-code-text:#24292e"><span class="line">const a = 1</span></code>',
     )
   })
 

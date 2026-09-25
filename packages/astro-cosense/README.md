@@ -166,35 +166,21 @@ const html = toHtml(parse(text), { highlight })
 
 ### 行番号
 
-行番号の要素は出さないので、CSS カウンタで付ける (shiki にも行番号のオプションは無い)。
-付けたいページだけで効くよう、`line-numbers` のような class を付けた要素の中に限る。
+`@cosense-toolbox/parser/compile` の `codeLineNumbers()` を `handlers` に渡すと、コードブロックの本体行に行番号 (`data-line`) が付く。
+番号の表示は `@cosense-toolbox/style` と `@cosense-toolbox/tailwind` が持っていて、行の左の余白に出す。本文の位置は変わらず、コピーしたときに番号は入らない。
 
-```html
-<article class="cosense line-numbers">…</article>
+```js
+// astro.config.mjs
+import { codeLineNumbers } from '@cosense-toolbox/parser/compile'
+
+cosense({ handlers: codeLineNumbers() })
 ```
 
-```css
-/* shiki で色付けしたブロックは行ごとの span.line を、色付けしていないブロックは 1 行ずつの div を数える */
-.line-numbers .code-body.highlight,
-.line-numbers .line.code-block:has(> .code-start) {
-  counter-reset: line;
-}
+`toHtml` で描画するページは、`toHtml` の `handlers` に同じく渡す。
 
-.line-numbers .code-body.highlight > .line::before,
-.line-numbers .line.code-block > .code-body:not(.highlight)::before {
-  counter-increment: line;
-  content: counter(line);
-  display: inline-block;
-  width: 2em;
-  margin-right: 1em;
-  text-align: right;
-  color: #94a3b8;
-  user-select: none; /* コピーしたときに番号が入らないように */
-}
-```
-
-- 色付けしていないブロック (shiki が知らない言語) は、まとめる親の要素が無い。ヘッダ行 (ファイル名) でカウンタを戻すと、後ろに並ぶ本体行で数えられる
-- `toHtml` に shiki の `structure: 'inline'` の出力を渡すと、行が `span.line` にならず `<br>` で区切られるので、行番号は付かない。上の `createCodeHighlight` のように `codeToHast` をそのまま返す
+- 番号の色は `--cosense-line-number` で変えられる
+- shiki で色付けしたブロックも、色付けしないブロックと同じく 1 行ずつの要素になるので番号が付く
+- 行をまたぐ出力を返すハイライタ (highlight.js など) でひと塊になったブロックには付かない
 
 ## content collection
 

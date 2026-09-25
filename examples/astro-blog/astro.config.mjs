@@ -1,6 +1,7 @@
 // @ts-check
 import svelte from '@astrojs/svelte'
 import cosense from '@cosense-toolbox/astro'
+import { codeLineNumbers } from '@cosense-toolbox/parser/compile'
 import { customDecorations } from '@cosense-toolbox/parser/extensions'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'astro/config'
@@ -24,6 +25,8 @@ export default defineConfig({
         extensions: [customDecorations(['|', '!', '~', '#'])],
       },
       unresolved: 'warn',
+      // コードブロックの本体行に行番号 (data-line) を付ける。表示は @cosense-toolbox/tailwind が持つ。
+      handlers: codeLineNumbers(),
       assets: { pat: process.env.COSENSE_PAT },
     }),
   ],

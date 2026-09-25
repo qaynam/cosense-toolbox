@@ -513,5 +513,26 @@ export const styles: CosenseStyles = {
         content: 'none',
       },
     },
+    {
+      selector: {
+        body: '.line.code-block[data-line]',
+        pseudo: '::before',
+      },
+      declarations: {
+        content: 'attr(data-line)',
+        top: '0',
+        left: 'calc(var(--cosense-indent, 1.5em) * (var(--cosense-depth, 1) - 1))',
+        width: 'calc(var(--cosense-indent, 1.5em) - 0.5em)',
+        height: 'auto',
+        display: 'flex',
+        'justify-content': 'flex-end',
+        'white-space': 'nowrap',
+        'border-radius': '0',
+        background: 'none',
+        'font-family': 'var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)',
+        'line-height': '1.7em',
+        color: 'var(--cosense-line-number, rgba(0, 0, 0, 0.35))',
+      },
+    },
   ],
 }

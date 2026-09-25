@@ -160,7 +160,7 @@ highlight: (code, lang) =>
 // sugar-high
 highlight: (code) => sugarHigh(code);
 
-// Shiki は hast をそのまま返せる。<pre><code> は剥がし、テーマの class と style はコードブロックに移る
+// Shiki は hast をそのまま返せる。<pre><code> は剥がし、テーマの class と色はコードブロックに移る
 const shiki = await createHighlighter({
   themes: ["github-light"],
   langs: ["js"],
@@ -175,10 +175,14 @@ highlight: (code, lang) =>
 `code:hello.js` なら `js`、`code:python` なら `python` です。
 言語名の綴りはライブラリごとに違うので、必要であれば受け取った側で読み替えてください。
 
-戻り値は HTML としてそのまま埋め込まれるので、エスケープはハイライタの責任になります。
+文字列の戻り値は HTML としてそのまま埋め込まれるので、エスケープはハイライタの責任になります。
+例外を投げたブロックは、色付けせずに出します。
 
-これを渡すと、コードブロックの本体は 1 行 1 要素ではなく 1 つの要素にまとまります。
-ハイライタの出力が複数行にまたがるタグを含みうるためで、行で切るとタグが壊れるからです。
+出力が Shiki のように行ごとの要素 (`span.line`) に分かれていれば、色付けしないときと同じく 1 行ずつの要素に入れ直します。
+行をまたぐ出力 (highlight.js など) は、行で切るとタグが壊れるので、本体を 1 つの要素にまとめます。
+
+Shiki のテーマの背景色と文字色は、`style` のまま移さず、`--cosense-code-bg` と `--cosense-code-text` の変数にして渡します。
+`@cosense-toolbox/style` はこの変数でコードブロックを塗るので、テーマの色が出たうえで、普通の CSS で上書きもできます。
 
 ハイライタのテーマ CSS が特定の class を要求する場合は、次の `classNames` で足せます。
 
@@ -383,7 +387,19 @@ Cosense Web と同じく 1 行を 1 要素に切ります。
 本体行はヘッダより 1 段深い `data-indent` を持ちます。
 それより深い字下げは中身の文字列に残ります。
 
-[`highlight`](#highlight) を渡した場合だけ、本体が 1 つの `<code class="code-body highlight">` にまとまります。
+[`highlight`](#highlight) を渡し、その出力が行ごとに分かれていないときだけ、本体が 1 つの `<code class="code-body highlight">` にまとまります。
+
+行番号が要るときは、`handlers` に `codeLineNumbers()` を渡します。
+本体行に 1 から数えた `data-line` が付き、`@cosense-toolbox/style` がそれを見て行の左に番号を出します。
+
+```ts
+import { codeLineNumbers, toHtml } from "@cosense-toolbox/parser/compile";
+
+toHtml(page, { handlers: codeLineNumbers() });
+// <div class="line code-block" data-indent="1" data-line="1">…</div>
+```
+
+ほかの `handlers` と一緒に使うときは、`{ ...codeLineNumbers(), formula: … }` のように重ねます。
 
 ### インライン
 

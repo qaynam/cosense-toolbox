@@ -217,6 +217,30 @@
   content: none;
 }
 
+/*
+ * 行番号。toHtml / toHast に codeLineNumbers() を渡したときだけ、本体行に data-line が付く。
+ * 番号は行の要素の擬似要素にし、ブロックの左端から本文までの余白 (インデント 1 段ぶん) に右寄せで置く。
+ * 本文の位置は変えないので、番号の有無で字下げがずれない。attr() の中身は選択されないので、
+ * コードをコピーしても番号は入らない。
+ */
+.page .line.code-block[data-line]::before {
+  content: attr(data-line);
+  top: 0;
+  left: calc(var(--cosense-indent, 1.5em) * (var(--cosense-depth, 1) - 1));
+  width: calc(var(--cosense-indent, 1.5em) - 0.5em);
+  height: auto;
+  /* 桁が余白に収まらないときは、折り返さず左 (本文の反対側) にはみ出させる。 */
+  display: flex;
+  justify-content: flex-end;
+  white-space: nowrap;
+  border-radius: 0;
+  background: none;
+  font-family: var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace);
+  /* 文字の大きさを変えると、left と width の em が行とずれるので変えない。 */
+  line-height: 1.7em;
+  color: var(--cosense-line-number, rgba(0, 0, 0, 0.35));
+}
+
 /* ---------------------------------------------------------------------------
  * 引用
  * ------------------------------------------------------------------------- */

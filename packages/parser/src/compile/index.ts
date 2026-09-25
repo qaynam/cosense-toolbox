@@ -14,6 +14,7 @@ export type {
 } from './create-compiler'
 export {
   codeLanguageOf,
+  codeLineNumbers,
   defaultClassNames,
   defaultHastHandlers,
   defaultPageUrl,

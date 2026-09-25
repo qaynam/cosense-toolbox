@@ -389,6 +389,43 @@ const highlightedBody = (result: Root | HastContent[]): HighlightedBody => {
 }
 
 /**
+ * ハイライタの出力が行ごとの要素 (shiki の `span.line`) に分かれていれば、それを行の数だけ返す。
+ * 行の区切りの改行 (空白だけのテキスト) は、行を別の要素にするので要らない。
+ */
+const linesOf = (
+  children: readonly ElementContent[],
+  count: number,
+): Option.Option<readonly Element[]> => {
+  const lines = children.filter((child) => !isBlank(child))
+  const isLine = (child: ElementContent): child is Element =>
+    child.type === 'element' &&
+    classesOf(child.properties.className ?? child.properties.class).includes('line')
+  return lines.length === count && lines.every(isLine) ? Option.some(lines) : Option.none()
+}
+
+/** style.css がコードブロックの背景と文字の色に使う変数。 */
+const THEME_VARIABLES: Readonly<Record<string, string>> = {
+  'background-color': '--cosense-code-bg',
+  color: '--cosense-code-text',
+}
+
+/**
+ * テーマの背景色と文字色 (shiki が pre に付ける style) を、style.css の変数に読み替える。
+ * そのまま style に置くと、利用者の CSS から上書きするのに !important が要るため。
+ * 変数なら、テーマの色は既定として出しつつ、普通の CSS で塗り替えられる。
+ */
+const themeStyleOf = (style: string | undefined): string | undefined =>
+  style
+    ?.split(';')
+    .filter((declaration) => declaration.trim() !== '')
+    .map((declaration) => {
+      const colon = declaration.indexOf(':')
+      const name = declaration.slice(0, colon).trim()
+      return `${THEME_VARIABLES[name] ?? name}:${declaration.slice(colon + 1).trim()}`
+    })
+    .join(';')
+
+/**
  * 1 行 = 1 要素に切る (Cosense Web と同じ)。行ごとにインデントを付けられるようにするため。
  * `highlight` があるときだけ、複数行にまたがる要素を壊さないよう本体をまとめる。
  */
@@ -399,6 +436,13 @@ const codeBlock = (node: CodeBlock, ctx: HastContext): ElementContent[] => {
     element('div', withClass(classes, { dataIndent: positive(indent) }), [child])
   const filename = element('span', withClass(cls.codeFilename), [text(node.filename)])
   const header = blockLine(node.indent, element('code', withClass(cls.codeStart), [filename]))
+
+  // 本体はヘッダより 1 段深い。それより深い字下げは値のほうに残っている。
+  const bodyLine = (
+    className: string | undefined,
+    properties: Properties,
+    children: ElementContent[],
+  ) => blockLine(node.indent + 1, element('code', withClass(className, properties), children))
 
   const highlighted = pipe(
     Option.fromNullable(ctx.options.highlight),
@@ -413,22 +457,24 @@ const codeBlock = (node: CodeBlock, ctx: HastContext): ElementContent[] => {
     Option.flatMapNullable((result) => result),
     Option.map(highlightedBody),
   )
-  if (Option.isSome(highlighted)) {
-    const { children, className, style } = highlighted.value
-    const names = joinClasses(cls.codeBody, cls.codeHighlight, ...className)
-    // 本体はヘッダより 1 段深い。ひと塊なので、それより深い字下げは中身のほうに残る。
-    return [
+
+  return Option.match(highlighted, {
+    onNone: () => [
       header,
-      blockLine(node.indent + 1, element('code', withClass(names, { style }), children)),
-    ]
-  }
-  return [
-    header,
-    // 本体はヘッダより 1 段深い。それより深い字下げは値のほうに残っている。
-    ...node.lines.map((codeLine) =>
-      blockLine(node.indent + 1, element('code', withClass(cls.codeBody), ctx.node(codeLine))),
-    ),
-  ]
+      ...node.lines.map((codeLine) => bodyLine(cls.codeBody, {}, ctx.node(codeLine))),
+    ],
+    onSome: ({ children, className, style }) => {
+      const names = joinClasses(cls.codeBody, cls.codeHighlight, ...className)
+      const properties = { style: themeStyleOf(style) }
+      return Option.match(linesOf(children, node.lines.length), {
+        // 行ごとに分かれた出力 (shiki) は、色付けしないときと同じく 1 行ずつの要素に入れ直す。
+        // 行ごとのインデントや行番号を、外側の行の要素に付けられるようにするため。
+        onSome: (lines) => [header, ...lines.map((line) => bodyLine(names, properties, [line]))],
+        // 行をまたぐ出力 (highlight.js など) は、壊さないようひと塊のまま出す。
+        onNone: () => [header, bodyLine(names, properties, children)],
+      })
+    },
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -565,6 +611,29 @@ export const defaultHastHandlers = {
     return [element('span', withClass(names, { dataSizeLevel: positive(node.sizeLevel) }), inner)]
   },
 } satisfies HastHandlers
+
+/**
+ * コードブロックの本体行に、1 から数えた行番号 (`data-line`) を付けるハンドラ。`handlers` に渡す。
+ *
+ * ```ts
+ * toHtml(page, { handlers: codeLineNumbers() })
+ * ```
+ *
+ * 番号を見せるのは CSS の役目 (`@cosense-toolbox/style` は `data-line` を見て行の左に番号を出す)。
+ * 色付けしてひと塊にまとめたブロックは、行と番号が対応しないので付けない。
+ */
+export const codeLineNumbers = (): { readonly codeBlock: HastHandler<'codeBlock'> } => ({
+  codeBlock: (node, ctx) => {
+    const lines = defaultHastHandlers.codeBlock(node, ctx)
+    // 先頭はヘッダ行。本体行が行の数だけあるときだけ番号を付ける。
+    if (lines.length !== node.lines.length + 1) return lines
+    return lines.map((line, index) =>
+      index === 0 || line.type !== 'element'
+        ? line
+        : { ...line, properties: { ...line.properties, dataLine: index } },
+    )
+  },
+})
 
 /** オプションの既定値を埋める。 */
 const resolveOptions = (options: HastRenderOptions): ResolvedHastOptions => ({

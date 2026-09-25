@@ -14,7 +14,7 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { parse } from '@cosense-toolbox/parser'
-import { type HtmlOptions, toHtml } from '@cosense-toolbox/parser/compile'
+import { type HtmlOptions, codeLineNumbers, toHtml } from '@cosense-toolbox/parser/compile'
 import { customDecorations } from '@cosense-toolbox/parser/extensions'
 import { optimize } from '@tailwindcss/node'
 import { type Page, chromium } from 'playwright-core'
@@ -59,6 +59,8 @@ const options: HtmlOptions[] = [
   {},
   // インデントの印と、画像のアイコンにも当たるルールがあるので、それらを出す形でも描画する。
   { showPads: true, iconImageUrl: () => 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' },
+  // コードブロックの行番号 (data-line) に当たるルールも出す。
+  { handlers: codeLineNumbers() },
 ]
 
 const bodies = options.flatMap((option) => [

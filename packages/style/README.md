@@ -55,6 +55,7 @@ CSS 変数を定義するだけでよい。定義した変数が最優先にな�
 | `--cosense-font-size` | `15px` | — |
 | `--cosense-line-height` | `1.87` | — |
 | `--cosense-code-font` | `ui-monospace, …` | — |
+| `--cosense-line-number` | `rgba(0,0,0,.35)` | — |
 | `--cosense-indent` | `1.5em` | — |
 
 「本体テーマの変数」の列は fallback として参照している。Cosense のテーマ変数を持つページに
