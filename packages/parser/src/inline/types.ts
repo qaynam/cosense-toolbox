@@ -2,13 +2,17 @@
  * types.ts (inline) — 記法ルールの型契約。
  *
  * プラグインが記法を追加するときの拡張点でもあるので、型だけを置き実装は持たない。
+ *
+ * 拡張を書く人向けの型 (`InlineConstruct` / `BracketRule`) は、成立しなければ null を返す普通の関数にしてある。
+ * 拡張を書くのに effect を入れたり `Option` を覚えたりしなくて済むようにするため。
+ * パッケージの中のルールは `Option` で書く (`internal-types.ts` の `InternalConstruct` / `InternalBracketRule`)。
+ * 拡張のルールは `resolveExtensions` で中の形に包んでから、既定のルールと同じように試す。
  */
-import type { Option } from 'effect'
 import type { Origin } from '../core/position'
 import type { InlineNode, InlineNodeInit } from '../types'
 
 /**
- * 走査中に共有される文脈。
+ * 走査中に共有される文脈。拡張のルールにもこの形で渡る。
  *
  * `tokenize` は装飾の中身のように部分文字列を再帰的に解析するためのフック。
  * ルールが走査ループを直接 import すると循環参照になるので、文脈経由で渡している。
@@ -18,8 +22,6 @@ export interface InlineContext {
   readonly allowDecoration: boolean
   /** 走査対象 `source` のインデックス 0 がソース上のどこか */
   readonly origin: Origin
-  /** 拡張が追加した `[...]` のルール。既定のルールより先に試される */
-  readonly bracketRules: readonly BracketRule[]
   readonly tokenize: (
     source: string,
     origin: Origin,
@@ -34,16 +36,16 @@ export interface ConstructMatch {
 }
 
 /**
- * 行内の走査ルール。`source[index]` から記法が始まるなら Some を返す。
+ * 行内の走査ルール。`source[index]` から記法が始まるなら、そのノードと消費した文字数を返す。
  *
- * None を返すと呼び出し側は 1 文字を素のテキストとして消費して次に進むので、
- * 「記法として無効なので `[` は素の文字」といったケースも None で表せる。
+ * null を返すと呼び出し側は 1 文字を素のテキストとして消費して次に進むので、
+ * 「記法として無効なので `[` は素の文字」といったケースも null で表せる。
  */
 export type InlineConstruct = (
   source: string,
   index: number,
   ctx: InlineContext,
-) => Option.Option<ConstructMatch>
+) => ConstructMatch | null
 
 /** `[...]` の中身を解釈するルールに渡る文脈。 */
 export interface BracketRuleContext extends InlineContext {
@@ -53,9 +55,9 @@ export interface BracketRuleContext extends InlineContext {
 
 /**
  * `[...]` の中身を解釈するルール。角括弧そのものは呼び出し側が扱うので、
- * ルールは中身の文字列だけを見る。None なら次のルールへ、全部 None なら記法として無効。
+ * ルールは中身の文字列だけを見る。null なら次のルールへ、全部 null なら記法として無効。
  */
-export type BracketRule = (inner: string, ctx: BracketRuleContext) => Option.Option<InlineNodeInit>
+export type BracketRule = (inner: string, ctx: BracketRuleContext) => InlineNodeInit | null
 
 /**
  * 記法の拡張。`parse` / `tokenizeInline` の options に渡すと、

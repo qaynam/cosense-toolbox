@@ -1,5 +1,5 @@
 import { Option } from 'effect'
-import type { InlineConstruct } from '../types'
+import type { InternalConstruct } from '../internal-types'
 
 const URL_RE = /^https?:\/\/[^\s\]]+/i
 
@@ -7,7 +7,7 @@ const URL_RE = /^https?:\/\/[^\s\]]+/i
  * 角括弧で囲まれていない URL。常に外部リンクになり、画像 URL でも画像にはしない
  * (Cosense Web に合わせている。インライン画像になるのは `[https://.../x.png]` の角括弧つきのみ)。
  */
-export const bareUrlConstruct: InlineConstruct = (source, index) => {
+export const bareUrlConstruct: InternalConstruct = (source, index) => {
   const head = source[index]
   if (head !== 'h' && head !== 'H') return Option.none()
 
