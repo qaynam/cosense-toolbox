@@ -1,13 +1,11 @@
 import AnchorLink from './AnchorLink.astro'
-/**
- * .csn / .csnx のすべてのページに渡すコンポーネント。
- * astro.config.mjs の `components` にこのファイルを指定している。
- */
-import Callout from './Callout.svelte'
-import CounterIsland from './CounterIsland.astro'
+import Callout from "./Callout.svelte";
+import CounterIsland from "./CounterIsland.astro";
+import Modal from "./Modal.svelte";
 
 export default {
   Callout,
   Counter: CounterIsland,
   a: AnchorLink,
-}
+  Modal,
+};

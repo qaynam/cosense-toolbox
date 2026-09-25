@@ -1,0 +1,12 @@
+id = "cosense-x"
+name = "Cosense X"
+version = "0.1.0"
+schema_version = 1
+description = ".csn と .csnx の記法に色を付ける。"
+repository = "https://github.com/qaynam/cosense-toolbox"
+
+languages = ["languages/csn", "languages/csnx"]
+
+[language_servers.cosense-language-server]
+name = "Cosense Language Server"
+languages = ["Cosense", "Cosense X"]
