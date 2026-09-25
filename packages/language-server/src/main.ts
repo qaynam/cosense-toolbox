@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-import { appendFileSync } from 'node:fs'
-import { Array as Arr, Effect, Option, pipe } from 'effect'
+import { Array as Arr, Option, pipe } from 'effect'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import {
   type InitializeResult,
@@ -11,17 +10,6 @@ import {
   createConnection,
 } from 'vscode-languageserver/node'
 import { LEGEND, computeTokens, encodeTokens } from './tokens'
-
-// TEMPORARY: whether the editor asks for tokens at all is the one thing that cannot be
-// seen from outside. Remove once the Zed side is settled.
-const DEBUG_LOG = '/tmp/cosense-ls.log'
-const note = (what: string, detail?: unknown): void =>
-  Effect.try(() =>
-    appendFileSync(
-      DEBUG_LOG,
-      `${new Date().toISOString()} ${what} ${detail === undefined ? '' : JSON.stringify(detail)}\n`,
-    ),
-  ).pipe(Effect.ignore, Effect.runSync)
 
 const connection = createConnection(ProposedFeatures.all)
 const documents = new TextDocuments(TextDocument)
@@ -36,23 +24,12 @@ const CSNX_LANGUAGE_IDS: ReadonlyArray<string> = ['csnx', 'cosense-x']
 const readsComponents = (document: TextDocument): boolean =>
   Arr.contains(CSNX_LANGUAGE_IDS, document.languageId) || document.uri.endsWith('.csnx')
 
-const semanticTokensOf = (document: TextDocument): SemanticTokens => {
-  const tokens = computeTokens(document.getText(), { components: readsComponents(document) })
-  note('semanticTokens/full', {
-    languageId: document.languageId,
-    tokens: tokens.length,
-    first: tokens.slice(0, 4),
-  })
-  return { data: encodeTokens(tokens) }
-}
+const semanticTokensOf = (document: TextDocument): SemanticTokens => ({
+  data: encodeTokens(computeTokens(document.getText(), { components: readsComponents(document) })),
+})
 
-connection.onInitialize((params): InitializeResult => {
-  note('initialize', {
-    client: params.clientInfo?.name,
-    // Zed only advertises this when `semantic_tokens` is anything but "off".
-    semanticTokens: params.capabilities.textDocument?.semanticTokens ?? null,
-  })
-  return {
+connection.onInitialize(
+  (): InitializeResult => ({
     capabilities: {
       // Incremental: a page is one file the reader types into, and resending all of it on
       // every keystroke is what makes a large page feel slow.
@@ -62,8 +39,8 @@ connection.onInitialize((params): InitializeResult => {
         full: true,
       },
     },
-  }
-})
+  }),
+)
 
 connection.languages.semanticTokens.on(
   ({ textDocument: { uri } }): SemanticTokens =>
@@ -71,10 +48,7 @@ connection.languages.semanticTokens.on(
       Option.fromNullable(documents.get(uri)),
       Option.match({
         // Asked before the document was synced: nothing to colour yet.
-        onNone: () => {
-          note('semanticTokens/full', { uri, synced: false })
-          return { data: [] }
-        },
+        onNone: () => ({ data: [] }),
         onSome: semanticTokensOf,
       }),
     ),
