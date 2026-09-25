@@ -3,18 +3,19 @@
 @plugin "@cosense-toolbox/tailwind";
 
 /*
- * コードブロックの行番号。CSS カウンタで数える。
+ * コードブロックの行番号。class="line-numbers" を付けた要素の中でだけ出す (記事のページで付けている)。
+ * CSS カウンタで数える。
  * shiki で色付けしたブロックは、行ごとの span.line を数える。
  * 色付けしていないブロック (shiki が知らない言語) は 1 行ずつの div なので、
  * ヘッダ行 (ファイル名) で数え直し、後ろに並ぶ本体行で数える。
  */
-.cosense .code-body.highlight,
-.cosense .line.code-block:has(> .code-start) {
+.line-numbers .code-body.highlight,
+.line-numbers .line.code-block:has(> .code-start) {
   counter-reset: line;
 }
 
-.cosense .code-body.highlight > .line::before,
-.cosense .line.code-block > .code-body:not(.highlight)::before {
+.line-numbers .code-body.highlight > .line::before,
+.line-numbers .line.code-block > .code-body:not(.highlight)::before {
   counter-increment: line;
   content: counter(line);
   display: inline-block;
