@@ -6,16 +6,16 @@
  * リダイレクト先も期限付きの URL (`/files/` は 5 分で切れる) なので、URL を解決して埋め込むだけでは
  * 公開する頃には表示されなくなる。そのため中身を取ってきて、サイトと同じ場所に置く。
  */
-import { createHash } from 'node:crypto'
-import { copyFile, mkdir, readdir, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { createHash } from "node:crypto"
+import { copyFile, mkdir, readdir, writeFile } from "node:fs/promises"
+import { join } from "node:path"
+import { fileURLToPath } from "node:url"
 
-import { fetchAsset, type FetchOptions, isCosenseAssetUrl } from '@cosense-toolbox/cosense-x/fetch'
-import type { Root } from 'hast'
+import { fetchAsset, type FetchOptions, isCosenseAssetUrl } from "@cosense-toolbox/cosense-x/fetch"
+import type { Root } from "hast"
 
 /** `globalThis` に置き場を置くときのキー (`Symbol.for` に渡す)。 */
-export const ASSET_STORE_KEY = '@cosense-toolbox/astro/assets'
+export const ASSET_STORE_KEY = "@cosense-toolbox/astro/assets"
 
 export interface AssetStoreOptions {
   /**
@@ -35,7 +35,7 @@ export interface AssetStoreOptions {
    *
    * @defaultValue `'keep'`
    */
-  readonly links?: 'keep' | 'download'
+  readonly links?: "keep" | "download"
   /** 取れなかったときに呼ぶ */
   readonly warn?: (message: string) => void
 }
@@ -55,30 +55,30 @@ export interface AssetStore {
 
 /** Content-Type から付ける拡張子。静的なホスティングは拡張子で Content-Type を決めるため。 */
 const EXTENSIONS: Readonly<Record<string, string>> = {
-  'image/png': '.png',
-  'image/jpeg': '.jpg',
-  'image/gif': '.gif',
-  'image/webp': '.webp',
-  'image/avif': '.avif',
-  'image/svg+xml': '.svg',
-  'image/x-icon': '.ico',
-  'application/pdf': '.pdf',
-  'video/mp4': '.mp4',
-  'audio/mpeg': '.mp3',
+  "image/png": ".png",
+  "image/jpeg": ".jpg",
+  "image/gif": ".gif",
+  "image/webp": ".webp",
+  "image/avif": ".avif",
+  "image/svg+xml": ".svg",
+  "image/x-icon": ".ico",
+  "application/pdf": ".pdf",
+  "video/mp4": ".mp4",
+  "audio/mpeg": ".mp3",
 }
 
 /** Content-Type で決まらなければ、元の URL の拡張子を使う。 */
 const extensionOf = (url: string, contentType: string): string => {
-  const known = EXTENSIONS[contentType.split(';')[0]?.trim().toLowerCase() ?? '']
+  const known = EXTENSIONS[contentType.split(";")[0]?.trim().toLowerCase() ?? ""]
   if (known !== undefined) return known
-  return /\.[A-Za-z0-9]{1,5}$/.exec(new URL(url).pathname)?.[0]?.toLowerCase() ?? ''
+  return /\.[A-Za-z0-9]{1,5}$/.exec(new URL(url).pathname)?.[0]?.toLowerCase() ?? ""
 }
 
 /**
  * 元の URL のハッシュ。同じ URL は何度ビルドしても同じ名前になり、ハッシュから元の URL
  * (アップロードしたファイルの ID) は分からない。非公開プロジェクトのファイル ID を出さないため。
  */
-const hashOf = (url: string): string => createHash('sha256').update(url).digest('hex').slice(0, 16)
+const hashOf = (url: string): string => createHash("sha256").update(url).digest("hex").slice(0, 16)
 
 const ICON_RE = /^\/api\/pages\/[^/]+\/(.+)\/icon$/
 
@@ -93,9 +93,9 @@ const decode = (segment: string): string => {
 /** ファイル名や URL に使えない文字を `_` にする。日本語はそのまま残す。 */
 const sanitize = (label: string): string =>
   label
-    .replace(/[\\/?#%:*"<>|\s\p{Cc}]+/gu, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '')
+    .replace(/[\\/?#%:*"<>|\s\p{Cc}]+/gu, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "")
     .slice(0, 60)
 
 /**
@@ -104,19 +104,19 @@ const sanitize = (label: string): string =>
  */
 const labelOf = (url: string): string => {
   const title = ICON_RE.exec(new URL(url).pathname)?.[1]
-  return title === undefined ? '' : sanitize(title.split('/').map(decode).join('_'))
+  return title === undefined ? "" : sanitize(title.split("/").map(decode).join("_"))
 }
 
 /** アップロードしたファイル (`/files/…`) は中身が変わらないので、前のビルドで取ったものを使い回せる。 */
-const isImmutable = (url: string): boolean => new URL(url).pathname.startsWith('/files/')
+const isImmutable = (url: string): boolean => new URL(url).pathname.startsWith("/files/")
 
 const unescapeAttribute = (value: string): string =>
   value
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
 
 const ATTRIBUTE_RE = /(\s(src|href)=")([^"]*)(")/g
 
@@ -141,7 +141,7 @@ export const createAssetStore = (options: AssetStoreOptions): AssetStore => {
 
   const download = async (url: string): Promise<string> => {
     const label = labelOf(url)
-    const base = label === '' ? hashOf(url) : `${hashOf(url)}_${label}`
+    const base = label === "" ? hashOf(url) : `${hashOf(url)}_${label}`
     try {
       const cached = isImmutable(url) ? await cachedFileOf(base) : undefined
       if (cached !== undefined) return publicUrlOf(cached)
@@ -165,14 +165,14 @@ export const createAssetStore = (options: AssetStoreOptions): AssetStore => {
   }
 
   const resolveLink = (url: string): Promise<string> =>
-    options.links === 'download' ? resolve(url) : Promise.resolve(url)
+    options.links === "download" ? resolve(url) : Promise.resolve(url)
 
   const resolveAttribute = (name: string, url: string): Promise<string> =>
-    name === 'href' ? resolveLink(url) : resolve(url)
+    name === "href" ? resolveLink(url) : resolve(url)
 
   const localizeHtml = async (html: string): Promise<string> => {
     const targets = [...html.matchAll(ATTRIBUTE_RE)]
-      .map((match) => [match[2] ?? '', unescapeAttribute(match[3] ?? '')] as const)
+      .map((match) => [match[2] ?? "", unescapeAttribute(match[3] ?? "")] as const)
       .filter(([, url]) => isAsset(url))
     const resolved = new Map(
       await Promise.all(
@@ -219,13 +219,13 @@ interface HastLike {
 }
 
 /** `img` の `src` と `a` の href。書き換えられるよう、要素とプロパティ名の組で返す。 */
-const referencesIn = (node: HastLike): (readonly [Record<string, unknown>, 'src' | 'href'])[] => {
+const referencesIn = (node: HastLike): (readonly [Record<string, unknown>, "src" | "href"])[] => {
   const own =
-    node.type === 'element' && node.properties !== undefined
-      ? node.tagName === 'img'
-        ? [[node.properties, 'src'] as const]
-        : node.tagName === 'a'
-          ? [[node.properties, 'href'] as const]
+    node.type === "element" && node.properties !== undefined
+      ? node.tagName === "img"
+        ? [[node.properties, "src"] as const]
+        : node.tagName === "a"
+          ? [[node.properties, "href"] as const]
           : []
       : []
   // コンポーネントのノードは、渡されなかったときに出す元の行 (fallback) も持つ。
@@ -241,8 +241,8 @@ export const rehypeCosenseAssets = (store: AssetStore) => () => async (tree: Roo
     referencesIn(tree as HastLike).map(async ([properties, key]) => {
       const value = properties[key]
       // hast は要素のプロパティをその場で書き換えるのが決まりなので、ここでも書き換える。
-      if (typeof value !== 'string') return
-      properties[key] = key === 'href' ? await store.resolveLink(value) : await store.resolve(value)
+      if (typeof value !== "string") return
+      properties[key] = key === "href" ? await store.resolveLink(value) : await store.resolve(value)
     }),
   )
 }

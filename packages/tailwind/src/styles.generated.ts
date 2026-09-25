@@ -6,7 +6,7 @@ import type { CosenseStyles } from './extract'
 
 export const styles: CosenseStyles = {
   "root": {
-    "font-family": "var(--cosense-font, 'Open Sans', Helvetica, Arial, 'Hiragino Sans', sans-serif)",
+    "font-family": "var(--cosense-font, \"Open Sans\", Helvetica, Arial, \"Hiragino Sans\", sans-serif)",
     "font-size": "var(--cosense-font-size, 15px)",
     "line-height": "var(--cosense-line-height, 1.87)",
     "color": "var(--cosense-text, var(--page-text-color, #4a4a4a))",
@@ -265,7 +265,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent='1']",
+        "body": ".line[data-indent=\"1\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -274,7 +274,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent='2']",
+        "body": ".line[data-indent=\"2\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -283,7 +283,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent='3']",
+        "body": ".line[data-indent=\"3\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -292,7 +292,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent='4']",
+        "body": ".line[data-indent=\"4\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -301,7 +301,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent='5']",
+        "body": ".line[data-indent=\"5\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -310,7 +310,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent='6']",
+        "body": ".line[data-indent=\"6\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -319,7 +319,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent='7']",
+        "body": ".line[data-indent=\"7\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -328,7 +328,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent='8']",
+        "body": ".line[data-indent=\"8\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -337,7 +337,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent='9']",
+        "body": ".line[data-indent=\"9\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -346,7 +346,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent='10']",
+        "body": ".line[data-indent=\"10\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -393,7 +393,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".decoration[data-size-level='1']",
+        "body": ".decoration[data-size-level=\"1\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -402,7 +402,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".decoration[data-size-level='2']",
+        "body": ".decoration[data-size-level=\"2\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -411,7 +411,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".decoration[data-size-level='3']",
+        "body": ".decoration[data-size-level=\"3\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -420,7 +420,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".decoration[data-size-level='4']",
+        "body": ".decoration[data-size-level=\"4\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -443,7 +443,7 @@ export const styles: CosenseStyles = {
         "pseudo": "::before"
       },
       "declarations": {
-        "content": "''",
+        "content": "\"\"",
         "position": "absolute",
         "top": "0.7em",
         "left": "calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0) - 1.05em)",
@@ -506,7 +506,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block[data-line-digits='1']",
+        "body": ".line.code-block[data-line-digits=\"1\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -515,7 +515,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block[data-line-digits='2']",
+        "body": ".line.code-block[data-line-digits=\"2\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -524,7 +524,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block[data-line-digits='3']",
+        "body": ".line.code-block[data-line-digits=\"3\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -533,7 +533,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block[data-line-digits='4']",
+        "body": ".line.code-block[data-line-digits=\"4\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -542,7 +542,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block[data-line-digits='5']",
+        "body": ".line.code-block[data-line-digits=\"5\"]",
         "pseudo": ""
       },
       "declarations": {

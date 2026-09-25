@@ -3,17 +3,17 @@
  * Cosense のページを、ビルド時に API から取ってきて描画する。
  * ネットワークにつながらなければ、このページだけ案内を出して飛ばす。
  */
-import { cosenseIconUrl, fetchPageText } from '@cosense-toolbox/cosense-x/fetch'
-import { parse } from '@cosense-toolbox/parser'
-import { customDecorations } from '@cosense-toolbox/parser/extensions'
-import { codeLineNumbers, toHtml } from '@cosense-toolbox/parser/html'
-import { localizeCosenseAssets } from 'virtual:cosense-x/assets'
+import { cosenseIconUrl, fetchPageText } from "@cosense-toolbox/cosense-x/fetch"
+import { parse } from "@cosense-toolbox/parser"
+import { customDecorations } from "@cosense-toolbox/parser/extensions"
+import { codeLineNumbers, toHtml } from "@cosense-toolbox/parser/html"
+import { localizeCosenseAssets } from "virtual:cosense-x/assets"
 
-import Base from '../layouts/Base.astro'
-import { createCodeHighlight } from '../shiki'
+import Base from "../layouts/Base.astro"
+import { createCodeHighlight } from "../shiki"
 
-const project = 'qaynam'
-const title = 'MCPについて'
+const project = "qaynam"
+const title = "MCPについて"
 // 非公開プロジェクトのページを取るときは、.env に Cosense の Personal Access Token を書く。
 const pat = import.meta.env.COSENSE_PAT
 const highlight = await createCodeHighlight()
@@ -23,7 +23,7 @@ try {
   const text = await fetchPageText(project, title, pat ? { pat } : {})
   const rendered = toHtml(
     parse(text, {
-      extensions: [customDecorations(['|', '!', '~'])],
+      extensions: [customDecorations(["|", "!", "~"])],
     }),
     {
       highlight,

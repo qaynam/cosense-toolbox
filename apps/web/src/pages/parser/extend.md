@@ -25,22 +25,22 @@ description: Extension で記法を足し、declaration merging で独自のノ�
 既定のルールより先に試されるので、既存の記法を上書きすることもできます。
 
 ```ts
-import { parse } from '@cosense-toolbox/parser'
-import type { Extension, InlineConstruct } from '@cosense-toolbox/parser/extensions'
+import { parse } from "@cosense-toolbox/parser"
+import type { Extension, InlineConstruct } from "@cosense-toolbox/parser/extensions"
 
 const mention: InlineConstruct = (source, index) => {
-  if (source[index] !== '@') return null
+  if (source[index] !== "@") return null
   const match = source.slice(index + 1).match(/^[A-Za-z0-9_-]+/)
   if (!match) return null
   return {
-    node: { type: 'internalLink', label: `@${match[0]}`, target: match[0] },
+    node: { type: "internalLink", label: `@${match[0]}`, target: match[0] },
     length: match[0].length + 1,
   }
 }
 
 const mentions: Extension = { constructs: [mention] }
 
-parse('メモ\n@qaynam に確認する', { extensions: [mentions] })
+parse("メモ\n@qaynam に確認する", { extensions: [mentions] })
 ```
 
 `null` を返すと、その位置では成立しなかったことになり、次のルールが試されます。
@@ -59,11 +59,11 @@ parse('メモ\n@qaynam に確認する', { extensions: [mentions] })
 それ以外の記号を使いたい場合は `customDecorations` を渡します。
 
 ```ts
-import { parse } from '@cosense-toolbox/parser'
-import { customDecorations } from '@cosense-toolbox/parser/extensions'
+import { parse } from "@cosense-toolbox/parser"
+import { customDecorations } from "@cosense-toolbox/parser/extensions"
 
 const page = parse(source, {
-  extensions: [customDecorations(['=', '~', '|', '%', '&', "'"])],
+  extensions: [customDecorations(["=", "~", "|", "%", "&", "'"])],
 })
 ```
 
@@ -78,13 +78,13 @@ const page = parse(source, {
 行と同じく記法を読みたい場合は `tableCellNotation` を渡します。Cosense Web には無い振る舞いです。
 
 ```ts
-import { customDecorations, tableCellNotation } from '@cosense-toolbox/parser/extensions'
+import { customDecorations, tableCellNotation } from "@cosense-toolbox/parser/extensions"
 
 // すべての記法 (一緒に渡した拡張の記法も含む)
-parse(source, { extensions: [customDecorations(['!']), tableCellNotation()] })
+parse(source, { extensions: [customDecorations(["!"]), tableCellNotation()] })
 
 // リンクに加えて、装飾だけ
-parse(source, { extensions: [tableCellNotation(['decoration'])] })
+parse(source, { extensions: [tableCellNotation(["decoration"])] })
 ```
 
 自分で書く拡張でも、`keepInTableCell` でセルの中に残すノードを決められます。
@@ -92,7 +92,7 @@ true を返したノードは記法として残り、どの拡張も残さない
 
 ```ts
 const keepCode: Extension = {
-  keepInTableCell: (node) => node.type === 'inlineCode',
+  keepInTableCell: (node) => node.type === "inlineCode",
 }
 ```
 
@@ -104,9 +104,9 @@ const keepCode: Extension = {
 mdast と同じ手法で、`NodeHandlers` のキーにも `visit` の型引数にも自動で現れるので、描画まで型が通ります。
 
 ```ts
-declare module '@cosense-toolbox/parser' {
+declare module "@cosense-toolbox/parser" {
   interface InlineNodeMap {
-    mention: { type: 'mention'; user: string; position: Position }
+    mention: { type: "mention"; user: string; position: Position }
   }
 }
 ```
@@ -114,21 +114,21 @@ declare module '@cosense-toolbox/parser' {
 あとは、記法を足したパーサーでパースして、その `type` に対するハンドラを書けば描画まで通ります。
 
 ```ts
-import { parse } from '@cosense-toolbox/parser'
-import { toHtml } from '@cosense-toolbox/parser/html'
+import { parse } from "@cosense-toolbox/parser"
+import { toHtml } from "@cosense-toolbox/parser/html"
 
 // mention が { type: 'mention', user } を返すようにしておく
-const page = parse('メモ\n@qaynam に確認する', {
+const page = parse("メモ\n@qaynam に確認する", {
   extensions: [{ constructs: [mention] }],
 })
 
 toHtml(page, {
   handlers: {
     mention: (node) => ({
-      type: 'element',
-      tagName: 'a',
+      type: "element",
+      tagName: "a",
       properties: { href: `/u/${encodeURIComponent(node.user)}` },
-      children: [{ type: 'text', value: `@${node.user}` }],
+      children: [{ type: "text", value: `@${node.user}` }],
     }),
   },
 })
@@ -143,8 +143,8 @@ toHtml(page, {
 `@cosense-toolbox/parser/schema` は、worklet や postMessage を跨いで受け取った、本当に `Page` か分からない値を検証します。
 
 ```ts
-import { decodePage } from '@cosense-toolbox/parser/schema'
-import { Either } from 'effect'
+import { decodePage } from "@cosense-toolbox/parser/schema"
+import { Either } from "effect"
 
 const decoded = decodePage(JSON.parse(input))
 if (Either.isRight(decoded)) {

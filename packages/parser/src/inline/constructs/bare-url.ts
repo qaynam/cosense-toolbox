@@ -1,6 +1,6 @@
-import { Option } from 'effect'
+import { Option } from "effect"
 
-import type { InternalConstruct } from '../internal-types'
+import type { InternalConstruct } from "../internal-types"
 
 const URL_RE = /^https?:\/\/[^\s\]]+/i
 
@@ -10,14 +10,14 @@ const URL_RE = /^https?:\/\/[^\s\]]+/i
  */
 export const bareUrlConstruct: InternalConstruct = (source, index) => {
   const head = source[index]
-  if (head !== 'h' && head !== 'H') return Option.none()
+  if (head !== "h" && head !== "H") return Option.none()
 
   const match = source.slice(index).match(URL_RE)
   if (!match) return Option.none()
 
   const url = match[0]
   return Option.some({
-    node: { type: 'externalLink', label: url, target: url },
+    node: { type: "externalLink", label: url, target: url },
     length: url.length,
   })
 }

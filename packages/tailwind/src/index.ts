@@ -10,11 +10,11 @@
  * 当てるスタイルは `@cosense-toolbox/style` の style.css と同じもの。`cosense-link:underline` のような
  * modifier で、記事の中の特定の記法にだけ utility を当てられる。
  */
-import plugin, { type PluginAPI } from 'tailwindcss/plugin'
+import plugin, { type PluginAPI } from "tailwindcss/plugin"
 
-import type { Declarations, StyleRule } from './extract'
-import { type Modifier, MODIFIERS } from './modifiers'
-import { styles } from './styles.generated'
+import type { Declarations, StyleRule } from "./extract"
+import { type Modifier, MODIFIERS } from "./modifiers"
+import { styles } from "./styles.generated"
 
 export interface CosenseTailwindOptions {
   /**
@@ -25,7 +25,7 @@ export interface CosenseTailwindOptions {
   readonly className?: string
 }
 
-type Components = Parameters<PluginAPI['addComponents']>[0]
+type Components = Parameters<PluginAPI["addComponents"]>[0]
 
 /** 生成したデータは readonly なので、Tailwind の可変の型に合わせる (中身は書き換えない)。 */
 const mutable = (declarations: Declarations) => declarations as Record<string, string | string[]>
@@ -73,7 +73,7 @@ const escapeClassChar = (char: string): string => (/[A-Za-z0-9_-]/.test(char) ? 
  * Tailwind は `[...]` の中の `_` を空白に変える。下線の記号 `_` は `[\_]` と書く (Tailwind の決まり)。
  */
 const decorationOf = (markers: string, className: string): string => {
-  const classes = [...new Set(markers)].map((marker) => `.deco-${escapeClassChar(marker)}`).join('')
+  const classes = [...new Set(markers)].map((marker) => `.deco-${escapeClassChar(marker)}`).join("")
   return `& :is(:where(.decoration${classes})${outside(className)})`
 }
 
@@ -83,7 +83,7 @@ type CosensePlugin = ReturnType<typeof plugin.withOptions<CosenseTailwindOptions
 const cosense: CosensePlugin = plugin.withOptions<CosenseTailwindOptions>(
   (options) =>
     ({ addComponents, addVariant, matchVariant }) => {
-      const className = options?.className ?? 'cosense'
+      const className = options?.className ?? "cosense"
       addComponents(componentsOf(className))
       for (const modifier of MODIFIERS) {
         addVariant(`${className}-${modifier.name}`, modifierOf(modifier, className))

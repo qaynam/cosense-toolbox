@@ -3,13 +3,13 @@
  *
  * Cosense にも API にも問い合わせない。オフラインで書いてもビルドできるようにするため。
  */
-import type { ProjectLink } from '@cosense-toolbox/parser'
-import type { PageRefNode } from '@cosense-toolbox/parser/html'
-import { Match, Option, pipe } from 'effect'
+import type { ProjectLink } from "@cosense-toolbox/parser"
+import type { PageRefNode } from "@cosense-toolbox/parser/html"
+import { Match, Option, pipe } from "effect"
 
-import { type CosenseXError, toError, unresolvedLinkError } from './errors'
-import { isRelativePath, normalizeTitle, resolveRelativePath, titleToSlug } from './title'
-import type { ResolvedLink } from './to-hast'
+import { type CosenseXError, toError, unresolvedLinkError } from "./errors"
+import { isRelativePath, normalizeTitle, resolveRelativePath, titleToSlug } from "./title"
+import type { ResolvedLink } from "./to-hast"
 
 /** 索引に載るページ。`id` はファイルのパスで、`[./foo.csn]` の解決に使う。 */
 export interface IndexedPage {
@@ -75,7 +75,7 @@ export const pageByPath = (
  * - `warn`：テキストとして出し、`warnings` に積む。書いている最中にリンク切れを拾うため
  * - `error`：コンパイルを失敗させる
  */
-export type UnresolvedLinkPolicy = 'text' | 'link' | 'warn' | 'error'
+export type UnresolvedLinkPolicy = "text" | "link" | "warn" | "error"
 
 /** URL を決める関数に渡るページ。索引に無いページ (`unresolved: 'link'`) では `id` が null。 */
 export interface LinkTarget {
@@ -122,23 +122,23 @@ export const defaultPageUrl = (page: LinkTarget): string => `/${encodeURICompone
 /** Cosense の URL の形。タイトルの空白は `_` になる。 */
 export const defaultProjectUrl = (node: ProjectLink): string => {
   const project = encodeURIComponent(node.project)
-  return node.title === ''
+  return node.title === ""
     ? `https://scrapbox.io/${project}`
-    : `https://scrapbox.io/${project}/${encodeURIComponent(node.title.replace(/ /g, '_'))}`
+    : `https://scrapbox.io/${project}/${encodeURIComponent(node.title.replace(/ /g, "_"))}`
 }
 
 /** 1 つのリンクを解決した結果。 */
 export type LinkResolution =
-  | { readonly _tag: 'resolved'; readonly link: ResolvedLink }
+  | { readonly _tag: "resolved"; readonly link: ResolvedLink }
   /** リンクにせずテキストとして出す */
-  | { readonly _tag: 'text' }
+  | { readonly _tag: "text" }
   /** テキストとして出し、警告する */
-  | { readonly _tag: 'warning'; readonly message: string }
+  | { readonly _tag: "warning"; readonly message: string }
   /** コンパイルを失敗させる */
-  | { readonly _tag: 'failure'; readonly error: CosenseXError }
+  | { readonly _tag: "failure"; readonly error: CosenseXError }
 
-const resolved = (link: ResolvedLink): LinkResolution => ({ _tag: 'resolved', link })
-const asText: LinkResolution = { _tag: 'text' }
+const resolved = (link: ResolvedLink): LinkResolution => ({ _tag: "resolved", link })
+const asText: LinkResolution = { _tag: "text" }
 
 /** リンクの解決の仕方。`toHast` に渡す関数は、これを `reportLinks` で包んで作る。 */
 export const linkResolution = (options: LinkOptions): ((node: PageRefNode) => LinkResolution) => {
@@ -151,16 +151,16 @@ export const linkResolution = (options: LinkOptions): ((node: PageRefNode) => Li
 
   /** 索引に無いリンク。相対パスは `link` にしてもページの URL を作れないので、テキストにする。 */
   const unresolved = (target: string, canLink: boolean): LinkResolution => {
-    const where = filePath === undefined ? '' : ` (${filePath})`
+    const where = filePath === undefined ? "" : ` (${filePath})`
     const message = `リンク先のページが見つからない: [${target}]${where}`
-    return Match.value(options.unresolved ?? 'text').pipe(
-      Match.when('link', () => (canLink ? toTitle(target) : asText)),
-      Match.when('warn', (): LinkResolution => ({ _tag: 'warning', message })),
-      Match.when('error', (): LinkResolution => ({
-        _tag: 'failure',
+    return Match.value(options.unresolved ?? "text").pipe(
+      Match.when("link", () => (canLink ? toTitle(target) : asText)),
+      Match.when("warn", (): LinkResolution => ({ _tag: "warning", message })),
+      Match.when("error", (): LinkResolution => ({
+        _tag: "failure",
         error: unresolvedLinkError(message),
       })),
-      Match.when('text', () => asText),
+      Match.when("text", () => asText),
       Match.exhaustive,
     )
   }
@@ -187,15 +187,15 @@ export const linkResolution = (options: LinkOptions): ((node: PageRefNode) => Li
 
   return (node) =>
     Match.value(node).pipe(
-      Match.when({ type: 'internalLink' }, (link) =>
+      Match.when({ type: "internalLink" }, (link) =>
         isRelativePath(link.target) ? byPath(link.target) : byTitle(link.target),
       ),
-      Match.when({ type: 'hashtag' }, (tag) =>
+      Match.when({ type: "hashtag" }, (tag) =>
         options.tagUrl === undefined ? byTitle(tag.value) : fromUrl(options.tagUrl(tag.value)),
       ),
-      Match.when({ type: 'projectLink' }, (link) => fromUrl(projectUrl(link))),
+      Match.when({ type: "projectLink" }, (link) => fromUrl(projectUrl(link))),
       // ブログにはユーザーのページが無いことが多いので、無くても警告しない。
-      Match.when({ type: 'icon' }, (icon) =>
+      Match.when({ type: "icon" }, (icon) =>
         index === undefined
           ? asText
           : Option.match(pageByTitle(index, icon.user), {
@@ -221,13 +221,13 @@ export const reportLinks =
   ) =>
   (node: PageRefNode): ResolvedLink | null =>
     Match.value(resolve(node)).pipe(
-      Match.tag('resolved', ({ link }) => link),
-      Match.tag('text', () => null),
-      Match.tag('warning', ({ message }) => {
+      Match.tag("resolved", ({ link }) => link),
+      Match.tag("text", () => null),
+      Match.tag("warning", ({ message }) => {
         report.warning(message)
         return null
       }),
-      Match.tag('failure', ({ error }) => {
+      Match.tag("failure", ({ error }) => {
         report.failure(error)
         return null
       }),

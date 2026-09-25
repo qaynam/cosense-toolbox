@@ -1,17 +1,17 @@
 /**
  * code-line-numbers.ts — コードブロックに行番号を付ける描画の拡張。
  */
-import { Match, Option, pipe } from 'effect'
-import type { ElementContent } from 'hast'
+import { Match, Option, pipe } from "effect"
+import type { ElementContent } from "hast"
 
-import type { RenderExtension } from './to-hast'
+import type { RenderExtension } from "./to-hast"
 
 /** 行の要素に行番号と桁数を付ける。要素でないもの (テキストなど) には付ける場所が無いのでそのまま。 */
 const withLineNumber =
   (digits: number) =>
   (line: ElementContent, number: number): ElementContent =>
     Match.value(line).pipe(
-      Match.when({ type: 'element' }, (element) => ({
+      Match.when({ type: "element" }, (element) => ({
         ...element,
         properties: { ...element.properties, dataLine: number, dataLineDigits: digits },
       })),

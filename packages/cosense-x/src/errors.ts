@@ -7,33 +7,33 @@
  *
  * class (`Data.TaggedError`) にしないのは、parser と同じく値をただのオブジェクトに保つため。
  */
-import { Either } from 'effect'
+import { Either } from "effect"
 
 export type CosenseXError =
   /** frontmatter が YAML として読めない、またはキーと値の組になっていない */
-  | { readonly _tag: 'FrontmatterError'; readonly message: string; readonly cause?: unknown }
+  | { readonly _tag: "FrontmatterError"; readonly message: string; readonly cause?: unknown }
   /** `.csnx` の開始タグと閉じタグが対応していない */
-  | { readonly _tag: 'ComponentTagError'; readonly message: string }
+  | { readonly _tag: "ComponentTagError"; readonly message: string }
   /** `unresolved: 'error'` のときに、リンク先のページが見つからない */
-  | { readonly _tag: 'UnresolvedLinkError'; readonly message: string }
+  | { readonly _tag: "UnresolvedLinkError"; readonly message: string }
 
 export const frontmatterError = (message: string, cause?: unknown): CosenseXError =>
   cause === undefined
-    ? { _tag: 'FrontmatterError', message }
-    : { _tag: 'FrontmatterError', message, cause }
+    ? { _tag: "FrontmatterError", message }
+    : { _tag: "FrontmatterError", message, cause }
 
 export const componentTagError = (message: string): CosenseXError => ({
-  _tag: 'ComponentTagError',
+  _tag: "ComponentTagError",
   message,
 })
 
 export const unresolvedLinkError = (message: string): CosenseXError => ({
-  _tag: 'UnresolvedLinkError',
+  _tag: "UnresolvedLinkError",
   message,
 })
 
 export const toError = (error: CosenseXError): Error =>
-  error._tag === 'FrontmatterError' && error.cause !== undefined
+  error._tag === "FrontmatterError" && error.cause !== undefined
     ? new Error(error.message, { cause: error.cause })
     : new Error(error.message)
 

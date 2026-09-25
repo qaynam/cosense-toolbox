@@ -17,7 +17,7 @@ npm install -D @cosense-toolbox/tailwind@beta
 Tailwind v4 の CSS に `@plugin` で足す。
 
 ```css
-@import 'tailwindcss';
+@import "tailwindcss";
 @plugin "@cosense-toolbox/tailwind";
 ```
 
@@ -97,9 +97,9 @@ class 名は `toHtml` の既定 (`classNames` を渡さなかったとき) に�
 
 ```js
 // astro.config.mjs (@cosense-toolbox/astro)
-import { customDecorations } from '@cosense-toolbox/parser/extensions'
+import { customDecorations } from "@cosense-toolbox/parser/extensions"
 
-cosense({ parseOptions: { extensions: [customDecorations(['|'])] } })
+cosense({ parseOptions: { extensions: [customDecorations(["|"])] } })
 ```
 
 ## 一部だけ外す

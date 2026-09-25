@@ -4,10 +4,10 @@
  * 公開の型 (`types.ts`) と別のファイルにしているのは、拡張を書く人が読む型定義に
  * effect の import を出さないため。
  */
-import type { Option } from 'effect'
+import type { Option } from "effect"
 
-import type { InlineNodeInit } from '../types'
-import type { BracketRuleContext, ConstructMatch, InlineContext } from './types'
+import type { InlineNodeInit } from "../types"
+import type { BracketRuleContext, ConstructMatch, InlineContext } from "./types"
 
 /** 走査ループがルールに渡す文脈。拡張が足した `[...]` のルールも持つ。 */
 export interface ScanContext extends InlineContext {

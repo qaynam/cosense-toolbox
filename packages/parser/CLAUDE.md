@@ -293,7 +293,7 @@ tsdown が後継として設定互換を保っている。**tsup に戻さない
 `tsdown.config.ts` の `entry` と `exports` の両方を更新すること。**
 
 整形はリポジトリルートの `prettier.config.mjs`、lint は `eslint.config.js` に従う
-（single quote / セミコロンなし / 100 桁 / 2 スペース / import は並べる / 型だけの import には `type` を付ける）。
+（double quote / セミコロンなし / 100 桁 / 2 スペース / import は並べる / 型だけの import には `type` を付ける）。
 **どちらもリポジトリルートに置いているので、単体で切り出す際は一緒に持っていくこと。**
 
 コメントは「なぜそうなっているか」を書く。特に**Cosense Web の挙動に合わせた結果

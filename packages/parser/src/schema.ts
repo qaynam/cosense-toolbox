@@ -10,7 +10,7 @@
  * 明示注釈してあるので、types.ts と定義がズレたらコンパイルエラーになる。
  * 逆に Schema から型を推論する形にすると、NodeMap への declaration merging が効かなくなる。
  */
-import { Schema } from 'effect'
+import { Schema } from "effect"
 
 import type {
   CodeBlock,
@@ -35,7 +35,7 @@ import type {
   TextNode,
   TitleBlock,
   TopLevelBlock,
-} from './types'
+} from "./types"
 
 export const PointSchema: Schema.Schema<Point> = Schema.Struct({
   line: Schema.Number,
@@ -53,27 +53,27 @@ const withPosition = { position: PositionSchema }
 // --- インライン ---------------------------------------------------------
 
 export const TextNodeSchema: Schema.Schema<TextNode> = Schema.Struct({
-  type: Schema.Literal('text'),
+  type: Schema.Literal("text"),
   value: Schema.String,
   ...withPosition,
 })
 
 export const InternalLinkSchema: Schema.Schema<InternalLink> = Schema.Struct({
-  type: Schema.Literal('internalLink'),
+  type: Schema.Literal("internalLink"),
   label: Schema.String,
   target: Schema.String,
   ...withPosition,
 })
 
 export const ExternalLinkSchema: Schema.Schema<ExternalLink> = Schema.Struct({
-  type: Schema.Literal('externalLink'),
+  type: Schema.Literal("externalLink"),
   label: Schema.String,
   target: Schema.String,
   ...withPosition,
 })
 
 export const ProjectLinkSchema: Schema.Schema<ProjectLink> = Schema.Struct({
-  type: Schema.Literal('projectLink'),
+  type: Schema.Literal("projectLink"),
   label: Schema.String,
   target: Schema.String,
   project: Schema.String,
@@ -82,19 +82,19 @@ export const ProjectLinkSchema: Schema.Schema<ProjectLink> = Schema.Struct({
 })
 
 export const HashtagSchema: Schema.Schema<Hashtag> = Schema.Struct({
-  type: Schema.Literal('hashtag'),
+  type: Schema.Literal("hashtag"),
   value: Schema.String,
   ...withPosition,
 })
 
 export const InlineCodeSchema: Schema.Schema<InlineCode> = Schema.Struct({
-  type: Schema.Literal('inlineCode'),
+  type: Schema.Literal("inlineCode"),
   value: Schema.String,
   ...withPosition,
 })
 
 export const ImageNodeSchema: Schema.Schema<ImageNode> = Schema.Struct({
-  type: Schema.Literal('image'),
+  type: Schema.Literal("image"),
   src: Schema.String,
   large: Schema.optionalWith(Schema.Boolean, { exact: true }),
   link: Schema.optionalWith(Schema.String, { exact: true }),
@@ -102,21 +102,21 @@ export const ImageNodeSchema: Schema.Schema<ImageNode> = Schema.Struct({
 })
 
 export const IconNodeSchema: Schema.Schema<IconNode> = Schema.Struct({
-  type: Schema.Literal('icon'),
+  type: Schema.Literal("icon"),
   user: Schema.String,
   count: Schema.Number,
   ...withPosition,
 })
 
 export const FormulaNodeSchema: Schema.Schema<FormulaNode> = Schema.Struct({
-  type: Schema.Literal('formula'),
+  type: Schema.Literal("formula"),
   value: Schema.String,
   ...withPosition,
 })
 
 /** 装飾は中に装飾以外のインライン記法を持てるので、InlineNodeSchema を通じて再帰する。 */
 export const DecorationSchema: Schema.Schema<Decoration> = Schema.Struct({
-  type: Schema.Literal('decoration'),
+  type: Schema.Literal("decoration"),
   value: Schema.String,
   markers: Schema.Array(Schema.String),
   bold: Schema.Boolean,
@@ -144,20 +144,20 @@ export const InlineNodeSchema: Schema.Schema<InlineNode> = Schema.Union(
 // --- ブロック -----------------------------------------------------------
 
 export const TitleBlockSchema: Schema.Schema<TitleBlock> = Schema.Struct({
-  type: Schema.Literal('title'),
+  type: Schema.Literal("title"),
   value: Schema.String,
   children: Schema.Array(InlineNodeSchema),
   ...withPosition,
 })
 
 export const CodeLineSchema: Schema.Schema<CodeLine> = Schema.Struct({
-  type: Schema.Literal('codeLine'),
+  type: Schema.Literal("codeLine"),
   value: Schema.String,
   ...withPosition,
 })
 
 export const CodeBlockSchema: Schema.Schema<CodeBlock> = Schema.Struct({
-  type: Schema.Literal('codeBlock'),
+  type: Schema.Literal("codeBlock"),
   filename: Schema.String,
   indent: Schema.Number,
   lines: Schema.Array(CodeLineSchema),
@@ -165,20 +165,20 @@ export const CodeBlockSchema: Schema.Schema<CodeBlock> = Schema.Struct({
 })
 
 export const TableCellSchema: Schema.Schema<TableCell> = Schema.Struct({
-  type: Schema.Literal('tableCell'),
+  type: Schema.Literal("tableCell"),
   value: Schema.String,
   children: Schema.Array(InlineNodeSchema),
   ...withPosition,
 })
 
 export const TableRowSchema: Schema.Schema<TableRow> = Schema.Struct({
-  type: Schema.Literal('tableRow'),
+  type: Schema.Literal("tableRow"),
   cells: Schema.Array(TableCellSchema),
   ...withPosition,
 })
 
 export const TableBlockSchema: Schema.Schema<TableBlock> = Schema.Struct({
-  type: Schema.Literal('table'),
+  type: Schema.Literal("table"),
   name: Schema.String,
   indent: Schema.Number,
   rows: Schema.Array(TableRowSchema),
@@ -186,7 +186,7 @@ export const TableBlockSchema: Schema.Schema<TableBlock> = Schema.Struct({
 })
 
 export const LineBlockSchema: Schema.Schema<LineBlock> = Schema.Struct({
-  type: Schema.Literal('line'),
+  type: Schema.Literal("line"),
   indent: Schema.Number,
   quote: Schema.Boolean,
   monospace: Schema.Boolean,
@@ -202,7 +202,7 @@ export const TopLevelBlockSchema: Schema.Schema<TopLevelBlock> = Schema.Union(
 )
 
 export const PageSchema: Schema.Schema<Page> = Schema.Struct({
-  type: Schema.Literal('page'),
+  type: Schema.Literal("page"),
   children: Schema.Array(TopLevelBlockSchema),
   ...withPosition,
 })

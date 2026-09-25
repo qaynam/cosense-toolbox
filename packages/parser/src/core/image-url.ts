@@ -6,7 +6,7 @@
  * パースでは行わず、描画する側 (`compile/`) が明示的に呼ぶ。
  * oEmbed の取得や動画判定のような URL の意味解決はこのパッケージの外の仕事。
  */
-import { Option, pipe } from 'effect'
+import { Option, pipe } from "effect"
 
 const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i
 
@@ -31,7 +31,7 @@ const gyazoSrc = (url: string): Option.Option<string> =>
  * 「これは画像」と教える Cosense の書き方 (`https://x/api/status?id=1#.svg`) のため。
  */
 const fragmentSrc = (url: string): Option.Option<string> => {
-  const hash = url.indexOf('#')
+  const hash = url.indexOf("#")
   return hash >= 0 && IMAGE_EXT_RE.test(url.slice(hash)) ? Option.some(url) : Option.none()
 }
 
@@ -43,7 +43,7 @@ const fragmentSrc = (url: string): Option.Option<string> => {
  * 「クエリの中にだけ拡張子がある」URL を画像と誤判定しないため。
  */
 const pathSrc = (url: string): Option.Option<string> =>
-  IMAGE_EXT_RE.test(url.replace(/[?#].*$/, '')) ? Option.some(url) : Option.none()
+  IMAGE_EXT_RE.test(url.replace(/[?#].*$/, "")) ? Option.some(url) : Option.none()
 
 /** `<img src>` に入れられる形の URL。画像でなければ None。 */
 const imageSrc = (url: string): Option.Option<string> =>

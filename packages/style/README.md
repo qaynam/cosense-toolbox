@@ -10,7 +10,7 @@ npm i @cosense-toolbox/style@beta
 ```
 
 ```ts
-import '@cosense-toolbox/style'
+import "@cosense-toolbox/style"
 ```
 
 > ⚠️ これは Cosense (Scrapbox) 本体の CSS **ではありません**。本体の CSS はエディタの DOM
@@ -94,7 +94,7 @@ Cosense と同じく、字下げの右端に中点を出す。`toHtml` の既定
 - この CSS をカスケードレイヤーに入れて、ページ側の CSS を常に優先させる
 
 ```css
-@import '@cosense-toolbox/style' layer(cosense);
+@import "@cosense-toolbox/style" layer(cosense);
 ```
 
 ## ライセンス

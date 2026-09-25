@@ -5,8 +5,8 @@
  * Astro にはそれを描画するレンダラが要る。`@astrojs/mdx` が登録するものと同じ役割で、
  * Astro は `astro:jsx` を 1 つしか持たないので、両方入っていてもぶつからない。
  */
-import { AstroJSX, jsx } from 'astro/jsx-runtime'
-import { chunkToString, renderStreaming } from 'astro/runtime/server/index.js'
+import { AstroJSX, jsx } from "astro/jsx-runtime"
+import { chunkToString, renderStreaming } from "astro/runtime/server/index.js"
 
 type Component = ((props: Record<string, unknown>) => unknown) & {
   readonly [key: symbol]: unknown
@@ -25,7 +25,7 @@ async function check(
   props: Record<string, unknown>,
   { default: children = null, ...slotted }: Slots = {},
 ): Promise<boolean> {
-  if (typeof Component !== 'function') return false
+  if (typeof Component !== "function") return false
   try {
     const result = (await Component({ ...props, ...slotProps(slotted), children })) as Record<
       string,
@@ -44,7 +44,7 @@ async function renderToStaticMarkup(
   { default: children = null, ...slotted }: Slots = {},
 ): Promise<{ html: string }> {
   const { result } = this
-  let html = ''
+  let html = ""
   const destination = {
     write(chunk: unknown) {
       if (chunk instanceof Response) return
@@ -59,4 +59,4 @@ async function renderToStaticMarkup(
   return { html }
 }
 
-export default { name: 'astro:jsx', check, renderToStaticMarkup }
+export default { name: "astro:jsx", check, renderToStaticMarkup }

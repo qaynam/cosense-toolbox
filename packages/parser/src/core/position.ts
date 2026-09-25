@@ -5,7 +5,7 @@
  * ソース上のどこかを表す Origin を持ち回り、そこからの相対インデックスで位置を作る。
  * 位置計算をここ 1 箇所に集約することで、装飾の中の再帰でオフセットがずれる事故を防ぐ。
  */
-import type { Point, Position } from '../types'
+import type { Point, Position } from "../types"
 
 /** 走査対象の文字列のインデックス 0 が、ソース上のどこにあるか。 */
 export interface Origin {

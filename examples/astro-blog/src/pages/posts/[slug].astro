@@ -1,12 +1,12 @@
 ---
-import { getCollection, render } from 'astro:content'
-import graph from 'virtual:cosense-x/graph'
+import { getCollection, render } from "astro:content"
+import graph from "virtual:cosense-x/graph"
 
-import Base from '../../layouts/Base.astro'
-import { pageUrl } from '../../urls'
+import Base from "../../layouts/Base.astro"
+import { pageUrl } from "../../urls"
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts', ({ data }) => !data.draft)
+  const posts = await getCollection("posts", ({ data }) => !data.draft)
   return posts.map((post) => ({ params: { slug: post.id }, props: { post } }))
 }
 
@@ -14,7 +14,7 @@ const { post } = Astro.props
 const { Content } = await render(post)
 
 // グラフの id はプロジェクトのルートからのパスで、content collection の filePath と同じ形。
-const id = post.filePath ?? ''
+const id = post.filePath ?? ""
 const pageLink = (pageId: string) => {
   const page = graph.pages[pageId]
   return page ? { href: pageUrl(page), title: page.title } : null

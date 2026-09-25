@@ -1,13 +1,13 @@
-import { glob } from 'astro/loaders'
-import { z } from 'astro/zod'
-import { defineCollection } from 'astro:content'
+import { glob } from "astro/loaders"
+import { z } from "astro/zod"
+import { defineCollection } from "astro:content"
 
 /**
  * `.csn` / `.csnx` の記事。title / slug / description / image / tags / draft は
  * frontmatter に書かなくても、本文から入る (1 行目がタイトル、#タグ がタグ)。
  */
 const posts = defineCollection({
-  loader: glob({ pattern: '**/*.{csn,csnx}', base: './src/content/posts' }),
+  loader: glob({ pattern: "**/*.{csn,csnx}", base: "./src/content/posts" }),
   schema: z.object({
     title: z.string(),
     slug: z.string(),

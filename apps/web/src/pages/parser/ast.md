@@ -83,7 +83,7 @@ interface Position {
 ```
 
 ```ts
-parse('タイトル\nサンプル').children[1].children[0]
+parse("タイトル\nサンプル").children[1].children[0]
 // {
 //   type: 'text',
 //   value: 'サンプル',

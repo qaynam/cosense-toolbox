@@ -1,8 +1,8 @@
 ---
-import graph from 'virtual:cosense-x/graph'
+import graph from "virtual:cosense-x/graph"
 
-import Base from '../../layouts/Base.astro'
-import { pageUrl } from '../../urls'
+import Base from "../../layouts/Base.astro"
+import { pageUrl } from "../../urls"
 
 export function getStaticPaths() {
   return Object.values(graph.tags).map((tag) => ({ params: { tag: tag.name }, props: { tag } }))

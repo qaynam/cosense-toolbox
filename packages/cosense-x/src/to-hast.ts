@@ -11,7 +11,7 @@ import type {
   Page,
   ParseOptions,
   TopLevelBlock,
-} from '@cosense-toolbox/parser'
+} from "@cosense-toolbox/parser"
 import {
   defaultHastHandlers,
   defaultPageUrl,
@@ -22,20 +22,20 @@ import {
   safeHref,
   safeSrc,
   toHast as toHastOf,
-} from '@cosense-toolbox/parser/html'
-import { Either, Match, Option, pipe } from 'effect'
-import type { Element, ElementContent, Parent, Properties, Root, Text } from 'hast'
+} from "@cosense-toolbox/parser/html"
+import { Either, Match, Option, pipe } from "effect"
+import type { Element, ElementContent, Parent, Properties, Root, Text } from "hast"
 
 import {
   type ComponentAttribute,
   type ComponentBlock,
   groupComponentsEither,
   type GroupedBlock,
-} from './components'
-import { type CosenseXError, orThrow } from './errors'
-import { type InlineComponent, inlineComponentsOf, type InlinePart } from './inline-components'
+} from "./components"
+import { type CosenseXError, orThrow } from "./errors"
+import { type InlineComponent, inlineComponentsOf, type InlinePart } from "./inline-components"
 
-export type { HastHighlighter } from '@cosense-toolbox/parser/html'
+export type { HastHighlighter } from "@cosense-toolbox/parser/html"
 
 /**
  * コンポーネントの呼び出し。hast には無いノード型なので、JS にするときに専用の変換を通す。
@@ -43,7 +43,7 @@ export type { HastHighlighter } from '@cosense-toolbox/parser/html'
  * 元の開始タグと閉じタグ。行ごと書いたものは行の要素、行の途中に書いたものはテキスト。
  */
 export interface CosenseComponent extends Parent {
-  readonly type: 'cosenseComponent'
+  readonly type: "cosenseComponent"
   readonly name: string
   readonly attributes: readonly ComponentAttribute[]
   readonly fallback: ElementContent
@@ -52,7 +52,7 @@ export interface CosenseComponent extends Parent {
   children: ElementContent[]
 }
 
-declare module 'hast' {
+declare module "hast" {
   interface RootContentMap {
     cosenseComponent: CosenseComponent
   }
@@ -72,7 +72,7 @@ export interface ResolvedLink {
  * 描画の規則 (要素と class 名) は parser の `toHast` が持ち、ここでは差分だけを足す。
  * `@cosense-toolbox/style` や `toHtml` の出力とずれないようにするため。
  */
-export interface ToHastOptions extends Omit<HastOptions, 'pageUrl'> {
+export interface ToHastOptions extends Omit<HastOptions, "pageUrl"> {
   /**
    * ページを指す記法 (`[title]` / `[/proj/page]` / `#tag` / `[user.icon]`) の遷移先。
    * null を返すとリンクにせず、テキストとして出す。
@@ -107,19 +107,19 @@ export interface ToHastOptions extends Omit<HastOptions, 'pageUrl'> {
  */
 export type RenderOptions = Pick<
   ToHastOptions,
-  'classNames' | 'extensions' | 'handlers' | 'highlight' | 'iconImageUrl' | 'showPads' | 'title'
+  "classNames" | "extensions" | "handlers" | "highlight" | "iconImageUrl" | "showPads" | "title"
 >
 
-const text = (value: string): Text => ({ type: 'text', value })
+const text = (value: string): Text => ({ type: "text", value })
 
 const classList = (name: string | undefined): string[] =>
-  name === undefined ? [] : name.split(/\s+/).filter((part) => part !== '')
+  name === undefined ? [] : name.split(/\s+/).filter((part) => part !== "")
 
 const element = (
   tagName: string,
   properties: Properties,
   children: ElementContent[] = [],
-): Element => ({ type: 'element', tagName, properties, children })
+): Element => ({ type: "element", tagName, properties, children })
 
 /** 空の class は属性ごと出さない。parser の `toHast` で class 名を空文字にしたときと同じ振る舞い。 */
 const withClass = (className: string | undefined, properties: Properties = {}): Properties => {
@@ -130,8 +130,8 @@ const withClass = (className: string | undefined, properties: Properties = {}): 
 /** 記法に書かれたページタイトル。parser の `toHast` と同じ。 */
 const pageTitleOf = (node: PageRefNode): string =>
   Match.value(node).pipe(
-    Match.when({ type: 'hashtag' }, (tag) => tag.value),
-    Match.when({ type: 'icon' }, (icon) => icon.user),
+    Match.when({ type: "hashtag" }, (tag) => tag.value),
+    Match.when({ type: "icon" }, (icon) => icon.user),
     Match.orElse((link) => link.target),
   )
 
@@ -154,7 +154,7 @@ export const toHastEither = (
       Option.flatMap((resolved) =>
         pipe(
           Option.fromNullable(safeHref(resolved.href)),
-          Option.filter((href) => href !== ''),
+          Option.filter((href) => href !== ""),
           Option.map((href) => ({ ...resolved, href })),
         ),
       ),
@@ -172,7 +172,7 @@ export const toHastEither = (
     Option.match(resolve(node), {
       onNone: () => text(label),
       onSome: (resolved) =>
-        element('a', withClass(className, { href: resolved.href }), [
+        element("a", withClass(className, { href: resolved.href }), [
           text(resolved.label ?? label),
         ]),
     })
@@ -183,27 +183,27 @@ export const toHastEither = (
     const src = pipe(
       Option.fromNullable(ctx.options.iconImageUrl(node)),
       Option.flatMap((url) => Option.fromNullable(safeSrc(url))),
-      Option.filter((url) => url !== ''),
+      Option.filter((url) => url !== ""),
     )
     const href = resolve(node)
-    const className = [cls.internalLink, cls.icon].filter(Boolean).join(' ')
+    const className = [cls.internalLink, cls.icon].filter(Boolean).join(" ")
     // 連打の数だけ出す。要素を共有しないよう、1 つずつ作る。
     return Array.from({ length: node.count }, () => {
       const body: ElementContent = Option.match(src, {
         onNone: () => text(node.user),
         onSome: (url) =>
-          element('img', withClass(cls.icon, { src: url, alt: node.user, title: node.user })),
+          element("img", withClass(cls.icon, { src: url, alt: node.user, title: node.user })),
       })
       return Option.match(href, {
         onNone: () => body,
-        onSome: (resolved) => element('a', withClass(className, { href: resolved.href }), [body]),
+        onSome: (resolved) => element("a", withClass(className, { href: resolved.href }), [body]),
       })
     })
   }
 
   /** 行の途中のコンポーネント。渡されなかったときはタグをテキストのまま出す */
   const inlineComponent = (node: InlineComponent, ctx: HastContext): CosenseComponent => ({
-    type: 'cosenseComponent',
+    type: "cosenseComponent",
     name: node.name,
     attributes: node.attributes,
     fallback: text(node.open),
@@ -212,7 +212,7 @@ export const toHastEither = (
   })
 
   const inlinePart = (node: InlinePart, ctx: HastContext): ElementContent[] =>
-    node.type === 'inlineComponent' ? [inlineComponent(node, ctx)] : ctx.node(node)
+    node.type === "inlineComponent" ? [inlineComponent(node, ctx)] : ctx.node(node)
 
   /**
    * 1 行。`.csnx` なら行の途中のコンポーネントを読む。
@@ -238,7 +238,7 @@ export const toHastEither = (
    * parser の既定の `line` で出す。
    */
   const component = (node: ComponentBlock, ctx: HastContext): CosenseComponent => ({
-    type: 'cosenseComponent',
+    type: "cosenseComponent",
     name: node.name,
     attributes: node.attributes,
     fallback: tagLine(node.line, ctx),
@@ -250,11 +250,11 @@ export const toHastEither = (
   const tagLine = (node: LineBlock, ctx: HastContext): ElementContent =>
     pipe(
       Option.fromNullable(defaultHastHandlers.line(node, ctx)[0]),
-      Option.getOrElse(() => text('')),
+      Option.getOrElse(() => text("")),
     )
 
   const block = (node: GroupedBlock, ctx: HastContext): ElementContent[] =>
-    node.type === 'component' ? [component(node, ctx)] : ctx.node(node)
+    node.type === "component" ? [component(node, ctx)] : ctx.node(node)
 
   const blocks: Either.Either<readonly GroupedBlock[], CosenseXError> =
     components === undefined
@@ -270,7 +270,7 @@ export const toHastEither = (
       // コンポーネントは複数の行をまたぐので、ページの子をまとめ直したものを出す。
       page: (_node, ctx) => [
         element(
-          'div',
+          "div",
           withClass(ctx.options.classNames.page),
           grouped.flatMap((child) => block(child, ctx)),
         ),

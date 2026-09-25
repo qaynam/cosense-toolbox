@@ -3,7 +3,7 @@
 //
 // 日本語を含むので、CJK のグリフを持つフォントが要る。
 // 描画は sharp (librsvg) 任せなので、生成後は実際に画像を開いて字化けしていないか見ること。
-import sharp from 'sharp'
+import sharp from "sharp"
 
 // SVG の属性は " で囲むので、フォント名の引用符は ' を使う。
 const SANS = "'Hiragino Sans', 'Noto Sans CJK JP', 'Yu Gothic', Helvetica, Arial, sans-serif"
@@ -18,7 +18,7 @@ function card({ headline, sub, headlineSize = 72, headlineFont = SANS }) {
       (text, i) =>
         `<text x="98" y="${292 + i * (headlineSize + 20)}" font-family="${headlineFont}" font-size="${headlineSize}" font-weight="800" fill="#f2f2f2">${text}</text>`,
     )
-    .join('\n  ')
+    .join("\n  ")
 
   return `<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -37,24 +37,24 @@ function card({ headline, sub, headlineSize = 72, headlineFont = SANS }) {
 }
 
 const cards = {
-  'public/og.png': card({
-    headline: ['Cosense をもっと面白く、', 'もっと強力に'],
-    sub: 'userscript / userCSS  ·  theme builder  ·  syntax parser',
+  "public/og.png": card({
+    headline: ["Cosense をもっと面白く、", "もっと強力に"],
+    sub: "userscript / userCSS  ·  theme builder  ·  syntax parser",
   }),
-  'public/og-parser.png': card({
-    headline: ['@cosense-toolbox', '/parser'],
+  "public/og-parser.png": card({
+    headline: ["@cosense-toolbox", "/parser"],
     headlineSize: 68,
     headlineFont: MONO,
-    sub: 'Cosense syntax → position-aware AST → HTML',
+    sub: "Cosense syntax → position-aware AST → HTML",
   }),
 }
 
 // 右側にマスコットを置く。余白を詰めてから縮小しないと小さく写る。
 // 見出しは 2 行目が短いので、その右下の空きに収める。
-const mascot = await sharp('public/beaver.png')
+const mascot = await sharp("public/beaver.png")
   .trim()
   .resize(224, 224, {
-    fit: 'contain',
+    fit: "contain",
     background: { r: 0, g: 0, b: 0, alpha: 0 },
   })
   .toBuffer()

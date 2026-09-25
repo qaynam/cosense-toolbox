@@ -4,20 +4,41 @@
  * Cosense のセルには改行を書けないので、`\n` のような文字の並びを代わりに書いておき、
  * 描画のときに `<br>` にする。記法ではなく見た目の約束なので、パーサーではなく描画の拡張にしている。
  */
-import type { Element, ElementContent, Text } from 'hast'
+import { Match, Option, pipe } from "effect"
+import type { Element, ElementContent, Text } from "hast"
 
-import type { RenderExtension } from './to-hast'
+import type { AnyNode } from "../types"
+import type { RenderExtension } from "./to-hast"
 
-const lineBreak = (): Element => ({ type: 'element', tagName: 'br', properties: {}, children: [] })
+const lineBreak = (): Element => ({ type: "element", tagName: "br", properties: {}, children: [] })
 
-/** 文字列を `marker` で区切り、間に `<br>` を挟む。空になった部分は出さない。 */
+/** 空でない文字列だけを text にする。区切った部分が空なら何も出さない。 */
+const textOf = (value: string): Option.Option<Text> =>
+  pipe(
+    Option.some(value),
+    Option.filter((part) => part !== ""),
+    Option.map((part): Text => ({ type: "text", value: part })),
+  )
+
+/** 文字列を `marker` で区切り、間に `<br>` を挟む。 */
 const breakText = (value: string, marker: string): ElementContent[] =>
   value
     .split(marker)
     .flatMap((part, index): ElementContent[] => [
       ...(index === 0 ? [] : [lineBreak()]),
-      ...(part === '' ? [] : [{ type: 'text', value: part } satisfies Text]),
+      ...Option.toArray(textOf(part)),
     ])
+
+/** 出力のうち text だけを区切る。`handlers.text` が要素を返したときは、そのまま残す。 */
+const breakContent =
+  (marker: string) =>
+  (content: ElementContent): ElementContent[] =>
+    Match.value(content).pipe(
+      Match.when({ type: "text" }, (text) => breakText(text.value, marker)),
+      Match.orElse((other) => [other]),
+    )
+
+const isTableCell = (node: AnyNode): boolean => node.type === "tableCell"
 
 /**
  * テーブルのセルの中の `marker` を `<br>` にする描画の拡張。
@@ -33,9 +54,13 @@ const breakText = (value: string, marker: string): ElementContent[] =>
  */
 export const tableCellLineBreaks = (marker: string): RenderExtension => ({
   text: (output, _node, ctx) =>
-    marker !== '' && ctx.ancestors.some((ancestor) => ancestor.type === 'tableCell')
-      ? output.flatMap((content) =>
-          content.type === 'text' ? breakText(content.value, marker) : [content],
-        )
-      : output,
+    pipe(
+      Option.some(marker),
+      Option.filter((value) => value !== ""),
+      Option.filter(() => ctx.ancestors.some(isTableCell)),
+      Option.match({
+        onNone: () => output,
+        onSome: (value) => output.flatMap(breakContent(value)),
+      }),
+    ),
 })

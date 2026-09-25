@@ -4,20 +4,20 @@
  * コンパイルとリンクグラフの両方がここを通る。グラフだけを使う人のバンドルに
  * unified 系が入らないよう、この層は JS の生成に関わるものを import しない。
  */
-import { normalizeLineEndings, type Page, parse, type ParseOptions } from '@cosense-toolbox/parser'
-import { Either, Option, pipe } from 'effect'
+import { normalizeLineEndings, type Page, parse, type ParseOptions } from "@cosense-toolbox/parser"
+import { Either, Option, pipe } from "effect"
 
-import { type CosenseXError, orThrow } from './errors'
-import { type Frontmatter, readFrontmatterEither, splitFrontmatterEither } from './frontmatter'
-import { pageByPath, type PageIndex } from './links'
-import { collectMetadata, type CollectMetadataOptions, type PageMetadata } from './metadata'
+import { type CosenseXError, orThrow } from "./errors"
+import { type Frontmatter, readFrontmatterEither, splitFrontmatterEither } from "./frontmatter"
+import { pageByPath, type PageIndex } from "./links"
+import { collectMetadata, type CollectMetadataOptions, type PageMetadata } from "./metadata"
 
 /** `.csn` は素の Cosense 記法、`.csnx` はそれにコンポーネントの行を足したもの。 */
-export type Format = 'csn' | 'csnx'
+export type Format = "csn" | "csnx"
 
 /** ファイル名の拡張子から形式を決める。どちらでもなければ `csn`。 */
 export const formatOf = (filePath: string | undefined): Format =>
-  filePath?.endsWith('.csnx') ? 'csnx' : 'csn'
+  filePath?.endsWith(".csnx") ? "csnx" : "csn"
 
 export interface ReadOptions {
   readonly format?: Format
@@ -53,7 +53,7 @@ export const readPageEither = (
   const normalized = normalizeLineEndings(source)
   const { index, filePath } = options
   const metadataOptions = (body: string): CollectMetadataOptions => ({
-    ...(format === 'csnx' ? { componentsSource: body } : {}),
+    ...(format === "csnx" ? { componentsSource: body } : {}),
     ...(index === undefined || filePath === undefined
       ? {}
       : {
@@ -77,7 +77,7 @@ export const readPageEither = (
             metadata: collectMetadata(page, data, metadataOptions(head.body)),
             page,
             body: head.body,
-            bodyLineOffset: removed.split('\n').length - 1,
+            bodyLineOffset: removed.split("\n").length - 1,
           }
         },
       ),

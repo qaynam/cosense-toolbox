@@ -1,6 +1,6 @@
 ---
 layout: ../../layouts/Doc.astro
-title: '@cosense-toolbox/parser'
+title: "@cosense-toolbox/parser"
 description: Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換するパーサー
 ---
 
@@ -12,9 +12,9 @@ description: Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に
 記法を読み取るだけでなく、それが元のテキストのどこに書かれていたかまで返します。
 
 ```ts
-import { parse } from '@cosense-toolbox/parser'
-import { collectLinks } from '@cosense-toolbox/parser/utils'
-import { toHtml } from '@cosense-toolbox/parser/html'
+import { parse } from "@cosense-toolbox/parser"
+import { collectLinks } from "@cosense-toolbox/parser/utils"
+import { toHtml } from "@cosense-toolbox/parser/html"
 
 const page = parse(`今日のメモ
 [プロジェクトA] の進捗を確認する

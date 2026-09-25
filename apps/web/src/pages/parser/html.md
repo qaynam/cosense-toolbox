@@ -17,10 +17,10 @@ toHtml(node: AnyNode, options?: HtmlOptions): string
 引数はページ全体でなくてもよく、`parseLine` が返した 1 行でも、AST の任意のノードでも受け取ります。
 
 ```ts
-import { parse } from '@cosense-toolbox/parser'
-import { toHtml } from '@cosense-toolbox/parser/html'
+import { parse } from "@cosense-toolbox/parser"
+import { toHtml } from "@cosense-toolbox/parser/html"
 
-const page = parse('タイトル\nこれは [リンク] です')
+const page = parse("タイトル\nこれは [リンク] です")
 
 toHtml(page)
 ```
@@ -37,7 +37,7 @@ toHtml(page)
 オプションは `style` を除いて同じです。
 
 ```ts
-import { toHast } from '@cosense-toolbox/parser/html'
+import { toHast } from "@cosense-toolbox/parser/html"
 
 toHast(page) // { type: 'root', children: [{ type: 'element', tagName: 'div', ... }] }
 ```
@@ -133,12 +133,12 @@ HTML の文字列を返す形は markdown-it の同名オプションと同じ�
 同じ決めかたの関数を `codeLanguageOf` として `@cosense-toolbox/parser/html` から出しています。
 
 ```ts
-import hljs from 'highlight.js'
+import hljs from "highlight.js"
 
 toHtml(page, {
   highlight: (code, language) =>
     hljs.highlight(code, {
-      language: hljs.getLanguage(language) ? language : 'plaintext',
+      language: hljs.getLanguage(language) ? language : "plaintext",
     }).value,
 })
 ```
@@ -155,12 +155,12 @@ highlight: (code) => sugarHigh(code)
 
 // Shiki は hast をそのまま返せる。<pre><code> は剥がし、テーマの class と色はコードブロックに移る
 const shiki = await createHighlighter({
-  themes: ['github-light'],
-  langs: ['js'],
+  themes: ["github-light"],
+  langs: ["js"],
 })
 highlight: (code, lang) =>
   shiki.getLoadedLanguages().includes(lang)
-    ? shiki.codeToHast(code, { lang, theme: 'github-light' })
+    ? shiki.codeToHast(code, { lang, theme: "github-light" })
     : null
 ```
 
@@ -180,7 +180,7 @@ Shiki のテーマの背景色と文字色は、`style` のまま移さず、`--
 ハイライタのテーマ CSS が特定の class を要求する場合は、次の `classNames` で足せます。
 
 ```ts
-toHtml(page, { highlight, classNames: { codeHighlight: 'highlight hljs' } })
+toHtml(page, { highlight, classNames: { codeHighlight: "highlight hljs" } })
 ```
 
 ### classNames
@@ -195,8 +195,8 @@ classNames?: HtmlClassNames
 ```ts
 toHtml(page, {
   classNames: {
-    line: 'my-2 leading-7',
-    internalLink: 'text-sky-600 underline',
+    line: "my-2 leading-7",
+    internalLink: "text-sky-600 underline",
   },
 })
 ```
@@ -256,8 +256,8 @@ handlers?: HastHandlers
 toHtml(page, {
   handlers: {
     line: (node, ctx) => ({
-      type: 'element',
-      tagName: 'p',
+      type: "element",
+      tagName: "p",
       properties: {},
       children: ctx.children(node),
     }),
@@ -307,7 +307,7 @@ toHtml(page, {
   extensions: [
     {
       // 画像を <figure> で包む。output は既定 (または handlers) の出力
-      image: (output) => ({ type: 'element', tagName: 'figure', properties: {}, children: output }),
+      image: (output) => ({ type: "element", tagName: "figure", properties: {}, children: output }),
     },
   ],
 })
@@ -335,10 +335,10 @@ toHtml(page, {
 Cosense のセルには改行を書けないので、`\n` のような文字の並びを代わりに書いておき、描画のときに改行にします。
 
 ```ts
-import { tableCellLineBreaks, toHtml } from '@cosense-toolbox/parser/html'
+import { tableCellLineBreaks, toHtml } from "@cosense-toolbox/parser/html"
 
-toHtml(parse('t\ntable:x\n 1 行目\\n2 行目'), {
-  extensions: [tableCellLineBreaks('\\n')],
+toHtml(parse("t\ntable:x\n 1 行目\\n2 行目"), {
+  extensions: [tableCellLineBreaks("\\n")],
 })
 // → … <td>1 行目<br>2 行目</td> …
 ```
@@ -369,7 +369,7 @@ style?: string
 渡した CSS を `<style>` 要素として出力の先頭に差し込みます。
 
 ```ts
-import css from '@cosense-toolbox/style/style.css?raw'
+import css from "@cosense-toolbox/style/style.css?raw"
 
 toHtml(page, { style: css })
 // <style>…</style><div class="page">…</div>
@@ -442,7 +442,7 @@ Cosense Web と同じく 1 行を 1 要素に切ります。
 `@cosense-toolbox/style` はそれを見て、行の左に番号の欄を取って番号を出します。
 
 ```ts
-import { codeLineNumbers, toHtml } from '@cosense-toolbox/parser/html'
+import { codeLineNumbers, toHtml } from "@cosense-toolbox/parser/html"
 
 toHtml(page, { extensions: [codeLineNumbers()] })
 // <div class="line code-block" data-indent="1" data-line="1" data-line-digits="1">…</div>
@@ -526,20 +526,20 @@ KaTeX に渡したい場合は [`handlers`](#handlers) で差し替えてくだ�
 外部リンクを別タブで開く例を示します。
 
 ```ts
-import { safeHref, toHtml } from '@cosense-toolbox/parser/html'
+import { safeHref, toHtml } from "@cosense-toolbox/parser/html"
 
 toHtml(page, {
   handlers: {
     externalLink: (node, ctx) => ({
-      type: 'element',
-      tagName: 'a',
+      type: "element",
+      tagName: "a",
       properties: {
-        className: ctx.options.classNames.externalLink?.split(' '),
+        className: ctx.options.classNames.externalLink?.split(" "),
         href: safeHref(node.target) ?? undefined,
-        target: '_blank',
-        rel: 'noreferrer',
+        target: "_blank",
+        rel: "noreferrer",
       },
-      children: [{ type: 'text', value: node.label }],
+      children: [{ type: "text", value: node.label }],
     }),
   },
 })

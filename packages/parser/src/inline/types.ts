@@ -8,8 +8,8 @@
  * パッケージの中のルールは `Option` で書く (`internal-types.ts` の `InternalConstruct` / `InternalBracketRule`)。
  * 拡張のルールは `resolveExtensions` で中の形に包んでから、既定のルールと同じように試す。
  */
-import type { Origin } from '../core/position'
-import type { InlineNode, InlineNodeInit } from '../types'
+import type { Origin } from "../core/position"
+import type { InlineNode, InlineNodeInit } from "../types"
 
 /**
  * 走査中に共有される文脈。拡張のルールにもこの形で渡る。

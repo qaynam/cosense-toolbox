@@ -9,25 +9,25 @@
  * })
  * ```
  */
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath } from "node:url"
 
-import { readPage } from '@cosense-toolbox/cosense-x/graph'
-import type { AstroConfig, AstroIntegration, ContentEntryType, HookParameters } from 'astro'
+import { readPage } from "@cosense-toolbox/cosense-x/graph"
+import type { AstroConfig, AstroIntegration, ContentEntryType, HookParameters } from "astro"
 
-import { ASSET_STORE_KEY, type AssetStore, createAssetStore, rehypeCosenseAssets } from './assets'
+import { ASSET_STORE_KEY, type AssetStore, createAssetStore, rehypeCosenseAssets } from "./assets"
 import {
   astroShikiHighlighter,
   type CodeHighlighter,
   customHighlighter,
   type SyntaxHighlightOption,
-} from './highlight'
-import { createSiteCache, EXTENSIONS, idOf } from './site'
+} from "./highlight"
+import { createSiteCache, EXTENSIONS, idOf } from "./site"
 import {
   ASSETS_MODULE_ID,
   type AstroCompileOptions,
   GRAPH_MODULE_ID,
   vitePluginCosense,
-} from './vite-plugin'
+} from "./vite-plugin"
 
 export interface CosenseAssetsOptions {
   /**
@@ -46,7 +46,7 @@ export interface CosenseAssetsOptions {
    *
    * @defaultValue `'keep'`
    */
-  readonly links?: 'keep' | 'download'
+  readonly links?: "keep" | "download"
 }
 
 export interface CosenseIntegrationOptions extends AstroCompileOptions {
@@ -82,11 +82,11 @@ export interface CosenseIntegrationOptions extends AstroCompileOptions {
 }
 
 /** `{base}/_cosense/`。base の末尾の `/` の有無を吸収する。 */
-const assetsPathOf = (config: AstroConfig): string => `${config.base.replace(/\/$/, '')}/_cosense/`
+const assetsPathOf = (config: AstroConfig): string => `${config.base.replace(/\/$/, "")}/_cosense/`
 
 /** 静的なサイトでは出力先そのもの、サーバー出力ではクライアント向けの出力先に置く。 */
 const assetsDirOf = (config: AstroConfig, dir: URL): URL =>
-  new URL('_cosense/', config.output === 'static' ? dir : config.build.client)
+  new URL("_cosense/", config.output === "static" ? dir : config.build.client)
 
 /**
  * `astro:config:setup` の引数のうち、型定義に載っていないもの。
@@ -103,7 +103,7 @@ const CONTENT_MODULE_TYPES = EXTENSIONS.map(
 
 const CONTENT_TYPES = `declare module 'astro:content' {
   interface Render {
-${CONTENT_MODULE_TYPES.join('\n')}
+${CONTENT_MODULE_TYPES.join("\n")}
   }
 }
 `
@@ -127,23 +127,23 @@ declare module '*${extension}' {
   export const Content: import('astro').MDXContent;
   export default Content;
 }`,
-).join('\n')}
+).join("\n")}
 `
 
 export default function cosense(options: CosenseIntegrationOptions = {}): AstroIntegration {
   const {
     components,
     assets: assetsOptions = {},
-    syntaxHighlight = 'astro',
+    syntaxHighlight = "astro",
     ...compileOptions
   } = options
   // config:setup で作る。ビルドの始まりと終わりのフックからも使う。
   let assets: AssetStore | undefined
   let astroConfig: AstroConfig | undefined
   return {
-    name: '@cosense-toolbox/astro',
+    name: "@cosense-toolbox/astro",
     hooks: {
-      'astro:config:setup': (params: HookParameters<'astro:config:setup'>) => {
+      "astro:config:setup": (params: HookParameters<"astro:config:setup">) => {
         const { addPageExtension, addContentEntryType } = params as unknown as HiddenSetupHooks
         const { config, addRenderer, updateConfig, logger } = params
         const root = fileURLToPath(config.root)
@@ -151,7 +151,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
           assetsOptions === false
             ? undefined
             : createAssetStore({
-                cacheDir: fileURLToPath(new URL('cosense-assets/', config.cacheDir)),
+                cacheDir: fileURLToPath(new URL("cosense-assets/", config.cacheDir)),
                 publicPath: assetsPathOf(config),
                 fetchOptions: {
                   ...(assetsOptions.pat === undefined ? {} : { pat: assetsOptions.pat }),
@@ -163,7 +163,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
         const highlighter: CodeHighlighter | undefined =
           syntaxHighlight === false
             ? undefined
-            : syntaxHighlight === 'astro'
+            : syntaxHighlight === "astro"
               ? astroShikiHighlighter(config.markdown)
               : customHighlighter(syntaxHighlight)
         // toHtml などで自分で描画するページが、virtual:cosense-x/assets から使う。
@@ -175,8 +175,8 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
         )
 
         addRenderer({
-          name: 'astro:jsx',
-          serverEntrypoint: new URL('./server.mjs', import.meta.url),
+          name: "astro:jsx",
+          serverEntrypoint: new URL("./server.mjs", import.meta.url),
         })
         for (const extension of EXTENSIONS) addPageExtension(extension)
 
@@ -196,7 +196,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
               data: { ...frontmatter, ...fields },
               body,
               slug: metadata.slug,
-              rawData: '',
+              rawData: "",
             }
           },
           contentModuleTypes: CONTENT_TYPES,
@@ -232,14 +232,14 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
         })
       },
 
-      'astro:config:done': ({ config, injectTypes }) => {
+      "astro:config:done": ({ config, injectTypes }) => {
         astroConfig = config
-        injectTypes({ filename: 'types.d.ts', content: INJECTED_TYPES })
+        injectTypes({ filename: "types.d.ts", content: INJECTED_TYPES })
       },
 
       // 置き場のディレクトリはビルドをまたいで残し、中身の変わらないファイルは取り直さない。
       // 出力先には、このビルドで使ったファイルだけを写す。
-      'astro:build:done': async ({ dir }) => {
+      "astro:build:done": async ({ dir }) => {
         if (assets === undefined || astroConfig === undefined) return
         await assets.copyUsedTo(assetsDirOf(astroConfig, dir))
       },
@@ -247,4 +247,4 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
   }
 }
 
-export type { Graph, GraphPage, TwoHopGroup } from '@cosense-toolbox/cosense-x/graph'
+export type { Graph, GraphPage, TwoHopGroup } from "@cosense-toolbox/cosense-x/graph"

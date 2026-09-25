@@ -43,9 +43,9 @@ npm i @cosense-toolbox/parser@beta
 ## 使ってみる
 
 ```ts
-import { parse } from '@cosense-toolbox/parser'
-import { collectLinks } from '@cosense-toolbox/parser/utils'
-import { toHtml } from '@cosense-toolbox/parser/html'
+import { parse } from "@cosense-toolbox/parser"
+import { collectLinks } from "@cosense-toolbox/parser/utils"
+import { toHtml } from "@cosense-toolbox/parser/html"
 
 const page = parse(`今日のメモ
 [プロジェクトA] の進捗を確認する

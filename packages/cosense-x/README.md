@@ -18,7 +18,7 @@ Astro で使うなら [`@cosense-toolbox/astro`](../astro-cosense) を入れる�
 ## 使ってみる
 
 ```ts
-import { compile } from '@cosense-toolbox/cosense-x'
+import { compile } from "@cosense-toolbox/cosense-x"
 
 const { code, metadata } = await compile(
   `---
@@ -29,7 +29,7 @@ date: 2026-09-01
 <Callout type="warn">
 閉じタグまでの行が children になる
 </Callout>`,
-  { format: 'csnx', jsxImportSource: 'react' },
+  { format: "csnx", jsxImportSource: "react" },
 )
 ```
 
@@ -100,19 +100,19 @@ code:frontmatter.yml
 | `[/project/page]`                   | `projectUrl`。既定は `https://scrapbox.io/project/page`                            |
 
 ```ts
-import { compile, createIndex } from '@cosense-toolbox/cosense-x'
+import { compile, createIndex } from "@cosense-toolbox/cosense-x"
 
 const index = createIndex([
-  { id: 'posts/a.csn', title: 'Page A', slug: 'page-a' },
-  { id: 'posts/b.csn', title: 'Page B', slug: 'page-b', draft: true },
+  { id: "posts/a.csn", title: "Page A", slug: "page-a" },
+  { id: "posts/b.csn", title: "Page B", slug: "page-b", draft: true },
 ])
 
 await compile(source, {
   index,
-  filePath: 'posts/a.csn',
+  filePath: "posts/a.csn",
   pageUrl: (page) => `/posts/${page.slug}/`,
   tagUrl: (tag) => `/tags/${tag}/`,
-  unresolved: 'warn',
+  unresolved: "warn",
 })
 ```
 
@@ -129,16 +129,16 @@ draft のページは索引に載らないので、そこへのリンクも「�
 ## リンクグラフ (`./graph`)
 
 ```ts
-import { scanPages } from '@cosense-toolbox/cosense-x/graph'
+import { scanPages } from "@cosense-toolbox/cosense-x/graph"
 
 const graph = scanPages([
-  { id: 'posts/react.csn', source: 'React\n[JavaScript] のライブラリ #フロントエンド' },
-  { id: 'posts/vue.csn', source: 'Vue\n[JavaScript] で書く #フロントエンド' },
-  { id: 'posts/js.csn', source: 'JavaScript\n言語' },
+  { id: "posts/react.csn", source: "React\n[JavaScript] のライブラリ #フロントエンド" },
+  { id: "posts/vue.csn", source: "Vue\n[JavaScript] で書く #フロントエンド" },
+  { id: "posts/js.csn", source: "JavaScript\n言語" },
 ])
 
-graph.backlinks['posts/js.csn'] // → ['posts/react.csn', 'posts/vue.csn']
-graph.twoHop['posts/react.csn']
+graph.backlinks["posts/js.csn"] // → ['posts/react.csn', 'posts/vue.csn']
+graph.twoHop["posts/react.csn"]
 // → [{ via: 'JavaScript', viaId: 'posts/js.csn', pages: ['posts/vue.csn'] },
 //    { via: 'フロントエンド', viaId: null, pages: ['posts/vue.csn'] }]
 ```
@@ -154,21 +154,21 @@ graph.twoHop['posts/react.csn']
 ページを 1 枚取ってくる。非公開プロジェクトは `pat` に Personal Access Token を渡す。
 
 ```ts
-import { fetchPage, fetchPageText } from '@cosense-toolbox/cosense-x/fetch'
+import { fetchPage, fetchPageText } from "@cosense-toolbox/cosense-x/fetch"
 
-const text = await fetchPageText('help-jp', 'ブラケティング') // 本文そのまま
-const page = await fetchPage('help-jp', 'ブラケティング') // { title, text, created, updated }
-const secret = await fetchPageText('my-private', 'メモ', { pat: process.env.COSENSE_PAT })
+const text = await fetchPageText("help-jp", "ブラケティング") // 本文そのまま
+const page = await fetchPage("help-jp", "ブラケティング") // { title, text, created, updated }
+const secret = await fetchPageText("my-private", "メモ", { pat: process.env.COSENSE_PAT })
 ```
 
 Cosense 上の画像やファイル (`https://scrapbox.io/files/…` とアイコン) も取ってこられる。
 
 ```ts
-import { cosenseIconUrl, fetchAsset, isCosenseAssetUrl } from '@cosense-toolbox/cosense-x/fetch'
+import { cosenseIconUrl, fetchAsset, isCosenseAssetUrl } from "@cosense-toolbox/cosense-x/fetch"
 
-cosenseIconUrl('help-jp', 'cosense') // → https://scrapbox.io/api/pages/help-jp/cosense/icon
-isCosenseAssetUrl('https://scrapbox.io/files/xxx.png') // → true
-const { data, contentType } = await fetchAsset('https://scrapbox.io/files/xxx.png', { pat })
+cosenseIconUrl("help-jp", "cosense") // → https://scrapbox.io/api/pages/help-jp/cosense/icon
+isCosenseAssetUrl("https://scrapbox.io/files/xxx.png") // → true
+const { data, contentType } = await fetchAsset("https://scrapbox.io/files/xxx.png", { pat })
 ```
 
 - これらのファイルは `Cross-Origin-Resource-Policy: same-origin` を返すので、別のサイトの `<img>` からは読めない
@@ -202,17 +202,17 @@ const { data, contentType } = await fetchAsset('https://scrapbox.io/files/xxx.pn
 shiki の `codeToHast` の結果はそのまま返してよい。`pre > code` の形なら、code の中身を使い、pre の class とテーマの背景色・文字色 (`--cosense-code-bg` / `--cosense-code-text` の変数にして) をコードブロックに移す。行ごとの `span.line` は 1 行ずつの要素に入れ直す。
 
 ```ts
-import { compile } from '@cosense-toolbox/cosense-x'
-import { createHighlighter } from 'shiki'
+import { compile } from "@cosense-toolbox/cosense-x"
+import { createHighlighter } from "shiki"
 
-const shiki = await createHighlighter({ themes: ['github-light'], langs: ['js', 'ts'] })
+const shiki = await createHighlighter({ themes: ["github-light"], langs: ["js", "ts"] })
 
 await compile(source, {
   renderOptions: {
     // 読み込んでいない言語は null を返して、色付けせずに出す
     highlight: (code, language) =>
       shiki.getLoadedLanguages().includes(language)
-        ? shiki.codeToHast(code, { lang: language, theme: 'github-light' })
+        ? shiki.codeToHast(code, { lang: language, theme: "github-light" })
         : null,
   },
 })

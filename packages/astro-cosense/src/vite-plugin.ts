@@ -1,22 +1,22 @@
 /**
  * vite-plugin.ts — `.csn` / `.csnx` を Astro のコンポーネントのモジュールにする。
  */
-import { createReadStream } from 'node:fs'
-import { stat } from 'node:fs/promises'
-import { basename, extname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { createReadStream } from "node:fs"
+import { stat } from "node:fs/promises"
+import { basename, extname, join } from "node:path"
+import { fileURLToPath } from "node:url"
 
-import { compile, type CompileOptions } from '@cosense-toolbox/cosense-x'
-import { Option } from 'effect'
-import type { Plugin } from 'vite'
+import { compile, type CompileOptions } from "@cosense-toolbox/cosense-x"
+import { Option } from "effect"
+import type { Plugin } from "vite"
 
-import { ASSET_STORE_KEY, type AssetStore } from './assets'
-import { type AstroRenderOptions, type CodeHighlighter, renderOptionsWith } from './highlight'
-import { idOf, isCosenseFile, type SiteCache } from './site'
+import { ASSET_STORE_KEY, type AssetStore } from "./assets"
+import { type AstroRenderOptions, type CodeHighlighter, renderOptionsWith } from "./highlight"
+import { idOf, isCosenseFile, type SiteCache } from "./site"
 
-export const GRAPH_MODULE_ID = 'virtual:cosense-x/graph'
+export const GRAPH_MODULE_ID = "virtual:cosense-x/graph"
 const RESOLVED_GRAPH_MODULE_ID = `\0${GRAPH_MODULE_ID}`
-export const ASSETS_MODULE_ID = 'virtual:cosense-x/assets'
+export const ASSETS_MODULE_ID = "virtual:cosense-x/assets"
 const RESOLVED_ASSETS_MODULE_ID = `\0${ASSETS_MODULE_ID}`
 
 /**
@@ -32,21 +32,21 @@ export const localizeCosenseAssets = (html) => store()?.localizeHtml(html) ?? Pr
 
 /** dev サーバーで返す Content-Type。ビルドでは静的なホスティングが拡張子から決める。 */
 const CONTENT_TYPES: Readonly<Record<string, string>> = {
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.webp': 'image/webp',
-  '.avif': 'image/avif',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-  '.pdf': 'application/pdf',
-  '.mp4': 'video/mp4',
-  '.mp3': 'audio/mpeg',
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".avif": "image/avif",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".pdf": "application/pdf",
+  ".mp4": "video/mp4",
+  ".mp3": "audio/mpeg",
 }
 
 export interface AstroCompileOptions extends Omit<
   CompileOptions,
-  'filePath' | 'format' | 'index' | 'jsxImportSource' | 'elementAttributeNameCase' | 'renderOptions'
+  "filePath" | "format" | "index" | "jsxImportSource" | "elementAttributeNameCase" | "renderOptions"
 > {
   /**
    * 描画の設定。parser の `toHast` のオプションがそのまま渡る
@@ -81,16 +81,16 @@ const toAstroModule = (
   const { components, layout, ssr } = options
   const content =
     layout === undefined
-      ? ['export const Content = (props = {}) => __cosenseBody(props);']
+      ? ["export const Content = (props = {}) => __cosenseBody(props);"]
       : // src/pages に置いたページを包むレイアウト。`.mdx` の `layout` と同じく、
         // 本文を default のスロットに入れ、frontmatter などを props で渡す。
         [
           `import __CosenseLayout from ${JSON.stringify(layout)};`,
           "import { jsx as __cosenseJsx } from 'astro/jsx-runtime';",
-          'export const Content = (props = {}) => __cosenseJsx(__CosenseLayout, {',
-          '  file, frontmatter, metadata,',
-          '  children: __cosenseBody(props),',
-          '});',
+          "export const Content = (props = {}) => __cosenseJsx(__CosenseLayout, {",
+          "  file, frontmatter, metadata,",
+          "  children: __cosenseBody(props),",
+          "});",
         ]
   const tag = ssr
     ? [
@@ -99,23 +99,23 @@ const toAstroModule = (
       ]
     : []
   return [
-    code.replace('export default function CosenseContent', 'function CosenseContent'),
+    code.replace("export default function CosenseContent", "function CosenseContent"),
     components === undefined
-      ? 'const __cosenseComponents = {};'
+      ? "const __cosenseComponents = {};"
       : `import __cosenseComponents from ${JSON.stringify(components)};`,
     `export const file = ${JSON.stringify(id)};`,
-    'const __cosenseBody = (props) => CosenseContent({',
-    '  ...props,',
-    '  components: { ...__cosenseComponents, ...props.components },',
-    '});',
+    "const __cosenseBody = (props) => CosenseContent({",
+    "  ...props,",
+    "  components: { ...__cosenseComponents, ...props.components },",
+    "});",
     ...content,
-    'export default Content;',
+    "export default Content;",
     "Content[Symbol.for('mdx-component')] = true;",
     // レイアウトがあれば <head> はレイアウトが出す。無ければ Astro に出させる。
     `Content[Symbol.for('astro.needsHeadRendering')] = ${layout === undefined};`,
     `Content.moduleId = ${JSON.stringify(id)};`,
     ...tag,
-  ].join('\n')
+  ].join("\n")
 }
 
 export const vitePluginCosense = (options: VitePluginOptions): Plugin => {
@@ -123,8 +123,8 @@ export const vitePluginCosense = (options: VitePluginOptions): Plugin => {
   const loadSite = options.site.get
 
   return {
-    name: '@cosense-toolbox/astro',
-    enforce: 'pre',
+    name: "@cosense-toolbox/astro",
+    enforce: "pre",
 
     resolveId(id) {
       if (id === GRAPH_MODULE_ID) return RESOLVED_GRAPH_MODULE_ID
@@ -149,15 +149,15 @@ export const vitePluginCosense = (options: VitePluginOptions): Plugin => {
           renderOptions: renderOptionsWith(options.compile.renderOptions, highlight),
           filePath: idOf(root, id),
           index,
-          jsxImportSource: 'astro',
+          jsxImportSource: "astro",
         })
         for (const warning of result.warnings) this.warn(warning)
-        const ssr = this.environment.name === 'ssr' || this.environment.name === 'prerender'
+        const ssr = this.environment.name === "ssr" || this.environment.name === "prerender"
         const layout = result.frontmatter.layout
         return {
           code: toAstroModule(result.code, id, {
             components: options.components,
-            layout: typeof layout === 'string' ? layout : undefined,
+            layout: typeof layout === "string" ? layout : undefined,
             ssr,
           }),
           map: null,
@@ -175,9 +175,9 @@ export const vitePluginCosense = (options: VitePluginOptions): Plugin => {
           // アイコンの名前は日本語を含みうるので、URL のエンコードを戻す。basename で置き場の外は読ませない。
           const name = (() => {
             try {
-              return decodeURIComponent(basename(request.url?.split('?')[0] ?? ''))
+              return decodeURIComponent(basename(request.url?.split("?")[0] ?? ""))
             } catch {
-              return ''
+              return ""
             }
           })()
           const file = join(assets.cacheDir, basename(name))
@@ -189,7 +189,7 @@ export const vitePluginCosense = (options: VitePluginOptions): Plugin => {
             return
           }
           const type = CONTENT_TYPES[extname(file)]
-          if (type !== undefined) response.setHeader('content-type', type)
+          if (type !== undefined) response.setHeader("content-type", type)
           createReadStream(file).pipe(response)
         })
       }
@@ -200,16 +200,16 @@ export const vitePluginCosense = (options: VitePluginOptions): Plugin => {
         for (const environment of Object.values(server.environments)) {
           const graph = environment.moduleGraph
           for (const [id, module] of graph.idToModuleMap) {
-            if (id === RESOLVED_GRAPH_MODULE_ID || isCosenseFile(id.split('?')[0] ?? '')) {
+            if (id === RESOLVED_GRAPH_MODULE_ID || isCosenseFile(id.split("?")[0] ?? "")) {
               graph.invalidateModule(module)
             }
           }
         }
-        server.ws.send({ type: 'full-reload' })
+        server.ws.send({ type: "full-reload" })
       }
-      server.watcher.on('add', onChange)
-      server.watcher.on('change', onChange)
-      server.watcher.on('unlink', onChange)
+      server.watcher.on("add", onChange)
+      server.watcher.on("change", onChange)
+      server.watcher.on("unlink", onChange)
     },
   }
 }

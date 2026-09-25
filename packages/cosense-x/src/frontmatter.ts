@@ -4,11 +4,11 @@
  * 書ける場所は 2 つある。ファイル先頭の YAML は普通の SSG と同じ書き方で、
  * `code:frontmatter.yml` ブロックは Cosense の編集画面だけで書ける。
  */
-import type { CodeBlock, Page, TopLevelBlock } from '@cosense-toolbox/parser'
-import { Either, Option, pipe } from 'effect'
-import { parse as parseYaml } from 'yaml'
+import type { CodeBlock, Page, TopLevelBlock } from "@cosense-toolbox/parser"
+import { Either, Option, pipe } from "effect"
+import { parse as parseYaml } from "yaml"
 
-import { type CosenseXError, frontmatterError, orThrow } from './errors'
+import { type CosenseXError, frontmatterError, orThrow } from "./errors"
 
 export type Frontmatter = Readonly<Record<string, unknown>>
 
@@ -18,7 +18,7 @@ export interface SplitFrontmatterResult {
   readonly body: string
 }
 
-const FRONTMATTER_FILENAMES = new Set(['frontmatter.yml', 'frontmatter.yaml'])
+const FRONTMATTER_FILENAMES = new Set(["frontmatter.yml", "frontmatter.yaml"])
 
 const HEAD_RE = /^---\r?\n([\s\S]*?)^---[ \t]*(?:\r?\n|$)/m
 
@@ -31,7 +31,7 @@ const toRecord = (yamlText: string, where: string): Either.Either<Frontmatter, C
     Either.flatMap((value) =>
       value === null || value === undefined
         ? Either.right({})
-        : typeof value !== 'object' || Array.isArray(value)
+        : typeof value !== "object" || Array.isArray(value)
           ? Either.left(frontmatterError(`${where} の frontmatter はキーと値の組で書く`))
           : Either.right(value as Frontmatter),
     ),
@@ -51,7 +51,7 @@ export const splitFrontmatterEither = (
   Option.match(headOf(source), {
     onNone: () => Either.right({ data: {}, body: source }),
     onSome: (match) =>
-      Either.map(toRecord(match[1] ?? '', 'ファイル先頭'), (data) => ({
+      Either.map(toRecord(match[1] ?? "", "ファイル先頭"), (data) => ({
         data,
         body: source.slice(match[0].length),
       })),
@@ -68,7 +68,7 @@ export const splitFrontmatter = (source: string): SplitFrontmatterResult =>
 
 const isFrontmatterBlock = (block: TopLevelBlock): block is CodeBlock =>
   // インデントされたブロックは本文の一部 (コード例など) として書かれたものとみなす。
-  block.type === 'codeBlock' && block.indent === 0 && FRONTMATTER_FILENAMES.has(block.filename)
+  block.type === "codeBlock" && block.indent === 0 && FRONTMATTER_FILENAMES.has(block.filename)
 
 export interface ReadFrontmatterResult {
   readonly data: Frontmatter
@@ -85,7 +85,7 @@ export const readFrontmatterEither = (
     onNone: () => Either.right({ data: head, page }),
     onSome: (block) =>
       Either.map(
-        toRecord(block.lines.map((line) => line.value).join('\n'), `code:${block.filename}`),
+        toRecord(block.lines.map((line) => line.value).join("\n"), `code:${block.filename}`),
         (fromBlock) => ({
           data: { ...fromBlock, ...head },
           page: { ...page, children: page.children.filter((child) => child !== block) },

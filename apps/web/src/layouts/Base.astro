@@ -1,7 +1,7 @@
 ---
-import '../styles/global.css'
+import "../styles/global.css"
 
-import { SITE } from '../lib/site'
+import { SITE } from "../lib/site"
 
 interface Props {
   title?: string
@@ -14,18 +14,18 @@ interface Props {
   home?: boolean
 }
 const {
-  title = 'Cosense Toolbox',
-  description = 'Cosense (旧Scrapbox) をもっと面白く、もっと強力に使うためのツール群',
+  title = "Cosense Toolbox",
+  description = "Cosense (旧Scrapbox) をもっと面白く、もっと強力に使うためのツール群",
   image,
   app = false,
   wide = false,
   home = false,
 } = Astro.props
-const fullTitle = title === 'Cosense Toolbox' ? title : `${title} — Cosense Toolbox`
+const fullTitle = title === "Cosense Toolbox" ? title : `${title} — Cosense Toolbox`
 
-const siteUrl = Astro.site ?? new URL('https://cosense-toolbox.qaynam.dev')
+const siteUrl = Astro.site ?? new URL("https://cosense-toolbox.qaynam.dev")
 const canonicalURL = new URL(Astro.url.pathname, siteUrl)
-const ogImageURL = new URL(image ?? '/og.png', siteUrl)
+const ogImageURL = new URL(image ?? "/og.png", siteUrl)
 ---
 
 <!doctype html>
@@ -66,14 +66,14 @@ const ogImageURL = new URL(image ?? '/og.png', siteUrl)
     <script is:inline>
       ;(function () {
         try {
-          let t = localStorage.getItem('cosense-toolbox-theme')
-          if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
-          document.documentElement.setAttribute('data-theme', t)
+          let t = localStorage.getItem("cosense-toolbox-theme")
+          if (!t) t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"
+          document.documentElement.setAttribute("data-theme", t)
         } catch {}
       })()
     </script>
   </head>
-  <body class={[app && 'is-app', home && 'is-home'].filter(Boolean).join(' ') || undefined}>
+  <body class={[app && "is-app", home && "is-home"].filter(Boolean).join(" ") || undefined}>
     <header class="site-header">
       <div class="wrap">
         <a class="brand" href="/">
@@ -95,7 +95,7 @@ const ogImageURL = new URL(image ?? '/og.png', siteUrl)
       </div>
     </header>
 
-    <main class={app ? 'main-app' : wide ? 'wrap wrap-wide' : 'wrap'}>
+    <main class={app ? "main-app" : wide ? "wrap wrap-wide" : "wrap"}>
       <slot />
     </main>
 
@@ -110,18 +110,18 @@ const ogImageURL = new URL(image ?? '/og.png', siteUrl)
     )}
 
     <script>
-      const THEME_KEY = 'cosense-toolbox-theme'
+      const THEME_KEY = "cosense-toolbox-theme"
 
       async function clip(text: string, btn?: HTMLElement | null) {
         try {
           await navigator.clipboard.writeText(text)
           if (btn) {
-            const l = (btn.querySelector('.label') as HTMLElement) || btn
+            const l = (btn.querySelector(".label") as HTMLElement) || btn
             const prev = l.textContent
-            btn.classList.add('copied')
-            l.textContent = 'コピー済み ✓'
+            btn.classList.add("copied")
+            l.textContent = "コピー済み ✓"
             setTimeout(() => {
-              btn.classList.remove('copied')
+              btn.classList.remove("copied")
               l.textContent = prev
             }, 1400)
           }
@@ -129,32 +129,32 @@ const ogImageURL = new URL(image ?? '/og.png', siteUrl)
       }
 
       function syncTheme() {
-        const dark = document.documentElement.getAttribute('data-theme') !== 'light'
-        document.querySelectorAll('[data-theme-toggle]').forEach((b) => {
-          b.textContent = dark ? '☀' : '🌙'
-          b.setAttribute('aria-label', dark ? 'ライトモードに切替' : 'ダークモードに切替')
+        const dark = document.documentElement.getAttribute("data-theme") !== "light"
+        document.querySelectorAll("[data-theme-toggle]").forEach((b) => {
+          b.textContent = dark ? "☀" : "🌙"
+          b.setAttribute("aria-label", dark ? "ライトモードに切替" : "ダークモードに切替")
         })
       }
 
       /* ---------- クリック委譲 ---------- */
-      document.addEventListener('click', async (e) => {
+      document.addEventListener("click", async (e) => {
         const t = e.target as HTMLElement
 
-        const copyBtn = t.closest<HTMLElement>('[data-copy]')
+        const copyBtn = t.closest<HTMLElement>("[data-copy]")
         if (copyBtn) {
-          clip(copyBtn.getAttribute('data-copy') || '', copyBtn)
+          clip(copyBtn.getAttribute("data-copy") || "", copyBtn)
           return
         }
-        const themeBtn = t.closest<HTMLElement>('[data-theme-toggle]')
+        const themeBtn = t.closest<HTMLElement>("[data-theme-toggle]")
         if (themeBtn) {
           const next =
-            document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'
+            document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light"
           // 色が一斉に切り替わるよう、この 1 フレームだけ遷移を止める
-          document.documentElement.classList.add('is-theme-switching')
-          document.documentElement.setAttribute('data-theme', next)
+          document.documentElement.classList.add("is-theme-switching")
+          document.documentElement.setAttribute("data-theme", next)
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-              document.documentElement.classList.remove('is-theme-switching')
+              document.documentElement.classList.remove("is-theme-switching")
             })
           })
           try {

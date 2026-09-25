@@ -1,5 +1,5 @@
 ---
-import { PARSER_DOCS } from '../lib/parser-docs'
+import { PARSER_DOCS } from "../lib/parser-docs"
 
 const current = Astro.url.pathname
 ---
@@ -12,7 +12,7 @@ const current = Astro.url.pathname
       <ul>
         {group.links.map((link) => (
           <li>
-            <a href={link.href} aria-current={current === link.href ? 'page' : undefined}>
+            <a href={link.href} aria-current={current === link.href ? "page" : undefined}>
               {link.label}
             </a>
           </li>
