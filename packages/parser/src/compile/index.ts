@@ -33,6 +33,8 @@ export type {
   HtmlClassNames,
   PageRefNode,
   RawNode,
+  RenderExtension,
+  RenderTransform,
   ResolvedHastOptions,
 } from './to-hast'
 export { escapeHtml, toHtml } from './to-html'

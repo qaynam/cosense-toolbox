@@ -1,7 +1,9 @@
+import fc from 'fast-check'
 import type { Element, ElementContent, Root } from 'hast'
 import { describe, expect, it } from 'vitest'
 import { parse, parseLine } from '../parse'
-import { codeLineNumbers, defaultHastHandlers, toHast } from './to-hast'
+import type { AnyNode } from '../types'
+import { type RenderExtension, codeLineNumbers, toHast } from './to-hast'
 import { toHtml } from './to-html'
 
 const italic = (value: string): Element => ({
@@ -135,55 +137,156 @@ describe('コードブロックの色付け (highlight)', () => {
   })
 })
 
-describe('既定のハンドラを包む', () => {
-  it('defaultHastHandlers はオプションを ctx から読むので、包むときにオプションを渡し直さなくてよい', () => {
-    const html = toHtml(parseLine('[リンク]'), {
-      pageUrl: (title) => `/wiki/${title}`,
-      handlers: {
-        internalLink: (node, ctx) => ({
-          type: 'element',
-          tagName: 'mark',
-          properties: {},
-          children: defaultHastHandlers.internalLink(node, ctx),
-        }),
-      },
-    })
-    expect(html).toBe(
-      '<div class="line"><mark><a class="link" href="/wiki/リンク">リンク</a></mark></div>',
-    )
-  })
+/** テキスト 1 つを子に持つ要素。 */
+const tag = (tagName: string, children: ElementContent[]): Element => ({
+  type: 'element',
+  tagName,
+  properties: {},
+  children,
+})
 
+describe('handlers (置き換え)', () => {
   it('ctx.children は子の変換結果を平らな配列で返す', () => {
     const html = toHtml(parseLine('[* [リンク] と 太字]'), {
-      handlers: {
-        decoration: (node, ctx) => ({
-          type: 'element',
-          tagName: 'b',
-          properties: {},
-          children: ctx.children(node),
-        }),
-      },
+      handlers: { decoration: (node, ctx) => tag('b', ctx.children(node)) },
     })
     expect(html).toBe(
       '<div class="line"><b><a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> と 太字</b></div>',
     )
   })
+
+  it('ctx.options には既定値を埋めたオプションが入る', () => {
+    const seen: string[] = []
+    toHtml(parseLine('[リンク]'), {
+      classNames: { internalLink: 'my-link' },
+      handlers: {
+        internalLink: (node, ctx) => {
+          seen.push(
+            ctx.options.classNames.internalLink ?? '',
+            ctx.options.pageUrl(node.target, node),
+          )
+          return []
+        },
+      },
+    })
+    expect(seen).toEqual(['my-link', '/%E3%83%AA%E3%83%B3%E3%82%AF'])
+  })
+})
+
+describe('extensions (出力の加工)', () => {
+  const SOURCE = 'タイトル\n[* 太字] と `code`'
+
+  it('拡張はそのノード型の出力を受け取り、返した値が新しい出力になる', () => {
+    const html = toHtml(parse(SOURCE), {
+      extensions: [{ inlineCode: (output) => tag('mark', output) }],
+    })
+    expect(html).toContain('<mark><code class="code">code</code></mark>')
+  })
+
+  it('並べた順に重なる。前の拡張の出力が次の拡張に渡る', () => {
+    const html = toHtml(parse(SOURCE), {
+      extensions: [
+        { inlineCode: (output) => tag('a1', output) },
+        { inlineCode: (output) => tag('a2', output) },
+      ],
+    })
+    expect(html).toContain('<a2><a1><code class="code">code</code></a1></a2>')
+  })
+
+  it('そのノード型の関数を持たない拡張は、出力に触れない', () => {
+    const html = toHtml(parse(SOURCE), { extensions: [{ formula: (output) => tag('x', output) }] })
+    expect(html).toBe(toHtml(parse(SOURCE)))
+  })
+
+  it('handlers で置き換えた出力を受け取る (handlers の後に動く)', () => {
+    const html = toHtml(parse(SOURCE), {
+      handlers: { inlineCode: (node) => tag('kbd', [{ type: 'text', value: node.value }]) },
+      extensions: [{ inlineCode: (output) => tag('mark', output) }],
+    })
+    expect(html).toContain('<mark><kbd>code</kbd></mark>')
+  })
+
+  it('ノードと ctx も受け取るので、AST の情報を見て加工できる', () => {
+    const html = toHtml(parse(SOURCE), {
+      extensions: [
+        {
+          decoration: (output, node, ctx) =>
+            tag(node.bold ? 'section' : 'div', [
+              ...output,
+              { type: 'text', value: ctx.options.classNames.decoration ?? '' },
+            ]),
+        },
+      ],
+    })
+    expect(html).toContain(
+      '<section><span class="decoration deco-*"><strong>太字</strong></span>decoration</section>',
+    )
+  })
+
+  it('子の変換 (ctx.children) にも拡張が効く', () => {
+    const html = toHtml(parse(SOURCE), {
+      extensions: [{ text: (output) => tag('t', output) }],
+    })
+    expect(html).toContain('<strong><t>太字</t></strong>')
+  })
+
+  it('ハンドラの無い独自ノードにも、中身を出した出力に対して効く', () => {
+    const custom = {
+      type: 'mention',
+      children: [{ type: 'text', value: 'qaynam' }],
+    } as unknown as AnyNode
+    const html = toHtml(custom, {
+      extensions: [{ mention: (output: ElementContent[]) => tag('at', output) } as RenderExtension],
+    })
+    expect(html).toBe('<at>qaynam</at>')
+  })
+
+  it('拡張は raw ノードも返せる', () => {
+    const html = toHtml(parse(SOURCE), {
+      extensions: [{ inlineCode: () => ({ type: 'raw', value: '<kbd>raw</kbd>' }) }],
+    })
+    expect(html).toContain('<kbd>raw</kbd>')
+  })
+
+  it('拡張が例外を投げたら握りつぶさずに上げる (書いた人が気づけるように)', () => {
+    expect(() =>
+      toHtml(parse(SOURCE), {
+        extensions: [
+          {
+            inlineCode: () => {
+              throw new Error('broken extension')
+            },
+          },
+        ],
+      }),
+    ).toThrow('broken extension')
+  })
 })
 
 describe('codeLineNumbers', () => {
   const SOURCE = 'タイトル\ncode:a.js\n one\n two'
-  const numbers = (html: string): string[] =>
-    [...html.matchAll(/<div class="line code-block"[^>]*data-line="(\d+)"/g)].map((m) => m[1] ?? '')
+  const attributes = (html: string, name: string): string[] =>
+    [...html.matchAll(new RegExp(`<div class="line code-block"[^>]*${name}="(\\d+)"`, 'g'))].map(
+      (match) => match[1] ?? '',
+    )
 
   it('コードブロックの本体行に、1 から数えた data-line を付ける。ヘッダ行には付けない', () => {
-    const html = toHtml(parse(SOURCE), { handlers: codeLineNumbers() })
-    expect(numbers(html)).toEqual(['1', '2'])
+    const html = toHtml(parse(SOURCE), { extensions: [codeLineNumbers()] })
+    expect(attributes(html, 'data-line')).toEqual(['1', '2'])
     expect(html).toContain('<div class="line code-block"><code class="code-start">')
+  })
+
+  it('番号の桁数 (ブロックの最後の番号の桁数) を data-line-digits で全行に付ける。CSS が番号の欄の幅に使う', () => {
+    const body = Array.from({ length: 10 }, (_, index) => ` line${index}`).join('\n')
+    const html = toHtml(parse(`タイトル\ncode:a.js\n${body}\ncode:b.js\n x`), {
+      extensions: [codeLineNumbers()],
+    })
+    expect(attributes(html, 'data-line-digits')).toEqual([...Array(10).fill('2'), '1'])
   })
 
   it('色付けして 1 行ずつに入れ直したブロックにも付く', () => {
     const html = toHtml(parse(SOURCE), {
-      handlers: codeLineNumbers(),
+      extensions: [codeLineNumbers()],
       highlight: (code) =>
         code.split('\n').map((value) => ({
           type: 'element' as const,
@@ -192,14 +295,97 @@ describe('codeLineNumbers', () => {
           children: [{ type: 'text' as const, value }],
         })),
     })
-    expect(numbers(html)).toEqual(['1', '2'])
+    expect(attributes(html, 'data-line')).toEqual(['1', '2'])
   })
 
   it('ひと塊にまとめたブロックには付けない (行と番号が対応しないため)', () => {
     const html = toHtml(parse(SOURCE), {
-      handlers: codeLineNumbers(),
+      extensions: [codeLineNumbers()],
       highlight: (code) => [italic(code)],
     })
-    expect(numbers(html)).toEqual([])
+    expect(attributes(html, 'data-line')).toEqual([])
+  })
+
+  it('handlers で codeBlock を置き換えても、行の要素が並んでいれば番号が付く', () => {
+    const html = toHtml(parse(SOURCE), {
+      handlers: {
+        codeBlock: (node) => [
+          tag('div', [{ type: 'text', value: node.filename }]),
+          ...node.lines.map((line) => tag('div', [{ type: 'text', value: line.value }])),
+        ],
+      },
+      extensions: [codeLineNumbers()],
+    })
+    expect(html).toContain('<div data-line="1" data-line-digits="1">one</div>')
+  })
+
+  it('handlers の出力が行の数と合わなければ、番号を付けずにそのまま出す', () => {
+    const html = toHtml(parse(SOURCE), {
+      handlers: { codeBlock: () => tag('pre', []) },
+      extensions: [codeLineNumbers()],
+    })
+    expect(html).toContain('<pre></pre>')
+    expect(html).not.toContain('data-line')
+  })
+})
+
+describe('extensions の不変条件', () => {
+  /** コードブロックや表を含むページ。完全にランダムな文字列ではコードブロックの経路をほとんど通らない。 */
+  const lineArb = fc.oneof(
+    fc.constantFrom(
+      '[リンク] と `code`',
+      '[* 太字]',
+      ' 字下げ #tag',
+      'code:a.js',
+      ' const a = 1',
+      ' ',
+      '  return <a>',
+      'table:表',
+      ' a\tb',
+      '> 引用',
+      '[user.icon*2]',
+      '',
+    ),
+    fc.string().map((value) => value.replace(/[\r\n]/g, '')),
+  )
+  const sourceArb = fc
+    .array(lineArb, { minLength: 1, maxLength: 12 })
+    .map((lines) => ['タイトル', ...lines].join('\n'))
+
+  /** すべてのノード型に、受け取った出力をそのまま返す拡張。 */
+  const identity = new Proxy({} as RenderExtension, {
+    get: () => (output: ElementContent[]) => output,
+  })
+
+  it('出力をそのまま返す拡張は、どのページの出力も変えない', () => {
+    fc.assert(
+      fc.property(sourceArb, (source) => {
+        const page = parse(source)
+        expect(toHtml(page, { extensions: [identity, identity] })).toBe(toHtml(page))
+      }),
+    )
+  })
+
+  it('codeLineNumbers は行番号の属性を足すだけで、ほかの出力を変えない', () => {
+    fc.assert(
+      fc.property(sourceArb, (source) => {
+        const page = parse(source)
+        const numbered = toHtml(page, { extensions: [codeLineNumbers()] })
+        expect(numbered.replace(/ data-line="\d+" data-line-digits="\d+"/g, '')).toBe(toHtml(page))
+      }),
+    )
+  })
+
+  it('codeLineNumbers の番号は、ブロックごとに 1 から本体行の数まで欠けずに並ぶ', () => {
+    fc.assert(
+      fc.property(sourceArb, (source) => {
+        const page = parse(source)
+        const html = toHtml(page, { extensions: [codeLineNumbers()] })
+        const expected = page.children.flatMap((block) =>
+          block.type === 'codeBlock' ? block.lines.map((_, index) => String(index + 1)) : [],
+        )
+        expect([...html.matchAll(/data-line="(\d+)"/g)].map((match) => match[1])).toEqual(expected)
+      }),
+    )
   })
 })

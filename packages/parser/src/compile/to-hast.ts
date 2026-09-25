@@ -228,12 +228,37 @@ export type HastHandlers = {
   readonly [K in AnyNodeType]?: HastHandler<K>
 }
 
+/**
+ * 描画の拡張の 1 段。そのノード型の、ここまでの出力 (既定のハンドラか `handlers`、
+ * 先に並べた拡張を通したもの) を受け取り、新しい出力を返す。
+ * vite の `transform` と同じく、前の段の出力をもらって加工するだけの関数にしている。
+ * 出力を一から作るのは `handlers` の役目なので、拡張では作り直さない。
+ */
+export type RenderTransform<K extends AnyNodeType> = (
+  output: ElementContent[],
+  node: NodeOfType<K>,
+  ctx: HastContext,
+) => HastContent | HastContent[]
+
+/**
+ * 描画の拡張。ノード型ごとに `RenderTransform` を持つ。
+ * 行番号 (`codeLineNumbers`) のように、既定の出力に手を加えるものをまとめて配るための形。
+ */
+export type RenderExtension = {
+  readonly [K in AnyNodeType]?: RenderTransform<K>
+}
+
 export interface HastOptions extends HastRenderOptions {
   /**
-   * ノード型ごとの出力の上書き。指定した型だけが差し替わる。
-   * 既定の出力を包みたいときは `defaultHastHandlers` の同じ型のハンドラを呼ぶ。
+   * ノード型ごとの出力の置き換え。指定した型だけが差し替わる。
+   * 出力を一から作りたいときに使う。できた出力に手を加えるだけなら `extensions` を使う。
    */
   readonly handlers?: HastHandlers
+  /**
+   * 描画の拡張。`handlers` の後に、並べた順に出力を加工する。
+   * 前の拡張の出力が次の拡張に渡るので、同じノード型に触る拡張どうしも重ねられる。
+   */
+  readonly extensions?: readonly RenderExtension[]
 }
 
 /**
@@ -482,8 +507,10 @@ const codeBlock = (node: CodeBlock, ctx: HastContext): ElementContent[] => {
 // ---------------------------------------------------------------------------
 
 /**
- * 既定のハンドラ一式。`toHast` はこれに `handlers` を重ねてから走らせるので、
- * 一部だけ差し替えるのに呼ぶ必要はない。既定の出力を包みたいときに、同じ型のものを呼ぶ。
+ * 既定のハンドラ一式。`toHast` はこれに `handlers` を重ねてから走らせる。
+ *
+ * cosense-x のように描画を組み立て直すライブラリが、既定の部品 (行の包み方など) を使い回すためのもの。
+ * 既定の出力に手を加えるだけなら、これを呼ばずに `extensions` を使う。
  * オプションは `ctx.options` から読むので、呼ぶ側が渡し直さなくてよい。
  */
 export const defaultHastHandlers = {
@@ -612,27 +639,50 @@ export const defaultHastHandlers = {
   },
 } satisfies HastHandlers
 
+/** 行の要素に行番号と桁数を付ける。要素でないもの (テキストなど) には付ける場所が無いのでそのまま。 */
+const withLineNumber =
+  (digits: number) =>
+  (line: ElementContent, number: number): ElementContent =>
+    Match.value(line).pipe(
+      Match.when({ type: 'element' }, (element) => ({
+        ...element,
+        properties: { ...element.properties, dataLine: number, dataLineDigits: digits },
+      })),
+      Match.orElse(() => line),
+    )
+
 /**
- * コードブロックの本体行に、1 から数えた行番号 (`data-line`) を付けるハンドラ。`handlers` に渡す。
+ * コードブロックの出力 (先頭がヘッダ行、続いて本体行) に行番号を付ける。
+ * 本体行が行の数だけ並んでいるときだけ付ける。ひと塊にまとめた出力や、
+ * `handlers` が別の形に置き換えた出力では、行と番号が対応しないため。
+ */
+const numberLines = (output: ElementContent[], count: number): ElementContent[] =>
+  pipe(
+    Option.some(output),
+    Option.filter((lines) => lines.length === count + 1),
+    Option.map(([header, ...body]) => {
+      // 番号の欄の幅を CSS が決められるよう、ブロックで一番大きい番号の桁数を全行に付ける。
+      const number = withLineNumber(String(count).length)
+      return [
+        ...Option.toArray(Option.fromNullable(header)),
+        ...body.map((line, index) => number(line, index + 1)),
+      ]
+    }),
+    Option.getOrElse(() => output),
+  )
+
+/**
+ * コードブロックの本体行に、1 から数えた行番号 (`data-line`) と桁数 (`data-line-digits`) を付ける拡張。
  *
  * ```ts
- * toHtml(page, { handlers: codeLineNumbers() })
+ * toHtml(page, { extensions: [codeLineNumbers()] })
  * ```
  *
  * 番号を見せるのは CSS の役目 (`@cosense-toolbox/style` は `data-line` を見て行の左に番号を出す)。
  * 色付けしてひと塊にまとめたブロックは、行と番号が対応しないので付けない。
  */
-export const codeLineNumbers = (): { readonly codeBlock: HastHandler<'codeBlock'> } => ({
-  codeBlock: (node, ctx) => {
-    const lines = defaultHastHandlers.codeBlock(node, ctx)
-    // 先頭はヘッダ行。本体行が行の数だけあるときだけ番号を付ける。
-    if (lines.length !== node.lines.length + 1) return lines
-    return lines.map((line, index) =>
-      index === 0 || line.type !== 'element'
-        ? line
-        : { ...line, properties: { ...line.properties, dataLine: index } },
-    )
-  },
+export const codeLineNumbers = (): RenderExtension => ({
+  codeBlock: (output, node) => numberLines(output, node.lines.length),
 })
 
 /** オプションの既定値を埋める。 */
@@ -644,23 +694,53 @@ const resolveOptions = (options: HastRenderOptions): ResolvedHastOptions => ({
   showPads: options.showPads === true,
 })
 
+/** ハンドラや拡張の戻り値 (1 つか配列) を、要素の中身の配列にする。 */
+const contentsOfResult = (result: HastContent | HastContent[]): ElementContent[] =>
+  asElementContents(Array.isArray(result) ? result : [result])
+
+/**
+ * ノード型で表 (ハンドラや拡張) を引く。
+ * 表の関数の型はキーごとに違うが、ノードの `type` でキーを引いている以上一致するので、型はここ 1 か所で合わせる。
+ */
+const entryOf = <F>(table: object, type: AnyNodeType): Option.Option<F> =>
+  Option.fromNullable((table as Readonly<Record<string, F | undefined>>)[type])
+
 /**
  * ページ (または任意のノード) を hast にする。
  *
+ * 1 つのノードは「既定のハンドラ (`handlers` があれば置き換え)」で作り、`extensions` を並べた順に通す。
  * テキストは hast のテキストノードに入れるだけなので、エスケープは文字列にする側 (`toHtml`) が行う。
  * `javascript:` のようなスキームの URL は属性ごと落とす。
  * ハンドラの無いノード型 (拡張が足した独自ノード) は、中身を落とさずに子だけを出す。
  */
 export const toHast = (node: AnyNode, options: HastOptions = {}): Root => {
   const handlers: HastHandlers = { ...defaultHastHandlers, ...options.handlers }
-  const compile = (target: AnyNode): ElementContent[] => {
-    // ハンドラの型はキーごとに異なるが、target.type でキーを引いている以上一致する。
-    const handler = handlers[target.type] as HastHandler<AnyNodeType> | undefined
-    if (handler === undefined) return ctx.children(target)
-    const result = handler(target, ctx)
-    // raw ノードも hast の要素の中身として扱う。文字列にするときにそのまま埋め込まれる。
-    return asElementContents(Array.isArray(result) ? result : [result])
-  }
+  const extensions = options.extensions ?? []
+
+  const render = (target: AnyNode): ElementContent[] =>
+    pipe(
+      entryOf<HastHandler<AnyNodeType>>(handlers, target.type),
+      Option.match({
+        onNone: () => ctx.children(target),
+        onSome: (handler) => contentsOfResult(handler(target, ctx)),
+      }),
+    )
+
+  const extend = (target: AnyNode, output: ElementContent[]): ElementContent[] =>
+    extensions.reduce(
+      (current, extension) =>
+        pipe(
+          entryOf<RenderTransform<AnyNodeType>>(extension, target.type),
+          Option.match({
+            onNone: () => current,
+            onSome: (transform) => contentsOfResult(transform(current, target, ctx)),
+          }),
+        ),
+      output,
+    )
+
+  const compile = (target: AnyNode): ElementContent[] => extend(target, render(target))
+
   const ctx: HastContext = {
     node: compile,
     children: (parent) => childrenOf(parent).flatMap(compile),

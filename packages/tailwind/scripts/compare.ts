@@ -60,7 +60,7 @@ const options: HtmlOptions[] = [
   // インデントの印と、画像のアイコンにも当たるルールがあるので、それらを出す形でも描画する。
   { showPads: true, iconImageUrl: () => 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' },
   // コードブロックの行番号 (data-line) に当たるルールも出す。
-  { handlers: codeLineNumbers() },
+  { extensions: [codeLineNumbers()] },
 ]
 
 const bodies = options.flatMap((option) => [
