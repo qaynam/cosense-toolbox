@@ -5,8 +5,9 @@ import type { Element, Root } from 'hast'
 import { fromHtml } from 'hast-util-from-html'
 import { toHtml as hastToHtmlRaw } from 'hast-util-to-html'
 import { describe, expect, it } from 'vitest'
+
 import fixtures from '../../parser/src/fixtures/conformance.json'
-import { type ToHastOptions, toHast } from './to-hast'
+import { toHast, type ToHastOptions } from './to-hast'
 
 /**
  * hast-util-to-html が別の版の @types/hast を見ていることがあり、`cosenseComponent` を足した

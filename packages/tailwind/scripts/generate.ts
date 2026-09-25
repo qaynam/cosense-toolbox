@@ -4,6 +4,7 @@
  */
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+
 import { extractStyles } from '../src/extract'
 
 const packageDir = join(import.meta.dirname, '..')

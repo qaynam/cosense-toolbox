@@ -10,7 +10,7 @@ import type { AnyNode, AnyNodeType, NodeOfType } from '../types'
  * - `'skip'` — このノードの子を辿らない
  * - `'exit'` — 走査全体を打ち切る
  */
-// biome-ignore lint/suspicious/noConfusingVoidType: undefined だと値を返さない visitor を渡せない
+// void にしているのは、undefined にすると値を返さない visitor を渡せなくなるため
 export type VisitResult = void | 'skip' | 'exit'
 
 export type Visitor<T extends AnyNode> = (node: T, ancestors: readonly AnyNode[]) => VisitResult

@@ -28,7 +28,7 @@
      HTML 系の出力 (HTML の文字列・JSX・rehype) を hast 1 つにまとめ、hast を文字列にする処理は
      unified の標準に任せるため (属性名の変換やエスケープを自前で持たない)
    - `parse` だけを使う人のバンドルには入らないこと (§4 の tree-shaking の確認) を保つ
-   （`tsdown` / `vitest` / `typescript` / `fast-check` は devDependencies なので対象外。）
+     （`tsdown` / `vitest` / `typescript` / `fast-check` は devDependencies なので対象外。）
 6. **CSS をこのパッケージに置かない**。既定の見た目は `@cosense-toolbox/style`（別パッケージ）
    の担当。JS のバンドルに CSS 文字列を持たせると、スタイルを使わない利用者まで太る。
    `toHtml` の `style` オプションは**受け取った CSS を差し込むだけ**で、中身は持たない。
@@ -112,15 +112,15 @@ extensions/ → 型の再エクスポートと、既製の Extension
 
 ### レイヤーの責務
 
-| レイヤー | 責務 | やらないこと |
-|---|---|---|
-| `core/` | 文字列走査のプリミティブ、Point/Position の生成、URL の判定 | 記法の知識を持たない |
-| `inline/` | 1 行の中のインライン記法 → `InlineNode[]` | 複数行のことを知らない |
-| `block/` | 行の分類とブロック（code:/table:/title）のグルーピング | インライン記法の中身を知らない（`inline/` に委譲） |
-| `parse.ts` | ページ全文 → `Page`。extension の合成 | 記法そのものを実装しない |
-| `compile/` | AST → HTML 以外の形式 (ハンドラ機構と toPlainText) | パースしない |
-| `html/` | AST → hast / HTML の文字列と描画の拡張。表示のための書き換えもここ | パースしない |
-| `utils/` | AST の走査・抽出 | パースしない |
+| レイヤー   | 責務                                                               | やらないこと                                       |
+| ---------- | ------------------------------------------------------------------ | -------------------------------------------------- |
+| `core/`    | 文字列走査のプリミティブ、Point/Position の生成、URL の判定        | 記法の知識を持たない                               |
+| `inline/`  | 1 行の中のインライン記法 → `InlineNode[]`                          | 複数行のことを知らない                             |
+| `block/`   | 行の分類とブロック（code:/table:/title）のグルーピング             | インライン記法の中身を知らない（`inline/` に委譲） |
+| `parse.ts` | ページ全文 → `Page`。extension の合成                              | 記法そのものを実装しない                           |
+| `compile/` | AST → HTML 以外の形式 (ハンドラ機構と toPlainText)                 | パースしない                                       |
+| `html/`    | AST → hast / HTML の文字列と描画の拡張。表示のための書き換えもここ | パースしない                                       |
+| `utils/`   | AST の走査・抽出                                                   | パースしない                                       |
 
 ---
 
@@ -223,6 +223,7 @@ src/
   ```
 
   例外は `./schema` だけ (effect ネイティブに使いたい人向けの opt-in サブパス)。
+
 - `import { Array, String, Number } from 'effect'` はグローバルをシャドウする。
   **必ずエイリアスする**（`import { Array as Arr } from 'effect'`）。
 - オプション引数は常に「全フィールド optional な readonly object」。
@@ -234,14 +235,14 @@ src/
 
 ## 6. semver / 互換性
 
-| 変更 | バージョン |
-|---|---|
-| 新しいノード `type` の追加 | minor |
-| 既存ノードへの optional フィールド追加 | minor |
-| オプション object への optional フィールド追加 | minor |
-| 既存ノードのフィールド削除・型変更・必須化 | major |
-| `position` の意味論（0-based / end exclusive）の変更 | major |
-| ノード `type` 文字列のリネーム | major |
+| 変更                                                 | バージョン |
+| ---------------------------------------------------- | ---------- |
+| 新しいノード `type` の追加                           | minor      |
+| 既存ノードへの optional フィールド追加               | minor      |
+| オプション object への optional フィールド追加       | minor      |
+| 既存ノードのフィールド削除・型変更・必須化           | major      |
+| `position` の意味論（0-based / end exclusive）の変更 | major      |
+| ノード `type` 文字列のリネーム                       | major      |
 
 利用者の `switch (node.type)` は minor でのノード型追加に備えて `default` を持つべき、
 という注意書きを README に必ず残す。
@@ -254,7 +255,8 @@ src/
 bun run typecheck   # tsc --noEmit
 bun run test        # vitest（fixtures/conformance.json を含めて全緑が必須）
 bun run build       # tsdown。ESM は .mjs/.d.mts、CJS は .cjs/.d.cts
-bunx biome check src *.ts
+bunx eslint src *.ts
+bunx prettier --check .
 ```
 
 加えて §5 の effect 漏れ検証と、以下の自己完結チェックを通すこと。
@@ -290,9 +292,9 @@ tsdown が後継として設定互換を保っている。**tsup に戻さない
 `types` と `default`）にしてある。**エントリを増やすときは
 `tsdown.config.ts` の `entry` と `exports` の両方を更新すること。**
 
-
-リポジトリルートの `biome.json` に従う（single quote / セミコロンなし / 100 桁 / 2 スペース）。
-**リポジトリルートの `biome.json` に依存しているので、単体で切り出す際は一緒に持っていくこと。**
+整形はリポジトリルートの `prettier.config.mjs`、lint は `eslint.config.js` に従う
+（single quote / セミコロンなし / 100 桁 / 2 スペース / import は並べる / 型だけの import には `type` を付ける）。
+**どちらもリポジトリルートに置いているので、単体で切り出す際は一緒に持っていくこと。**
 
 コメントは「なぜそうなっているか」を書く。特に**Cosense Web の挙動に合わせた結果
 直感に反している箇所**（装飾内では相対パス画像がリンクになる、`[[...]]` が `]]` でしか閉じない等）は

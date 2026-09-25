@@ -1,8 +1,10 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+
 import postcss, { type Rule } from 'postcss'
 import { compile } from 'tailwindcss'
 import { describe, expect, it } from 'vitest'
+
 import { extractStyles } from './extract'
 import cosense from './index'
 import { MODIFIERS } from './modifiers'
@@ -157,8 +159,10 @@ describe('modifier', () => {
 
   it('README の modifier の表に、すべての modifier と対象が載っている', async () => {
     const readme = await readFile(join(import.meta.dirname, '..', 'README.md'), 'utf8')
+    // 表の列は prettier が空白で揃えるので、セルの前後の空白は 1 つに潰してから比べる。
+    const table = readme.replace(/ *\| */g, ' | ')
     for (const { name, target } of MODIFIERS) {
-      expect(readme).toContain(`| \`cosense-${name}:{utility}\` | \`${target}\` |`)
+      expect(table).toContain(`| \`cosense-${name}:{utility}\` | \`${target}\` |`)
     }
   })
 })

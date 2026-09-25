@@ -5,6 +5,7 @@
  * 拡張は成立しなければ null を返すだけの、普通の関数で書ける。
  */
 import { describe, expect, it } from 'vitest'
+
 import { rawTextOf } from './ast'
 import type { BracketRule, Extension, InlineConstruct } from './extensions'
 import { tokenizeInline } from './inline/tokenize'

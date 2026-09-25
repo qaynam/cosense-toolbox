@@ -10,6 +10,7 @@
  */
 import { Match, Option, pipe } from 'effect'
 import type { Element, ElementContent, Properties, Root, Text } from 'hast'
+
 import { childrenOf } from '../ast'
 import { asImageSrc } from '../core/image-url'
 import type {
@@ -414,13 +415,11 @@ const highlightedBody = (result: Root | HastContent[]): HighlightedBody => {
       pipe(
         onlyChildOf(pre.children),
         Option.flatMap(elementNamed('code')),
-        Option.map(
-          (code): HighlightedBody => ({
-            children: code.children,
-            className: classesOf(pre.properties.className ?? pre.properties.class),
-            style: typeof pre.properties.style === 'string' ? pre.properties.style : undefined,
-          }),
-        ),
+        Option.map((code): HighlightedBody => ({
+          children: code.children,
+          className: classesOf(pre.properties.className ?? pre.properties.class),
+          style: typeof pre.properties.style === 'string' ? pre.properties.style : undefined,
+        })),
       ),
     ),
     Option.getOrElse((): HighlightedBody => ({ children, className: [], style: undefined })),

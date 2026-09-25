@@ -28,16 +28,16 @@ export default defineConfig({
 })
 ```
 
-| オプション | 内容 |
-| :--- | :--- |
-| `components` | すべてのページに渡すコンポーネントを default export するモジュールの、プロジェクトのルートからのパス |
-| `pageUrl` | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス |
-| `tagUrl` `projectUrl` `unresolved` | `compile` の同名のオプションと同じ |
-| `parseOptions` | パースの設定。parser の `parse` のオプション (`extensions` など) がそのまま渡る |
-| `renderOptions` | 描画の設定。parser の `toHast` のオプション (`extensions` `handlers` `classNames` `showPads` `iconImageUrl`) と `title` がそのまま渡る。色付けは `syntaxHighlight` で決める |
-| `rehypePlugins` | `compile` の同名のオプションと同じ |
-| `syntaxHighlight` | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け) |
-| `assets` | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効 |
+| オプション                         | 内容                                                                                                                                                                        |
+| :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `components`                       | すべてのページに渡すコンポーネントを default export するモジュールの、プロジェクトのルートからのパス                                                                        |
+| `pageUrl`                          | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス                                                                             |
+| `tagUrl` `projectUrl` `unresolved` | `compile` の同名のオプションと同じ                                                                                                                                          |
+| `parseOptions`                     | パースの設定。parser の `parse` のオプション (`extensions` など) がそのまま渡る                                                                                             |
+| `renderOptions`                    | 描画の設定。parser の `toHast` のオプション (`extensions` `handlers` `classNames` `showPads` `iconImageUrl`) と `title` がそのまま渡る。色付けは `syntaxHighlight` で決める |
+| `rehypePlugins`                    | `compile` の同名のオプションと同じ                                                                                                                                          |
+| `syntaxHighlight`                  | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け)                          |
+| `assets`                           | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効                                          |
 
 ## Cosense 上の画像とファイル
 
@@ -92,6 +92,7 @@ const html = await localizeCosenseAssets(
   toHtml(parse(text), { iconImageUrl: (icon) => cosenseIconUrl(project, icon.user) }),
 )
 ---
+
 <article class="cosense" set:html={html} />
 ```
 
@@ -163,6 +164,7 @@ import { createCodeHighlight } from '../shiki'
 const highlight = await createCodeHighlight(['js', 'ts'])
 const html = toHtml(parse(text), { highlight })
 ---
+
 <article class="cosense" set:html={html} />
 ```
 
@@ -223,6 +225,7 @@ Cosense では 1 行目がタイトルなので、frontmatter に書かなくて
 import { render } from 'astro:content'
 const { Content } = await render(post)
 ---
+
 <Content />
 ```
 
@@ -266,6 +269,7 @@ Astro の中で描画されるので、Svelte などのコンポーネントも�
 // CounterIsland.astro
 import Counter from './Counter.svelte'
 ---
+
 <Counter client:load {...Astro.props} />
 ```
 

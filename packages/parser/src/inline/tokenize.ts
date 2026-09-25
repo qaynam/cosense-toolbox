@@ -6,6 +6,7 @@
  * text ノードにする。位置の付与はこのループだけが行う。
  */
 import { Option } from 'effect'
+
 import { type Origin, spanAt } from '../core/position'
 import type { InlineNode, InlineNodeInit, Position } from '../types'
 import { inlineConstructs } from './constructs'

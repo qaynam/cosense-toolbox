@@ -4,14 +4,15 @@
  * リンクの解決には全ページのタイトルが要るので、1 ファイルずつのコンパイルの前にまとめて読む。
  * パースは軽いので、全ページを先読みしても問題にならない。
  */
-import { readFile, readdir } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
+
 import {
+  buildGraph,
+  createIndex,
   type Graph,
   type PageIndex,
   type ReadOptions,
-  buildGraph,
-  createIndex,
   readPage,
 } from '@cosense-toolbox/cosense-x/graph'
 

@@ -5,6 +5,7 @@
  * 描画のときに `<br>` にする。記法ではなく見た目の約束なので、パーサーではなく描画の拡張にしている。
  */
 import type { Element, ElementContent, Text } from 'hast'
+
 import type { RenderExtension } from './to-hast'
 
 const lineBreak = (): Element => ({ type: 'element', tagName: 'br', properties: {}, children: [] })

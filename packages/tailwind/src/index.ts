@@ -11,8 +11,9 @@
  * modifier で、記事の中の特定の記法にだけ utility を当てられる。
  */
 import plugin, { type PluginAPI } from 'tailwindcss/plugin'
+
 import type { Declarations, StyleRule } from './extract'
-import { MODIFIERS, type Modifier } from './modifiers'
+import { type Modifier, MODIFIERS } from './modifiers'
 import { styles } from './styles.generated'
 
 export interface CosenseTailwindOptions {

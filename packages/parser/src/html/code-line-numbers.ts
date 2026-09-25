@@ -3,6 +3,7 @@
  */
 import { Match, Option, pipe } from 'effect'
 import type { ElementContent } from 'hast'
+
 import type { RenderExtension } from './to-hast'
 
 /** 行の要素に行番号と桁数を付ける。要素でないもの (テキストなど) には付ける場所が無いのでそのまま。 */

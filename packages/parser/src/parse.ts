@@ -1,7 +1,7 @@
 /**
  * parse.ts — ページ全文の入口。
  */
-import { type SourceLine, buildBlocks, buildLineBlock } from './block/build'
+import { buildBlocks, buildLineBlock, type SourceLine } from './block/build'
 import { keepInTableCellOf, keepNotation } from './inline/table-cell'
 import { resolveExtensions, tokenizeInlineWith } from './inline/tokenize'
 import type { Extension } from './inline/types'

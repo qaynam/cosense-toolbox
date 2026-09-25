@@ -5,7 +5,8 @@
  * このサブパスだけで済む。
  */
 import { Option } from 'effect'
-import { type PageIndex, createIndex, pageByPath, pageByTitle } from './links'
+
+import { createIndex, pageByPath, pageByTitle, type PageIndex } from './links'
 import type { PageMetadata } from './metadata'
 import { type ReadOptions, readPage } from './read'
 import { isRelativePath, normalizeTitle, uniqueTitles } from './title'

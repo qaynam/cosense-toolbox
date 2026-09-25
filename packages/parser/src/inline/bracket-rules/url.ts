@@ -1,4 +1,5 @@
 import { Option, pipe } from 'effect'
+
 import { isImageUrl } from '../../core/image-url'
 import type { InlineNodeInit } from '../../types'
 import type { InternalBracketRule } from '../internal-types'

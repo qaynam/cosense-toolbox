@@ -1,6 +1,6 @@
-import { defineCollection } from 'astro:content'
 import { glob } from 'astro/loaders'
 import { z } from 'astro/zod'
+import { defineCollection } from 'astro:content'
 
 /**
  * `.csn` / `.csnx` の記事。title / slug / description / image / tags / draft は

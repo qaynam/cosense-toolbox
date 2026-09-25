@@ -1,11 +1,13 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+
 import { tableCellNotation } from '@cosense-toolbox/parser/extensions'
 import { codeLineNumbers, tableCellLineBreaks } from '@cosense-toolbox/parser/html'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { type CompileOptions, compile } from './compile'
+
+import { compile, type CompileOptions } from './compile'
 import { createIndex } from './links'
 
 /**
@@ -15,7 +17,7 @@ import { createIndex } from './links'
 const CACHE_DIR = join(import.meta.dirname, '..', 'node_modules', '.cache', 'cosense-x-test')
 let counter = 0
 
-// biome-ignore lint/suspicious/noExplicitAny: 生成したモジュールの形は実行するまで分からない
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- 生成したモジュールの形は実行するまで分からない
 const load = async (code: string): Promise<any> => {
   await mkdir(CACHE_DIR, { recursive: true })
   const file = join(CACHE_DIR, `module-${process.pid}-${counter++}.mjs`)

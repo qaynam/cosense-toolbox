@@ -1,4 +1,5 @@
 import { Option, pipe } from 'effect'
+
 import { shiftOrigin } from '../../core/position'
 import { findClosingBracket } from '../../core/scan'
 import { bracketRules, simpleTargetRules } from '../bracket-rules'

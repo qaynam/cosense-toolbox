@@ -6,6 +6,7 @@
 import type { ProjectLink } from '@cosense-toolbox/parser'
 import type { PageRefNode } from '@cosense-toolbox/parser/html'
 import { Match, Option, pipe } from 'effect'
+
 import { type CosenseXError, toError, unresolvedLinkError } from './errors'
 import { isRelativePath, normalizeTitle, resolveRelativePath, titleToSlug } from './title'
 import type { ResolvedLink } from './to-hast'
@@ -155,10 +156,10 @@ export const linkResolution = (options: LinkOptions): ((node: PageRefNode) => Li
     return Match.value(options.unresolved ?? 'text').pipe(
       Match.when('link', () => (canLink ? toTitle(target) : asText)),
       Match.when('warn', (): LinkResolution => ({ _tag: 'warning', message })),
-      Match.when(
-        'error',
-        (): LinkResolution => ({ _tag: 'failure', error: unresolvedLinkError(message) }),
-      ),
+      Match.when('error', (): LinkResolution => ({
+        _tag: 'failure',
+        error: unresolvedLinkError(message),
+      })),
       Match.when('text', () => asText),
       Match.exhaustive,
     )

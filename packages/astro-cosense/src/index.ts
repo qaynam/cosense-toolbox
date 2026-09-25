@@ -10,16 +10,18 @@
  * ```
  */
 import { fileURLToPath } from 'node:url'
+
 import { readPage } from '@cosense-toolbox/cosense-x/graph'
 import type { AstroConfig, AstroIntegration, ContentEntryType, HookParameters } from 'astro'
+
 import { ASSET_STORE_KEY, type AssetStore, createAssetStore, rehypeCosenseAssets } from './assets'
 import {
-  type CodeHighlighter,
-  type SyntaxHighlightOption,
   astroShikiHighlighter,
+  type CodeHighlighter,
   customHighlighter,
+  type SyntaxHighlightOption,
 } from './highlight'
-import { EXTENSIONS, createSiteCache, idOf } from './site'
+import { createSiteCache, EXTENSIONS, idOf } from './site'
 import {
   ASSETS_MODULE_ID,
   type AstroCompileOptions,

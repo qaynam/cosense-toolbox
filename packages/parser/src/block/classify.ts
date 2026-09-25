@@ -5,6 +5,7 @@
  * exhaustive チェックで対応漏れを教えてくれる。
  */
 import { Option, pipe } from 'effect'
+
 import { leadingWhitespace } from '../core/scan'
 
 const CODE_HEADER_RE = /^code:(.+)$/

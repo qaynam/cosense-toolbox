@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { parse } from '../parse'
 import { collectLinks, collectProjectLinks, firstImage } from './links'
 import { collect, find, visit } from './visit'

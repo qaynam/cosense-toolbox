@@ -1,5 +1,6 @@
 import { Option } from 'effect'
-import { OFFICIAL_MARKERS, buildDecorationRule } from '../inline/bracket-rules/decoration'
+
+import { buildDecorationRule, OFFICIAL_MARKERS } from '../inline/bracket-rules/decoration'
 import type { Extension } from '../inline/types'
 
 /**

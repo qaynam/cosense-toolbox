@@ -13,26 +13,27 @@ import type {
   TopLevelBlock,
 } from '@cosense-toolbox/parser'
 import {
+  defaultHastHandlers,
+  defaultPageUrl,
   type HastContext,
   type HastHandlers,
   type HastOptions,
   type PageRefNode,
-  defaultHastHandlers,
-  defaultPageUrl,
   safeHref,
   safeSrc,
   toHast as toHastOf,
 } from '@cosense-toolbox/parser/html'
 import { Either, Match, Option, pipe } from 'effect'
 import type { Element, ElementContent, Parent, Properties, Root, Text } from 'hast'
+
 import {
   type ComponentAttribute,
   type ComponentBlock,
-  type GroupedBlock,
   groupComponentsEither,
+  type GroupedBlock,
 } from './components'
 import { type CosenseXError, orThrow } from './errors'
-import { type InlineComponent, type InlinePart, inlineComponentsOf } from './inline-components'
+import { type InlineComponent, inlineComponentsOf, type InlinePart } from './inline-components'
 
 export type { HastHighlighter } from '@cosense-toolbox/parser/html'
 

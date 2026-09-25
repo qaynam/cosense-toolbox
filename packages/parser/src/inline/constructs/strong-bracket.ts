@@ -1,4 +1,5 @@
 import { Option } from 'effect'
+
 import { isImageUrl } from '../../core/image-url'
 import { shiftOrigin } from '../../core/position'
 import type { InlineNodeInit } from '../../types'

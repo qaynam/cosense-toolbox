@@ -2,10 +2,11 @@
  * metadata.ts — ページから一覧や `<head>` に使う情報を集める。
  * frontmatter に同じ項目があれば、そちらを使う。
  */
-import { type InlineNode, type Page, type TopLevelBlock, asImageSrc } from '@cosense-toolbox/parser'
+import { asImageSrc, type InlineNode, type Page, type TopLevelBlock } from '@cosense-toolbox/parser'
 import { toPlainText } from '@cosense-toolbox/parser/compile'
 import { collect, firstImage } from '@cosense-toolbox/parser/utils'
 import { Option, pipe } from 'effect'
+
 import { closingTagOf, componentTagOf, rawTextOfLine } from './components'
 import type { Frontmatter } from './frontmatter'
 import { isRelativePath, titleToSlug, uniqueTitles } from './title'

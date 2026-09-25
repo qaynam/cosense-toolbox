@@ -1,6 +1,6 @@
 ---
 layout: ../../layouts/Doc.astro
-title: "@cosense-toolbox/parser"
+title: '@cosense-toolbox/parser'
 description: Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換するパーサー
 ---
 
@@ -12,18 +12,18 @@ description: Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に
 記法を読み取るだけでなく、それが元のテキストのどこに書かれていたかまで返します。
 
 ```ts
-import { parse } from "@cosense-toolbox/parser";
-import { collectLinks } from "@cosense-toolbox/parser/utils";
-import { toHtml } from "@cosense-toolbox/parser/html";
+import { parse } from '@cosense-toolbox/parser'
+import { collectLinks } from '@cosense-toolbox/parser/utils'
+import { toHtml } from '@cosense-toolbox/parser/html'
 
 const page = parse(`今日のメモ
 [プロジェクトA] の進捗を確認する
-#あとで読む`);
+#あとで読む`)
 
-collectLinks(page);
+collectLinks(page)
 // → ['プロジェクトA', 'あとで読む']
 
-toHtml(page);
+toHtml(page)
 // → '<div class="page"><h1 class="title">今日のメモ</h1>…'
 ```
 
@@ -119,12 +119,12 @@ AST から欲しいものを取り出します。
 
 AST を HTML 系の出力 (hast と HTML の文字列) にします。
 
-| API                                                              | 何をするか                           |
-| :--------------------------------------------------------------- | :----------------------------------- |
-| [`toHtml`](/parser/html/)                                        | HTML の文字列にする                  |
-| [`toHast`](/parser/html/#tohast)                                 | hast にする                          |
-| [`codeLineNumbers`](/parser/html/#extensions)                    | 描画の拡張。コードブロックの行番号   |
-| [`tableCellLineBreaks`](/parser/html/#tablecelllinebreaks)       | 描画の拡張。テーブルのセルの中の改行 |
+| API                                                        | 何をするか                           |
+| :--------------------------------------------------------- | :----------------------------------- |
+| [`toHtml`](/parser/html/)                                  | HTML の文字列にする                  |
+| [`toHast`](/parser/html/#tohast)                           | hast にする                          |
+| [`codeLineNumbers`](/parser/html/#extensions)              | 描画の拡張。コードブロックの行番号   |
+| [`tableCellLineBreaks`](/parser/html/#tablecelllinebreaks) | 描画の拡張。テーブルのセルの中の改行 |
 
 ### @cosense-toolbox/parser/compile
 

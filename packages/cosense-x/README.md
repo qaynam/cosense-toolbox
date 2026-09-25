@@ -92,12 +92,12 @@ code:frontmatter.yml
 
 ## リンクの解決
 
-| 書き方 | 解決のしかた |
-| :--- | :--- |
-| `[ページ名]` | 索引 (`index`) からタイトルで引く。大文字小文字と、空白と `_` の違いは無視する |
+| 書き方                              | 解決のしかた                                                                       |
+| :---------------------------------- | :--------------------------------------------------------------------------------- |
+| `[ページ名]`                        | 索引 (`index`) からタイトルで引く。大文字小文字と、空白と `_` の違いは無視する     |
 | `[./foo.csn]` `[../notes/bar.csnx]` | 今のファイル (`filePath`) からの相対パスでファイルを指す。表示はリンク先のタイトル |
-| `#タグ` | `tagUrl` があればその URL、無ければ `[タグ]` と同じ |
-| `[/project/page]` | `projectUrl`。既定は `https://scrapbox.io/project/page` |
+| `#タグ`                             | `tagUrl` があればその URL、無ければ `[タグ]` と同じ                                |
+| `[/project/page]`                   | `projectUrl`。既定は `https://scrapbox.io/project/page`                            |
 
 ```ts
 import { compile, createIndex } from '@cosense-toolbox/cosense-x'
@@ -178,23 +178,23 @@ const { data, contentType } = await fetchAsset('https://scrapbox.io/files/xxx.pn
 
 ## API
 
-| モジュール | API |
-| :--- | :--- |
-| `@cosense-toolbox/cosense-x` | `compile` `toHast` `readPage` `createIndex` `createLinkResolver` `parseComponentTag` `parseClosingTag` `findInlineComponents` `splitFrontmatter` `readFrontmatter` `collectMetadata` `normalizeTitle` `titleToSlug` |
-| `@cosense-toolbox/cosense-x/graph` | `scanPages` `buildGraph` `readPage` `createIndex` `normalizeTitle` `titleToSlug` |
-| `@cosense-toolbox/cosense-x/fetch` | `fetchPage` `fetchPageText` `fetchAsset` `isCosenseAssetUrl` `cosenseIconUrl` |
+| モジュール                         | API                                                                                                                                                                                                                 |
+| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@cosense-toolbox/cosense-x`       | `compile` `toHast` `readPage` `createIndex` `createLinkResolver` `parseComponentTag` `parseClosingTag` `findInlineComponents` `splitFrontmatter` `readFrontmatter` `collectMetadata` `normalizeTitle` `titleToSlug` |
+| `@cosense-toolbox/cosense-x/graph` | `scanPages` `buildGraph` `readPage` `createIndex` `normalizeTitle` `titleToSlug`                                                                                                                                    |
+| `@cosense-toolbox/cosense-x/fetch` | `fetchPage` `fetchPageText` `fetchAsset` `isCosenseAssetUrl` `cosenseIconUrl`                                                                                                                                       |
 
 `compile` の主なオプション:
 
-| オプション | 内容 |
-| :--- | :--- |
-| `format` | `'csn'` か `'csnx'`。省くと `filePath` の拡張子で決める |
-| `jsxImportSource` | JSX ランタイムの読み込み元。既定は `'react'` |
-| `elementAttributeNameCase` | `'react'` なら `className`、`'html'` なら `class`。既定は `jsxImportSource` から決める |
-| `rehypePlugins` | hast に当てる rehype プラグイン |
-| `index` `filePath` `pageUrl` `tagUrl` `projectUrl` `unresolved` | リンクの解決 |
-| `renderOptions` | 描画の設定。parser の `toHast` のオプションがそのまま渡る (`extensions` `handlers` `highlight` `classNames` `showPads` `iconImageUrl`)。加えて `title: false` でタイトル行 (`<h1>`) を出さない |
-| `parseOptions` | パーサーに渡すオプション (記法の拡張など) |
+| オプション                                                      | 内容                                                                                                                                                                                           |
+| :-------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `format`                                                        | `'csn'` か `'csnx'`。省くと `filePath` の拡張子で決める                                                                                                                                        |
+| `jsxImportSource`                                               | JSX ランタイムの読み込み元。既定は `'react'`                                                                                                                                                   |
+| `elementAttributeNameCase`                                      | `'react'` なら `className`、`'html'` なら `class`。既定は `jsxImportSource` から決める                                                                                                         |
+| `rehypePlugins`                                                 | hast に当てる rehype プラグイン                                                                                                                                                                |
+| `index` `filePath` `pageUrl` `tagUrl` `projectUrl` `unresolved` | リンクの解決                                                                                                                                                                                   |
+| `renderOptions`                                                 | 描画の設定。parser の `toHast` のオプションがそのまま渡る (`extensions` `handlers` `highlight` `classNames` `showPads` `iconImageUrl`)。加えて `title: false` でタイトル行 (`<h1>`) を出さない |
+| `parseOptions`                                                  | パーサーに渡すオプション (記法の拡張など)                                                                                                                                                      |
 
 ### コードブロックの色付け
 

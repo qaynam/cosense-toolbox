@@ -1,4 +1,5 @@
 import { Option } from 'effect'
+
 import type { InternalConstruct } from '../internal-types'
 
 /** バッククォートで囲んだインラインコード。閉じるバッククォートが無ければ成立しない。 */

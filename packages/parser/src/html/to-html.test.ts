@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
+
 import { tableCellNotation } from '../extensions'
 import type { InlineConstruct } from '../inline/types'
-import { type ParseOptions, parse, parseLine } from '../parse'
+import { parse, parseLine, type ParseOptions } from '../parse'
 import type { InlineNodeInit } from '../types'
 import type { HastHandlers } from './to-hast'
 import { codeLanguageOf, defaultPageUrl, safeHref, safeSrc } from './to-hast'

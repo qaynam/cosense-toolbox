@@ -4,12 +4,13 @@
  * コンパイルとリンクグラフの両方がここを通る。グラフだけを使う人のバンドルに
  * unified 系が入らないよう、この層は JS の生成に関わるものを import しない。
  */
-import { type Page, type ParseOptions, normalizeLineEndings, parse } from '@cosense-toolbox/parser'
+import { normalizeLineEndings, type Page, parse, type ParseOptions } from '@cosense-toolbox/parser'
 import { Either, Option, pipe } from 'effect'
+
 import { type CosenseXError, orThrow } from './errors'
 import { type Frontmatter, readFrontmatterEither, splitFrontmatterEither } from './frontmatter'
-import { type PageIndex, pageByPath } from './links'
-import { type CollectMetadataOptions, type PageMetadata, collectMetadata } from './metadata'
+import { pageByPath, type PageIndex } from './links'
+import { collectMetadata, type CollectMetadataOptions, type PageMetadata } from './metadata'
 
 /** `.csn` は素の Cosense 記法、`.csnx` はそれにコンポーネントの行を足したもの。 */
 export type Format = 'csn' | 'csnx'

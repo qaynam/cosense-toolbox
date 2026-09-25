@@ -5,6 +5,7 @@
  * effect の import を出さないため。
  */
 import type { Option } from 'effect'
+
 import type { InlineNodeInit } from '../types'
 import type { BracketRuleContext, ConstructMatch, InlineContext } from './types'
 

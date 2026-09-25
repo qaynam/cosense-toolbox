@@ -3,6 +3,7 @@
  * 公開 API の一部として固定しておく (CLAUDE.md §4)。
  */
 import { describe, expect, it } from 'vitest'
+
 import pkg from '../package.json'
 import config from '../tsdown.config'
 

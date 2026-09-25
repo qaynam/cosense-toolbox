@@ -17,20 +17,18 @@ toHtml(node: AnyNode, options?: HtmlOptions): string
 引数はページ全体でなくてもよく、`parseLine` が返した 1 行でも、AST の任意のノードでも受け取ります。
 
 ```ts
-import { parse } from "@cosense-toolbox/parser";
-import { toHtml } from "@cosense-toolbox/parser/html";
+import { parse } from '@cosense-toolbox/parser'
+import { toHtml } from '@cosense-toolbox/parser/html'
 
-const page = parse("タイトル\nこれは [リンク] です");
+const page = parse('タイトル\nこれは [リンク] です')
 
-toHtml(page);
+toHtml(page)
 ```
 
 ```html
 <div class="page">
   <h1 class="title">タイトル</h1>
-  <div class="line">
-    これは <a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> です
-  </div>
+  <div class="line">これは <a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> です</div>
 </div>
 ```
 
@@ -39,9 +37,9 @@ toHtml(page);
 オプションは `style` を除いて同じです。
 
 ```ts
-import { toHast } from "@cosense-toolbox/parser/html";
+import { toHast } from '@cosense-toolbox/parser/html'
 
-toHast(page); // { type: 'root', children: [{ type: 'element', tagName: 'div', ... }] }
+toHast(page) // { type: 'root', children: [{ type: 'element', tagName: 'div', ... }] }
 ```
 
 以降の HTML は読みやすさのために字下げして示しますが、実際の出力に要素間の空白は入りません。
@@ -51,16 +49,16 @@ toHast(page); // { type: 'root', children: [{ type: 'element', tagName: 'div', .
 
 ## オプション
 
-| オプション                      | 型                           | 既定                 |
-| :------------------------------ | :--------------------------- | :------------------- |
-| [`pageUrl`](#pageurl)           | `(title, node) => string`    | `/{title}`           |
-| [`iconImageUrl`](#iconimageurl) | `(node) => string \| null`   | 常に `null`          |
-| [`highlight`](#highlight)       | `(code, language) => string \| hast \| null` | 色付けしない |
-| [`classNames`](#classnames)     | `HtmlClassNames`             | `defaultClassNames`  |
-| [`showPads`](#showpads)         | `boolean`                    | `false`              |
-| [`handlers`](#handlers)         | `HastHandlers`               | 既定のハンドラ       |
-| [`extensions`](#extensions)     | `RenderExtension[]`          | なし                 |
-| [`style`](#style)               | `string`                     | `<style>` を出さない |
+| オプション                      | 型                                           | 既定                 |
+| :------------------------------ | :------------------------------------------- | :------------------- |
+| [`pageUrl`](#pageurl)           | `(title, node) => string`                    | `/{title}`           |
+| [`iconImageUrl`](#iconimageurl) | `(node) => string \| null`                   | 常に `null`          |
+| [`highlight`](#highlight)       | `(code, language) => string \| hast \| null` | 色付けしない         |
+| [`classNames`](#classnames)     | `HtmlClassNames`                             | `defaultClassNames`  |
+| [`showPads`](#showpads)         | `boolean`                                    | `false`              |
+| [`handlers`](#handlers)         | `HastHandlers`                               | 既定のハンドラ       |
+| [`extensions`](#extensions)     | `RenderExtension[]`                          | なし                 |
+| [`style`](#style)               | `string`                                     | `<style>` を出さない |
 
 上の 3 つは、AST から導けない情報を外から渡すためにあります。
 ページをどの URL で配信しているか、アイコン画像がどこにあるか、コードの構文がどう色分けされるかは、どれもソースに書かれていないからです。
@@ -76,7 +74,7 @@ pageUrl?: (title: string, node: PageRefNode) => string
 対象は `[title]` と `[/proj/page]` と `#tag` と `[user.icon]` の 4 つです。
 
 ```ts
-toHtml(page, { pageUrl: (title) => `/wiki/${encodeURIComponent(title)}` });
+toHtml(page, { pageUrl: (title) => `/wiki/${encodeURIComponent(title)}` })
 ```
 
 `title` には記法に書かれたタイトルがそのまま渡ります。
@@ -101,19 +99,13 @@ iconImageUrl?: (node: IconNode) => string | null
 
 ```ts
 toHtml(page, {
-  iconImageUrl: (node) =>
-    `/api/pages/help-jp/${encodeURIComponent(node.user)}/icon`,
-});
+  iconImageUrl: (node) => `/api/pages/help-jp/${encodeURIComponent(node.user)}/icon`,
+})
 ```
 
 ```html
 <a class="link icon" href="/cosense">
-  <img
-    class="icon"
-    src="/api/pages/help-jp/rakusai/icon"
-    alt="rakusai"
-    title="rakusai"
-  />
+  <img class="icon" src="/api/pages/help-jp/rakusai/icon" alt="rakusai" title="rakusai" />
 </a>
 ```
 
@@ -141,14 +133,14 @@ HTML の文字列を返す形は markdown-it の同名オプションと同じ�
 同じ決めかたの関数を `codeLanguageOf` として `@cosense-toolbox/parser/html` から出しています。
 
 ```ts
-import hljs from "highlight.js";
+import hljs from 'highlight.js'
 
 toHtml(page, {
   highlight: (code, language) =>
     hljs.highlight(code, {
-      language: hljs.getLanguage(language) ? language : "plaintext",
+      language: hljs.getLanguage(language) ? language : 'plaintext',
     }).value,
-});
+})
 ```
 
 ライブラリごとの書きかたは次のとおりです。
@@ -156,20 +148,20 @@ toHtml(page, {
 ```ts
 // Prism
 highlight: (code, lang) =>
-  Prism.highlight(code, Prism.languages[lang] ?? Prism.languages.plain, lang);
+  Prism.highlight(code, Prism.languages[lang] ?? Prism.languages.plain, lang)
 
 // sugar-high
-highlight: (code) => sugarHigh(code);
+highlight: (code) => sugarHigh(code)
 
 // Shiki は hast をそのまま返せる。<pre><code> は剥がし、テーマの class と色はコードブロックに移る
 const shiki = await createHighlighter({
-  themes: ["github-light"],
-  langs: ["js"],
-});
+  themes: ['github-light'],
+  langs: ['js'],
+})
 highlight: (code, lang) =>
   shiki.getLoadedLanguages().includes(lang)
-    ? shiki.codeToHast(code, { lang, theme: "github-light" })
-    : null;
+    ? shiki.codeToHast(code, { lang, theme: 'github-light' })
+    : null
 ```
 
 `language` はファイル名から推測した名前で、拡張子があればそれが、無ければファイル名全体が渡ります。
@@ -188,7 +180,7 @@ Shiki のテーマの背景色と文字色は、`style` のまま移さず、`--
 ハイライタのテーマ CSS が特定の class を要求する場合は、次の `classNames` で足せます。
 
 ```ts
-toHtml(page, { highlight, classNames: { codeHighlight: "highlight hljs" } });
+toHtml(page, { highlight, classNames: { codeHighlight: 'highlight hljs' } })
 ```
 
 ### classNames
@@ -203,10 +195,10 @@ classNames?: HtmlClassNames
 ```ts
 toHtml(page, {
   classNames: {
-    line: "my-2 leading-7",
-    internalLink: "text-sky-600 underline",
+    line: 'my-2 leading-7',
+    internalLink: 'text-sky-600 underline',
   },
-});
+})
 ```
 
 値は置き換えであって追加ではありません。
@@ -264,23 +256,23 @@ handlers?: HastHandlers
 toHtml(page, {
   handlers: {
     line: (node, ctx) => ({
-      type: "element",
-      tagName: "p",
+      type: 'element',
+      tagName: 'p',
       properties: {},
       children: ctx.children(node),
     }),
   },
-});
+})
 ```
 
 ハンドラは `(node, ctx)` を受け取ります。
 
-| `ctx` | 内容 |
-| :--- | :--- |
-| `ctx.children(node)` | 子ノードの変換結果を、平らな配列で返します |
-| `ctx.node(node)` | ノード 1 つを変換します |
-| `ctx.options` | 既定値を埋めたオプション (`pageUrl` や `classNames` など) です |
-| `ctx.ancestors` | 今描いているノードの祖先です。根から親までの順に並びます |
+| `ctx`                | 内容                                                           |
+| :------------------- | :------------------------------------------------------------- |
+| `ctx.children(node)` | 子ノードの変換結果を、平らな配列で返します                     |
+| `ctx.node(node)`     | ノード 1 つを変換します                                        |
+| `ctx.options`        | 既定値を埋めたオプション (`pageUrl` や `classNames` など) です |
+| `ctx.ancestors`      | 今描いているノードの祖先です。根から親までの順に並びます       |
 
 HTML の文字列をそのまま入れたいときは、`raw` ノードを返します。
 `toHtml` はこれをエスケープせずに埋め込みます。
@@ -315,10 +307,10 @@ toHtml(page, {
   extensions: [
     {
       // 画像を <figure> で包む。output は既定 (または handlers) の出力
-      image: (output) => ({ type: "element", tagName: "figure", properties: {}, children: output }),
+      image: (output) => ({ type: 'element', tagName: 'figure', properties: {}, children: output }),
     },
   ],
-});
+})
 ```
 
 関数は `(output, node, ctx)` を受け取るので、AST のノードやオプションを見て加工できます。
@@ -333,21 +325,21 @@ toHtml(page, {
 
 用意している拡張は次のとおりです。
 
-| 拡張 | 内容 |
-| :--- | :--- |
-| `codeLineNumbers()` | コードブロックの本体行に行番号 (`data-line`) と桁数 (`data-line-digits`) を付けます。番号の表示は `@cosense-toolbox/style` が持ちます |
-| `tableCellLineBreaks(marker)` | テーブルのセルの中の `marker` を `<br>` にします |
+| 拡張                          | 内容                                                                                                                                  |
+| :---------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| `codeLineNumbers()`           | コードブロックの本体行に行番号 (`data-line`) と桁数 (`data-line-digits`) を付けます。番号の表示は `@cosense-toolbox/style` が持ちます |
+| `tableCellLineBreaks(marker)` | テーブルのセルの中の `marker` を `<br>` にします                                                                                      |
 
 #### tableCellLineBreaks
 
 Cosense のセルには改行を書けないので、`\n` のような文字の並びを代わりに書いておき、描画のときに改行にします。
 
 ```ts
-import { tableCellLineBreaks, toHtml } from "@cosense-toolbox/parser/html";
+import { tableCellLineBreaks, toHtml } from '@cosense-toolbox/parser/html'
 
-toHtml(parse("t\ntable:x\n 1 行目\\n2 行目"), {
-  extensions: [tableCellLineBreaks("\\n")],
-});
+toHtml(parse('t\ntable:x\n 1 行目\\n2 行目'), {
+  extensions: [tableCellLineBreaks('\\n')],
+})
 // → … <td>1 行目<br>2 行目</td> …
 ```
 
@@ -377,9 +369,9 @@ style?: string
 渡した CSS を `<style>` 要素として出力の先頭に差し込みます。
 
 ```ts
-import css from "@cosense-toolbox/style/style.css?raw";
+import css from '@cosense-toolbox/style/style.css?raw'
 
-toHtml(page, { style: css });
+toHtml(page, { style: css })
 // <style>…</style><div class="page">…</div>
 ```
 
@@ -450,9 +442,9 @@ Cosense Web と同じく 1 行を 1 要素に切ります。
 `@cosense-toolbox/style` はそれを見て、行の左に番号の欄を取って番号を出します。
 
 ```ts
-import { codeLineNumbers, toHtml } from "@cosense-toolbox/parser/html";
+import { codeLineNumbers, toHtml } from '@cosense-toolbox/parser/html'
 
-toHtml(page, { extensions: [codeLineNumbers()] });
+toHtml(page, { extensions: [codeLineNumbers()] })
 // <div class="line code-block" data-indent="1" data-line="1" data-line-digits="1">…</div>
 ```
 
@@ -534,23 +526,23 @@ KaTeX に渡したい場合は [`handlers`](#handlers) で差し替えてくだ�
 外部リンクを別タブで開く例を示します。
 
 ```ts
-import { safeHref, toHtml } from "@cosense-toolbox/parser/html";
+import { safeHref, toHtml } from '@cosense-toolbox/parser/html'
 
 toHtml(page, {
   handlers: {
     externalLink: (node, ctx) => ({
-      type: "element",
-      tagName: "a",
+      type: 'element',
+      tagName: 'a',
       properties: {
-        className: ctx.options.classNames.externalLink?.split(" "),
+        className: ctx.options.classNames.externalLink?.split(' '),
         href: safeHref(node.target) ?? undefined,
-        target: "_blank",
-        rel: "noreferrer",
+        target: '_blank',
+        rel: 'noreferrer',
       },
-      children: [{ type: "text", value: node.label }],
+      children: [{ type: 'text', value: node.label }],
     }),
   },
-});
+})
 ```
 
 木全体に手を入れる場合 (見出しに id を振る、外部リンクをまとめて別タブにする) は、`toHast` の出力に rehype のプラグインを通すこともできます。

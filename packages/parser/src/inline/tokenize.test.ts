@@ -3,6 +3,7 @@
  * 構造の比較は position を落として行う。位置情報の検証は別ファイルに分けてある。
  */
 import { describe, expect, it } from 'vitest'
+
 import { stripPositions } from '../test-helpers'
 import type { Decoration, InlineNode } from '../types'
 import { tokenizeInline } from './tokenize'

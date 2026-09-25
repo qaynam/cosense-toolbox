@@ -72,18 +72,18 @@ Gyazo のページ URL (`https://gyazo.com/{hash}`) のように、そのまま�
 
 ```ts
 interface Point {
-  line: number;
-  column: number;
-  offset: number;
+  line: number
+  column: number
+  offset: number
 } // すべて 0-based
 interface Position {
-  start: Point;
-  end: Point;
+  start: Point
+  end: Point
 } // end は exclusive
 ```
 
 ```ts
-parse("タイトル\nサンプル").children[1].children[0];
+parse('タイトル\nサンプル').children[1].children[0]
 // {
 //   type: 'text',
 //   value: 'サンプル',

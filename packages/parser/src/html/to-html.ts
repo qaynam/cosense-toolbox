@@ -6,6 +6,7 @@
  */
 import type { Root } from 'hast'
 import { toHtml as hastToHtml } from 'hast-util-to-html'
+
 import type { AnyNode } from '../types'
 import { type HastContent, type HastHighlighter, type HastOptions, toHast } from './to-hast'
 

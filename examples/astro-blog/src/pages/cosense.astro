@@ -5,9 +5,10 @@
  */
 import { cosenseIconUrl, fetchPageText } from '@cosense-toolbox/cosense-x/fetch'
 import { parse } from '@cosense-toolbox/parser'
-import { codeLineNumbers, toHtml } from '@cosense-toolbox/parser/html'
 import { customDecorations } from '@cosense-toolbox/parser/extensions'
+import { codeLineNumbers, toHtml } from '@cosense-toolbox/parser/html'
 import { localizeCosenseAssets } from 'virtual:cosense-x/assets'
+
 import Base from '../layouts/Base.astro'
 import { createCodeHighlight } from '../shiki'
 
@@ -20,14 +21,17 @@ const highlight = await createCodeHighlight()
 let html: string | null = null
 try {
   const text = await fetchPageText(project, title, pat ? { pat } : {})
-  const rendered = toHtml(parse(text, {
-    extensions: [customDecorations(["|", "!", "~"])]
-  }), {
-    highlight,
-    extensions: [codeLineNumbers()],
-    pageUrl: (target) => `https://scrapbox.io/${project}/${encodeURIComponent(target)}`,
-    iconImageUrl: (icon) => cosenseIconUrl(project, icon.user),
-  })
+  const rendered = toHtml(
+    parse(text, {
+      extensions: [customDecorations(['|', '!', '~'])],
+    }),
+    {
+      highlight,
+      extensions: [codeLineNumbers()],
+      pageUrl: (target) => `https://scrapbox.io/${project}/${encodeURIComponent(target)}`,
+      iconImageUrl: (icon) => cosenseIconUrl(project, icon.user),
+    },
+  )
   html = await localizeCosenseAssets(rendered)
 } catch (error) {
   console.warn(`[cosense] ${project}/${title} を取得できなかった:`, error)
@@ -36,15 +40,19 @@ try {
 
 <Base title={title}>
   <blockquote class="mb-10 border-l-2 border-neutral-700 bg-gray-100 py-3 pl-4 pr-3 text-stone-700 text-sm">
-    <a class="text-blue-700 underline" target="_blank" href={`https://scrapbox.io/${project}/${encodeURIComponent(title)}`}>/{project}/{title}</a>
-  をビルド時に取ってきて描画しています。
+    <a
+      class="text-blue-700 underline"
+      target="_blank"
+      href={`https://scrapbox.io/${project}/${encodeURIComponent(title)}`}
+    >
+      /{project}/{title}
+    </a>
+    をビルド時に取ってきて描画しています。
   </blockquote>
 
-  {
-    html === null ? (
-      <p>取得できませんでした</p>
-    ) : (
-      <article class="cosense cosense-title:text-4xl" set:html={html} />
-    )
-  }
+  {html === null ? (
+    <p>取得できませんでした</p>
+  ) : (
+    <article class="cosense cosense-title:text-4xl" set:html={html} />
+  )}
 </Base>

@@ -1,4 +1,5 @@
 import { Option } from 'effect'
+
 import type { InternalBracketRule } from '../internal-types'
 
 const ICON_RE = /^(.+)\.icon(?:\*(\d+))?$/

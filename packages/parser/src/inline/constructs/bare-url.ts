@@ -1,4 +1,5 @@
 import { Option } from 'effect'
+
 import type { InternalConstruct } from '../internal-types'
 
 const URL_RE = /^https?:\/\/[^\s\]]+/i

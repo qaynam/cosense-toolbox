@@ -39,11 +39,12 @@ import { valueToEstree } from 'estree-util-value-to-estree'
 import type { Root } from 'hast'
 import { type Handle, toEstree } from 'hast-util-to-estree'
 import { type PluggableList, unified } from 'unified'
+
 import { type CosenseXError, orThrow } from './errors'
 import type { Frontmatter } from './frontmatter'
 import { type LinkOptions, linkResolution, reportLinks } from './links'
 import type { PageMetadata } from './metadata'
-import { type Format, type ReadOptions, type ReadResult, readPageEither } from './read'
+import { type Format, type ReadOptions, readPageEither, type ReadResult } from './read'
 import { type CosenseComponent, type RenderOptions, toHastEither } from './to-hast'
 
 export interface CompileOptions extends LinkOptions, Omit<ReadOptions, 'filePath'> {
@@ -197,17 +198,15 @@ const exportConst = (name: string, value: Expression): Statement =>
 const componentsObject = (used: ReadonlySet<string>): ObjectExpression => ({
   type: 'ObjectExpression',
   properties: [
-    ...[...used].sort().map(
-      (name): Property => ({
-        type: 'Property',
-        key: identifier(name),
-        value: { type: 'Literal', value: name },
-        kind: 'init',
-        method: false,
-        shorthand: false,
-        computed: false,
-      }),
-    ),
+    ...[...used].sort().map((name): Property => ({
+      type: 'Property',
+      key: identifier(name),
+      value: { type: 'Literal', value: name },
+      kind: 'init',
+      method: false,
+      shorthand: false,
+      computed: false,
+    })),
     {
       type: 'SpreadElement',
       argument: {

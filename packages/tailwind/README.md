@@ -17,7 +17,7 @@ npm install -D @cosense-toolbox/tailwind@beta
 Tailwind v4 の CSS に `@plugin` で足す。
 
 ```css
-@import "tailwindcss";
+@import 'tailwindcss';
 @plugin "@cosense-toolbox/tailwind";
 ```
 
@@ -43,7 +43,9 @@ Tailwind v4 の CSS に `@plugin` で足す。
 包んでいる要素に付けるので、記事の HTML には手を入れなくてよい。
 
 ```html
-<article class="cosense cosense-link:text-sky-700 cosense-link:hover:underline cosense-code:bg-slate-100 cosense-title:text-4xl">
+<article
+  class="cosense cosense-link:text-sky-700 cosense-link:hover:underline cosense-code:bg-slate-100 cosense-title:text-4xl"
+>
   …
 </article>
 ```
@@ -51,28 +53,28 @@ Tailwind v4 の CSS に `@plugin` で足す。
 `cosense-link:hover:underline` のように続けて書くと、リンクを hover したときだけ当たる。
 `md:cosense-title:text-5xl` や `dark:cosense-link:text-sky-300` のように、画面幅やダークモードの variant とも組み合わせられる。
 
-| Modifier | Target | 記法 |
-| :--- | :--- | :--- |
-| `cosense-title:{utility}` | `.title` | タイトル (1 行目) |
-| `cosense-line:{utility}` | `.line` | 各行 |
-| `cosense-heading:{utility}` | `.decoration[data-size-level]` | `[** 見出し]` などの大きな文字 |
-| `cosense-strong:{utility}` | `strong` | `[[太字]]` `[* 太字]` |
-| `cosense-em:{utility}` | `em` | `[/ 斜体]` |
-| `cosense-s:{utility}` | `s` | `[- 打ち消し]` |
-| `cosense-u:{utility}` | `u` | `[_ 下線]` |
-| `cosense-link:{utility}` | `.link` | リンクすべて (`[ページ]` `[https://…]` `[/project/ページ]`) |
-| `cosense-link-external:{utility}` | `.link-external` | 外部リンク `[https://…]` |
-| `cosense-link-project:{utility}` | `.link-project` | 別プロジェクトへのリンク `[/project/ページ]` |
-| `cosense-hashtag:{utility}` | `.hashtag` | `#タグ` |
-| `cosense-code:{utility}` | `.code` | `` `コード` `` |
-| `cosense-code-block:{utility}` | `.code-block > code` | `code:ファイル名` のブロックの各行 |
-| `cosense-code-filename:{utility}` | `.code-block-start` | `code:ファイル名` のファイル名 |
-| `cosense-quote:{utility}` | `.quote` | `>` で始まる引用 |
-| `cosense-table:{utility}` | `.table` | `table:名前` の表 |
-| `cosense-td:{utility}` | `.table td` | 表のセル |
-| `cosense-image:{utility}` | `.image` | 画像 |
-| `cosense-icon:{utility}` | `.icon` | `[ユーザー名.icon]` |
-| `cosense-formula:{utility}` | `.formula` | `[$ 数式]` |
+| Modifier                          | Target                         | 記法                                                        |
+| :-------------------------------- | :----------------------------- | :---------------------------------------------------------- |
+| `cosense-title:{utility}`         | `.title`                       | タイトル (1 行目)                                           |
+| `cosense-line:{utility}`          | `.line`                        | 各行                                                        |
+| `cosense-heading:{utility}`       | `.decoration[data-size-level]` | `[** 見出し]` などの大きな文字                              |
+| `cosense-strong:{utility}`        | `strong`                       | `[[太字]]` `[* 太字]`                                       |
+| `cosense-em:{utility}`            | `em`                           | `[/ 斜体]`                                                  |
+| `cosense-s:{utility}`             | `s`                            | `[- 打ち消し]`                                              |
+| `cosense-u:{utility}`             | `u`                            | `[_ 下線]`                                                  |
+| `cosense-link:{utility}`          | `.link`                        | リンクすべて (`[ページ]` `[https://…]` `[/project/ページ]`) |
+| `cosense-link-external:{utility}` | `.link-external`               | 外部リンク `[https://…]`                                    |
+| `cosense-link-project:{utility}`  | `.link-project`                | 別プロジェクトへのリンク `[/project/ページ]`                |
+| `cosense-hashtag:{utility}`       | `.hashtag`                     | `#タグ`                                                     |
+| `cosense-code:{utility}`          | `.code`                        | `` `コード` ``                                              |
+| `cosense-code-block:{utility}`    | `.code-block > code`           | `code:ファイル名` のブロックの各行                          |
+| `cosense-code-filename:{utility}` | `.code-block-start`            | `code:ファイル名` のファイル名                              |
+| `cosense-quote:{utility}`         | `.quote`                       | `>` で始まる引用                                            |
+| `cosense-table:{utility}`         | `.table`                       | `table:名前` の表                                           |
+| `cosense-td:{utility}`            | `.table td`                    | 表のセル                                                    |
+| `cosense-image:{utility}`         | `.image`                       | 画像                                                        |
+| `cosense-icon:{utility}`          | `.icon`                        | `[ユーザー名.icon]`                                         |
+| `cosense-formula:{utility}`       | `.formula`                     | `[$ 数式]`                                                  |
 
 対象は HTML の要素名ではなく、Cosense の記法で分けている。`toHtml` はリンク・タグ・アイコンのどれにも同じ `<a>` を使うため、要素名では区別できない。
 class 名は `toHtml` の既定 (`classNames` を渡さなかったとき) に合わせている。
@@ -83,7 +85,9 @@ class 名は `toHtml` の既定 (`classNames` を渡さなかったとき) に�
 `toHtml` は装飾を `<span class="decoration deco-|">` のように記号ごとの class で出すので、それを選ぶ。
 
 ```html
-<article class="cosense cosense-deco-[|]:border-l-4 cosense-deco-[|]:pl-3 cosense-deco-[|]:text-slate-600">
+<article
+  class="cosense cosense-deco-[|]:border-l-4 cosense-deco-[|]:pl-3 cosense-deco-[|]:text-slate-600"
+></article>
 ```
 
 - 記号を並べると、それらをすべて持つ装飾に当たる。`cosense-deco-[-/]:` は `[-/ 文字]` など
@@ -112,25 +116,27 @@ cosense({ parseOptions: { extensions: [customDecorations(['|'])] } })
 変数は style.css と同じもので、一覧は [`@cosense-toolbox/style` の README](../style/README.md#色を変える) にある。
 
 ```html
-<article class="cosense [--cosense-link:var(--color-sky-700)] [--cosense-font-size:16px]">
+<article class="cosense [--cosense-link:var(--color-sky-700)] [--cosense-font-size:16px]"></article>
 ```
 
 ダークモードでは、`dark:` の variant で変数を差し替える。
 
 ```html
-<article class="cosense dark:[--cosense-text:var(--color-slate-200)] dark:[--cosense-bg:var(--color-slate-900)]">
+<article
+  class="cosense dark:[--cosense-text:var(--color-slate-200)] dark:[--cosense-bg:var(--color-slate-900)]"
+></article>
 ```
 
 ## オプション
 
 ```css
 @plugin "@cosense-toolbox/tailwind" {
-  className: article;
+  classname: article;
 }
 ```
 
-| オプション | 既定 | 内容 |
-| :--- | :--- | :--- |
+| オプション  | 既定      | 内容                                                                                                                                 |
+| :---------- | :-------- | :----------------------------------------------------------------------------------------------------------------------------------- |
 | `className` | `cosense` | スタイルを当てる class 名。除外の class 名は `not-{className}`、modifier は `{className}-link:` `{className}-deco-[…]:` のようになる |
 
 ## style.css との違い

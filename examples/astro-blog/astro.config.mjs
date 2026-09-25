@@ -5,6 +5,7 @@ import { customDecorations, tableCellNotation } from '@cosense-toolbox/parser/ex
 import { codeLineNumbers, tableCellLineBreaks } from '@cosense-toolbox/parser/html'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'astro/config'
+
 import { pageUrl, tagUrl } from './src/urls.ts'
 
 try {

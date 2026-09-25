@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { extractStyles } from './extract'
 
 /** 抜き出したルールのセレクタを、出てきた順に並べる。 */

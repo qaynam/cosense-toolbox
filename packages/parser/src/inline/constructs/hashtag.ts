@@ -1,4 +1,5 @@
 import { Option } from 'effect'
+
 import { isTagBoundary } from '../../core/scan'
 import type { InternalConstruct } from '../internal-types'
 

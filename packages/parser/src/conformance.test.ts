@@ -3,6 +3,7 @@
  * ここが緑でないものはリリースしない。
  */
 import { describe, expect, it } from 'vitest'
+
 import fixtures from './fixtures/conformance.json'
 import { tokenizeInline } from './inline/tokenize'
 import { parse } from './parse'

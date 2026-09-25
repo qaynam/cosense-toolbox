@@ -1,5 +1,6 @@
 import type { Element, ElementContent } from 'hast'
 import { describe, expect, it } from 'vitest'
+
 import { parse } from '../parse'
 import { codeLineNumbers } from './code-line-numbers'
 import { toHtml } from './to-html'

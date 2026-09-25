@@ -1,6 +1,7 @@
 import fc from 'fast-check'
 import type { Element, ElementContent, Root } from 'hast'
 import { describe, expect, it } from 'vitest'
+
 import { tableCellNotation } from '../extensions'
 import { parse } from '../parse'
 import { tableCellLineBreaks } from './table-cell-line-breaks'

@@ -1,9 +1,10 @@
 import { parse } from '@cosense-toolbox/parser'
 import { describe, expect, it } from 'vitest'
+
 import {
   type ComponentBlock,
-  type GroupedBlock,
   groupComponents,
+  type GroupedBlock,
   parseClosingTag,
   parseComponentTag,
 } from './components'

@@ -11,6 +11,7 @@
  * 逆に Schema から型を推論する形にすると、NodeMap への declaration merging が効かなくなる。
  */
 import { Schema } from 'effect'
+
 import type {
   CodeBlock,
   CodeLine,

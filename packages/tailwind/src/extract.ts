@@ -8,7 +8,8 @@
 import { Either } from 'effect'
 import postcss, { type ChildNode, type Declaration, type Rule } from 'postcss'
 import selectorParser from 'postcss-selector-parser'
-import { type Specificity, compareSpecificity, selectorSpecificity } from './specificity'
+
+import { compareSpecificity, selectorSpecificity, type Specificity } from './specificity'
 
 /** 同じプロパティを 2 回書いた宣言 (fallback など) は配列にする。 */
 export type Declarations = Readonly<Record<string, string | readonly string[]>>
@@ -114,13 +115,11 @@ const topLevelRuleOf = (node: ChildNode): Either.Either<TopLevelRule, ExtractErr
     const declarations = yield* declarationsOf(node)
     const roots = selectors.filter((selector) => selector.body === '').length
     if (roots === 0) {
-      const rules = selectors.map(
-        (selector, i): RankedRule => ({
-          selector,
-          declarations,
-          specificity: selectorSpecificity(parsed[i] as selectorParser.Selector),
-        }),
-      )
+      const rules = selectors.map((selector, i): RankedRule => ({
+        selector,
+        declarations,
+        specificity: selectorSpecificity(parsed[i] as selectorParser.Selector),
+      }))
       return { _tag: 'rules', rules } as const
     }
     if (roots !== selectors.length) return yield* fail(`${ROOT} 自身へのルールは 1 つだけにする`)

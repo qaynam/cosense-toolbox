@@ -4,6 +4,7 @@
  */
 import { Either } from 'effect'
 import { describe, expect, it } from 'vitest'
+
 import { parse } from './parse'
 import { decodePage } from './schema'
 

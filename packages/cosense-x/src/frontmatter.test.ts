@@ -1,5 +1,6 @@
 import { parse } from '@cosense-toolbox/parser'
 import { describe, expect, it } from 'vitest'
+
 import { readFrontmatter, splitFrontmatter } from './frontmatter'
 
 describe('splitFrontmatter', () => {

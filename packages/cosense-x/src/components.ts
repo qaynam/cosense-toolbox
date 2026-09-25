@@ -11,7 +11,8 @@
  */
 import type { LineBlock, TopLevelBlock } from '@cosense-toolbox/parser'
 import { Either, Match, Option, pipe } from 'effect'
-import { type CosenseXError, componentTagError, orThrow } from './errors'
+
+import { componentTagError, type CosenseXError, orThrow } from './errors'
 
 export type ComponentAttributeValue =
   | string

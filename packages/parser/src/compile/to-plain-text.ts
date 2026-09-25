@@ -4,7 +4,7 @@
  * `createCompiler` のハンドラ機構をひととおり使った参照実装も兼ねる。
  */
 import type { AnyNode } from '../types'
-import { type NodeHandlers, createCompiler } from './create-compiler'
+import { createCompiler, type NodeHandlers } from './create-compiler'
 
 const INDENT_UNIT = '  '
 

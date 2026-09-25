@@ -13,12 +13,14 @@
  */
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+
 import { parse } from '@cosense-toolbox/parser'
 import { customDecorations } from '@cosense-toolbox/parser/extensions'
-import { type HtmlOptions, codeLineNumbers, toHtml } from '@cosense-toolbox/parser/html'
+import { codeLineNumbers, type HtmlOptions, toHtml } from '@cosense-toolbox/parser/html'
 import { optimize } from '@tailwindcss/node'
-import { type Page, chromium } from 'playwright-core'
+import { chromium, type Page } from 'playwright-core'
 import { compile } from 'tailwindcss'
+
 import cosense from '../src/index'
 import { MODIFIERS } from '../src/modifiers'
 

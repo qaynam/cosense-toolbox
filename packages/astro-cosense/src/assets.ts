@@ -10,7 +10,8 @@ import { createHash } from 'node:crypto'
 import { copyFile, mkdir, readdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { type FetchOptions, fetchAsset, isCosenseAssetUrl } from '@cosense-toolbox/cosense-x/fetch'
+
+import { fetchAsset, type FetchOptions, isCosenseAssetUrl } from '@cosense-toolbox/cosense-x/fetch'
 import type { Root } from 'hast'
 
 /** `globalThis` に置き場を置くときのキー (`Symbol.for` に渡す)。 */

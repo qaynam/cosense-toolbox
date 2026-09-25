@@ -1,4 +1,5 @@
 import { Option } from 'effect'
+
 import { shiftOrigin } from '../../core/position'
 import type { InlineNodeInit } from '../../types'
 import type { InternalBracketRule } from '../internal-types'

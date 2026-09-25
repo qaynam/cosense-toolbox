@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { normalizeTitle, resolveRelativePath, titleToSlug } from './title'
 
 describe('normalizeTitle', () => {

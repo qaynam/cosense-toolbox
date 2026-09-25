@@ -5,12 +5,14 @@ import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { type CompileOptions, compile } from '@cosense-toolbox/cosense-x'
+
+import { compile, type CompileOptions } from '@cosense-toolbox/cosense-x'
 import { Option } from 'effect'
 import type { Plugin } from 'vite'
+
 import { ASSET_STORE_KEY, type AssetStore } from './assets'
 import { type AstroRenderOptions, type CodeHighlighter, renderOptionsWith } from './highlight'
-import { type SiteCache, idOf, isCosenseFile } from './site'
+import { idOf, isCosenseFile, type SiteCache } from './site'
 
 export const GRAPH_MODULE_ID = 'virtual:cosense-x/graph'
 const RESOLVED_GRAPH_MODULE_ID = `\0${GRAPH_MODULE_ID}`
@@ -42,16 +44,10 @@ const CONTENT_TYPES: Readonly<Record<string, string>> = {
   '.mp3': 'audio/mpeg',
 }
 
-export interface AstroCompileOptions
-  extends Omit<
-    CompileOptions,
-    | 'filePath'
-    | 'format'
-    | 'index'
-    | 'jsxImportSource'
-    | 'elementAttributeNameCase'
-    | 'renderOptions'
-  > {
+export interface AstroCompileOptions extends Omit<
+  CompileOptions,
+  'filePath' | 'format' | 'index' | 'jsxImportSource' | 'elementAttributeNameCase' | 'renderOptions'
+> {
   /**
    * 描画の設定。parser の `toHast` のオプションがそのまま渡る
    * (`extensions` / `handlers` / `classNames` / `showPads` / `iconImageUrl` / `title`)。

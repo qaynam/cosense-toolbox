@@ -2,13 +2,15 @@ import { codeLineNumbers } from '@cosense-toolbox/parser/html'
 import type { AstroConfig } from 'astro'
 import { Option } from 'effect'
 import type { Element, Root } from 'hast'
+import type * as Shiki from 'shiki'
 import { createHighlighter } from 'shiki'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { astroShikiHighlighter, codeLanguagesIn, renderOptionsWith } from './highlight'
 
 // shiki を作った回数を数えるため、本物の createHighlighter を包む。
 vi.mock('shiki', async (importOriginal) => {
-  const shiki = await importOriginal<typeof import('shiki')>()
+  const shiki = await importOriginal<typeof Shiki>()
   return { ...shiki, createHighlighter: vi.fn(shiki.createHighlighter) }
 })
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { cosenseIconUrl, fetchAsset, fetchPage, fetchPageText, isCosenseAssetUrl } from './fetch'
 
 const TEXT = 'タイトル\n本文\n 二行目'

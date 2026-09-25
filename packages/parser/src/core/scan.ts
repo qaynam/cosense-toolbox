@@ -4,7 +4,7 @@
 import { Option } from 'effect'
 
 /** 行頭の空白 (半角スペース / タブ / 全角スペース)。インデント判定の単一ソース。 */
-const LEADING_WHITESPACE_RE = /^[ \t　]*/
+const LEADING_WHITESPACE_RE = /^[ \t\u3000]*/
 
 export const leadingWhitespace = (s: string): string => LEADING_WHITESPACE_RE.exec(s)?.[0] ?? ''
 

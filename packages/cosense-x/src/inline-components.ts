@@ -16,7 +16,8 @@ import {
   tokenizeInline,
 } from '@cosense-toolbox/parser'
 import { Match, Option, pipe } from 'effect'
-import { type ComponentAttribute, closingTagOf, componentTagOf } from './components'
+
+import { closingTagOf, type ComponentAttribute, componentTagOf } from './components'
 
 export interface InlineComponent {
   readonly type: 'inlineComponent'

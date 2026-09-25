@@ -1,6 +1,7 @@
 import { type LineBlock, parse } from '@cosense-toolbox/parser'
 import { describe, expect, it } from 'vitest'
-import { type InlinePart, findInlineComponents } from './inline-components'
+
+import { findInlineComponents, type InlinePart } from './inline-components'
 
 /** 2 行目 (タイトルの次の行) を読んで、インラインのコンポーネントをまとめる。 */
 const inline = (text: string) => {

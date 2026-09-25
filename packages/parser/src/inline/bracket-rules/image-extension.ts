@@ -1,4 +1,5 @@
 import { Option } from 'effect'
+
 import { hasImageExtension } from '../../core/image-url'
 import type { InternalBracketRule } from '../internal-types'
 

@@ -3,6 +3,7 @@
  * `source.slice(start.offset, end.offset)` で必ず復元できる。
  */
 import { describe, expect, it } from 'vitest'
+
 import { rawTextOf } from './ast'
 import { parse, parseLine } from './parse'
 import { at } from './test-helpers'

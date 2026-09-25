@@ -9,6 +9,7 @@
  * どのノードを残すかは拡張の `keepInTableCell` で足せる (`tableCellNotation`)。
  */
 import { Match, Option, pipe } from 'effect'
+
 import { type Origin, spanAt } from '../core/position'
 import type { Decoration, InlineNode, TextNode } from '../types'
 import type { Extension } from './types'

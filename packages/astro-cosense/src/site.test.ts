@@ -1,7 +1,9 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
+
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+
 import { idOf, isCosenseFile, scanSite } from './site'
 
 const FILES: Record<string, string> = {

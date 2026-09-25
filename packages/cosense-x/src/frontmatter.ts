@@ -7,6 +7,7 @@
 import type { CodeBlock, Page, TopLevelBlock } from '@cosense-toolbox/parser'
 import { Either, Option, pipe } from 'effect'
 import { parse as parseYaml } from 'yaml'
+
 import { type CosenseXError, frontmatterError, orThrow } from './errors'
 
 export type Frontmatter = Readonly<Record<string, unknown>>

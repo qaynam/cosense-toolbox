@@ -2,6 +2,7 @@
  * ページ全体・行レベルの仕様。ブロック構造 (タイトル / code: / table:) はここで検証する。
  */
 import { describe, expect, it } from 'vitest'
+
 import { customDecorations, tableCellNotation } from './extensions'
 import type { Extension } from './inline/types'
 import { parse, parseLine } from './parse'

@@ -5,589 +5,588 @@
 import type { CosenseStyles } from './extract'
 
 export const styles: CosenseStyles = {
-  root: {
-    'font-family':
-      'var(--cosense-font, "Open Sans", Helvetica, Arial, "Hiragino Sans", sans-serif)',
-    'font-size': 'var(--cosense-font-size, 15px)',
-    'line-height': 'var(--cosense-line-height, 1.87)',
-    color: 'var(--cosense-text, var(--page-text-color, #4a4a4a))',
-    background: 'var(--cosense-bg, var(--page-bg, #fefefe))',
-    'text-align': 'left',
-    'word-wrap': 'break-word',
+  "root": {
+    "font-family": "var(--cosense-font, 'Open Sans', Helvetica, Arial, 'Hiragino Sans', sans-serif)",
+    "font-size": "var(--cosense-font-size, 15px)",
+    "line-height": "var(--cosense-line-height, 1.87)",
+    "color": "var(--cosense-text, var(--page-text-color, #4a4a4a))",
+    "background": "var(--cosense-bg, var(--page-bg, #fefefe))",
+    "text-align": "left",
+    "word-wrap": "break-word"
   },
-  rules: [
+  "rules": [
     {
-      selector: {
-        body: '.title',
-        pseudo: '',
+      "selector": {
+        "body": ".title",
+        "pseudo": ""
       },
-      declarations: {
-        margin: '0 0 0.77em',
-        'font-size': '1.73em',
-        'font-weight': '700',
-        'line-height': '1.62',
-        color: 'var(--cosense-title, var(--line-title-color, var(--page-text-color, #4a4a4a)))',
-      },
+      "declarations": {
+        "margin": "0 0 0.77em",
+        "font-size": "1.73em",
+        "font-weight": "700",
+        "line-height": "1.62",
+        "color": "var(--cosense-title, var(--line-title-color, var(--page-text-color, #4a4a4a)))"
+      }
     },
     {
-      selector: {
-        body: '.line',
-        pseudo: '',
+      "selector": {
+        "body": ".line",
+        "pseudo": ""
       },
-      declarations: {
-        position: 'relative',
-        'min-height': '1em',
-        'font-variant-ligatures': 'no-common-ligatures',
-      },
+      "declarations": {
+        "position": "relative",
+        "min-height": "1em",
+        "font-variant-ligatures": "no-common-ligatures"
+      }
     },
     {
-      selector: {
-        body: '.indent-mark',
-        pseudo: '',
+      "selector": {
+        "body": ".indent-mark",
+        "pseudo": ""
       },
-      declarations: {
-        position: 'absolute',
-        left: '0',
-        top: '0',
-        height: '1em',
-        color: 'transparent',
-      },
+      "declarations": {
+        "position": "absolute",
+        "left": "0",
+        "top": "0",
+        "height": "1em",
+        "color": "transparent"
+      }
     },
     {
-      selector: {
-        body: '.pad',
-        pseudo: '',
+      "selector": {
+        "body": ".pad",
+        "pseudo": ""
       },
-      declarations: {
-        display: 'inline-block',
-        width: 'var(--cosense-indent, 1.5em)',
-        height: '1em',
-        overflow: 'hidden',
-      },
+      "declarations": {
+        "display": "inline-block",
+        "width": "var(--cosense-indent, 1.5em)",
+        "height": "1em",
+        "overflow": "hidden"
+      }
     },
     {
-      selector: {
-        body: '.dot',
-        pseudo: '',
+      "selector": {
+        "body": ".dot",
+        "pseudo": ""
       },
-      declarations: {
-        position: 'absolute',
-        right: '0.65em',
-        top: '0.7em',
-        width: '6px',
-        height: '6px',
-        'border-radius': '50%',
-        background: 'var(--cosense-text, var(--page-text-color, #555))',
-      },
+      "declarations": {
+        "position": "absolute",
+        "right": "0.65em",
+        "top": "0.7em",
+        "width": "6px",
+        "height": "6px",
+        "border-radius": "50%",
+        "background": "var(--cosense-text, var(--page-text-color, #555))"
+      }
     },
     {
-      selector: {
-        body: '.link',
-        pseudo: '',
+      "selector": {
+        "body": ".link",
+        "pseudo": ""
       },
-      declarations: {
-        color: 'var(--cosense-link, var(--page-link-color, #3d72f5))',
-        'text-decoration': 'none',
-        '-webkit-tap-highlight-color': 'rgba(0, 0, 0, 0.2)',
-      },
+      "declarations": {
+        "color": "var(--cosense-link, var(--page-link-color, #3d72f5))",
+        "text-decoration": "none",
+        "-webkit-tap-highlight-color": "rgba(0, 0, 0, 0.2)"
+      }
     },
     {
-      selector: {
-        body: '.hashtag',
-        pseudo: '',
+      "selector": {
+        "body": ".hashtag",
+        "pseudo": ""
       },
-      declarations: {
-        color: 'var(--cosense-link, var(--page-link-color, #3d72f5))',
-        'text-decoration': 'none',
-        '-webkit-tap-highlight-color': 'rgba(0, 0, 0, 0.2)',
-      },
+      "declarations": {
+        "color": "var(--cosense-link, var(--page-link-color, #3d72f5))",
+        "text-decoration": "none",
+        "-webkit-tap-highlight-color": "rgba(0, 0, 0, 0.2)"
+      }
     },
     {
-      selector: {
-        body: '.code',
-        pseudo: '',
+      "selector": {
+        "body": ".code",
+        "pseudo": ""
       },
-      declarations: {
-        'font-family': 'var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)',
-        color: 'var(--cosense-code-text, var(--code-color, #342d9c))',
-      },
+      "declarations": {
+        "font-family": "var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)",
+        "color": "var(--cosense-code-text, var(--code-color, #342d9c))"
+      }
     },
     {
-      selector: {
-        body: '.code-start',
-        pseudo: '',
+      "selector": {
+        "body": ".code-start",
+        "pseudo": ""
       },
-      declarations: {
-        'font-family': 'var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)',
-        color: 'var(--cosense-code-text, var(--code-color, #342d9c))',
-      },
+      "declarations": {
+        "font-family": "var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)",
+        "color": "var(--cosense-code-text, var(--code-color, #342d9c))"
+      }
     },
     {
-      selector: {
-        body: '.code-body',
-        pseudo: '',
+      "selector": {
+        "body": ".code-body",
+        "pseudo": ""
       },
-      declarations: {
-        'font-family': 'var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)',
-        color: 'var(--cosense-code-text, var(--code-color, #342d9c))',
-      },
+      "declarations": {
+        "font-family": "var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)",
+        "color": "var(--cosense-code-text, var(--code-color, #342d9c))"
+      }
     },
     {
-      selector: {
-        body: '.monospace',
-        pseudo: '',
+      "selector": {
+        "body": ".monospace",
+        "pseudo": ""
       },
-      declarations: {
-        'font-family': 'var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)',
-        color: 'var(--cosense-code-text, var(--code-color, #342d9c))',
-      },
+      "declarations": {
+        "font-family": "var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)",
+        "color": "var(--cosense-code-text, var(--code-color, #342d9c))"
+      }
     },
     {
-      selector: {
-        body: '.code',
-        pseudo: '',
+      "selector": {
+        "body": ".code",
+        "pseudo": ""
       },
-      declarations: {
-        padding: '0 0.2em',
-        'border-radius': '4px',
-        'font-size': '90%',
-        'word-wrap': 'break-word',
-        background: 'var(--cosense-code-bg, var(--code-bg, rgba(0, 0, 0, 0.04)))',
-      },
+      "declarations": {
+        "padding": "0 0.2em",
+        "border-radius": "4px",
+        "font-size": "90%",
+        "word-wrap": "break-word",
+        "background": "var(--cosense-code-bg, var(--code-bg, rgba(0, 0, 0, 0.04)))"
+      }
     },
     {
-      selector: {
-        body: '.monospace',
-        pseudo: '',
+      "selector": {
+        "body": ".monospace",
+        "pseudo": ""
       },
-      declarations: {
-        padding: '0 0.2em',
-        'border-radius': '4px',
-        'font-size': '90%',
-        'word-wrap': 'break-word',
-        background: 'var(--cosense-code-bg, var(--code-bg, rgba(0, 0, 0, 0.04)))',
-      },
+      "declarations": {
+        "padding": "0 0.2em",
+        "border-radius": "4px",
+        "font-size": "90%",
+        "word-wrap": "break-word",
+        "background": "var(--cosense-code-bg, var(--code-bg, rgba(0, 0, 0, 0.04)))"
+      }
     },
     {
-      selector: {
-        body: '.code-block-start',
-        pseudo: '',
+      "selector": {
+        "body": ".code-block-start",
+        "pseudo": ""
       },
-      declarations: {
-        padding: '1px 2px',
-        'font-size': '0.95em',
-        color: 'var(--cosense-badge-text, #342d9c)',
-        background: 'var(--cosense-badge-bg, #ffcfc6)',
-      },
+      "declarations": {
+        "padding": "1px 2px",
+        "font-size": "0.95em",
+        "color": "var(--cosense-badge-text, #342d9c)",
+        "background": "var(--cosense-badge-bg, #ffcfc6)"
+      }
     },
     {
-      selector: {
-        body: '.quote',
-        pseudo: '',
+      "selector": {
+        "body": ".quote",
+        "pseudo": ""
       },
-      declarations: {
-        display: 'block',
-        margin: '0',
-        'padding-left': '3px',
-        'border-left': 'solid 1px #a0a0a0',
-        background: 'var(--cosense-quote-bg, var(--quote-bg-color, rgba(0, 0, 0, 0.05)))',
-      },
+      "declarations": {
+        "display": "block",
+        "margin": "0",
+        "padding-left": "3px",
+        "border-left": "solid 1px #a0a0a0",
+        "background": "var(--cosense-quote-bg, var(--quote-bg-color, rgba(0, 0, 0, 0.05)))"
+      }
     },
     {
-      selector: {
-        body: '.table',
-        pseudo: '',
+      "selector": {
+        "body": ".table",
+        "pseudo": ""
       },
-      declarations: {
-        margin: '0',
-        'border-collapse': 'collapse',
-        'caption-side': 'top',
-      },
+      "declarations": {
+        "margin": "0",
+        "border-collapse": "collapse",
+        "caption-side": "top"
+      }
     },
     {
-      selector: {
-        body: '.image',
-        pseudo: '',
+      "selector": {
+        "body": ".image",
+        "pseudo": ""
       },
-      declarations: {
-        display: 'inline-block',
-        'max-width': '100%',
-        'max-height': '300px',
-        'vertical-align': 'bottom',
-      },
+      "declarations": {
+        "display": "inline-block",
+        "max-width": "100%",
+        "max-height": "300px",
+        "vertical-align": "bottom"
+      }
     },
     {
-      selector: {
-        body: '.formula',
-        pseudo: '',
+      "selector": {
+        "body": ".formula",
+        "pseudo": ""
       },
-      declarations: {
-        margin: 'auto 6px',
-        'font-family': 'var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)',
-        'font-style': 'italic',
-      },
+      "declarations": {
+        "margin": "auto 6px",
+        "font-family": "var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)",
+        "font-style": "italic"
+      }
     },
     {
-      selector: {
-        body: '.table caption',
-        pseudo: '',
+      "selector": {
+        "body": ".table caption",
+        "pseudo": ""
       },
-      declarations: {
-        padding: '1px 2px',
-        'text-align': 'center',
-        'font-size': '0.9em',
-        color: 'var(--cosense-badge-text, #342d9c)',
-        background: 'var(--cosense-badge-bg, #ffcfc6)',
-      },
+      "declarations": {
+        "padding": "1px 2px",
+        "text-align": "center",
+        "font-size": "0.9em",
+        "color": "var(--cosense-badge-text, #342d9c)",
+        "background": "var(--cosense-badge-bg, #ffcfc6)"
+      }
     },
     {
-      selector: {
-        body: '.table td',
-        pseudo: '',
+      "selector": {
+        "body": ".table td",
+        "pseudo": ""
       },
-      declarations: {
-        padding: '0 2px 0 8px',
-        'white-space': 'nowrap',
-      },
+      "declarations": {
+        "padding": "0 2px 0 8px",
+        "white-space": "nowrap"
+      }
     },
     {
-      selector: {
-        body: 'img.icon',
-        pseudo: '',
+      "selector": {
+        "body": "img.icon",
+        "pseudo": ""
       },
-      declarations: {
-        display: 'inline-block',
-        position: 'relative',
-        top: '-0.3em',
-        height: '1.3em',
-        'max-width': '100%',
-        'vertical-align': 'baseline',
-      },
+      "declarations": {
+        "display": "inline-block",
+        "position": "relative",
+        "top": "-0.3em",
+        "height": "1.3em",
+        "max-width": "100%",
+        "vertical-align": "baseline"
+      }
     },
     {
-      selector: {
-        body: '.line[data-indent="1"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line[data-indent='1']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-depth': '1',
-      },
+      "declarations": {
+        "--cosense-depth": "1"
+      }
     },
     {
-      selector: {
-        body: '.line[data-indent="2"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line[data-indent='2']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-depth': '2',
-      },
+      "declarations": {
+        "--cosense-depth": "2"
+      }
     },
     {
-      selector: {
-        body: '.line[data-indent="3"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line[data-indent='3']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-depth': '3',
-      },
+      "declarations": {
+        "--cosense-depth": "3"
+      }
     },
     {
-      selector: {
-        body: '.line[data-indent="4"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line[data-indent='4']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-depth': '4',
-      },
+      "declarations": {
+        "--cosense-depth": "4"
+      }
     },
     {
-      selector: {
-        body: '.line[data-indent="5"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line[data-indent='5']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-depth': '5',
-      },
+      "declarations": {
+        "--cosense-depth": "5"
+      }
     },
     {
-      selector: {
-        body: '.line[data-indent="6"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line[data-indent='6']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-depth': '6',
-      },
+      "declarations": {
+        "--cosense-depth": "6"
+      }
     },
     {
-      selector: {
-        body: '.line[data-indent="7"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line[data-indent='7']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-depth': '7',
-      },
+      "declarations": {
+        "--cosense-depth": "7"
+      }
     },
     {
-      selector: {
-        body: '.line[data-indent="8"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line[data-indent='8']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-depth': '8',
-      },
+      "declarations": {
+        "--cosense-depth": "8"
+      }
     },
     {
-      selector: {
-        body: '.line[data-indent="9"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line[data-indent='9']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-depth': '9',
-      },
+      "declarations": {
+        "--cosense-depth": "9"
+      }
     },
     {
-      selector: {
-        body: '.line[data-indent="10"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line[data-indent='10']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-depth': '10',
-      },
+      "declarations": {
+        "--cosense-depth": "10"
+      }
     },
     {
-      selector: {
-        body: '.line[data-indent]',
-        pseudo: '',
+      "selector": {
+        "body": ".line[data-indent]",
+        "pseudo": ""
       },
-      declarations: {
-        'padding-left': 'calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0))',
-      },
+      "declarations": {
+        "padding-left": "calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0))"
+      }
     },
     {
-      selector: {
-        body: '.link:hover',
-        pseudo: '',
+      "selector": {
+        "body": ".link:hover",
+        "pseudo": ""
       },
-      declarations: {
-        color: 'var(--cosense-link-hover, var(--page-link-hover-color, #0d4ff3))',
-      },
+      "declarations": {
+        "color": "var(--cosense-link-hover, var(--page-link-hover-color, #0d4ff3))"
+      }
     },
     {
-      selector: {
-        body: '.hashtag:hover',
-        pseudo: '',
+      "selector": {
+        "body": ".hashtag:hover",
+        "pseudo": ""
       },
-      declarations: {
-        color: 'var(--cosense-link-hover, var(--page-link-hover-color, #0d4ff3))',
-      },
+      "declarations": {
+        "color": "var(--cosense-link-hover, var(--page-link-hover-color, #0d4ff3))"
+      }
     },
     {
-      selector: {
-        body: '.image[data-large]',
-        pseudo: '',
+      "selector": {
+        "body": ".image[data-large]",
+        "pseudo": ""
       },
-      declarations: {
-        margin: '3px 0',
-        'max-width': '95%',
-        'max-height': 'none',
-      },
+      "declarations": {
+        "margin": "3px 0",
+        "max-width": "95%",
+        "max-height": "none"
+      }
     },
     {
-      selector: {
-        body: '.decoration[data-size-level="1"]',
-        pseudo: '',
+      "selector": {
+        "body": ".decoration[data-size-level='1']",
+        "pseudo": ""
       },
-      declarations: {
-        'font-size': '1.2em',
-      },
+      "declarations": {
+        "font-size": "1.2em"
+      }
     },
     {
-      selector: {
-        body: '.decoration[data-size-level="2"]',
-        pseudo: '',
+      "selector": {
+        "body": ".decoration[data-size-level='2']",
+        "pseudo": ""
       },
-      declarations: {
-        'font-size': '1.44em',
-      },
+      "declarations": {
+        "font-size": "1.44em"
+      }
     },
     {
-      selector: {
-        body: '.decoration[data-size-level="3"]',
-        pseudo: '',
+      "selector": {
+        "body": ".decoration[data-size-level='3']",
+        "pseudo": ""
       },
-      declarations: {
-        'font-size': '1.73em',
-      },
+      "declarations": {
+        "font-size": "1.73em"
+      }
     },
     {
-      selector: {
-        body: '.decoration[data-size-level="4"]',
-        pseudo: '',
+      "selector": {
+        "body": ".decoration[data-size-level='4']",
+        "pseudo": ""
       },
-      declarations: {
-        'font-size': '2.07em',
-      },
+      "declarations": {
+        "font-size": "2.07em"
+      }
     },
     {
-      selector: {
-        body: '.decoration[data-size-level]',
-        pseudo: '',
+      "selector": {
+        "body": ".decoration[data-size-level]",
+        "pseudo": ""
       },
-      declarations: {
-        display: 'inline-block',
-        'line-height': '1.6',
-      },
+      "declarations": {
+        "display": "inline-block",
+        "line-height": "1.6"
+      }
     },
     {
-      selector: {
-        body: '.line[data-indent]',
-        pseudo: '::before',
+      "selector": {
+        "body": ".line[data-indent]",
+        "pseudo": "::before"
       },
-      declarations: {
-        content: '""',
-        position: 'absolute',
-        top: '0.7em',
-        left: 'calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0) - 1.05em)',
-        width: '6px',
-        height: '6px',
-        'border-radius': '50%',
-        background: 'var(--cosense-text, var(--page-text-color, #555))',
-      },
+      "declarations": {
+        "content": "''",
+        "position": "absolute",
+        "top": "0.7em",
+        "left": "calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0) - 1.05em)",
+        "width": "6px",
+        "height": "6px",
+        "border-radius": "50%",
+        "background": "var(--cosense-text, var(--page-text-color, #555))"
+      }
     },
     {
-      selector: {
-        body: '.line:has(> .indent-mark)',
-        pseudo: '::before',
+      "selector": {
+        "body": ".line:has(> .indent-mark)",
+        "pseudo": "::before"
       },
-      declarations: {
-        content: 'none',
-      },
+      "declarations": {
+        "content": "none"
+      }
     },
     {
-      selector: {
-        body: '.line.code-block > code',
-        pseudo: '',
+      "selector": {
+        "body": ".line.code-block > code",
+        "pseudo": ""
       },
-      declarations: {
-        display: 'block',
-        'min-height': '1.7em',
-        'line-height': '1.7em',
-        'tab-size': '4',
-        background: 'var(--cosense-code-bg, var(--code-bg, rgba(0, 0, 0, 0.04)))',
-      },
+      "declarations": {
+        "display": "block",
+        "min-height": "1.7em",
+        "line-height": "1.7em",
+        "tab-size": "4",
+        "background": "var(--cosense-code-bg, var(--code-bg, rgba(0, 0, 0, 0.04)))"
+      }
     },
     {
-      selector: {
-        body: '.table td:nth-child(odd)',
-        pseudo: '',
+      "selector": {
+        "body": ".table td:nth-child(odd)",
+        "pseudo": ""
       },
-      declarations: {
-        background: 'rgba(0, 0, 0, 0.04)',
-      },
+      "declarations": {
+        "background": "rgba(0, 0, 0, 0.04)"
+      }
     },
     {
-      selector: {
-        body: '.table td:nth-child(even)',
-        pseudo: '',
+      "selector": {
+        "body": ".table td:nth-child(even)",
+        "pseudo": ""
       },
-      declarations: {
-        background: 'rgba(0, 0, 0, 0.06)',
-      },
+      "declarations": {
+        "background": "rgba(0, 0, 0, 0.06)"
+      }
     },
     {
-      selector: {
-        body: '.line.code-block > .code-body',
-        pseudo: '',
+      "selector": {
+        "body": ".line.code-block > .code-body",
+        "pseudo": ""
       },
-      declarations: {
-        'margin-left': 'calc(var(--cosense-indent, 1.5em) * -1)',
-        'padding-left': 'var(--cosense-indent, 1.5em)',
-        'white-space': 'pre-wrap',
-      },
+      "declarations": {
+        "margin-left": "calc(var(--cosense-indent, 1.5em) * -1)",
+        "padding-left": "var(--cosense-indent, 1.5em)",
+        "white-space": "pre-wrap"
+      }
     },
     {
-      selector: {
-        body: '.line.code-block[data-line-digits="1"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line.code-block[data-line-digits='1']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-line-digits': '1',
-      },
+      "declarations": {
+        "--cosense-line-digits": "1"
+      }
     },
     {
-      selector: {
-        body: '.line.code-block[data-line-digits="2"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line.code-block[data-line-digits='2']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-line-digits': '2',
-      },
+      "declarations": {
+        "--cosense-line-digits": "2"
+      }
     },
     {
-      selector: {
-        body: '.line.code-block[data-line-digits="3"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line.code-block[data-line-digits='3']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-line-digits': '3',
-      },
+      "declarations": {
+        "--cosense-line-digits": "3"
+      }
     },
     {
-      selector: {
-        body: '.line.code-block[data-line-digits="4"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line.code-block[data-line-digits='4']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-line-digits': '4',
-      },
+      "declarations": {
+        "--cosense-line-digits": "4"
+      }
     },
     {
-      selector: {
-        body: '.line.code-block[data-line-digits="5"]',
-        pseudo: '',
+      "selector": {
+        "body": ".line.code-block[data-line-digits='5']",
+        "pseudo": ""
       },
-      declarations: {
-        '--cosense-line-digits': '5',
-      },
+      "declarations": {
+        "--cosense-line-digits": "5"
+      }
     },
     {
-      selector: {
-        body: '.line.code-block:not(:has(> .code-start))',
-        pseudo: '::before',
+      "selector": {
+        "body": ".line.code-block:not(:has(> .code-start))",
+        "pseudo": "::before"
       },
-      declarations: {
-        content: 'none',
-      },
+      "declarations": {
+        "content": "none"
+      }
     },
     {
-      selector: {
-        body: '.line.code-block[data-line]',
-        pseudo: '::before',
+      "selector": {
+        "body": ".line.code-block[data-line]",
+        "pseudo": "::before"
       },
-      declarations: {
-        content: 'attr(data-line)',
-        top: '0',
-        left: 'calc(var(--cosense-indent, 1.5em) * (var(--cosense-depth, 1) - 1))',
-        width: 'calc(0.6em + var(--cosense-line-digits, 5) * 1ch)',
-        height: 'auto',
-        display: 'flex',
-        'justify-content': 'flex-end',
-        'white-space': 'nowrap',
-        'border-radius': '0',
-        background: 'none',
-        'font-family': 'var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)',
-        'line-height': '1.7em',
-        color: 'var(--cosense-line-number, rgba(0, 0, 0, 0.35))',
-      },
+      "declarations": {
+        "content": "attr(data-line)",
+        "top": "0",
+        "left": "calc(var(--cosense-indent, 1.5em) * (var(--cosense-depth, 1) - 1))",
+        "width": "calc(0.6em + var(--cosense-line-digits, 5) * 1ch)",
+        "height": "auto",
+        "display": "flex",
+        "justify-content": "flex-end",
+        "white-space": "nowrap",
+        "border-radius": "0",
+        "background": "none",
+        "font-family": "var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)",
+        "line-height": "1.7em",
+        "color": "var(--cosense-line-number, rgba(0, 0, 0, 0.35))"
+      }
     },
     {
-      selector: {
-        body: '.line.code-block[data-line] > .code-body',
-        pseudo: '',
+      "selector": {
+        "body": ".line.code-block[data-line] > .code-body",
+        "pseudo": ""
       },
-      declarations: {
-        'padding-left': 'calc(0.6em + (var(--cosense-line-digits, 5) + 1) * 1ch)',
-      },
-    },
-  ],
+      "declarations": {
+        "padding-left": "calc(0.6em + (var(--cosense-line-digits, 5) + 1) * 1ch)"
+      }
+    }
+  ]
 }

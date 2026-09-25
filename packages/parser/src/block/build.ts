@@ -6,6 +6,7 @@
  * (どの記法ルールを使うかを知らずに済むので、拡張入りのパーサーでもここは変わらない)。
  */
 import { Match } from 'effect'
+
 import { type Origin, originOfLine, shiftOrigin, spanAt } from '../core/position'
 import type {
   CodeBlock,
@@ -18,7 +19,7 @@ import type {
   TitleBlock,
   TopLevelBlock,
 } from '../types'
-import { type ContentLine, classifyLine, indentOf } from './classify'
+import { classifyLine, type ContentLine, indentOf } from './classify'
 
 /** 1 行分の入力。`offset` はソース全文における行頭の位置。 */
 export interface SourceLine {
