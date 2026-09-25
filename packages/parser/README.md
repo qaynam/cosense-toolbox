@@ -48,17 +48,6 @@ collectLinks(page) // → ['プロジェクトA', 'あとで読む']
 toHtml(page)       // → '<div class="page"><h1 class="title">今日のメモ</h1>…'
 ```
 
-## 次のリリースでの変更
-
-HTML 系の出力を hast にまとめた。`toHtml` は `toHast` の出力を文字列にする近道になる。
-
-- `toHast` を足した。描画の規則はここにだけある。HTML の文字列が要らないとき (rehype や JSX) はこちらを使う
-- `handlers` は HTML の文字列ではなく hast のノードを返す。文字列のまま入れたいときは `{ type: 'raw', value }` を返す
-- `ctx.children(node)` は子の変換結果を平らな hast の配列で返す。`ctx.options` で既定値を埋めたオプションを読める
-- `createHtmlHandlers(options)` をやめ、`defaultHastHandlers` にした。オプションは `ctx.options` から読むので、既定の出力を包むときに渡し直さなくてよい
-- `highlight` は hast と `null` も返せる。HTML の文字列を返す今までの形も `toHtml` ではそのまま使える
-- テキストのエスケープは hast-util-to-html に揃えた。`<` と `&` だけを実体参照にする (`>` はそのまま)
-
 ## API
 
 モジュールごとに export が分かれている。使うものだけ import すればよい。
