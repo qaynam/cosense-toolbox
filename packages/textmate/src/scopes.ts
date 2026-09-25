@@ -1,4 +1,10 @@
 /**
+ * A scope this grammar gives. Every one ends in `.cosense`, which is how a theme or a
+ * reader tells them from the scopes of a language embedded next to Cosense.
+ */
+export type Scope = `${string}.cosense`
+
+/**
  * The TextMate scope each Cosense notation is drawn as.
  *
  * Keys are the token names @cosense-toolbox/language-server reasons in, so the two
@@ -31,6 +37,6 @@ export const SCOPES = {
   // `.csnx` only.
   component: 'meta.tag.component.cosense',
   frontmatter: 'comment.block.frontmatter.cosense',
-} as const
+} as const satisfies Record<string, Scope>
 
 export type Notation = keyof typeof SCOPES

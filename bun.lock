@@ -154,6 +154,9 @@
     "packages/textmate": {
       "name": "@cosense-toolbox/textmate",
       "version": "0.1.0-beta.0",
+      "dependencies": {
+        "effect": "^3.22.1",
+      },
       "devDependencies": {
         "@cosense-toolbox/language-server": "workspace:*",
         "shiki": "^4.4.3",

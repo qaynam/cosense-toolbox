@@ -25,6 +25,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
+  "dependencies": {
+    "effect": "^3.22.1"
+  },
   "devDependencies": {
     "@cosense-toolbox/language-server": "workspace:*",
     "shiki": "^4.4.3",

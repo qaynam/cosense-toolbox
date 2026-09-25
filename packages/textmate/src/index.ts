@@ -6,9 +6,9 @@
  */
 import { type Grammar, buildGrammar } from './grammar'
 
-export type { Grammar, Rule } from './grammar'
+export type { Dialect, Grammar, Rule } from './grammar'
 export { type Notation, SCOPES } from './scopes'
 
-export const cosense: Grammar = buildGrammar({ components: false })
+export const cosense: Grammar = buildGrammar('cosense')
 
-export const cosenseX: Grammar = buildGrammar({ components: true })
+export const cosenseX: Grammar = buildGrammar('cosense-x')
