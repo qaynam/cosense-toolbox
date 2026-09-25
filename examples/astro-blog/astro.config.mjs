@@ -19,8 +19,12 @@ export default defineConfig({
       pageUrl,
       tagUrl,
       parseOptions: {
-        extensions: [customDecorations(['|', '!', '~', '#'])],
+        extensions: [
+          customDecorations(['|', '!', '~', '#'])
+        ],
+        tableCellNotation: "all",
       },
+      tableCellLineBreakMarker: "\\n",
       unresolved: 'warn',
       assets: { pat: process.env.COSENSE_PAT },
     }),
