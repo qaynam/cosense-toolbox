@@ -4,17 +4,18 @@
  * `toHast` で hast にしてから文字列にするだけの近道。描画の規則は `toHast` にしか持たない。
  * JSX など HTML 以外の出力とずれないようにするため。
  */
-import type { Root } from 'hast'
-import { toHtml as hastToHtml } from 'hast-util-to-html'
-import type { AnyNode } from '../types'
-import { type HastContent, type HastHighlighter, type HastOptions, toHast } from './to-hast'
+import type { Root } from "hast"
+import { toHtml as hastToHtml } from "hast-util-to-html"
+
+import type { AnyNode } from "../types"
+import { type HastContent, type HastHighlighter, type HastOptions, toHast } from "./to-hast"
 
 const HTML_ESCAPES: Readonly<Record<string, string>> = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;',
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
 }
 
 /**
@@ -31,7 +32,7 @@ export const escapeHtml = (value: string): string =>
  */
 export type Highlighter = (code: string, language: string) => string | Root | HastContent[] | null
 
-export interface HtmlOptions extends Omit<HastOptions, 'highlight'> {
+export interface HtmlOptions extends Omit<HastOptions, "highlight"> {
   /** コードブロックの中身の色付け。 */
   readonly highlight?: Highlighter
   /**
@@ -47,7 +48,7 @@ const asHastHighlighter =
   (highlight: Highlighter): HastHighlighter =>
   (code, language) => {
     const result = highlight(code, language)
-    return typeof result === 'string' ? [{ type: 'raw', value: result }] : result
+    return typeof result === "string" ? [{ type: "raw", value: result }] : result
   }
 
 /**

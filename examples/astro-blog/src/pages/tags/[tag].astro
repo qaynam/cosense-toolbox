@@ -1,7 +1,8 @@
 ---
-import graph from 'virtual:cosense-x/graph'
-import Base from '../../layouts/Base.astro'
-import { pageUrl } from '../../urls'
+import graph from "virtual:cosense-x/graph"
+
+import Base from "../../layouts/Base.astro"
+import { pageUrl } from "../../urls"
 
 export function getStaticPaths() {
   return Object.values(graph.tags).map((tag) => ({ params: { tag: tag.name }, props: { tag } }))
@@ -14,12 +15,12 @@ const pages = tag.pages.map((id) => graph.pages[id]).filter((page) => page !== u
 <Base title={`#${tag.name}`}>
   <h1 class="mb-6 text-2xl font-bold">#{tag.name}</h1>
   <ul class="list-disc pl-6">
-    {
-      pages.map((page) => (
-        <li>
-          <a class="text-blue-700 underline" href={pageUrl(page)}>{page.title}</a>
-        </li>
-      ))
-    }
+    {pages.map((page) => (
+      <li>
+        <a class="text-blue-700 underline" href={pageUrl(page)}>
+          {page.title}
+        </a>
+      </li>
+    ))}
   </ul>
 </Base>

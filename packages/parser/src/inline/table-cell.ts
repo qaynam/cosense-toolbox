@@ -8,20 +8,21 @@
  *
  * どのノードを残すかは拡張の `keepInTableCell` で足せる (`tableCellNotation`)。
  */
-import { Match, Option, pipe } from 'effect'
-import { type Origin, spanAt } from '../core/position'
-import type { Decoration, InlineNode, TextNode } from '../types'
-import type { Extension } from './types'
+import { Match, Option, pipe } from "effect"
+
+import { type Origin, spanAt } from "../core/position"
+import type { Decoration, InlineNode, TextNode } from "../types"
+import type { Extension } from "./types"
 
 /** セルの中でも記法として残すかどうか。 */
 export type KeepInTableCell = (node: InlineNode) => boolean
 
 /** Cosense Web がセルの中でも読む記法。 */
-const LINK_TYPES: ReadonlySet<InlineNode['type']> = new Set([
-  'internalLink',
-  'externalLink',
-  'projectLink',
-  'hashtag',
+const LINK_TYPES: ReadonlySet<InlineNode["type"]> = new Set([
+  "internalLink",
+  "externalLink",
+  "projectLink",
+  "hashtag",
 ])
 
 /** リンクの記法は必ず残し、それに加えて拡張のどれかが残すと言ったノードを残す。 */
@@ -33,12 +34,12 @@ export const keepInTableCellOf = (extensions: readonly Extension[] = []): KeepIn
 }
 
 const joinTexts = (previous: TextNode, next: TextNode): TextNode => ({
-  type: 'text',
+  type: "text",
   value: previous.value + next.value,
   position: { start: previous.position.start, end: next.position.end },
 })
 
-const isText = (node: InlineNode): node is TextNode => node.type === 'text'
+const isText = (node: InlineNode): node is TextNode => node.type === "text"
 
 /** `start` から続く text ノードの並び。 */
 const textRunFrom = (nodes: readonly InlineNode[], start: number): readonly TextNode[] => {
@@ -78,7 +79,7 @@ export const keepNotation = (
       ? []
       : [
           {
-            type: 'text',
+            type: "text",
             value: source.slice(start - origin.offset, end - origin.offset),
             position: spanAt(origin, start - origin.offset, end - origin.offset),
           },
@@ -106,8 +107,8 @@ export const keepNotation = (
 
   const demote = (node: InlineNode): readonly InlineNode[] =>
     Match.value(node).pipe(
-      Match.when({ type: 'text' }, (text) => [text]),
-      Match.when({ type: 'decoration' }, (decoration) =>
+      Match.when({ type: "text" }, (text) => [text]),
+      Match.when({ type: "decoration" }, (decoration) =>
         keep(decoration)
           ? [{ ...decoration, children: inside(decoration.children) }]
           : unwrap(decoration),

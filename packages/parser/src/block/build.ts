@@ -5,8 +5,9 @@
  * この複数行のまとまりを作るのがここの仕事で、行の中身の解釈は注入された tokenize に任せる
  * (どの記法ルールを使うかを知らずに済むので、拡張入りのパーサーでもここは変わらない)。
  */
-import { Match } from 'effect'
-import { type Origin, originOfLine, shiftOrigin, spanAt } from '../core/position'
+import { Match } from "effect"
+
+import { type Origin, originOfLine, shiftOrigin, spanAt } from "../core/position"
 import type {
   CodeBlock,
   CodeLine,
@@ -17,8 +18,8 @@ import type {
   TableRow,
   TitleBlock,
   TopLevelBlock,
-} from '../types'
-import { type ContentLine, classifyLine, indentOf } from './classify'
+} from "../types"
+import { classifyLine, type ContentLine, indentOf } from "./classify"
 
 /** 1 行分の入力。`offset` はソース全文における行頭の位置。 */
 export interface SourceLine {
@@ -48,14 +49,14 @@ const dedent = (text: string, amount: number): string =>
   text.slice(Math.min(amount, indentOf(text)))
 
 const titleBlock = (line: SourceLine, tokenize: TokenizeLine): TitleBlock => ({
-  type: 'title',
+  type: "title",
   value: line.text,
   children: tokenize(line.text, lineOrigin(line)),
   position: wholeLine(line),
 })
 
 const lineBlock = (line: SourceLine, role: ContentLine, tokenize: TokenizeLine): LineBlock => ({
-  type: 'line',
+  type: "line",
   indent: role.indent,
   quote: role.quote,
   monospace: role.monospace,
@@ -68,7 +69,7 @@ const lineBlock = (line: SourceLine, role: ContentLine, tokenize: TokenizeLine):
 })
 
 const codeLine = (line: SourceLine, headerIndent: number): CodeLine => ({
-  type: 'codeLine',
+  type: "codeLine",
   // ヘッダより 1 段深いところがコードの左端。それより深いインデントは中身なので保つ。
   value: dedent(line.text, headerIndent + 1),
   position: wholeLine(line),
@@ -77,12 +78,12 @@ const codeLine = (line: SourceLine, headerIndent: number): CodeLine => ({
 const tableCells = (line: SourceLine, tokenize: TokenizeLine): readonly TableCell[] => {
   const origin = lineOrigin(line)
   const indent = indentOf(line.text)
-  const values = line.text.slice(indent).split('\t')
+  const values = line.text.slice(indent).split("\t")
   return values.map((value, index) => {
     // 前にあるセルと、その区切りのタブ 1 文字ずつのぶんだけ右から始まる。
     const start = indent + values.slice(0, index).reduce((sum, cell) => sum + cell.length + 1, 0)
     return {
-      type: 'tableCell',
+      type: "tableCell",
       value,
       children: tokenize(value, shiftOrigin(origin, start)),
       position: spanAt(origin, start, start + value.length),
@@ -91,7 +92,7 @@ const tableCells = (line: SourceLine, tokenize: TokenizeLine): readonly TableCel
 }
 
 const tableRow = (line: SourceLine, tokenize: TokenizeLine): TableRow => ({
-  type: 'tableRow',
+  type: "tableRow",
   cells: tableCells(line, tokenize),
   position: wholeLine(line),
 })
@@ -118,7 +119,7 @@ const codeBlock = (
   filename: string,
   indent: number,
 ): CodeBlock => ({
-  type: 'codeBlock',
+  type: "codeBlock",
   filename,
   indent,
   lines: body.map((line) => codeLine(line, indent)),
@@ -132,7 +133,7 @@ const tableBlock = (
   indent: number,
   tokenize: TokenizeLine,
 ): TableBlock => ({
-  type: 'table',
+  type: "table",
   name,
   indent,
   rows: body.map((line) => tableRow(line, tokenize)),
@@ -159,12 +160,12 @@ export const buildBlocks = (
     if (line === undefined) break
 
     index = Match.value(classifyLine(line.text)).pipe(
-      Match.tag('codeHeader', (role) => {
+      Match.tag("codeHeader", (role) => {
         const end = bodyEnd(lines, index + 1, role.indent)
         blocks.push(codeBlock(line, lines.slice(index + 1, end), role.filename, role.indent))
         return end
       }),
-      Match.tag('tableHeader', (role) => {
+      Match.tag("tableHeader", (role) => {
         const end = bodyEnd(lines, index + 1, role.indent)
         blocks.push(
           tableBlock(
@@ -177,7 +178,7 @@ export const buildBlocks = (
         )
         return end
       }),
-      Match.tag('content', (role) => {
+      Match.tag("content", (role) => {
         blocks.push(lineBlock(line, role, tokenize))
         return index + 1
       }),
@@ -196,10 +197,10 @@ export const buildLineBlock = (line: SourceLine, tokenize: TokenizeLine): LineBl
   const role = classifyLine(line.text)
   return lineBlock(
     line,
-    role._tag === 'content'
+    role._tag === "content"
       ? role
       : {
-          _tag: 'content',
+          _tag: "content",
           indent: role.indent,
           quote: false,
           monospace: false,

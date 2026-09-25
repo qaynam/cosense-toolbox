@@ -67,6 +67,7 @@ jobs:
       - name: 検査
         run: |
           bun run lint
+          bun run format:check
           bun run typecheck
           bun run test
 

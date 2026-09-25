@@ -1,11 +1,11 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte'
+  import type { Snippet } from "svelte"
 
   let {
-    type = 'note',
+    type = "note",
     title,
     children,
-  }: { type?: 'note' | 'warn'; title?: string; children?: Snippet } = $props()
+  }: { type?: "note" | "warn"; title?: string; children?: Snippet } = $props()
 </script>
 
 <aside class="callout callout-{type}">

@@ -1,7 +1,8 @@
-import { Option, pipe } from 'effect'
-import { isImageUrl } from '../../core/image-url'
-import type { InlineNodeInit } from '../../types'
-import type { InternalBracketRule } from '../internal-types'
+import { Option, pipe } from "effect"
+
+import { isImageUrl } from "../../core/image-url"
+import type { InlineNodeInit } from "../../types"
+import type { InternalBracketRule } from "../internal-types"
 
 const URLS_RE = /https?:\/\/[^\s\]]+/gi
 
@@ -29,10 +30,10 @@ export const urlRule: InternalBracketRule = (inner) => {
   const urls = inner.match(URLS_RE) ?? []
   if (urls.length === 0) return Option.none()
 
-  const label = urls.reduce((rest, url) => rest.replace(url, ' '), inner).trim()
-  if (label !== '') {
+  const label = urls.reduce((rest, url) => rest.replace(url, " "), inner).trim()
+  if (label !== "") {
     return Option.some({
-      type: 'externalLink',
+      type: "externalLink",
       label,
       target: urls[0] ?? inner,
     })
@@ -47,13 +48,13 @@ export const urlRule: InternalBracketRule = (inner) => {
             pipe(
               linkFor(urls, src),
               Option.match({
-                onNone: (): InlineNodeInit => ({ type: 'image', src }),
-                onSome: (link): InlineNodeInit => ({ type: 'image', src, link }),
+                onNone: (): InlineNodeInit => ({ type: "image", src }),
+                onSome: (link): InlineNodeInit => ({ type: "image", src, link }),
               }),
             ),
           onNone: (): InlineNodeInit => ({
-            type: 'externalLink',
-            label: urls[1] ?? urls[0] ?? '',
+            type: "externalLink",
+            label: urls[1] ?? urls[0] ?? "",
             target: urls[0] ?? inner,
           }),
         }),
@@ -66,8 +67,8 @@ export const urlRule: InternalBracketRule = (inner) => {
     pipe(
       Option.liftPredicate(only, isImageUrl),
       Option.match({
-        onSome: (src): InlineNodeInit => ({ type: 'image', src }),
-        onNone: (): InlineNodeInit => ({ type: 'externalLink', label: only, target: only }),
+        onSome: (src): InlineNodeInit => ({ type: "image", src }),
+        onNone: (): InlineNodeInit => ({ type: "externalLink", label: only, target: only }),
       }),
     ),
   )

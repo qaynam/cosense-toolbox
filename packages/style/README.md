@@ -10,7 +10,7 @@ npm i @cosense-toolbox/style@beta
 ```
 
 ```ts
-import '@cosense-toolbox/style'
+import "@cosense-toolbox/style"
 ```
 
 > ⚠️ これは Cosense (Scrapbox) 本体の CSS **ではありません**。本体の CSS はエディタの DOM
@@ -40,23 +40,23 @@ CSS 変数を定義するだけでよい。定義した変数が最優先にな�
 }
 ```
 
-| 変数 | 既定 | 本体テーマの変数 |
-|---|---|---|
-| `--cosense-text` | `#4a4a4a` | `--page-text-color` |
-| `--cosense-title` | 本文と同じ | `--line-title-color` |
-| `--cosense-bg` | `#fefefe` | `--page-bg` |
-| `--cosense-link` | `#3d72f5` | `--page-link-color` |
-| `--cosense-link-hover` | `#0d4ff3` | `--page-link-hover-color` |
-| `--cosense-code-text` | `#342d9c` | `--code-color` |
-| `--cosense-code-bg` | `rgba(0,0,0,.04)` | `--code-bg` |
-| `--cosense-quote-bg` | `rgba(0,0,0,.05)` | `--quote-bg-color` |
-| `--cosense-badge-text` / `--cosense-badge-bg` | `#342d9c` / `#ffcfc6` | — |
-| `--cosense-font` | `"Open Sans", Helvetica, Arial, "Hiragino Sans", sans-serif` | — |
-| `--cosense-font-size` | `15px` | — |
-| `--cosense-line-height` | `1.87` | — |
-| `--cosense-code-font` | `ui-monospace, …` | — |
-| `--cosense-line-number` | `rgba(0,0,0,.35)` | — |
-| `--cosense-indent` | `1.5em` | — |
+| 変数                                          | 既定                                                         | 本体テーマの変数          |
+| --------------------------------------------- | ------------------------------------------------------------ | ------------------------- |
+| `--cosense-text`                              | `#4a4a4a`                                                    | `--page-text-color`       |
+| `--cosense-title`                             | 本文と同じ                                                   | `--line-title-color`      |
+| `--cosense-bg`                                | `#fefefe`                                                    | `--page-bg`               |
+| `--cosense-link`                              | `#3d72f5`                                                    | `--page-link-color`       |
+| `--cosense-link-hover`                        | `#0d4ff3`                                                    | `--page-link-hover-color` |
+| `--cosense-code-text`                         | `#342d9c`                                                    | `--code-color`            |
+| `--cosense-code-bg`                           | `rgba(0,0,0,.04)`                                            | `--code-bg`               |
+| `--cosense-quote-bg`                          | `rgba(0,0,0,.05)`                                            | `--quote-bg-color`        |
+| `--cosense-badge-text` / `--cosense-badge-bg` | `#342d9c` / `#ffcfc6`                                        | —                         |
+| `--cosense-font`                              | `"Open Sans", Helvetica, Arial, "Hiragino Sans", sans-serif` | —                         |
+| `--cosense-font-size`                         | `15px`                                                       | —                         |
+| `--cosense-line-height`                       | `1.87`                                                       | —                         |
+| `--cosense-code-font`                         | `ui-monospace, …`                                            | —                         |
+| `--cosense-line-number`                       | `rgba(0,0,0,.35)`                                            | —                         |
+| `--cosense-indent`                            | `1.5em`                                                      | —                         |
 
 「本体テーマの変数」の列は fallback として参照している。Cosense のテーマ変数を持つページに
 埋め込めば、`--cosense-*` を書かなくても見た目が揃う。
@@ -94,7 +94,7 @@ Cosense と同じく、字下げの右端に中点を出す。`toHtml` の既定
 - この CSS をカスケードレイヤーに入れて、ページ側の CSS を常に優先させる
 
 ```css
-@import '@cosense-toolbox/style' layer(cosense);
+@import "@cosense-toolbox/style" layer(cosense);
 ```
 
 ## ライセンス

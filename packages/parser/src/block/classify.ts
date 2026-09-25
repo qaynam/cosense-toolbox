@@ -4,8 +4,9 @@
  * 結果はタグ付きユニオンなので、行の種類を増やすと分岐している側が
  * exhaustive チェックで対応漏れを教えてくれる。
  */
-import { Option, pipe } from 'effect'
-import { leadingWhitespace } from '../core/scan'
+import { Option, pipe } from "effect"
+
+import { leadingWhitespace } from "../core/scan"
 
 const CODE_HEADER_RE = /^code:(.+)$/
 const TABLE_HEADER_RE = /^table:(.+)$/
@@ -14,19 +15,19 @@ const QUOTE_RE = /^>\s?/
 const MONOSPACE_RE = /^[$%]/
 
 export interface CodeHeaderLine {
-  readonly _tag: 'codeHeader'
+  readonly _tag: "codeHeader"
   readonly indent: number
   readonly filename: string
 }
 
 export interface TableHeaderLine {
-  readonly _tag: 'tableHeader'
+  readonly _tag: "tableHeader"
   readonly indent: number
   readonly name: string
 }
 
 export interface ContentLine {
-  readonly _tag: 'content'
+  readonly _tag: "content"
   readonly indent: number
   readonly quote: boolean
   readonly monospace: boolean
@@ -39,24 +40,24 @@ export type LineRole = CodeHeaderLine | TableHeaderLine | ContentLine
 const codeHeader = (rest: string, indent: number): Option.Option<LineRole> => {
   const match = rest.match(CODE_HEADER_RE)
   return match
-    ? Option.some({ _tag: 'codeHeader', indent, filename: (match[1] ?? '').trimEnd() })
+    ? Option.some({ _tag: "codeHeader", indent, filename: (match[1] ?? "").trimEnd() })
     : Option.none()
 }
 
 const tableHeader = (rest: string, indent: number): Option.Option<LineRole> => {
   const match = rest.match(TABLE_HEADER_RE)
   return match
-    ? Option.some({ _tag: 'tableHeader', indent, name: (match[1] ?? '').trimEnd() })
+    ? Option.some({ _tag: "tableHeader", indent, name: (match[1] ?? "").trimEnd() })
     : Option.none()
 }
 
 const content = (rest: string, indent: number): LineRole => {
-  const quoteMark = rest.match(QUOTE_RE)?.[0] ?? ''
+  const quoteMark = rest.match(QUOTE_RE)?.[0] ?? ""
   const body = rest.slice(quoteMark.length)
   return {
-    _tag: 'content',
+    _tag: "content",
     indent,
-    quote: quoteMark !== '',
+    quote: quoteMark !== "",
     monospace: MONOSPACE_RE.test(body),
     contentOffset: indent + quoteMark.length,
   }

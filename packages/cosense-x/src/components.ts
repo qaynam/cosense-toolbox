@@ -9,9 +9,10 @@
  * パーサー本体は変更しない。Cosense の画面ではただのテキスト行に見えるほうが、
  * Cosense で書いて読む人にとって自然だから。認識はパースした後に行の生テキストで行う。
  */
-import type { LineBlock, TopLevelBlock } from '@cosense-toolbox/parser'
-import { Either, Match, Option, pipe } from 'effect'
-import { type CosenseXError, componentTagError, orThrow } from './errors'
+import type { LineBlock, TopLevelBlock } from "@cosense-toolbox/parser"
+import { Either, Match, Option, pipe } from "effect"
+
+import { componentTagError, type CosenseXError, orThrow } from "./errors"
 
 export type ComponentAttributeValue =
   | string
@@ -36,7 +37,7 @@ export interface ComponentTag {
 
 /** 開始タグから閉じタグまでをまとめたコンポーネント。 */
 export interface ComponentBlock extends ComponentTag {
-  readonly type: 'component'
+  readonly type: "component"
   /**
    * 開始タグの行と閉じタグの行 (自己完結なら null)。
    * コンポーネントが渡されなかったときは、これらの行を children と一緒にそのまま出す。
@@ -62,13 +63,13 @@ const endOfBraces = (text: string, start: number): Option.Option<number> => {
   for (let i = start; i < text.length; i++) {
     const char = text[i]
     if (inString) {
-      if (char === '\\') i++
+      if (char === "\\") i++
       else if (char === '"') inString = false
       continue
     }
     if (char === '"') inString = true
-    else if (char === '{') depth++
-    else if (char === '}') {
+    else if (char === "{") depth++
+    else if (char === "}") {
       depth--
       if (depth === 0) return Option.some(i + 1)
     }
@@ -92,7 +93,7 @@ const parseAttributeValue = (text: string): Option.Option<ParsedValue> => {
     const end = text.indexOf(quote, 1)
     return end === -1 ? Option.none() : Option.some({ value: text.slice(1, end), length: end + 1 })
   }
-  if (quote === '{') {
+  if (quote === "{") {
     // 任意の JS 式は評価しない。共有プロジェクトのページをビルド時に実行させないため。
     return pipe(
       endOfBraces(text, 0),
@@ -107,7 +108,7 @@ const parseAttributeValue = (text: string): Option.Option<ParsedValue> => {
 /** 名前の後ろの属性の並び。名前と属性、属性どうしは空白で区切る。 */
 const parseAttributes = (text: string): Option.Option<readonly ComponentAttribute[]> => {
   const rest = text.trimStart()
-  if (rest === '') return Option.some([])
+  if (rest === "") return Option.some([])
   if (rest.length === text.length) return Option.none()
 
   const followedBy = (attribute: ComponentAttribute, after: string) =>
@@ -117,7 +118,7 @@ const parseAttributes = (text: string): Option.Option<readonly ComponentAttribut
     Option.fromNullable(ATTRIBUTE_NAME_RE.exec(rest)?.[0]),
     Option.flatMap((name) => {
       const after = rest.slice(name.length)
-      if (!after.startsWith('=')) return followedBy({ name, value: true }, after)
+      if (!after.startsWith("=")) return followedBy({ name, value: true }, after)
       return pipe(
         parseAttributeValue(after.slice(1)),
         Option.flatMap(({ value, length }) => followedBy({ name, value }, after.slice(1 + length))),
@@ -129,8 +130,8 @@ const parseAttributes = (text: string): Option.Option<readonly ComponentAttribut
 /** `parseComponentTag` の、Option を返す版。 */
 export const componentTagOf = (text: string): Option.Option<ComponentTag> => {
   const trimmed = text.trim()
-  if (!trimmed.startsWith('<') || !trimmed.endsWith('>')) return Option.none()
-  const selfClosing = trimmed.endsWith('/>')
+  if (!trimmed.startsWith("<") || !trimmed.endsWith(">")) return Option.none()
+  const selfClosing = trimmed.endsWith("/>")
   return pipe(
     Option.fromNullable(NAME_RE.exec(trimmed.slice(1))?.[0]),
     Option.flatMap((name) =>
@@ -161,7 +162,7 @@ export const parseClosingTag = (text: string): string | null => Option.getOrNull
  * そのぶん浅くする。それより浅い行は 0 に揃える。
  */
 const dedent = <T extends TopLevelBlock>(block: T, amount: number): T =>
-  block.type === 'title' || amount === 0
+  block.type === "title" || amount === 0
     ? block
     : { ...block, indent: Math.max(0, block.indent - amount) }
 
@@ -171,24 +172,24 @@ export const rawTextOfLine = (source: string, line: LineBlock): string =>
 
 /** ブロックが、コンポーネントの記法の中でどの役割を持つか。 */
 type BlockRole =
-  | { readonly _tag: 'plain'; readonly block: TopLevelBlock }
-  | { readonly _tag: 'open'; readonly line: LineBlock; readonly tag: ComponentTag }
-  | { readonly _tag: 'selfClosing'; readonly line: LineBlock; readonly tag: ComponentTag }
-  | { readonly _tag: 'close'; readonly line: LineBlock; readonly name: string }
+  | { readonly _tag: "plain"; readonly block: TopLevelBlock }
+  | { readonly _tag: "open"; readonly line: LineBlock; readonly tag: ComponentTag }
+  | { readonly _tag: "selfClosing"; readonly line: LineBlock; readonly tag: ComponentTag }
+  | { readonly _tag: "close"; readonly line: LineBlock; readonly name: string }
 
 const roleOf = (block: TopLevelBlock, source: string): BlockRole => {
   // 引用とコードの行に書いたタグは、タグの書き方を説明している文章とみなす。
-  if (block.type !== 'line' || block.quote || block.monospace) return { _tag: 'plain', block }
+  if (block.type !== "line" || block.quote || block.monospace) return { _tag: "plain", block }
   const raw = rawTextOfLine(source, block)
   return Option.match(closingTagOf(raw), {
-    onSome: (name): BlockRole => ({ _tag: 'close', line: block, name }),
+    onSome: (name): BlockRole => ({ _tag: "close", line: block, name }),
     onNone: () =>
       Option.match(componentTagOf(raw), {
-        onNone: (): BlockRole => ({ _tag: 'plain', block }),
+        onNone: (): BlockRole => ({ _tag: "plain", block }),
         onSome: (tag): BlockRole =>
           tag.selfClosing
-            ? { _tag: 'selfClosing', line: block, tag }
-            : { _tag: 'open', line: block, tag },
+            ? { _tag: "selfClosing", line: block, tag }
+            : { _tag: "open", line: block, tag },
       }),
   })
 }
@@ -228,7 +229,7 @@ const componentBlock = (
   line: LineBlock,
   closeLine: LineBlock | null,
   children: readonly GroupedBlock[],
-): ComponentBlock => ({ type: 'component', ...tag, line, closeLine, children })
+): ComponentBlock => ({ type: "component", ...tag, line, closeLine, children })
 
 /** `groupComponents` の、失敗を Either で返す版。 */
 export const groupComponentsEither = (
@@ -241,22 +242,22 @@ export const groupComponentsEither = (
 
   const step = (state: Grouping, block: TopLevelBlock): Either.Either<Grouping, CosenseXError> =>
     Match.value(roleOf(block, source)).pipe(
-      Match.tag('plain', ({ block }) =>
+      Match.tag("plain", ({ block }) =>
         Either.right(append(state, dedent(block, baseIndent(state)))),
       ),
-      Match.tag('selfClosing', ({ line, tag }) =>
+      Match.tag("selfClosing", ({ line, tag }) =>
         Either.right(append(state, componentBlock(tag, dedent(line, baseIndent(state)), null, []))),
       ),
-      Match.tag('open', ({ line, tag }) =>
+      Match.tag("open", ({ line, tag }) =>
         Either.right({ ...state, stack: [...state.stack, { tag, line, children: [] }] }),
       ),
-      Match.tag('close', ({ line, name }) =>
+      Match.tag("close", ({ line, name }) =>
         Option.match(
           Option.filter(innermost(state), (frame) => frame.tag.name === name),
           {
             onNone: () => {
               const expected = Option.match(innermost(state), {
-                onNone: () => '',
+                onNone: () => "",
                 onSome: (frame) => ` (<${frame.tag.name}> を閉じる前に閉じている)`,
               })
               return Either.left(

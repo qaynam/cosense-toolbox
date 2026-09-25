@@ -1,11 +1,11 @@
 /**
  * parse.ts — ページ全文の入口。
  */
-import { type SourceLine, buildBlocks, buildLineBlock } from './block/build'
-import { keepInTableCellOf, keepNotation } from './inline/table-cell'
-import { resolveExtensions, tokenizeInlineWith } from './inline/tokenize'
-import type { Extension } from './inline/types'
-import type { LineBlock, Page } from './types'
+import { buildBlocks, buildLineBlock, type SourceLine } from "./block/build"
+import { keepInTableCellOf, keepNotation } from "./inline/table-cell"
+import { resolveExtensions, tokenizeInlineWith } from "./inline/tokenize"
+import type { Extension } from "./inline/types"
+import type { LineBlock, Page } from "./types"
 
 /**
  * CR / CRLF を LF に揃える。
@@ -13,7 +13,7 @@ import type { LineBlock, Page } from './types'
  * `parse` は必ずこれを通してから解析するので、報告される位置は**正規化後**の
  * 文字列を基準にする。CRLF のソースでは元のオフセットと 1 行につき 1 文字ずれる。
  */
-export const normalizeLineEndings = (source: string): string => source.replace(/\r\n?/g, '\n')
+export const normalizeLineEndings = (source: string): string => source.replace(/\r\n?/g, "\n")
 
 export interface ParseOptions {
   /** 記法の拡張。既定のルールより先に試される */
@@ -23,7 +23,7 @@ export interface ParseOptions {
 const toSourceLines = (source: string): readonly SourceLine[] => {
   const lines: SourceLine[] = []
   let offset = 0
-  for (const [index, text] of source.split('\n').entries()) {
+  for (const [index, text] of source.split("\n").entries()) {
     lines.push({ index, text, offset })
     offset += text.length + 1 // 改行 1 文字ぶん進める
   }
@@ -44,7 +44,7 @@ export const parse = (source: string, options?: ParseOptions): Page => {
   const last = lines[lines.length - 1]
 
   return {
-    type: 'page',
+    type: "page",
     children: buildBlocks(lines, {
       line: (text, origin) => tokenizeInlineWith(text, origin, rules),
       tableCell: (text, origin) =>
@@ -84,7 +84,7 @@ export const parseLine = (raw: string, options?: ParseLineOptions): LineBlock =>
 
 export interface Parser {
   readonly parse: (source: string) => Page
-  readonly parseLine: (raw: string, options?: Omit<ParseLineOptions, 'extensions'>) => LineBlock
+  readonly parseLine: (raw: string, options?: Omit<ParseLineOptions, "extensions">) => LineBlock
 }
 
 /**

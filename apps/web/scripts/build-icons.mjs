@@ -3,11 +3,11 @@
 //
 // 元は 400x400 の透過 PNG。favicon は小さく表示されるので、
 // 余白を詰めてから縮小しないと絵が潰れる。
-import sharp from "sharp";
+import sharp from "sharp"
 
-const SOURCE = "public/beaver.png";
+const SOURCE = "public/beaver.png"
 
-const trimmed = await sharp(SOURCE).trim().toBuffer();
+const trimmed = await sharp(SOURCE).trim().toBuffer()
 
 const icons = [
   // ブラウザのタブ用。16px でも見えるように少し大きめを渡す
@@ -19,14 +19,14 @@ const icons = [
     background: "#161616",
     padding: 18,
   },
-];
+]
 
 for (const { file, size, background, padding = 0 } of icons) {
-  const inner = size - padding * 2;
+  const inner = size - padding * 2
   let image = sharp(trimmed).resize(inner, inner, {
     fit: "contain",
     background: { r: 0, g: 0, b: 0, alpha: 0 },
-  });
+  })
 
   if (background !== undefined) {
     image = image
@@ -38,9 +38,9 @@ for (const { file, size, background, padding = 0 } of icons) {
         background,
       })
       // extend は外周を足すだけなので、透過のままの中身も背景で埋める
-      .flatten({ background });
+      .flatten({ background })
   }
 
-  await image.png().toFile(file);
-  console.log(`wrote ${file}`);
+  await image.png().toFile(file)
+  console.log(`wrote ${file}`)
 }

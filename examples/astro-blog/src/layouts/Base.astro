@@ -1,5 +1,5 @@
 ---
-import '../styles/global.css'
+import "../styles/global.css"
 
 interface Props {
   title: string
@@ -18,13 +18,18 @@ const { title, description } = Astro.props
   </head>
   <body class="mx-auto max-w-3xl p-4 font-sans">
     <header class="mb-8 flex flex-wrap gap-4">
-      <a class="text-blue-700 underline" href="/">cosense-x example</a>
-      <a class="text-blue-700 underline" href="/about/">about</a>
-      <a class="text-blue-700 underline" href="/cosense/">Cosense から取得</a>
+      <a class="text-blue-700 underline" href="/">
+        cosense-x example
+      </a>
+      <a class="text-blue-700 underline" href="/about/">
+        about
+      </a>
+      <a class="text-blue-700 underline" href="/cosense/">
+        Cosense から取得
+      </a>
     </header>
     <main>
       <slot />
     </main>
   </body>
 </html>
-

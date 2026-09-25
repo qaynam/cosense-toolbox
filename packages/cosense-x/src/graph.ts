@@ -4,17 +4,18 @@
  * JS の生成 (unified 系) を import しないので、一覧ページやサイトマップを作るだけなら
  * このサブパスだけで済む。
  */
-import { Option } from 'effect'
-import { type PageIndex, createIndex, pageByPath, pageByTitle } from './links'
-import type { PageMetadata } from './metadata'
-import { type ReadOptions, readPage } from './read'
-import { isRelativePath, normalizeTitle, uniqueTitles } from './title'
+import { Option } from "effect"
 
-export { createIndex, findByTitle } from './links'
-export type { IndexInput, IndexedPage, PageIndex } from './links'
-export { formatOf, readPage } from './read'
-export type { Format, ReadOptions, ReadResult } from './read'
-export { normalizeTitle, titleToSlug } from './title'
+import { createIndex, pageByPath, pageByTitle, type PageIndex } from "./links"
+import type { PageMetadata } from "./metadata"
+import { type ReadOptions, readPage } from "./read"
+import { isRelativePath, normalizeTitle, uniqueTitles } from "./title"
+
+export { createIndex, findByTitle } from "./links"
+export type { IndexInput, IndexedPage, PageIndex } from "./links"
+export { formatOf, readPage } from "./read"
+export type { Format, ReadOptions, ReadResult } from "./read"
+export { normalizeTitle, titleToSlug } from "./title"
 
 /** グラフの入力。`readPage` の結果の `metadata` と、ファイルの id を渡す。 */
 export interface GraphInput {
@@ -136,7 +137,7 @@ export const buildGraph = (inputs: readonly GraphInput[]): Graph => {
     tags: Object.fromEntries(
       [...tagGroups].map(([key, group]) => [
         key,
-        { name: group[0]?.name ?? '', pages: group.map((tag) => tag.id) },
+        { name: group[0]?.name ?? "", pages: group.map((tag) => tag.id) },
       ]),
     ),
   }
@@ -155,7 +156,7 @@ export interface ScanInput {
  */
 export const scanPages = (
   files: readonly ScanInput[],
-  options: Omit<ReadOptions, 'filePath' | 'format' | 'index'> = {},
+  options: Omit<ReadOptions, "filePath" | "format" | "index"> = {},
 ): Graph => {
   const index = createIndex(
     files.map(({ id, source }) => {

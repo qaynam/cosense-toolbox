@@ -25,7 +25,11 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
@@ -63,7 +67,14 @@
     "tag": "beta",
     "registry": "https://registry.npmjs.org/"
   },
-  "keywords": ["cosense", "scrapbox", "mdx", "jsx", "compiler", "ssg"],
+  "keywords": [
+    "cosense",
+    "scrapbox",
+    "mdx",
+    "jsx",
+    "compiler",
+    "ssg"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/qaynam/cosense-toolbox.git",

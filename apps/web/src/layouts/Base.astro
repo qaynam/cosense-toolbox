@@ -1,16 +1,17 @@
 ---
-import "../styles/global.css";
-import { SITE } from "../lib/site";
+import "../styles/global.css"
+
+import { SITE } from "../lib/site"
 
 interface Props {
-  title?: string;
-  description?: string;
-  image?: string;
-  app?: boolean;
+  title?: string
+  description?: string
+  image?: string
+  app?: boolean
   /** ドキュメントのように 3 カラムを並べる画面で、本文の枠を広げる */
-  wide?: boolean;
+  wide?: boolean
   /** 背景にぼかしたグラデーションを敷く */
-  home?: boolean;
+  home?: boolean
 }
 const {
   title = "Cosense Toolbox",
@@ -19,13 +20,12 @@ const {
   app = false,
   wide = false,
   home = false,
-} = Astro.props;
-const fullTitle =
-  title === "Cosense Toolbox" ? title : `${title} — Cosense Toolbox`;
+} = Astro.props
+const fullTitle = title === "Cosense Toolbox" ? title : `${title} — Cosense Toolbox`
 
-const siteUrl = Astro.site ?? new URL("https://cosense-toolbox.qaynam.dev");
-const canonicalURL = new URL(Astro.url.pathname, siteUrl);
-const ogImageURL = new URL(image ?? "/og.png", siteUrl);
+const siteUrl = Astro.site ?? new URL("https://cosense-toolbox.qaynam.dev")
+const canonicalURL = new URL(Astro.url.pathname, siteUrl)
+const ogImageURL = new URL(image ?? "/og.png", siteUrl)
 ---
 
 <!doctype html>
@@ -64,22 +64,16 @@ const ogImageURL = new URL(image ?? "/og.png", siteUrl);
     />
     <title>{fullTitle}</title>
     <script is:inline>
-      (function () {
+      ;(function () {
         try {
-          var t = localStorage.getItem("cosense-toolbox-theme");
-          if (!t)
-            t = matchMedia("(prefers-color-scheme: light)").matches
-              ? "light"
-              : "dark";
-          document.documentElement.setAttribute("data-theme", t);
-        } catch (e) {}
-      })();
+          let t = localStorage.getItem("cosense-toolbox-theme")
+          if (!t) t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"
+          document.documentElement.setAttribute("data-theme", t)
+        } catch {}
+      })()
     </script>
   </head>
-  <body
-    class={[app && "is-app", home && "is-home"].filter(Boolean).join(" ") ||
-      undefined}
-  >
+  <body class={[app && "is-app", home && "is-home"].filter(Boolean).join(" ") || undefined}>
     <header class="site-header">
       <div class="wrap">
         <a class="brand" href="/">
@@ -90,14 +84,13 @@ const ogImageURL = new URL(image ?? "/og.png", siteUrl);
           <nav>
             <a href="/parser/">パーサー</a>
             <a href="/builder/">テーマ作成</a>
-            <a href={SITE.github} target="_blank" rel="noopener">GitHub ↗</a>
+            <a href={SITE.github} target="_blank" rel="noopener">
+              GitHub ↗
+            </a>
           </nav>
-          <button
-            class="icon-btn"
-            data-theme-toggle
-            aria-label="テーマ切替"
-            type="button">☀</button
-          >
+          <button class="icon-btn" data-theme-toggle aria-label="テーマ切替" type="button">
+            ☀
+          </button>
         </div>
       </div>
     </header>
@@ -106,89 +99,73 @@ const ogImageURL = new URL(image ?? "/og.png", siteUrl);
       <slot />
     </main>
 
-    {
-      !app && (
-        <footer class="site-footer">
-          <div class="wrap">
-            <a href={SITE.github} target="_blank" rel="noopener">
-              GitHub ↗
-            </a>
-          </div>
-        </footer>
-      )
-    }
+    {!app && (
+      <footer class="site-footer">
+        <div class="wrap">
+          <a href={SITE.github} target="_blank" rel="noopener">
+            GitHub ↗
+          </a>
+        </div>
+      </footer>
+    )}
 
     <script>
-      const THEME_KEY = "cosense-toolbox-theme";
-
-      function esc(s: string) {
-        return String(s).replace(
-          /[&<>"]/g,
-          (c) =>
-            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] || c,
-        );
-      }
+      const THEME_KEY = "cosense-toolbox-theme"
 
       async function clip(text: string, btn?: HTMLElement | null) {
         try {
-          await navigator.clipboard.writeText(text);
+          await navigator.clipboard.writeText(text)
           if (btn) {
-            const l = (btn.querySelector(".label") as HTMLElement) || btn;
-            const prev = l.textContent;
-            btn.classList.add("copied");
-            l.textContent = "コピー済み ✓";
+            const l = (btn.querySelector(".label") as HTMLElement) || btn
+            const prev = l.textContent
+            btn.classList.add("copied")
+            l.textContent = "コピー済み ✓"
             setTimeout(() => {
-              btn.classList.remove("copied");
-              l.textContent = prev;
-            }, 1400);
+              btn.classList.remove("copied")
+              l.textContent = prev
+            }, 1400)
           }
         } catch {}
       }
 
       function syncTheme() {
-        const dark =
-          document.documentElement.getAttribute("data-theme") !== "light";
+        const dark = document.documentElement.getAttribute("data-theme") !== "light"
         document.querySelectorAll("[data-theme-toggle]").forEach((b) => {
-          b.textContent = dark ? "☀" : "🌙";
-          b.setAttribute(
-            "aria-label",
-            dark ? "ライトモードに切替" : "ダークモードに切替",
-          );
-        });
+          b.textContent = dark ? "☀" : "🌙"
+          b.setAttribute("aria-label", dark ? "ライトモードに切替" : "ダークモードに切替")
+        })
       }
 
       /* ---------- クリック委譲 ---------- */
       document.addEventListener("click", async (e) => {
-        const t = e.target as HTMLElement;
+        const t = e.target as HTMLElement
 
-        const copyBtn = t.closest<HTMLElement>("[data-copy]");
+        const copyBtn = t.closest<HTMLElement>("[data-copy]")
         if (copyBtn) {
-          clip(copyBtn.getAttribute("data-copy") || "", copyBtn);
-          return;
+          clip(copyBtn.getAttribute("data-copy") || "", copyBtn)
+          return
         }
-        const themeBtn = t.closest<HTMLElement>("[data-theme-toggle]");
+        const themeBtn = t.closest<HTMLElement>("[data-theme-toggle]")
         if (themeBtn) {
           const next =
-            document.documentElement.getAttribute("data-theme") === "light"
-              ? "dark"
-              : "light";
+            document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light"
           // 色が一斉に切り替わるよう、この 1 フレームだけ遷移を止める
-          document.documentElement.classList.add("is-theme-switching");
-          document.documentElement.setAttribute("data-theme", next);
+          document.documentElement.classList.add("is-theme-switching")
+          document.documentElement.setAttribute("data-theme", next)
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-              document.documentElement.classList.remove("is-theme-switching");
-            });
-          });
+              document.documentElement.classList.remove("is-theme-switching")
+            })
+          })
           try {
-            localStorage.setItem(THEME_KEY, next);
+            localStorage.setItem(THEME_KEY, next)
           } catch {}
-          syncTheme();
-          return;
+          syncTheme()
+          return
         }
-      });
+      })
 
-      syncTheme();
+      syncTheme()
     </script>
   </body>
 </html>

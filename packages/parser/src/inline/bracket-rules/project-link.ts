@@ -1,5 +1,6 @@
-import { Option } from 'effect'
-import type { InternalBracketRule } from '../internal-types'
+import { Option } from "effect"
+
+import type { InternalBracketRule } from "../internal-types"
 
 /**
  * `[/project/title]` — 別プロジェクトのページへのリンク。
@@ -9,12 +10,12 @@ import type { InternalBracketRule } from '../internal-types'
  * その場合は title を空文字にする (利用側が「プロジェクトそのものへのリンク」と判断できる)。
  */
 export const projectLinkRule: InternalBracketRule = (inner) => {
-  if (!inner.startsWith('/')) return Option.none()
+  if (!inner.startsWith("/")) return Option.none()
 
   const rest = inner.slice(1)
-  const slash = rest.indexOf('/')
+  const slash = rest.indexOf("/")
   const project = slash < 0 ? rest : rest.slice(0, slash)
-  const title = slash < 0 ? '' : rest.slice(slash + 1)
+  const title = slash < 0 ? "" : rest.slice(slash + 1)
 
-  return Option.some({ type: 'projectLink', label: inner, target: inner, project, title })
+  return Option.some({ type: "projectLink", label: inner, target: inner, project, title })
 }

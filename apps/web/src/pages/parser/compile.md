@@ -23,9 +23,9 @@ toPlainText(node: AnyNode): string
 オプションはありません。
 
 ```ts
-import { toPlainText } from "@cosense-toolbox/parser/compile";
+import { toPlainText } from "@cosense-toolbox/parser/compile"
 
-toPlainText(parse("タイトル\n[* 太字] と [リンク]"));
+toPlainText(parse("タイトル\n[* 太字] と [リンク]"))
 // 'タイトル\n太字 と リンク'
 ```
 
@@ -44,7 +44,7 @@ HTML 系 (hast / HTML の文字列) とテキスト以外を出すときに使�
 `toPlainText` はこれで書かれています。HTML 系は `toHast` を使ってください。
 
 ```ts
-import { createCompiler } from "@cosense-toolbox/parser/compile";
+import { createCompiler } from "@cosense-toolbox/parser/compile"
 
 const toMarkdown = createCompiler<string>({
   handlers: {
@@ -53,7 +53,7 @@ const toMarkdown = createCompiler<string>({
     text: (node) => node.value,
   },
   fallback: (node, ctx) => ctx.children(node).join(""),
-});
+})
 ```
 
 `handlers` の書きかたは [`toHtml` の handlers](/parser/html/#handlers) と同じ `(node, ctx)` です。

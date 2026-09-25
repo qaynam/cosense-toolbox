@@ -1,8 +1,8 @@
 /**
  * visit.ts — AST を深さ優先で走査する。外部依存を増やさないための自前実装。
  */
-import { childrenOf } from '../ast'
-import type { AnyNode, AnyNodeType, NodeOfType } from '../types'
+import { childrenOf } from "../ast"
+import type { AnyNode, AnyNodeType, NodeOfType } from "../types"
 
 /**
  * visitor の戻り値。
@@ -10,8 +10,8 @@ import type { AnyNode, AnyNodeType, NodeOfType } from '../types'
  * - `'skip'` — このノードの子を辿らない
  * - `'exit'` — 走査全体を打ち切る
  */
-// biome-ignore lint/suspicious/noConfusingVoidType: undefined だと値を返さない visitor を渡せない
-export type VisitResult = void | 'skip' | 'exit'
+// void にしているのは、undefined にすると値を返さない visitor を渡せなくなるため
+export type VisitResult = void | "skip" | "exit"
 
 export type Visitor<T extends AnyNode> = (node: T, ancestors: readonly AnyNode[]) => VisitResult
 
@@ -32,7 +32,7 @@ export function visit(
     maybeVisitor === undefined
       ? undefined
       : new Set(
-          typeof typesOrVisitor === 'string'
+          typeof typesOrVisitor === "string"
             ? [typesOrVisitor]
             : (typesOrVisitor as readonly AnyNodeType[]),
         )
@@ -40,12 +40,12 @@ export function visit(
   const walk = (node: AnyNode, ancestors: readonly AnyNode[]): VisitResult => {
     if (types === undefined || types.has(node.type)) {
       const result = visitor(node, ancestors)
-      if (result === 'exit') return 'exit'
-      if (result === 'skip') return undefined
+      if (result === "exit") return "exit"
+      if (result === "skip") return undefined
     }
     const nextAncestors = [...ancestors, node]
     for (const child of childrenOf(node)) {
-      if (walk(child, nextAncestors) === 'exit') return 'exit'
+      if (walk(child, nextAncestors) === "exit") return "exit"
     }
     return undefined
   }
@@ -58,7 +58,7 @@ export function find<K extends AnyNodeType>(tree: AnyNode, type: K): NodeOfType<
   let found: NodeOfType<K> | null = null
   visit(tree, type, (node) => {
     found = node
-    return 'exit'
+    return "exit"
   })
   return found
 }

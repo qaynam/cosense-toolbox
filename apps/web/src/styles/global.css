@@ -14,8 +14,7 @@
   --warn: #e3b341;
   --warn-bg: rgba(227, 179, 65, 0.1);
   --font-sans: Roboto, "Noto Sans JP", sans-serif;
-  --font-mono:
-    "Geist Mono", ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
   --radius: 12px;
   --maxw: 1180px;
   font-synthesis: none;
@@ -181,21 +180,9 @@ body.is-home::before {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(
-      34rem 24rem at 16% 8%,
-      rgba(110, 138, 243, 0.5),
-      transparent 62%
-    ),
-    radial-gradient(
-      30rem 20rem at 84% 2%,
-      rgba(255, 125, 84, 0.42),
-      transparent 60%
-    ),
-    radial-gradient(
-      26rem 18rem at 58% 34%,
-      rgba(248, 228, 46, 0.24),
-      transparent 62%
-    );
+    radial-gradient(34rem 24rem at 16% 8%, rgba(110, 138, 243, 0.5), transparent 62%),
+    radial-gradient(30rem 20rem at 84% 2%, rgba(255, 125, 84, 0.42), transparent 60%),
+    radial-gradient(26rem 18rem at 58% 34%, rgba(248, 228, 46, 0.24), transparent 62%);
   filter: blur(64px);
 }
 /* 明るい地では同じ濃さだと色が勝つ */

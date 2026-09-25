@@ -20,7 +20,11 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
@@ -50,7 +54,14 @@
     "tag": "beta",
     "registry": "https://registry.npmjs.org/"
   },
-  "keywords": ["cosense", "scrapbox", "astro", "astro-integration", "withastro", "ssg"],
+  "keywords": [
+    "cosense",
+    "scrapbox",
+    "astro",
+    "astro-integration",
+    "withastro",
+    "ssg"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/qaynam/cosense-toolbox.git",

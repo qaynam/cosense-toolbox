@@ -1,0 +1,5 @@
+# .gitignore に書いたもの (dist / .astro / node_modules / .turbo / .wrangler など) は、prettier が自動で除く。
+bun.lock
+**/public/**
+# 生成したファイル。作り直すたびに差分が出ないよう、整形しない。
+**/*.generated.ts

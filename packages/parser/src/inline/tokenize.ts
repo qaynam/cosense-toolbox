@@ -5,12 +5,13 @@
  * その 1 文字はテキストとして貯めておき、次にノードが出たところ (と末尾) でまとめて
  * text ノードにする。位置の付与はこのループだけが行う。
  */
-import { Option } from 'effect'
-import { type Origin, spanAt } from '../core/position'
-import type { InlineNode, InlineNodeInit, Position } from '../types'
-import { inlineConstructs } from './constructs'
-import type { InternalBracketRule, InternalConstruct, ScanContext } from './internal-types'
-import type { BracketRule, ConstructMatch, Extension, InlineConstruct } from './types'
+import { Option } from "effect"
+
+import { type Origin, spanAt } from "../core/position"
+import type { InlineNode, InlineNodeInit, Position } from "../types"
+import { inlineConstructs } from "./constructs"
+import type { InternalBracketRule, InternalConstruct, ScanContext } from "./internal-types"
+import type { BracketRule, ConstructMatch, Extension, InlineConstruct } from "./types"
 
 export interface TokenizeInlineOptions {
   /** 装飾記法を解釈するか (既定: true)。装飾の中身を解析するときだけ false になる */
@@ -100,7 +101,7 @@ const scan = (
   const flushText = (end: number) => {
     if (end <= textStart) return
     out.push({
-      type: 'text',
+      type: "text",
       value: source.slice(textStart, end),
       position: spanAt(origin, textStart, end),
     })
@@ -123,7 +124,7 @@ const scan = (
   return out
 }
 
-const resolveOrigin = (origin: TokenizeInlineOptions['origin']): Origin => ({
+const resolveOrigin = (origin: TokenizeInlineOptions["origin"]): Origin => ({
   line: origin?.line ?? 0,
   column: origin?.column ?? 0,
   offset: origin?.offset ?? 0,

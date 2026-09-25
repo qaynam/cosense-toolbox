@@ -1,11 +1,12 @@
 ---
-import { getCollection, render } from 'astro:content'
-import graph from 'virtual:cosense-x/graph'
-import Base from '../../layouts/Base.astro'
-import { pageUrl } from '../../urls'
+import { getCollection, render } from "astro:content"
+import graph from "virtual:cosense-x/graph"
+
+import Base from "../../layouts/Base.astro"
+import { pageUrl } from "../../urls"
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts', ({ data }) => !data.draft)
+  const posts = await getCollection("posts", ({ data }) => !data.draft)
   return posts.map((post) => ({ params: { slug: post.id }, props: { post } }))
 }
 
@@ -13,7 +14,7 @@ const { post } = Astro.props
 const { Content } = await render(post)
 
 // グラフの id はプロジェクトのルートからのパスで、content collection の filePath と同じ形。
-const id = post.filePath ?? ''
+const id = post.filePath ?? ""
 const pageLink = (pageId: string) => {
   const page = graph.pages[pageId]
   return page ? { href: pageUrl(page), title: page.title } : null
@@ -31,47 +32,46 @@ cosense-table:[&_caption]:bg-white cosense-table:[&_caption]:text-base cosense-t
 cosense-deco-[|]:border-l-10 cosense-deco-[|]:border-orange-400 cosense-deco-[|]:pl-2
 cosense-deco-[|]:mb-4
 cosense-deco-[!]:font-semibold cosense-deco-[!]:px-2 cosense-deco-[!]:py-1 cosense-deco-[!]:bg-red-500 cosense-deco-[!]:text-white
-cosense-deco-[~]:font-semibold cosense-deco-[~]:px-2 cosense-deco-[~]:py-1 cosense-deco-[~]:bg-yellow-300 cosense-deco-[~]:text-black
-    "
+cosense-deco-[~]:font-semibold cosense-deco-[~]:px-2 cosense-deco-[~]:py-1 cosense-deco-[~]:bg-yellow-300 cosense-deco-[~]:text-black"
   >
     <Content />
   </article>
 
-  {
-    backlinks.length > 0 && (
-      <section class="mt-10">
-        <h2 class="mb-2 text-lg font-bold">1 hope リンク</h2>
-        <ul class="list-disc pl-6">
-          {backlinks.map((link) => (
-            <li>
-              <a class="text-blue-700 underline" href={link.href}>{link.title}</a>
-            </li>
-          ))}
-        </ul>
-      </section>
-    )
-  }
-
-  {
-    twoHop.length > 0 && (
-      <section class="mt-10">
-        <h2 class="mb-2 text-lg font-bold">2 hop リンク</h2>
-        {twoHop.map((group) => (
-          <div class="two-hop">
-            <h3 class="mt-3 font-bold">{group.via} 経由</h3>
-            <ul class="list-disc pl-6">
-              {group.pages.map(pageLink).map(
-                (link) =>
-                  link && (
-                    <li>
-                      <a class="text-blue-700 underline" href={link.href}>{link.title}</a>
-                    </li>
-                  ),
-              )}
-            </ul>
-          </div>
+  {backlinks.length > 0 && (
+    <section class="mt-10">
+      <h2 class="mb-2 text-lg font-bold">1 hope リンク</h2>
+      <ul class="list-disc pl-6">
+        {backlinks.map((link) => (
+          <li>
+            <a class="text-blue-700 underline" href={link.href}>
+              {link.title}
+            </a>
+          </li>
         ))}
-      </section>
-    )
-  }
+      </ul>
+    </section>
+  )}
+
+  {twoHop.length > 0 && (
+    <section class="mt-10">
+      <h2 class="mb-2 text-lg font-bold">2 hop リンク</h2>
+      {twoHop.map((group) => (
+        <div class="two-hop">
+          <h3 class="mt-3 font-bold">{group.via} 経由</h3>
+          <ul class="list-disc pl-6">
+            {group.pages.map(pageLink).map(
+              (link) =>
+                link && (
+                  <li>
+                    <a class="text-blue-700 underline" href={link.href}>
+                      {link.title}
+                    </a>
+                  </li>
+                ),
+            )}
+          </ul>
+        </div>
+      ))}
+    </section>
+  )}
 </Base>

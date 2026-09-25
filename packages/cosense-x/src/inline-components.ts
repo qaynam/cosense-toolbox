@@ -14,12 +14,13 @@ import {
   type ParseOptions,
   type TextNode,
   tokenizeInline,
-} from '@cosense-toolbox/parser'
-import { Match, Option, pipe } from 'effect'
-import { type ComponentAttribute, closingTagOf, componentTagOf } from './components'
+} from "@cosense-toolbox/parser"
+import { Match, Option, pipe } from "effect"
+
+import { closingTagOf, type ComponentAttribute, componentTagOf } from "./components"
 
 export interface InlineComponent {
-  readonly type: 'inlineComponent'
+  readonly type: "inlineComponent"
   readonly name: string
   readonly attributes: readonly ComponentAttribute[]
   /** 開始タグの生テキスト。コンポーネントが渡されなかったときにこのまま出す */
@@ -52,9 +53,9 @@ interface OpeningTag extends Span {
 
 /** 行の中で見つけたタグ。`start` / `end` はパースに渡した文字列の中の位置。 */
 type Tag =
-  | ({ readonly _tag: 'open' } & OpeningTag)
-  | ({ readonly _tag: 'self' } & OpeningTag)
-  | ({ readonly _tag: 'close'; readonly name: string } & Span)
+  | ({ readonly _tag: "open" } & OpeningTag)
+  | ({ readonly _tag: "self" } & OpeningTag)
+  | ({ readonly _tag: "close"; readonly name: string } & Span)
 
 /**
  * `text[start]` の `<` から始まるタグの終わりを探す。引用符と `{}` の中の `>` は数えない。
@@ -71,14 +72,14 @@ const endOfTag = (text: string, start: number): Option.Option<number> => {
     }
     if (depth > 0) {
       if (char === '"') quote = char
-      else if (char === '{') depth++
-      else if (char === '}') depth--
+      else if (char === "{") depth++
+      else if (char === "}") depth--
       continue
     }
     if (char === '"' || char === "'") quote = char
-    else if (char === '{') depth++
-    else if (char === '>') return Option.some(i + 1)
-    else if (char === '<') return Option.none()
+    else if (char === "{") depth++
+    else if (char === ">") return Option.some(i + 1)
+    else if (char === "<") return Option.none()
   }
   return Option.none()
 }
@@ -92,11 +93,11 @@ const readTag = (text: string, start: number, offset: number): Option.Option<Tag
       const raw = text.slice(start, end)
       const span = { start: offset + start, end: offset + end }
       return Option.match(closingTagOf(raw), {
-        onSome: (name): Option.Option<Tag> => Option.some({ _tag: 'close', name, ...span }),
+        onSome: (name): Option.Option<Tag> => Option.some({ _tag: "close", name, ...span }),
         onNone: () =>
           Option.map(componentTagOf(raw), (tag): Tag => {
             const opening = { name: tag.name, attributes: tag.attributes, ...span }
-            return tag.selfClosing ? { _tag: 'self', ...opening } : { _tag: 'open', ...opening }
+            return tag.selfClosing ? { _tag: "self", ...opening } : { _tag: "open", ...opening }
           }),
       })
     }),
@@ -108,8 +109,8 @@ const readTag = (text: string, start: number, offset: number): Option.Option<Tag
  * 角括弧で囲まない裸の URL だけは探す。属性に URL を書いたタグを読めるようにするため。
  */
 const isSearchable = (node: InlineNode, source: string): boolean =>
-  node.type === 'text' ||
-  (node.type === 'externalLink' && source[node.position.start.offset] !== '[')
+  node.type === "text" ||
+  (node.type === "externalLink" && source[node.position.start.offset] !== "[")
 
 /** `source` の `[start, end)` からタグを拾う。`blocked` の範囲は読み飛ばす。 */
 const scanTags = (
@@ -128,7 +129,7 @@ const scanTags = (
       i = range[1] - start
       continue
     }
-    const tag = region[i] === '<' ? readTag(region, i, start) : Option.none()
+    const tag = region[i] === "<" ? readTag(region, i, start) : Option.none()
     if (Option.isNone(tag)) {
       i++
       continue
@@ -183,7 +184,7 @@ interface InlineComponentsResult {
 export const inlineComponentsOf = (
   line: LineBlock,
   source: string,
-  options: Omit<FindInlineComponentsOptions, 'onWarning'> = {},
+  options: Omit<FindInlineComponentsOptions, "onWarning"> = {},
 ): Option.Option<InlineComponentsResult> => {
   const first = line.children[0]
   const last = line.children[line.children.length - 1]
@@ -208,7 +209,7 @@ export const inlineComponentsOf = (
     offset,
   })
   const textOf = (start: number, end: number): TextNode => ({
-    type: 'text',
+    type: "text",
     value: source.slice(start, end),
     position: { start: pointAt(start), end: pointAt(end) },
   })
@@ -230,10 +231,10 @@ export const inlineComponentsOf = (
   const step = (before: Pairing, tag: Tag): Pairing => {
     const state = { ...append(before, tokenize(before.cursor, tag.start)), cursor: tag.end }
     return Match.value(tag).pipe(
-      Match.tag('self', (self) =>
+      Match.tag("self", (self) =>
         append(state, [
           {
-            type: 'inlineComponent',
+            type: "inlineComponent",
             name: self.name,
             attributes: self.attributes,
             open: rawOf(self),
@@ -242,11 +243,11 @@ export const inlineComponentsOf = (
           },
         ]),
       ),
-      Match.tag('open', (open) => ({
+      Match.tag("open", (open) => ({
         ...state,
         stack: [...state.stack, { tag: open, children: [] }],
       })),
-      Match.tag('close', (close) =>
+      Match.tag("close", (close) =>
         Option.match(
           Option.filter(innermost(state), (frame) => frame.tag.name === close.name),
           {
@@ -262,7 +263,7 @@ export const inlineComponentsOf = (
             onSome: (frame) =>
               append(pop(state), [
                 {
-                  type: 'inlineComponent',
+                  type: "inlineComponent",
                   name: close.name,
                   attributes: frame.tag.attributes,
                   open: rawOf(frame.tag),

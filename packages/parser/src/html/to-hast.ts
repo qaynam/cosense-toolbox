@@ -8,10 +8,11 @@
  * 既定のハンドラは `defaultHastHandlers` として公開し、オプションは `ctx.options` から読む。
  * 利用者が既定の出力を包むとき、オプションを渡し直さなくて済むようにするため。
  */
-import { Match, Option, pipe } from 'effect'
-import type { Element, ElementContent, Properties, Root, Text } from 'hast'
-import { childrenOf } from '../ast'
-import { asImageSrc } from '../core/image-url'
+import { Match, Option, pipe } from "effect"
+import type { Element, ElementContent, Properties, Root, Text } from "hast"
+
+import { childrenOf } from "../ast"
+import { asImageSrc } from "../core/image-url"
 import type {
   AnyNode,
   AnyNodeType,
@@ -22,7 +23,7 @@ import type {
   InternalLink,
   NodeOfType,
   ProjectLink,
-} from '../types'
+} from "../types"
 
 // ---------------------------------------------------------------------------
 // URL の検査
@@ -38,7 +39,7 @@ const UNSAFE_SRC_RE = /^(?:javascript|vbscript):/
  * スキームだけを見るために空白と制御文字を落とす。
  * ブラウザは途中にタブや改行が挟まった `javascript:` もスキームとして解釈するため。
  */
-const schemeOf = (url: string): string => url.replace(/[\s\p{Cc}]/gu, '').toLowerCase()
+const schemeOf = (url: string): string => url.replace(/[\s\p{Cc}]/gu, "").toLowerCase()
 
 const safeUrl = (url: string, unsafe: RegExp): string | null =>
   unsafe.test(schemeOf(url)) ? null : url
@@ -53,7 +54,7 @@ export const safeSrc = (url: string): string | null => safeUrl(url, UNSAFE_SRC_R
 const nonEmpty = (value: string | null | undefined): Option.Option<string> =>
   pipe(
     Option.fromNullable(value),
-    Option.filter((text) => text !== ''),
+    Option.filter((text) => text !== ""),
   )
 
 // ---------------------------------------------------------------------------
@@ -105,29 +106,29 @@ export interface HtmlClassNames {
 
 /** 既定の class 名。接頭辞を持たないため、利用側の CSS と名前がぶつかりうる。 */
 export const defaultClassNames: HtmlClassNames = {
-  page: 'page',
-  title: 'title',
-  line: 'line',
-  quote: 'quote',
-  monospace: 'monospace',
-  codeBlock: 'code-block',
-  codeStart: 'code-start',
-  codeFilename: 'code-block-start',
-  codeBody: 'code-body',
-  codeHighlight: 'highlight',
-  table: 'table',
-  indentMark: 'indent-mark',
-  pad: 'pad',
-  dot: 'dot',
-  internalLink: 'link',
-  externalLink: 'link link-external',
-  projectLink: 'link link-project',
-  hashtag: 'hashtag',
-  inlineCode: 'code',
-  image: 'image',
-  icon: 'icon',
-  formula: 'formula',
-  decoration: 'decoration',
+  page: "page",
+  title: "title",
+  line: "line",
+  quote: "quote",
+  monospace: "monospace",
+  codeBlock: "code-block",
+  codeStart: "code-start",
+  codeFilename: "code-block-start",
+  codeBody: "code-body",
+  codeHighlight: "highlight",
+  table: "table",
+  indentMark: "indent-mark",
+  pad: "pad",
+  dot: "dot",
+  internalLink: "link",
+  externalLink: "link link-external",
+  projectLink: "link link-project",
+  hashtag: "hashtag",
+  inlineCode: "code",
+  image: "image",
+  icon: "icon",
+  formula: "formula",
+  decoration: "decoration",
 }
 
 /**
@@ -136,7 +137,7 @@ export const defaultClassNames: HtmlClassNames = {
  * `@types/hast` の版が分かれたときに型が合わなくなるため。
  */
 export interface RawNode {
-  readonly type: 'raw'
+  readonly type: "raw"
   readonly value: string
 }
 
@@ -208,6 +209,11 @@ export interface ResolvedHastOptions {
 
 /** ハンドラの中から再帰的に変換するための入口と、オプション。 */
 export interface HastContext {
+  /**
+   * 今描いているノードの祖先。根 (`toHast` に渡したノード) から親までの順に並ぶ。
+   * 「テーブルのセルの中の text だけ」のように、どこにあるかで出力を変えるときに使う。
+   */
+  readonly ancestors: readonly AnyNode[]
   /** ノード 1 つを変換する (そのノード型のハンドラを通る) */
   readonly node: (node: AnyNode) => ElementContent[]
   /** 子ノードをすべて変換し、平らな配列で返す */
@@ -267,7 +273,7 @@ export interface HastOptions extends HastRenderOptions {
  * `highlight` に渡る言語名はこれで決めている。
  */
 export const codeLanguageOf = (filename: string): string => {
-  const dot = filename.lastIndexOf('.')
+  const dot = filename.lastIndexOf(".")
   return (dot > 0 ? filename.slice(dot + 1) : filename).toLowerCase()
 }
 
@@ -276,15 +282,15 @@ export const codeLanguageOf = (filename: string): string => {
  * 区切りを残したまま各段を encode する。
  */
 export const defaultPageUrl = (title: string): string =>
-  title.startsWith('/')
-    ? title.split('/').map(encodeURIComponent).join('/')
+  title.startsWith("/")
+    ? title.split("/").map(encodeURIComponent).join("/")
     : `/${encodeURIComponent(title)}`
 
 /** 記法に書かれたページタイトル。ノード型ごとに置き場所が違うのをここで吸収する。 */
 const pageTitleOf = (node: PageRefNode): string =>
   Match.value(node).pipe(
-    Match.when({ type: 'hashtag' }, (tag) => tag.value),
-    Match.when({ type: 'icon' }, (icon) => icon.user),
+    Match.when({ type: "hashtag" }, (tag) => tag.value),
+    Match.when({ type: "icon" }, (icon) => icon.user),
     Match.orElse((link) => link.target),
   )
 
@@ -292,16 +298,16 @@ const pageTitleOf = (node: PageRefNode): string =>
 // hast の組み立て
 // ---------------------------------------------------------------------------
 
-const text = (value: string): Text => ({ type: 'text', value })
+const text = (value: string): Text => ({ type: "text", value })
 
 const classList = (name: string | undefined): string[] =>
-  name === undefined ? [] : name.split(/\s+/).filter((part) => part !== '')
+  name === undefined ? [] : name.split(/\s+/).filter((part) => part !== "")
 
 const element = (
   tagName: string,
   properties: Properties,
   children: ElementContent[] = [],
-): Element => ({ type: 'element', tagName, properties, children })
+): Element => ({ type: "element", tagName, properties, children })
 
 /** 値が undefined のプロパティは出さない (`exactOptionalPropertyTypes` と同じ考え)。 */
 const compact = (properties: Properties): Properties =>
@@ -318,14 +324,14 @@ const positive = (value: number): number | undefined => (value > 0 ? value : und
 
 /** 複数の class 名の設定を 1 つにつなぐ。未設定のものは飛ばす。 */
 const joinClasses = (...names: (string | undefined)[]): string =>
-  names.filter((name) => name !== undefined).join(' ')
+  names.filter((name) => name !== undefined).join(" ")
 
 /** ページを指すノードの遷移先。安全でなければ null (href を出さない)。 */
 const pageHrefOf = (node: PageRefNode, options: ResolvedHastOptions): string | undefined =>
   Option.getOrUndefined(nonEmpty(safeHref(options.pageUrl(pageTitleOf(node), node))))
 
 const anchor = (className: string | undefined, href: string | undefined, label: string): Element =>
-  element('a', withClass(className, { href }), [text(label)])
+  element("a", withClass(className, { href }), [text(label)])
 
 /**
  * 装飾を表す要素を、内側から外側の順に並べたもの。
@@ -334,17 +340,17 @@ const anchor = (className: string | undefined, href: string | undefined, label: 
  * フラグの集合を入れ子の要素に開いて表現する。
  */
 const DECORATION_TAGS: readonly (readonly [(node: Decoration) => boolean, string])[] = [
-  [(node) => node.strike, 's'],
-  [(node) => node.underline, 'u'],
-  [(node) => node.italic, 'em'],
-  [(node) => node.bold, 'strong'],
+  [(node) => node.strike, "s"],
+  [(node) => node.underline, "u"],
+  [(node) => node.italic, "em"],
+  [(node) => node.bold, "strong"],
 ]
 
 /** 余白の数がインデントの深さを表し、中点はその右端に付く (Cosense Web と同じ形)。 */
 const indentMark = (indent: number, cls: HtmlClassNames): Element =>
-  element('span', withClass(cls.indentMark), [
-    ...Array.from({ length: indent }, () => element('span', withClass(cls.pad), [text(' ')])),
-    element('span', withClass(cls.dot)),
+  element("span", withClass(cls.indentMark), [
+    ...Array.from({ length: indent }, () => element("span", withClass(cls.pad), [text(" ")])),
+    element("span", withClass(cls.dot)),
   ])
 
 /** 色付けした本体と、コードブロックの code に足す class と style。 */
@@ -368,9 +374,9 @@ const asElementContents = (nodes: readonly HastContent[]): ElementContent[] =>
 const contentsOf = (result: Root | HastContent[]): ElementContent[] =>
   Array.isArray(result)
     ? asElementContents(result)
-    : result.children.filter((child): child is ElementContent => child.type !== 'doctype')
+    : result.children.filter((child): child is ElementContent => child.type !== "doctype")
 
-const isBlank = (node: ElementContent): boolean => node.type === 'text' && node.value.trim() === ''
+const isBlank = (node: ElementContent): boolean => node.type === "text" && node.value.trim() === ""
 
 /** 空白だけのテキストを除いた、ただ 1 つの子。 */
 const onlyChildOf = (children: readonly ElementContent[]): Option.Option<ElementContent> =>
@@ -385,7 +391,7 @@ const elementNamed =
   (node: ElementContent): Option.Option<Element> =>
     Option.liftPredicate(
       node,
-      (content): content is Element => content.type === 'element' && content.tagName === tagName,
+      (content): content is Element => content.type === "element" && content.tagName === tagName,
     )
 
 /** hast の決まりでは className は配列だが、shiki は class を文字列で付ける。どちらも読む。 */
@@ -404,18 +410,16 @@ const highlightedBody = (result: Root | HastContent[]): HighlightedBody => {
   const children = contentsOf(result)
   return pipe(
     onlyChildOf(children),
-    Option.flatMap(elementNamed('pre')),
+    Option.flatMap(elementNamed("pre")),
     Option.flatMap((pre) =>
       pipe(
         onlyChildOf(pre.children),
-        Option.flatMap(elementNamed('code')),
-        Option.map(
-          (code): HighlightedBody => ({
-            children: code.children,
-            className: classesOf(pre.properties.className ?? pre.properties.class),
-            style: typeof pre.properties.style === 'string' ? pre.properties.style : undefined,
-          }),
-        ),
+        Option.flatMap(elementNamed("code")),
+        Option.map((code): HighlightedBody => ({
+          children: code.children,
+          className: classesOf(pre.properties.className ?? pre.properties.class),
+          style: typeof pre.properties.style === "string" ? pre.properties.style : undefined,
+        })),
       ),
     ),
     Option.getOrElse((): HighlightedBody => ({ children, className: [], style: undefined })),
@@ -431,8 +435,8 @@ const linesOf = (
   count: number,
 ): Option.Option<readonly Element[]> => {
   const isLine = (child: ElementContent): child is Element =>
-    child.type === 'element' &&
-    classesOf(child.properties.className ?? child.properties.class).includes('line')
+    child.type === "element" &&
+    classesOf(child.properties.className ?? child.properties.class).includes("line")
   return Option.liftPredicate(
     children.filter((child) => !isBlank(child)),
     (lines): lines is Element[] => lines.length === count && lines.every(isLine),
@@ -441,8 +445,8 @@ const linesOf = (
 
 /** style.css がコードブロックの背景と文字の色に使う変数。 */
 const THEME_VARIABLES: Readonly<Record<string, string>> = {
-  'background-color': '--cosense-code-bg',
-  color: '--cosense-code-text',
+  "background-color": "--cosense-code-bg",
+  color: "--cosense-code-text",
 }
 
 /**
@@ -455,9 +459,9 @@ const themeStyleOf = (style: string | undefined): string | undefined =>
     Option.fromNullable(style),
     Option.map((declarations) =>
       declarations
-        .split(';')
+        .split(";")
         .flatMap((declaration) => Option.toArray(themeDeclarationOf(declaration)))
-        .join(';'),
+        .join(";"),
     ),
     Option.getOrUndefined,
   )
@@ -465,7 +469,7 @@ const themeStyleOf = (style: string | undefined): string | undefined =>
 /** `name: value` の 1 つ。`:` の無い壊れた宣言は落とす。 */
 const themeDeclarationOf = (declaration: string): Option.Option<string> =>
   pipe(
-    Option.some(declaration.indexOf(':')),
+    Option.some(declaration.indexOf(":")),
     Option.filter((colon) => colon > 0),
     Option.map((colon) => {
       const name = declaration.slice(0, colon).trim()
@@ -482,16 +486,16 @@ const codeBlock = (node: CodeBlock, ctx: HastContext): ElementContent[] => {
   const cls = ctx.options.classNames
   const classes = joinClasses(cls.line, cls.codeBlock)
   const blockLine = (indent: number, child: Element): Element =>
-    element('div', withClass(classes, { dataIndent: positive(indent) }), [child])
-  const filename = element('span', withClass(cls.codeFilename), [text(node.filename)])
-  const header = blockLine(node.indent, element('code', withClass(cls.codeStart), [filename]))
+    element("div", withClass(classes, { dataIndent: positive(indent) }), [child])
+  const filename = element("span", withClass(cls.codeFilename), [text(node.filename)])
+  const header = blockLine(node.indent, element("code", withClass(cls.codeStart), [filename]))
 
   // 本体はヘッダより 1 段深い。それより深い字下げは値のほうに残っている。
   const bodyLine = (
     className: string | undefined,
     properties: Properties,
     children: ElementContent[],
-  ) => blockLine(node.indent + 1, element('code', withClass(className, properties), children))
+  ) => blockLine(node.indent + 1, element("code", withClass(className, properties), children))
 
   const highlighted = pipe(
     Option.fromNullable(ctx.options.highlight),
@@ -499,7 +503,7 @@ const codeBlock = (node: CodeBlock, ctx: HastContext): ElementContent[] => {
     // 1 つのブロックのためにページ全体の描画を落とさないようにする。
     Option.flatMap((highlight) =>
       Option.liftThrowable(highlight)(
-        node.lines.map((codeLine) => codeLine.value).join('\n'),
+        node.lines.map((codeLine) => codeLine.value).join("\n"),
         codeLanguageOf(node.filename),
       ),
     ),
@@ -538,22 +542,22 @@ const codeBlock = (node: CodeBlock, ctx: HastContext): ElementContent[] => {
  * オプションは `ctx.options` から読むので、呼ぶ側が渡し直さなくてよい。
  */
 export const defaultHastHandlers = {
-  page: (node, ctx) => [element('div', withClass(ctx.options.classNames.page), ctx.children(node))],
+  page: (node, ctx) => [element("div", withClass(ctx.options.classNames.page), ctx.children(node))],
 
   title: (node, ctx) => [
-    element('h1', withClass(ctx.options.classNames.title), ctx.children(node)),
+    element("h1", withClass(ctx.options.classNames.title), ctx.children(node)),
   ],
 
   line: (node, ctx) => {
     const cls = ctx.options.classNames
     const body = ctx.children(node)
-    const styled = node.monospace ? [element('code', withClass(cls.monospace), body)] : body
-    const quoted = node.quote ? [element('blockquote', withClass(cls.quote), styled)] : styled
+    const styled = node.monospace ? [element("code", withClass(cls.monospace), body)] : body
+    const quoted = node.quote ? [element("blockquote", withClass(cls.quote), styled)] : styled
     // 空行も 1 行分の高さを保つ。Cosense では空行が段落の区切りとして意味を持つ。
-    const inner = quoted.length === 0 ? [element('br', {})] : quoted
+    const inner = quoted.length === 0 ? [element("br", {})] : quoted
     const mark = ctx.options.showPads && node.indent > 0 ? [indentMark(node.indent, cls)] : []
     return [
-      element('div', withClass(cls.line, { dataIndent: positive(node.indent) }), [
+      element("div", withClass(cls.line, { dataIndent: positive(node.indent) }), [
         ...mark,
         ...inner,
       ]),
@@ -564,17 +568,17 @@ export const defaultHastHandlers = {
   codeLine: (node) => [text(node.value)],
 
   table: (node, ctx) => {
-    const caption = node.name === '' ? [] : [element('caption', {}, [text(node.name)])]
+    const caption = node.name === "" ? [] : [element("caption", {}, [text(node.name)])]
     return [
-      element('table', withClass(ctx.options.classNames.table), [
+      element("table", withClass(ctx.options.classNames.table), [
         ...caption,
-        element('tbody', {}, ctx.children(node)),
+        element("tbody", {}, ctx.children(node)),
       ]),
     ]
   },
-  tableRow: (node, ctx) => [element('tr', {}, ctx.children(node))],
+  tableRow: (node, ctx) => [element("tr", {}, ctx.children(node))],
   // Cosense のテーブルにヘッダ行の概念は無いので、1 行目も含めてすべて td。
-  tableCell: (node, ctx) => [element('td', {}, ctx.children(node))],
+  tableCell: (node, ctx) => [element("td", {}, ctx.children(node))],
 
   text: (node) => [text(node.value)],
 
@@ -596,7 +600,7 @@ export const defaultHastHandlers = {
   ],
 
   inlineCode: (node, ctx) => [
-    element('code', withClass(ctx.options.classNames.inlineCode), [text(node.value)]),
+    element("code", withClass(ctx.options.classNames.inlineCode), [text(node.value)]),
   ],
 
   image: (node, ctx) => {
@@ -604,11 +608,11 @@ export const defaultHastHandlers = {
     // AST はソースの文字列を保つ約束なので、表示用への変換は描画側の責任になる。
     const src = Option.getOrUndefined(nonEmpty(safeSrc(asImageSrc(node.src) ?? node.src)))
     const img = element(
-      'img',
+      "img",
       withClass(ctx.options.classNames.image, {
         src,
-        alt: '',
-        dataLarge: node.large ? 'true' : undefined,
+        alt: "",
+        dataLarge: node.large ? "true" : undefined,
       }),
     )
     // 遷移先があるときだけ <a> で包む。スキームが安全でなければ包まない。
@@ -619,7 +623,7 @@ export const defaultHastHandlers = {
     return [
       Option.match(href, {
         onNone: () => img,
-        onSome: (url) => element('a', { href: url }, [img]),
+        onSome: (url) => element("a", { href: url }, [img]),
       }),
     ]
   },
@@ -637,15 +641,15 @@ export const defaultHastHandlers = {
       const body: ElementContent = Option.match(src, {
         onNone: () => text(node.user),
         onSome: (url) =>
-          element('img', withClass(cls.icon, { src: url, alt: node.user, title: node.user })),
+          element("img", withClass(cls.icon, { src: url, alt: node.user, title: node.user })),
       })
-      return element('a', withClass(joinClasses(cls.internalLink, cls.icon), { href }), [body])
+      return element("a", withClass(joinClasses(cls.internalLink, cls.icon), { href }), [body])
     })
   },
 
   // 数式の組版は KaTeX 等の仕事なので、記法を外した中身をそのまま置く。
   formula: (node, ctx) => [
-    element('span', withClass(ctx.options.classNames.formula), [text(node.value)]),
+    element("span", withClass(ctx.options.classNames.formula), [text(node.value)]),
   ],
 
   decoration: (node, ctx) => {
@@ -659,7 +663,7 @@ export const defaultHastHandlers = {
       ctx.options.classNames.decoration,
       ...node.markers.map((marker) => `deco-${marker}`),
     )
-    return [element('span', withClass(names, { dataSizeLevel: positive(node.sizeLevel) }), inner)]
+    return [element("span", withClass(names, { dataSizeLevel: positive(node.sizeLevel) }), inner)]
   },
 } satisfies HastHandlers
 
@@ -695,7 +699,9 @@ export const toHast = (node: AnyNode, options: HastOptions = {}): Root => {
   const handlers: HastHandlers = { ...defaultHastHandlers, ...options.handlers }
   const extensions = options.extensions ?? []
 
-  const render = (target: AnyNode): ElementContent[] =>
+  const resolved = resolveOptions(options)
+
+  const render = (target: AnyNode, ctx: HastContext): ElementContent[] =>
     pipe(
       entryOf<HastHandler<AnyNodeType>>(handlers, target.type),
       Option.match({
@@ -704,7 +710,7 @@ export const toHast = (node: AnyNode, options: HastOptions = {}): Root => {
       }),
     )
 
-  const extend = (target: AnyNode, output: ElementContent[]): ElementContent[] =>
+  const extend = (target: AnyNode, output: ElementContent[], ctx: HastContext): ElementContent[] =>
     extensions.reduce(
       (current, extension) =>
         pipe(
@@ -717,12 +723,25 @@ export const toHast = (node: AnyNode, options: HastOptions = {}): Root => {
       output,
     )
 
-  const compile = (target: AnyNode): ElementContent[] => extend(target, render(target))
-
-  const ctx: HastContext = {
-    node: compile,
-    children: (parent) => childrenOf(parent).flatMap(compile),
-    options: resolveOptions(options),
+  /**
+   * `target` を描くときの文脈。`ctx.node` / `ctx.children` で描くノードは、
+   * 渡したノードに依らず `target` の下にあるものとして描く。
+   * ハンドラが中身を差し替えた写し (`{ ...node, children }`) を渡しても、祖先が重ならないようにするため。
+   */
+  const contextOf = (target: AnyNode, ancestors: readonly AnyNode[]): HastContext => {
+    const inside = [...ancestors, target]
+    return {
+      ancestors,
+      node: (child) => compile(child, inside),
+      children: (parent) => childrenOf(parent).flatMap((child) => compile(child, inside)),
+      options: resolved,
+    }
   }
-  return { type: 'root', children: compile(node) }
+
+  const compile = (target: AnyNode, ancestors: readonly AnyNode[]): ElementContent[] => {
+    const ctx = contextOf(target, ancestors)
+    return extend(target, render(target, ctx), ctx)
+  }
+
+  return { type: "root", children: compile(node, []) }
 }

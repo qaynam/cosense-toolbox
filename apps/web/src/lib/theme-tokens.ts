@@ -4,16 +4,16 @@
 
 export interface ThemeToken {
   /** CSS変数名 */
-  var: string;
+  var: string
   /** 表示ラベル */
-  label: string;
+  label: string
   /** 既定値（カラーピッカー用の16進） */
-  default: string;
+  default: string
 }
 
 export interface ThemeGroup {
-  title: string;
-  tokens: ThemeToken[];
+  title: string
+  tokens: ThemeToken[]
 }
 
 export const THEME_GROUPS: ThemeGroup[] = [
@@ -99,4 +99,4 @@ export const THEME_GROUPS: ThemeGroup[] = [
       { var: "--relation-label-text", label: "ラベル文字", default: "#444444" },
     ],
   },
-];
+]
