@@ -52,9 +52,15 @@ VS Code 拡張の `contributes.grammars` などには、このファイルを指
 | `[* ]` / `[** ]` / `[*** ]` 以上 | `markup.bold.cosense` / `markup.bold.level2.cosense` / `markup.bold.level3.cosense` |
 | `[/ ]` `[- ]` `[_ ]` | `markup.italic.cosense` / `markup.strikethrough.cosense` / `markup.underline.cosense` |
 | 先頭の `---` で囲んだ YAML | `comment.block.frontmatter.cosense` |
-| コンポーネント行 (`.csnx`) | `meta.tag.component.cosense` |
+| コンポーネントのタグ名 (`.csnx`) | `support.class.component.cosense` |
+| 属性名 | `entity.other.attribute-name.cosense` |
+| 引用符で囲んだ属性値 | `string.quoted.attribute-value.cosense` |
+| `{ }` で囲んだ属性値 | `meta.embedded.expression.cosense` (中の数値は `constant.numeric.cosense`) |
 
 `[-* x]` のように記号を重ねると、それぞれのスコープが全部付く。
+
+コンポーネント行は行全体に `meta.tag.component.cosense` が付き、行頭のタグだけを JSX として読む。
+タグの後ろの文章は、Cosense の記法としても読まない。`.csnx` では 1 行目がタグならタイトルにしない。
 
 ## Language Server との関係
 
@@ -68,8 +74,9 @@ Zed は TextMate 文法を読まないので、Zed の色は
 
 ## 分かっている差
 
-- **Shiki では、空行でコードブロックと表が終わらない。** Shiki は空行を文法に通さずに飛ばすため、
-  空行の次の行が深く字下げされていると、ブロックの続きとして色が付く。VS Code では終わる。
+- **Shiki は空行を文法に通さずに飛ばす。** そのため Shiki でだけ次のことが起きる。VS Code では起きない。
+  - 空行でコードブロックと表が終わらない。空行の次の行が深く字下げされていると、ブロックの続きとして色が付く。
+  - タイトル行が空行だと、次の行がタイトルとして色付けされる (1 行目が空行のページや、frontmatter の直後が空行のページ)。
 - 字下げの深さは「ヘッダ行と同じ空白に続けて、さらに空白がある」で見ている。
   タブと空白を混ぜて字下げしたページでは、パーサーとブロックの範囲がずれることがある。
 - `code:` ブロックの中身は、ファイル名の言語では色付けしない。

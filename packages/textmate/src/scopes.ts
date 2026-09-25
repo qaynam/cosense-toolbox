@@ -34,8 +34,12 @@ export const SCOPES = {
   // `[** x]` and louder: still bold to a theme, but a level apart for anyone who wants it.
   bold2: 'markup.bold.level2.cosense',
   bold3: 'markup.bold.level3.cosense',
-  // `.csnx` only.
-  component: 'meta.tag.component.cosense',
+  // `.csnx` only: the tag that opens a component line, read as JSX. The whole line also
+  // carries `meta.tag.component.cosense`.
+  component: 'support.class.component.cosense',
+  attribute: 'entity.other.attribute-name.cosense',
+  attributeValue: 'string.quoted.attribute-value.cosense',
+  expression: 'meta.embedded.expression.cosense',
   frontmatter: 'comment.block.frontmatter.cosense',
 } as const satisfies Record<string, Scope>
 

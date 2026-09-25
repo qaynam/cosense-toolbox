@@ -34,10 +34,8 @@ const scopesOf = (text: string, needle: string, lang = 'cosense'): string[] => {
   const perChar = (tokens ?? []).flatMap((token) =>
     (token.explanation ?? []).flatMap((part) =>
       Array.from(part.content, () =>
-        part.scopes
-          .slice(1)
-          .map((scope) => scope.scopeName)
-          .sort(),
+        // A scope given twice (a nested `{ }` inside another) looks the same as once.
+        [...new Set(part.scopes.slice(1).map((scope) => scope.scopeName))].sort(),
       ),
     ),
   )
@@ -317,21 +315,60 @@ describe('引用', () => {
 })
 
 describe('コンポーネント (.csnx)', () => {
-  const text = 'T\n<Callout type="[ページ]">\n本文'
+  const LINE = 'meta.tag.component.cosense'
+  const x = (text: string, needle: string) => scopesOf(text, needle, 'cosense-x')
 
-  it('大文字で始まるタグの行はコンポーネントになり、行の中の記法は読まない', () => {
-    expect(scopesOf(text, 'type="[ページ]">', 'cosense-x')).toEqual([SCOPES.component])
+  it('大文字で始まるタグの名前はコンポーネントになる', () => {
+    expect(x('T\n<Callout type="warn">', 'Callout')).toEqual([LINE, SCOPES.component].sort())
   })
 
-  it('タグの名前には名前のスコープが付く', () => {
-    expect(scopesOf(text, 'Callout', 'cosense-x')).toContain('support.class.component.cosense')
+  it('閉じタグの名前もコンポーネントになる', () => {
+    expect(x('T\n</Callout>', 'Callout')).toEqual([LINE, SCOPES.component].sort())
+  })
+
+  it('属性の名前と、引用符で囲んだ値を読み分ける', () => {
+    const text = 'T\n<Callout type="warn" title=\'注意\'>'
+    expect(x(text, 'type')).toEqual([LINE, SCOPES.attribute].sort())
+    expect(x(text, '"warn"')).toEqual([LINE, SCOPES.attributeValue].sort())
+    expect(x(text, "'注意'")).toEqual([LINE, SCOPES.attributeValue].sort())
+  })
+
+  it('{ } で囲んだ値は式になり、中の数値は数値になる', () => {
+    const text = 'T\n<Counter start={10} />'
+    expect(x(text, '{')).toContain(SCOPES.expression)
+    expect(x(text, '10')).toEqual([LINE, SCOPES.expression, 'constant.numeric.cosense'].sort())
+  })
+
+  it('式の中の { } は入れ子として数え、外側の } で式が終わる', () => {
+    const text = 'T\n<Box style={{ a: 1 }} id="b">'
+    expect(x(text, '}}')).toContain(SCOPES.expression)
+    expect(x(text, '"b"')).toEqual([LINE, SCOPES.attributeValue].sort())
+  })
+
+  it('値の中の Cosense の記法は読まない', () => {
+    expect(x('T\n<Note href="[ページ]">', '[ページ]')).toEqual([LINE, SCOPES.attributeValue].sort())
+  })
+
+  it('タグの後ろの文章は、記法を読まずにそのままにする', () => {
+    expect(x('T\n<Callout> text [ページ] まで', ' text [ページ] まで')).toEqual([LINE])
+  })
+
+  it('1 行目がタグなら、タイトルではなくコンポーネントになる', () => {
+    expect(x('<Callout type="warn">\n 中身', 'Callout')).toEqual([LINE, SCOPES.component].sort())
+  })
+
+  it('frontmatter の次の行がタグなら、タイトルではなくコンポーネントになる', () => {
+    expect(x('---\na: 1\n---\n<Callout>\n 中身', 'Callout')).toEqual(
+      [LINE, SCOPES.component].sort(),
+    )
   })
 
   it('小文字で始まるタグはコンポーネントにならない', () => {
-    expect(scopesOf('T\n<div>', '<div>', 'cosense-x')).toEqual([])
+    expect(x('T\n<div>', '<div>')).toEqual([])
   })
 
-  it('.csn はコンポーネントを読まない', () => {
-    expect(scopesOf(text, '[ページ]', 'cosense')).toEqual([SCOPES.link])
+  it('.csn はコンポーネントを読まず、1 行目のタグもタイトルになる', () => {
+    expect(scopesOf('T\n<Callout type="[ページ]">', '[ページ]')).toEqual([SCOPES.link])
+    expect(scopesOf('<Callout>\n 中身', '<Callout>')).toEqual([SCOPES.title])
   })
 })

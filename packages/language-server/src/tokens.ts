@@ -29,8 +29,12 @@ export const TOKEN_TYPES = [
   'table',
   'bold2',
   'bold3',
-  // `.csnx` only: a line that is one component tag.
+  // `.csnx` only: a line that opens with a component tag. The tag's name, its attribute
+  // names, and the two kinds of value, as JSX reads them.
   'component',
+  'attribute',
+  'attributeValue',
+  'expression',
   // The YAML at the top of the file, which is not Cosense notation at all.
   'frontmatter',
 ] as const
@@ -86,6 +90,9 @@ const LSP_TYPE: Record<TokenType, (typeof LEGEND)[number]> = {
   quote: 'comment',
   frontmatter: 'comment',
   component: 'type',
+  attribute: 'parameter',
+  attributeValue: 'string',
+  expression: 'variable',
   bold: 'keyword',
   bold2: 'keyword',
   bold3: 'keyword',
@@ -140,6 +147,72 @@ const quoteMarkerLength = (lineText: string, indent: number): number => {
 
 const COMPONENT_LINE = /^\s*<\/?[A-Z][A-Za-z0-9_.]*(\s|\/?>)/
 
+const TAG_OPEN = /^(\s*<\/?)([A-Z][A-Za-z0-9_.]*)/
+const ATTRIBUTE_NAME = /[A-Za-z_:][A-Za-z0-9_:.-]*/y
+const SPACE = /\s*/y
+
+/** Where the run matching the sticky `pattern` at `from` ends. */
+const skip = (pattern: RegExp, text: string, from: number): number => {
+  pattern.lastIndex = from
+  return pattern.test(text) ? pattern.lastIndex : from
+}
+
+/** Where a quoted value opened at `from` ends: after its closing quote, or the line. */
+const quotedEnd = (text: string, from: number): number => {
+  const close = text.indexOf(text[from] ?? '', from + 1)
+  return close < 0 ? text.length : close + 1
+}
+
+/** Where `{ ... }` opened at `from` ends, counting nested braces: after its `}`, or the line. */
+const bracedEnd = (text: string, from: number): number => {
+  let depth = 0
+  for (let i = from; i < text.length; i++) {
+    if (text[i] === '{') depth++
+    else if (text[i] === '}' && --depth === 0) return i + 1
+  }
+  return text.length
+}
+
+/**
+ * The tag that opens a component line, read as JSX: its name, then each attribute and its
+ * value, up to the `>` that closes it. Text after the tag is left alone; it is neither
+ * Cosense notation nor part of the tag.
+ */
+const componentTokens = (line: number, text: string): RawToken[] => {
+  const open = TAG_OPEN.exec(text)
+  if (!open) return []
+  const [head = '', lead = '', name = ''] = open
+  const tokens: RawToken[] = [{ line, char: lead.length, length: name.length, type: 'component' }]
+  const span = (type: TokenType, from: number, to: number) =>
+    tokens.push({ line, char: from, length: to - from, type })
+
+  let i = head.length
+  while (i < text.length) {
+    i = skip(SPACE, text, i)
+    if (text[i] === '>' || text.startsWith('/>', i)) break
+    const nameEnd = skip(ATTRIBUTE_NAME, text, i)
+    if (nameEnd === i) {
+      i++
+      continue
+    }
+    span('attribute', i, nameEnd)
+    i = skip(SPACE, text, nameEnd)
+    if (text[i] !== '=') continue
+    i = skip(SPACE, text, i + 1)
+    const quote = text[i]
+    if (quote === '"' || quote === "'") {
+      const end = quotedEnd(text, i)
+      span('attributeValue', i, end)
+      i = end
+    } else if (quote === '{') {
+      const end = bracedEnd(text, i)
+      span('expression', i, end)
+      i = end
+    }
+  }
+  return tokens
+}
+
 /** The `---` fenced YAML at the very top, as [firstLine, lastLine] of the fence itself. */
 const frontmatterRange = (lines: readonly string[]): [number, number] | undefined => {
   if (lines[0]?.trim() !== '---') return undefined
@@ -185,9 +258,17 @@ export const computeTokens = (text: string, options: ComputeTokensOptions = {}):
       end: { ...position.end, line: position.end.line + offset },
     })
     switch (node.type) {
-      case 'title':
-        tokens.push(spanToken('title', shift(node.position)))
+      case 'title': {
+        // A page that opens with a component has no title line: the tag is what it is.
+        const line = node.position.start.line + offset
+        const lineText = docLines[line] ?? ''
+        if (options.components && COMPONENT_LINE.test(lineText)) {
+          tokens.push(...componentTokens(line, lineText))
+        } else {
+          tokens.push(spanToken('title', shift(node.position)))
+        }
         return 'skip'
+      }
       case 'codeBlock':
         pushLineSpan(
           'codeBlock',
@@ -201,11 +282,9 @@ export const computeTokens = (text: string, options: ComputeTokensOptions = {}):
       case 'line': {
         const line = node.position.start.line + offset
         const lineText = docLines[line] ?? ''
-        // A component tag owns its whole line, so nothing inside it is Cosense notation.
+        // A component tag owns its line, so nothing on it is Cosense notation.
         if (options.components && COMPONENT_LINE.test(lineText)) {
-          if (lineText.length > 0) {
-            tokens.push({ line, char: 0, length: lineText.length, type: 'component' })
-          }
+          tokens.push(...componentTokens(line, lineText))
           return 'skip'
         }
         if (node.quote) {

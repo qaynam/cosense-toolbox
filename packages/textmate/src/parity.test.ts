@@ -34,9 +34,25 @@ const marksFromServer = (text: string, components: boolean): Marks => {
 // biome-ignore lint/suspicious/noExplicitAny: the highlighter's language union is not needed here
 type Highlighter = HighlighterGeneric<any, any>
 
+/**
+ * Shiki skips an empty line without handing it to the grammar, so the state before it
+ * carries over: a blank line would not end a code block, and a blank first line would
+ * make the second the title. That is Shiki's, not the grammar's (VS Code tokenizes every
+ * line), so each empty line is given a zero-width space, which no rule reads as anything
+ * but "a line indented by nothing". Its one character is never compared: the line it
+ * stands for has none.
+ */
+const VISIBLE_EMPTY_LINE = '\u200b'
+
 const marksFromGrammar = (shiki: Highlighter, text: string, lang: string): Marks =>
   shiki
-    .codeToTokensBase(text, { lang, theme: 'min-light', includeExplanation: 'scopeName' })
+    .codeToTokensBase(
+      text
+        .split('\n')
+        .map((line) => (line === '' ? VISIBLE_EMPTY_LINE : line))
+        .join('\n'),
+      { lang, theme: 'min-light', includeExplanation: 'scopeName' },
+    )
     .map((line) =>
       line.flatMap((token) =>
         (token.explanation ?? []).flatMap((part) => {
@@ -85,20 +101,16 @@ const samples: Sample[] = [
     components: false,
   },
   {
+    name: 'component tags read as JSX',
+    text: '<Callout type="warn" title=\'注意\'>\n <Counter start={10} style={{ a: 1 }} />\n <Note href="[page]"> から [page] #tag\n</Callout>',
+    components: true,
+  },
+  {
     name: 'frontmatter, then a component',
     text: '---\ntitle: 投稿\n---\nはじめての投稿\n<Callout type="warn">\n [page] #tag\n</Callout>',
     components: true,
   },
 ]
-
-/**
- * Where Shiki cannot follow the parser, whatever the grammar says.
- *
- * Shiki skips empty lines without handing them to the grammar, so the state on the line
- * before carries over them: a blank line cannot end a code block. VS Code tokenizes every
- * line and ends it there.
- */
-const SHIKI_LIMITS: ReadonlySet<string> = new Set(['page: 空行でコードブロックが終わる'])
 
 /** Lines where the two disagree, as `line N: grammar ≠ server`, for a readable failure. */
 const disagreements = (grammar: Marks, server: Marks, text: string): string[] =>
@@ -126,23 +138,15 @@ describe.each([
     })
   })
 
-  it.each(samples.filter((s) => !SHIKI_LIMITS.has(s.name)).map((s) => [s.name, s] as const))(
-    'matches the server: %s',
-    (_, sample) => {
-      const grammar = marksFromGrammar(
-        shiki,
-        sample.text,
-        sample.components ? 'cosense-x' : 'cosense',
-      )
-      const server = marksFromServer(sample.text, sample.components)
-      expect(disagreements(grammar, server, sample.text)).toEqual([])
-    },
-  )
-})
-
-it('knows every sample it excuses', () => {
-  const names = new Set(samples.map((s) => s.name))
-  expect([...SHIKI_LIMITS].filter((name) => !names.has(name))).toEqual([])
+  it.each(samples.map((s) => [s.name, s] as const))('matches the server: %s', (_, sample) => {
+    const grammar = marksFromGrammar(
+      shiki,
+      sample.text,
+      sample.components ? 'cosense-x' : 'cosense',
+    )
+    const server = marksFromServer(sample.text, sample.components)
+    expect(disagreements(grammar, server, sample.text)).toEqual([])
+  })
 })
 
 describe('SCOPES', () => {

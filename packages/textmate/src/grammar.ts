@@ -82,6 +82,12 @@ const MARKERS = re`[*/\-_]`
 
 const NOT_STAR = re`[/\-_]`
 
+/**
+ * A line that opens with a component tag (`.csnx`), as the language server tells one:
+ * `<` or `</`, a capitalised name, then a space or the end of the tag.
+ */
+const COMPONENT_LINE = re`\s*</?[A-Z][A-Za-z0-9_.]*(?:[^\S\n]|/?>)`
+
 // --- Rules, typed -----------------------------------------------------------------------
 
 type RepositoryKey =
@@ -90,14 +96,16 @@ type RepositoryKey =
   | 'code-block'
   | 'table-block'
   | 'component'
+  | 'component-tag'
+  | 'expression'
   | 'quote'
   | 'inline'
   | 'inline-in-emphasis'
   | 'nested-bracket'
   | 'bare-bracket'
 
-/** Capture groups are numbered from 1; this grammar never needs more than three. */
-type CaptureGroup = '1' | '2' | '3'
+/** `0` is the whole match; this grammar never needs more than three groups. */
+type CaptureGroup = '0' | '1' | '2' | '3'
 
 interface Capture {
   readonly scopes: ReadonlyArray<Scope>
@@ -333,21 +341,29 @@ const block = (keyword: 'code' | 'table', scope: Scope, patterns: ReadonlyArray<
     patterns,
   })
 
-/** Every entry the grammar can `include`. The mapped type makes a missing one an error. */
-const REPOSITORY: { readonly [K in RepositoryKey]: Pattern } = {
-  // The first line is the title, unless the file opens with YAML: then it is the first
-  // line after the fence. Nothing on the title line is notation.
-  head: group([
+/**
+ * The first line is the title, unless the file opens with YAML: then it is the first line
+ * after the fence. Nothing on the title line is notation. In `.csnx` a first line that is
+ * a component tag is that tag, and the page has no title line.
+ */
+const head = (dialect: DialectInfo): Pattern => {
+  const notComponent = dialect.components ? re`(?!${COMPONENT_LINE})` : re``
+  return group([
     region({
       begin: re`\A(?=---[ \t]*$)`,
       patterns: [include('frontmatter')],
-      end: re`^(.*)$`,
+      // Ends on the line after the fence either way; only a title line is captured.
+      end: dialect.components ? re`^(?:(?=${COMPONENT_LINE})|(.*)$)` : re`^(.*)$`,
       endCaptures: { 1: scoped(SCOPES.title) },
       // At the very start the fence and the title line both match: the fence wins.
       endPatternLast: true,
     }),
-    single(re`\A.*$`, { scopes: [SCOPES.title] }),
-  ]),
+    single(re`\A${notComponent}.*$`, { scopes: [SCOPES.title] }),
+  ])
+}
+
+/** Every other entry the grammar can `include`. The mapped type makes a missing one an error. */
+const REPOSITORY: { readonly [K in Exclude<RepositoryKey, 'head'>]: Pattern } = {
   frontmatter: region({
     scopes: [SCOPES.frontmatter],
     begin: re`\A---[ \t]*$`,
@@ -357,13 +373,43 @@ const REPOSITORY: { readonly [K in RepositoryKey]: Pattern } = {
   'table-block': block('table', SCOPES.table, [
     single(re`\t`, { scopes: ['punctuation.separator.table-cell.cosense'] }),
   ]),
-  // A component tag owns its line: nothing on it is Cosense notation.
-  component: single(re`^\s*(</?)([A-Z][A-Za-z0-9_.]*)(?=\s|/?>).*$`, {
-    scopes: [SCOPES.component],
-    captures: {
-      1: scoped('punctuation.definition.tag.begin.cosense'),
-      2: scoped('support.class.component.cosense'),
+  // A component tag owns its line: nothing on it is Cosense notation, and the text after
+  // the tag is plain.
+  component: region({
+    scopes: ['meta.tag.component.cosense'],
+    begin: re`^(?=${COMPONENT_LINE})`,
+    end: re`$`,
+    patterns: [include('component-tag')],
+  }),
+  // The tag itself, read as JSX.
+  'component-tag': region({
+    begin: re`^(\s*)(</?)([A-Z][A-Za-z0-9_.]*)`,
+    beginCaptures: {
+      2: scoped('punctuation.definition.tag.begin.cosense'),
+      3: scoped(SCOPES.component),
     },
+    end: re`(/?>)|(?=$)`,
+    endCaptures: { 1: scoped('punctuation.definition.tag.end.cosense') },
+    patterns: [
+      single(re`[A-Za-z_:][A-Za-z0-9_:.\-]*`, { scopes: [SCOPES.attribute] }),
+      single(re`=`, { scopes: ['punctuation.separator.key-value.cosense'] }),
+      single(re`"[^"]*(?:"|$)|'[^']*(?:'|$)`, { scopes: [SCOPES.attributeValue] }),
+      include('expression'),
+    ],
+  }),
+  // `{...}`: a JavaScript expression. Braces nest; a few literals are told apart.
+  expression: region({
+    scopes: [SCOPES.expression],
+    begin: re`\{`,
+    end: re`\}|(?=$)`,
+    beginCaptures: { 0: scoped('punctuation.section.embedded.begin.cosense') },
+    endCaptures: { 0: scoped('punctuation.section.embedded.end.cosense') },
+    patterns: [
+      include('expression'),
+      single(re`"[^"]*"|'[^']*'`, { scopes: ['string.quoted.cosense'] }),
+      single(re`\b\d+(?:\.\d+)?\b`, { scopes: ['constant.numeric.cosense'] }),
+      single(re`\b(?:true|false|null|undefined)\b`, { scopes: ['constant.language.cosense'] }),
+    ],
   }),
   quote: region({
     scopes: ['markup.quote.cosense'],
@@ -486,6 +532,6 @@ export const buildGrammar = (dialect: Dialect): Grammar => {
     aliases: [info.extension],
     fileTypes: [info.extension],
     patterns: Arr.map(linePatterns(info), encode),
-    repository: Rec.map(REPOSITORY, encode),
+    repository: Rec.map({ head: head(info), ...REPOSITORY }, encode),
   }
 }

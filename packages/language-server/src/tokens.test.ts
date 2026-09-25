@@ -53,14 +53,56 @@ describe('frontmatter', () => {
 describe('component lines', () => {
   const text = 'T\n<Callout type="warn">\n 中身\n[page]'
 
+  /** The text each token on `line` covers, with its type. */
+  const spansOn = (source: string, line: number) =>
+    computeTokens(source, { components: true })
+      .filter((t) => t.line === line)
+      .map((t) => [t.type, source.split('\n')[line]?.slice(t.char, t.char + t.length)])
+
   it('are read only for .csnx', () => {
-    expect(typesOn(text, 1, { components: true })).toEqual(['component'])
+    expect(typesOn(text, 1, { components: true })).toContain('component')
     expect(typesOn(text, 1)).not.toContain('component')
   })
 
-  it('own their whole line, so nothing inside is notation', () => {
-    const tokens = computeTokens('T\n<Note href="[page]" />', { components: true })
-    expect(tokens.filter((t) => t.line === 1).map((t) => t.type)).toEqual(['component'])
+  it('read the tag as JSX: its name, attribute names and values', () => {
+    expect(spansOn('T\n<Callout type="warn" title=\'注意\'>', 1)).toEqual([
+      ['component', 'Callout'],
+      ['attribute', 'type'],
+      ['attributeValue', '"warn"'],
+      ['attribute', 'title'],
+      ['attributeValue', "'注意'"],
+    ])
+  })
+
+  it('read a braced value whole, nested braces and all', () => {
+    expect(spansOn('T\n<Counter start={10} style={{ a: 1 }} />', 1)).toEqual([
+      ['component', 'Counter'],
+      ['attribute', 'start'],
+      ['expression', '{10}'],
+      ['attribute', 'style'],
+      ['expression', '{{ a: 1 }}'],
+    ])
+  })
+
+  it('mark a closing tag by its name', () => {
+    expect(spansOn('T\n</Callout>', 1)).toEqual([['component', 'Callout']])
+  })
+
+  it('own their line, so neither text after the tag nor a value is notation', () => {
+    expect(spansOn('T\n<Note href="[page]"> [page] #tag', 1)).toEqual([
+      ['component', 'Note'],
+      ['attribute', 'href'],
+      ['attributeValue', '"[page]"'],
+    ])
+  })
+
+  it('are a component, not the title, on the first line', () => {
+    expect(spansOn('<Callout type="warn">\n 中身', 0)).toEqual([
+      ['component', 'Callout'],
+      ['attribute', 'type'],
+      ['attributeValue', '"warn"'],
+    ])
+    expect(typesOn('<Callout type="warn">\n 中身', 0)).toEqual(['title'])
   })
 })
 
