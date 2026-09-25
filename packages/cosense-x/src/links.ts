@@ -4,7 +4,7 @@
  * Cosense にも API にも問い合わせない。オフラインで書いてもビルドできるようにするため。
  */
 import type { ProjectLink } from '@cosense-toolbox/parser'
-import type { PageRefNode } from '@cosense-toolbox/parser/compile'
+import type { PageRefNode } from '@cosense-toolbox/parser/html'
 import { Match, Option, pipe } from 'effect'
 import { type CosenseXError, toError, unresolvedLinkError } from './errors'
 import { isRelativePath, normalizeTitle, resolveRelativePath, titleToSlug } from './title'

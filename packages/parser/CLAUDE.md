@@ -17,12 +17,17 @@
 3. **AST はソースに書かれた文字列を保つ**。パースの過程で値を「使いやすい形」に書き換えない。
    例: `[https://gyazo.com/{hash}]` の `src` はそのページ URL のままにする。
    `<img>` に入る形（`https://i.gyazo.com/{hash}.png`）への変換は表示のための書き換えなので、
-   `core/image-url.ts` の `asImageSrc` に切り出し、`compile/`（既定の `toHtml`）で行う。
+   `core/image-url.ts` の `asImageSrc` に切り出し、`html/`（既定の `toHast`）で行う。
    **どのノード型になるかの判定は構造なのでパーサーの仕事、値の書き換えは描画の仕事。**
 4. **自己完結**。ワークスペース内の他パッケージ（`@cosense/*`）を import しない。
    `tsconfig.json` も `extends` せず内容を直接持つ。ディレクトリを別リポにコピーしただけで
    `bun install && bun run build && bun run test` が通る状態を常に維持する。
-5. **runtime dependency は `effect` のみ**。他は増やさない。
+5. **runtime dependency は `effect` と、`./html` が使う hast の標準の部品だけ**。他は増やさない。
+   - `effect`：パーサー本体を含むすべての層で使う
+   - `hast-util-to-html` と `@types/hast`：`./html` の `toHast` / `toHtml` だけが使う。
+     HTML 系の出力 (HTML の文字列・JSX・rehype) を hast 1 つにまとめ、hast を文字列にする処理は
+     unified の標準に任せるため (属性名の変換やエスケープを自前で持たない)
+   - `parse` だけを使う人のバンドルには入らないこと (§4 の tree-shaking の確認) を保つ
    （`tsdown` / `vitest` / `typescript` / `fast-check` は devDependencies なので対象外。）
 6. **CSS をこのパッケージに置かない**。既定の見た目は `@cosense-toolbox/style`（別パッケージ）
    の担当。JS のバンドルに CSS 文字列を持たせると、スタイルを使わない利用者まで太る。
@@ -89,15 +94,16 @@ core/      ← types のみ（位置計算・文字列走査のプリミティ�
 core ← inline/ ← block/ ← parse.ts ← index.ts
 schema.ts  → types のみ
 utils/     → types, ast のみ
-compile/   → types, ast, core/ のみ
+compile/   → types, ast のみ
+html/      → types, ast, core/ のみ
 extensions/ → 型の再エクスポートと、既製の Extension
 ```
 
-- `utils/` / `compile/` は**パーサー本体（`parse.ts`、`inline/`、`block/`）を import してはいけない。**
+- `utils/` / `compile/` / `html/` は**パーサー本体（`parse.ts`、`inline/`、`block/`）を import してはいけない。**
   AST を受け取って処理するだけ。これにより `parse` だけ使う利用者のバンドルに
   compiler や visitor が入らない（§4 tree-shaking）。
 - `core/` は記法の知識を持たない（括弧の対応探索、タグ境界の判定、位置計算、URL の判定だけ）。
-  `compile/` が `core/image-url.ts` を使うのは、画像 URL の扱いをパーサーとレンダラーで
+  `html/` が `core/image-url.ts` を使うのは、画像 URL の扱いをパーサーとレンダラーで
   二重に持たないため（依存は core への一方向なので循環しない）。
 - ルール（`inline/constructs/`、`inline/bracket-rules/`）から走査ループを直接 import しない。
   再帰が必要なら `InlineContext.tokenize` 経由で呼ぶ（循環 import を避けるため）。
@@ -112,7 +118,8 @@ extensions/ → 型の再エクスポートと、既製の Extension
 | `inline/` | 1 行の中のインライン記法 → `InlineNode[]` | 複数行のことを知らない |
 | `block/` | 行の分類とブロック（code:/table:/title）のグルーピング | インライン記法の中身を知らない（`inline/` に委譲） |
 | `parse.ts` | ページ全文 → `Page`。extension の合成 | 記法そのものを実装しない |
-| `compile/` | AST → 何らかの出力。表示のための書き換えもここ | パースしない |
+| `compile/` | AST → HTML 以外の形式 (ハンドラ機構と toPlainText) | パースしない |
+| `html/` | AST → hast / HTML の文字列と描画の拡張。表示のための書き換えもここ | パースしない |
 | `utils/` | AST の走査・抽出 | パースしない |
 
 ---
@@ -135,6 +142,7 @@ src/
     types.ts            InlineConstruct / BracketRule / InlineContext / Extension（公開の型のみ。effect を import しない）
     internal-types.ts   パッケージの中のルールの型（Option で返す）。公開しない
     tokenize.ts         走査ループ。位置の付与はここだけが行う
+    table-cell.ts       テーブルのセルの中の記法 (既定ではリンク以外を書いたままの文字に戻す)
     constructs/         1 construct = 1 ファイル + index.ts（配列の登録場所）
     bracket-rules/      1 rule = 1 ファイル + index.ts（配列の登録場所）
     extensions/         既定では有効にしない Extension を作る factory（customDecorations 等）
@@ -143,9 +151,14 @@ src/
     build.ts            ブロックのグルーピング
   extensions/           拡張を書くための型と、既製の Extension（サブパスのバレル）
   compile/
-    create-compiler.ts  ハンドラ機構
-    to-html.ts          公式の HTML コンパイラ（pageUrl / iconImageUrl / highlight / classNames / showPads / handlers）
+    create-compiler.ts  ハンドラ機構 (HTML 以外の形式を AST から直接作るとき用)
     to-plain-text.ts    参照実装
+  html/                 HTML 系の出力 (./html サブパス)
+    to-hast.ts          公式の hast コンパイラ。描画の規則はここだけに持つ
+                        （pageUrl / iconImageUrl / highlight / classNames / showPads / handlers / extensions）
+    to-html.ts          toHast の出力を文字列にする近道（highlight は HTML の文字列も受け付ける / style）
+    code-line-numbers.ts       描画の拡張。コードブロックの行番号
+    table-cell-line-breaks.ts  描画の拡張。セルの中の文字列を <br> にする
   utils/                visit / links
   fixtures/             conformance.json（記法仕様）
 ```
@@ -172,7 +185,7 @@ src/
 
 ## 4. tree-shaking ルール
 
-配布物は「`parse` だけ使う人のバンドルに `schema` も `compile` も入らない」状態を保つ。
+配布物は「`parse` だけ使う人のバンドルに `schema` も `compile` も `html` も入らない」状態を保つ。
 
 - `package.json` の `"sideEffects": false` を**壊さない**。すなわち:
   - モジュールのトップレベルで**関数を実行しない**（定数と関数宣言のみ）
@@ -180,7 +193,7 @@ src/
   - polyfill や prototype 拡張を書かない
 - **class を使わない。** AST は plain object（`JSON.stringify` / `JSON.parse` で往復できること）。
   worklet / postMessage / CLI の `--json` 出力がこの制約に依存している。
-- 重い層はサブパス export に分ける（`./schema` `./utils` `./extensions` `./compile`）。
+- 重い層はサブパス export に分ける（`./schema` `./utils` `./extensions` `./compile` `./html`）。
   メインエントリ `index.ts` からは**それらを re-export しない**（したら opt-in の意味が消える）。
 - effect は必ず named import（`import { Option } from 'effect'`）。default import / `import * as` は使わない。
 - **`import { Array } from 'effect'` は使わない。** effect の `Array` モジュールはそれだけで
@@ -200,13 +213,13 @@ src/
 - ノード型による分岐は**網羅 switch**にし、`default` で `node satisfies never` を書く。
   これにより NodeMap に型を足したとき、対応漏れがコンパイルエラーになる。
 - **公開 API のシグネチャに effect を漏らさない。** `parse` / `parseLine` / `tokenizeInline` /
-  `utils` / `compile` の引数・戻り値に `Option` / `Either` / `Effect` / `Schema` が
+  `utils` / `compile` / `html` の引数・戻り値に `Option` / `Either` / `Effect` / `Schema` が
   現れてはいけない。内部で使った `Option<A>` は境界で `Option.getOrNull` 等でアンラップし、
   `A | null` にする（`asImageSrc(): string | null` がその例）。
   検証コマンド（何もヒットしなければ OK）:
 
   ```sh
-  bun run build && grep -nE "Option\.|Either\.|Effect\.|Schema\." dist/index.d.mts dist/utils.d.mts dist/compile.d.mts dist/extensions.d.mts
+  bun run build && grep -nE "Option\.|Either\.|Effect\.|Schema\." dist/index.d.mts dist/utils.d.mts dist/compile.d.mts dist/html.d.mts dist/extensions.d.mts
   ```
 
   例外は `./schema` だけ (effect ネイティブに使いたい人向けの opt-in サブパス)。
@@ -252,14 +265,19 @@ cp -R packages/parser /tmp/parser-standalone
 cd /tmp/parser-standalone && rm -rf node_modules dist && bun install && bun run build && bun run test
 ```
 
-tree-shaking の確認（`parse` だけを import したバンドルに schema / compile / utils が入らないこと）:
+tree-shaking の確認（`parse` だけを import したバンドルに schema / compile / html / utils が入らないこと。
+`toPlainText` だけを import したバンドルに html (hast の処理) が入らないこと）:
 
 ```sh
 # dist/index.mjs から parse だけを import したバンドルに、他の層が入らないこと
 echo "import { parse } from './dist/index.mjs'; console.log(parse('x'))" > only-parse.tmp.mjs
 bunx esbuild only-parse.tmp.mjs --bundle --format=esm --minify --outfile=/tmp/bundle.js
-grep -c "PageSchema\|toPlainText\|collectLinks" /tmp/bundle.js   # → 0
-rm only-parse.tmp.mjs
+grep -c "PageSchema\|toPlainText\|collectLinks\|code-block-start" /tmp/bundle.js   # → 0
+# ./compile だけを使うバンドルに、./html (既定の class 名や hast-util-to-html) が入らないこと
+echo "import { toPlainText } from './dist/compile.mjs'; console.log(toPlainText)" > only-compile.tmp.mjs
+bunx esbuild only-compile.tmp.mjs --bundle --format=esm --minify --outfile=/tmp/bundle.js
+grep -c "code-block-start\|allowDangerousHtml" /tmp/bundle.js   # → 0
+rm only-parse.tmp.mjs only-compile.tmp.mjs
 ```
 
 ## 8. ビルドとコードスタイル

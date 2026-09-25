@@ -75,6 +75,32 @@ const page = parse(source, {
 
 [`toHtml`](/parser/html/) はこれを `class="decoration deco-* deco-'"` として書き出すので、記号ごとに CSS を当てられます。
 
+## テーブルのセルの中で記法を読む
+
+テーブルのセルの中は、Cosense Web と同じくリンクの記法 (`[title]` / `[https://…]` / `[/project/page]` / 裸の URL / `#tag`) だけを読み、ほかの記法は書いたままの文字になります。
+行と同じく記法を読みたい場合は `tableCellNotation` を渡します。Cosense Web には無い振る舞いです。
+
+```ts
+import { customDecorations, tableCellNotation } from "@cosense-toolbox/parser/extensions";
+
+// すべての記法 (一緒に渡した拡張の記法も含む)
+parse(source, { extensions: [customDecorations(["!"]), tableCellNotation()] });
+
+// リンクに加えて、装飾だけ
+parse(source, { extensions: [tableCellNotation(["decoration"])] });
+```
+
+自分で書く拡張でも、`keepInTableCell` でセルの中に残すノードを決められます。
+true を返したノードは記法として残り、どの拡張も残さないノードは書いたままの文字に戻ります。
+
+```ts
+const keepCode: Extension = {
+  keepInTableCell: (node) => node.type === "inlineCode",
+};
+```
+
+セルの中の改行は記法ではなく見た目の約束なので、描画の拡張 [`tableCellLineBreaks`](/parser/html/#tablecelllinebreaks) で扱います。
+
 ## 独自のノード型を足す
 
 既存のノード型に寄せず新しい `type` を作る場合は、`InlineNodeMap` を declaration merging で拡張します。
@@ -92,7 +118,7 @@ declare module "@cosense-toolbox/parser" {
 
 ```ts
 import { parse } from "@cosense-toolbox/parser";
-import { escapeHtml, toHtml } from "@cosense-toolbox/parser/compile";
+import { toHtml } from "@cosense-toolbox/parser/html";
 
 // mention が { type: 'mention', user } を返すようにしておく
 const page = parse("メモ\n@qaynam に確認する", {
@@ -101,8 +127,12 @@ const page = parse("メモ\n@qaynam に確認する", {
 
 toHtml(page, {
   handlers: {
-    mention: (node) =>
-      `<a href="/u/${node.user}">@${escapeHtml(node.user)}</a>`,
+    mention: (node) => ({
+      type: "element",
+      tagName: "a",
+      properties: { href: `/u/${encodeURIComponent(node.user)}` },
+      children: [{ type: "text", value: `@${node.user}` }],
+    }),
   },
 });
 ```

@@ -6,7 +6,7 @@
  * (どの記法ルールを使うかを知らずに済むので、拡張入りのパーサーでもここは変わらない)。
  */
 import { Match } from 'effect'
-import { type Origin, originOfLine, spanAt } from '../core/position'
+import { type Origin, originOfLine, shiftOrigin, spanAt } from '../core/position'
 import type {
   CodeBlock,
   CodeLine,
@@ -32,6 +32,12 @@ export interface SourceLine {
  * 記法ルールの構成は呼び出し側が束ねて渡すので、この層は拡張の有無を知らずに済む。
  */
 export type TokenizeLine = (source: string, origin: Origin) => readonly InlineNode[]
+
+/** 行の中身と、テーブルのセルの中身の読み方。セルは行と違う規則で読むので別に受け取る。 */
+export interface Tokenizers {
+  readonly line: TokenizeLine
+  readonly tableCell: TokenizeLine
+}
 
 const lineOrigin = (line: SourceLine): Origin => originOfLine(line.index, line.offset)
 
@@ -68,21 +74,25 @@ const codeLine = (line: SourceLine, headerIndent: number): CodeLine => ({
   position: wholeLine(line),
 })
 
-const tableCells = (line: SourceLine): readonly TableCell[] => {
-  const indent = indentOf(line.text)
+const tableCells = (line: SourceLine, tokenize: TokenizeLine): readonly TableCell[] => {
   const origin = lineOrigin(line)
-  const cells: TableCell[] = []
-  let start = indent
-  for (const value of line.text.slice(indent).split('\t')) {
-    cells.push({ type: 'tableCell', value, position: spanAt(origin, start, start + value.length) })
-    start += value.length + 1 // タブ 1 文字ぶん進める
-  }
-  return cells
+  const indent = indentOf(line.text)
+  const values = line.text.slice(indent).split('\t')
+  return values.map((value, index) => {
+    // 前にあるセルと、その区切りのタブ 1 文字ずつのぶんだけ右から始まる。
+    const start = indent + values.slice(0, index).reduce((sum, cell) => sum + cell.length + 1, 0)
+    return {
+      type: 'tableCell',
+      value,
+      children: tokenize(value, shiftOrigin(origin, start)),
+      position: spanAt(origin, start, start + value.length),
+    }
+  })
 }
 
-const tableRow = (line: SourceLine): TableRow => ({
+const tableRow = (line: SourceLine, tokenize: TokenizeLine): TableRow => ({
   type: 'tableRow',
-  cells: tableCells(line),
+  cells: tableCells(line, tokenize),
   position: wholeLine(line),
 })
 
@@ -120,11 +130,12 @@ const tableBlock = (
   body: readonly SourceLine[],
   name: string,
   indent: number,
+  tokenize: TokenizeLine,
 ): TableBlock => ({
   type: 'table',
   name,
   indent,
-  rows: body.map(tableRow),
+  rows: body.map((line) => tableRow(line, tokenize)),
   position: blockPosition(header, body),
 })
 
@@ -134,8 +145,9 @@ const tableBlock = (
  */
 export const buildBlocks = (
   lines: readonly SourceLine[],
-  tokenize: TokenizeLine,
+  tokenizers: Tokenizers,
 ): readonly TopLevelBlock[] => {
+  const tokenize = tokenizers.line
   const blocks: TopLevelBlock[] = []
   const head = lines[0]
   if (head === undefined) return blocks
@@ -154,7 +166,15 @@ export const buildBlocks = (
       }),
       Match.tag('tableHeader', (role) => {
         const end = bodyEnd(lines, index + 1, role.indent)
-        blocks.push(tableBlock(line, lines.slice(index + 1, end), role.name, role.indent))
+        blocks.push(
+          tableBlock(
+            line,
+            lines.slice(index + 1, end),
+            role.name,
+            role.indent,
+            tokenizers.tableCell,
+          ),
+        )
         return end
       }),
       Match.tag('content', (role) => {

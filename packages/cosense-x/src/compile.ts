@@ -44,12 +44,9 @@ import type { Frontmatter } from './frontmatter'
 import { type LinkOptions, linkResolution, reportLinks } from './links'
 import type { PageMetadata } from './metadata'
 import { type Format, type ReadOptions, type ReadResult, readPageEither } from './read'
-import { type CosenseComponent, type ToHastOptions, toHastEither } from './to-hast'
+import { type CosenseComponent, type RenderOptions, toHastEither } from './to-hast'
 
-export interface CompileOptions
-  extends LinkOptions,
-    Omit<ReadOptions, 'filePath'>,
-    Pick<ToHastOptions, 'classNames' | 'iconImageUrl' | 'showPads' | 'title'> {
+export interface CompileOptions extends LinkOptions, Omit<ReadOptions, 'filePath'> {
   /** 形式 (`format`) を省いたときは、このパスの拡張子で決める */
   readonly filePath?: string
   /**
@@ -64,6 +61,12 @@ export interface CompileOptions
    * @defaultValue `jsxImportSource` が `react` なら `'react'`、それ以外は `'html'`
    */
   readonly elementAttributeNameCase?: 'html' | 'react'
+  /**
+   * 描画の設定。parser の `toHast` のオプションに、cosense-x の `title` を足したもの
+   * (`handlers` / `extensions` / `highlight` / `classNames` / `showPads` / `iconImageUrl` / `title`)。
+   * パースの設定 (`parseOptions`) と分けて置き、どの段階の設定かを名前で分かるようにしている。
+   */
+  readonly renderOptions?: RenderOptions
   /** hast に当てる rehype プラグイン。 */
   readonly rehypePlugins?: PluggableList
 }
@@ -276,7 +279,7 @@ const prepare = (source: string, options: CompileOptions): Either.Either<Prepare
     })
     return pipe(
       toHastEither(read.page, {
-        ...options,
+        ...options.renderOptions,
         resolveLink,
         ...(read.format === 'csnx'
           ? {

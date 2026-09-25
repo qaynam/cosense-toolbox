@@ -2,7 +2,7 @@
  * ページ全体・行レベルの仕様。ブロック構造 (タイトル / code: / table:) はここで検証する。
  */
 import { describe, expect, it } from 'vitest'
-import { customDecorations } from './extensions'
+import { customDecorations, tableCellNotation } from './extensions'
 import type { Extension } from './inline/types'
 import { parse, parseLine } from './parse'
 import { stripPositions } from './test-helpers'
@@ -153,6 +153,67 @@ describe('table: ブロック', () => {
   it('セル数が揃っていなくてもそのまま保持する', () => {
     const table = blockAt(body('table:ragged', ' a\tb\tc', ' d'), 0, 'table')
     expect(table.rows.map((r) => r.cells.length)).toEqual([3, 1])
+  })
+
+  it('セルの value は書いたままの文字を保つ', () => {
+    const table = blockAt(body('table:data', ' [* 太字]\t[リンク]'), 0, 'table')
+    expect(table.rows[0]?.cells.map((c) => c.value)).toEqual(['[* 太字]', '[リンク]'])
+  })
+
+  it('既定では、セルの中はリンクの記法だけを読む (Cosense Web と同じ)', () => {
+    const table = blockAt(body('table:data', ' [* 太字] `code` [リンク]'), 0, 'table')
+    expect(stripPositions(table.rows[0]?.cells[0]?.children)).toEqual([
+      { type: 'text', value: '[* 太字] `code` ' },
+      { type: 'internalLink', label: 'リンク', target: 'リンク' },
+    ])
+  })
+
+  it('拡張 tableCellNotation() を渡すと、セルの中でも行と同じくすべての記法を読む', () => {
+    const page = parse('title\ntable:data\n [* 太字]\t`code` [リンク]', {
+      extensions: [tableCellNotation()],
+    })
+    const table = blockAt(page.children.slice(1), 0, 'table')
+    expect(stripPositions(table.rows[0]?.cells.map((c) => c.children))).toEqual([
+      stripPositions(parseLine('[* 太字]').children),
+      stripPositions(parseLine('`code` [リンク]').children),
+    ])
+  })
+
+  it('tableCellNotation にノード型を並べると、リンクに加えてその型だけを読む', () => {
+    const page = parse('title\ntable:data\n [* `code` [リンク]] `code`', {
+      extensions: [tableCellNotation(['decoration'])],
+    })
+    const table = blockAt(page.children.slice(1), 0, 'table')
+    expect(stripPositions(table.rows[0]?.cells[0]?.children)).toMatchObject([
+      {
+        type: 'decoration',
+        markers: ['*'],
+        children: [
+          { type: 'text', value: '`code` ' },
+          { type: 'internalLink', label: 'リンク', target: 'リンク' },
+        ],
+      },
+      { type: 'text', value: ' `code`' },
+    ])
+  })
+
+  it('tableCellNotation と一緒に渡した拡張の記法も、セルの中で読む', () => {
+    const extensions = [customDecorations(['!']), tableCellNotation()]
+    const page = parse('title\ntable:data\n [! 目印]', { extensions })
+    const table = blockAt(page.children.slice(1), 0, 'table')
+    expect(stripPositions(table.rows[0]?.cells[0]?.children)).toEqual(
+      stripPositions(parseLine('[! 目印]', { extensions }).children),
+    )
+  })
+
+  it('拡張の keepInTableCell が true を返したノードは、セルの中でも記法として残す', () => {
+    const keepCode: Extension = { keepInTableCell: (node) => node.type === 'inlineCode' }
+    const page = parse('title\ntable:data\n `code` [$ x]', { extensions: [keepCode] })
+    const table = blockAt(page.children.slice(1), 0, 'table')
+    expect(table.rows[0]?.cells[0]?.children.map((child) => child.type)).toEqual([
+      'inlineCode',
+      'text',
+    ])
   })
 
   it('同じインデントの行でテーブルが終わる', () => {

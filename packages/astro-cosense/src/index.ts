@@ -13,6 +13,12 @@ import { fileURLToPath } from 'node:url'
 import { readPage } from '@cosense-toolbox/cosense-x/graph'
 import type { AstroConfig, AstroIntegration, ContentEntryType, HookParameters } from 'astro'
 import { ASSET_STORE_KEY, type AssetStore, createAssetStore, rehypeCosenseAssets } from './assets'
+import {
+  type CodeHighlighter,
+  type SyntaxHighlightOption,
+  astroShikiHighlighter,
+  customHighlighter,
+} from './highlight'
 import { EXTENSIONS, createSiteCache, idOf } from './site'
 import {
   ASSETS_MODULE_ID,
@@ -60,6 +66,17 @@ export interface CosenseIntegrationOptions extends AstroCompileOptions {
    * @defaultValue `{}` (有効)
    */
   readonly assets?: CosenseAssetsOptions | false
+  /**
+   * コードブロックの色付け。
+   *
+   * - `'astro'`: `.md` / `.mdx` と同じく、Astro の `markdown.syntaxHighlight` と `markdown.shikiConfig` に従う。
+   *   shiki のときだけ色付けし、prism には対応していない
+   * - `false`: 色付けしない
+   * - 関数: `(code, language) => hast | null` で自分で色付けする
+   *
+   * @defaultValue `'astro'`
+   */
+  readonly syntaxHighlight?: SyntaxHighlightOption
 }
 
 /** `{base}/_cosense/`。base の末尾の `/` の有無を吸収する。 */
@@ -112,7 +129,12 @@ declare module '*${extension}' {
 `
 
 export default function cosense(options: CosenseIntegrationOptions = {}): AstroIntegration {
-  const { components, assets: assetsOptions = {}, ...compileOptions } = options
+  const {
+    components,
+    assets: assetsOptions = {},
+    syntaxHighlight = 'astro',
+    ...compileOptions
+  } = options
   // config:setup で作る。ビルドの始まりと終わりのフックからも使う。
   let assets: AssetStore | undefined
   let astroConfig: AstroConfig | undefined
@@ -136,6 +158,12 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
                 ...(assetsOptions.links === undefined ? {} : { links: assetsOptions.links }),
                 warn: (message) => logger.warn(message),
               })
+        const highlighter: CodeHighlighter | undefined =
+          syntaxHighlight === false
+            ? undefined
+            : syntaxHighlight === 'astro'
+              ? astroShikiHighlighter(config.markdown)
+              : customHighlighter(syntaxHighlight)
         // toHtml などで自分で描画するページが、virtual:cosense-x/assets から使う。
         Object.assign(globalThis, { [Symbol.for(ASSET_STORE_KEY)]: assets })
         const site = createSiteCache(
@@ -191,6 +219,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
                         ],
                       },
                 assets,
+                highlighter,
                 components:
                   components === undefined
                     ? undefined

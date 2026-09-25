@@ -45,7 +45,7 @@ npm i @cosense-toolbox/parser@beta
 ```ts
 import { parse } from '@cosense-toolbox/parser'
 import { collectLinks } from '@cosense-toolbox/parser/utils'
-import { toHtml } from '@cosense-toolbox/parser/compile'
+import { toHtml } from '@cosense-toolbox/parser/html'
 
 const page = parse(`今日のメモ
 [プロジェクトA] の進捗を確認する
@@ -63,8 +63,9 @@ toHtml(page)       // → '<div class="page"><h1 class="title">今日のメモ</
 | :--- | :--- | :--- |
 | `@cosense-toolbox/parser` | テキストを AST にする | `parse` `parseLine` `tokenizeInline` `createParser` `asImageSrc` `normalizeLineEndings` |
 | `@cosense-toolbox/parser/utils` | ヘルパー。AST から取り出す | `visit` `find` `collect` `collectLinks` `firstImage` `rawTextOf` |
-| `@cosense-toolbox/parser/compile` | AST を別の形式にする | `toHtml` `toPlainText` `createCompiler` `NodeHandlers` |
-| `@cosense-toolbox/parser/extensions` | 記法を足す | `Extension` `InlineConstruct` `BracketRule` `customDecorations` |
+| `@cosense-toolbox/parser/html` | AST を HTML 系の出力 (hast と HTML の文字列) にする | `toHast` `toHtml` `codeLineNumbers` `tableCellLineBreaks` |
+| `@cosense-toolbox/parser/compile` | AST を HTML 以外の形式にする | `toPlainText` `createCompiler` |
+| `@cosense-toolbox/parser/extensions` | 記法を足す | `Extension` `InlineConstruct` `BracketRule` `customDecorations` `tableCellNotation` |
 | `@cosense-toolbox/parser/schema` | 外から来た値を検証する | `decodePage` |
 
 各 API の詳細はドキュメントにある。
@@ -76,7 +77,7 @@ toHtml(page)       // → '<div class="page"><h1 class="title">今日のメモ</
 | [パース](https://cosense-toolbox.qaynam.dev/parser/parse/) | `parse` / `parseLine` / `tokenizeInline` / `createParser` |
 | [AST と位置情報](https://cosense-toolbox.qaynam.dev/parser/ast/) | ノードの構造と `position` の意味 |
 | [ヘルパー](https://cosense-toolbox.qaynam.dev/parser/utils/) | `visit` / `find` / `collect` など |
-| [HTML への変換](https://cosense-toolbox.qaynam.dev/parser/html/) | `toHtml` と 7 つのオプション |
+| [HTML への変換](https://cosense-toolbox.qaynam.dev/parser/html/) | `toHast` / `toHtml` と 8 つのオプション |
 | [独自形式への変換](https://cosense-toolbox.qaynam.dev/parser/compile/) | `toPlainText` / `createCompiler` |
 | [記法の拡張](https://cosense-toolbox.qaynam.dev/parser/extend/) | `Extension` と独自のノード型 |
 

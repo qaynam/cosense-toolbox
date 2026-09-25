@@ -114,6 +114,13 @@ describe('ブロックの位置', () => {
     const cells = collect(page, 'tableCell')
     expect(cells.map((c) => rawTextOf(source, c))).toEqual(['あ', 'い', 'う'])
   })
+
+  it('セルの中のリンクはページ上の自分の範囲を指す', () => {
+    const source = ['タイトル', 'table:data', ' あ\t前 [リンク] #tag'].join('\n')
+    const page = parse(source)
+    expect(collect(page, 'internalLink').map((n) => rawTextOf(source, n))).toEqual(['[リンク]'])
+    expect(collect(page, 'hashtag').map((n) => rawTextOf(source, n))).toEqual(['#tag'])
+  })
 })
 
 describe('parseLine の origin', () => {

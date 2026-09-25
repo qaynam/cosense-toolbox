@@ -42,4 +42,10 @@ export { formatOf, readPage } from './read'
 export type { Format, ReadOptions, ReadResult } from './read'
 export { isRelativePath, normalizeTitle, resolveRelativePath, titleToSlug } from './title'
 export { defaultResolveLink, toHast } from './to-hast'
-export type { CosenseComponent, ResolvedLink, ToHastOptions } from './to-hast'
+export type {
+  CosenseComponent,
+  HastHighlighter,
+  RenderOptions,
+  ResolvedLink,
+  ToHastOptions,
+} from './to-hast'

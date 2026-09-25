@@ -55,6 +55,11 @@ for (const block of page.children) {
 1 行目は無条件でタイトルとして扱います。
 `code:` と `table:` は複数行にまたがるので、ページの文脈があって初めてブロックにまとまります。
 
+`options` には記法の拡張 (`extensions`) を渡せます。[記法の拡張](/parser/extend/)を参照してください。
+
+テーブルのセルの中は、Cosense Web と同じくリンクの記法だけを読み、ほかの記法は書いたままの文字になります。
+行と同じく読みたいときは、拡張 [`tableCellNotation`](/parser/extend/#テーブルのセルの中で記法を読む) を渡します。
+
 ここで出てきた `title` や `line` といったブロックの中身は、[AST と位置情報](/parser/ast/)で詳しく扱います。
 
 ## parseLine
