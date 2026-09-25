@@ -1,10 +1,15 @@
-Cosense で書く
+Cosenseで書く
 code:frontmatter.yml
  date: 2026-09-05
  description: Cosense の記法でブログ記事を書く方法
+
 [frontmatter] も対応している。
-code:code
+
+code:csnx
  ---
+  title: Cosenseで書く
+  date: 2026-09-05
+  description: Cosense の記法でブログ記事を書く方法
  ---
 
 のような点線を書くか、最初の`code:frontmatter.yml`のように書くと、Cosense の画面でも frontmatter が書ける。

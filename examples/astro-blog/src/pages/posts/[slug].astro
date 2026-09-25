@@ -25,15 +25,21 @@ const twoHop = graph.twoHop[id] ?? []
 <Base title={post.data.title} description={post.data.description}>
   <!-- cosense-{記法}: の modifier で、記事の中の記法ごとに utility を当てる -->
   <article
-    class="cosense cosense-title:text-4xl cosense-hashtag:text-emerald-700 cosense-link:hover:underline cosense-code:bg-amber-50 cosense-table:[&_tr:first-child_td]:font-bold cosense-table:[&_td]:whitespace-break-spaces
+    class="cosense cosense-title:text-4xl cosense-hashtag:text-emerald-700 cosense-link:hover:underline  cosense-table:[&_tr:first-child_td]:font-bold cosense-table:[&_td]:whitespace-break-spaces
 cosense-table:[&_td]:border cosense-table:[&_td]:border-slate-300 cosense-table:[&_td]:p-2 cosense-table:[&_td]:text-sm
 cosense-table:[&_caption]:bg-white cosense-table:[&_caption]:text-base cosense-table:[&_caption]:text-slate-500
 cosense-deco-[|]:border-l-10 cosense-deco-[|]:border-orange-400 cosense-deco-[|]:pl-2
 cosense-deco-[|]:mb-4
 cosense-deco-[!]:font-semibold cosense-deco-[!]:px-2 cosense-deco-[!]:py-1 cosense-deco-[!]:bg-red-500 cosense-deco-[!]:text-white
 cosense-deco-[~]:font-semibold cosense-deco-[~]:px-2 cosense-deco-[~]:py-1 cosense-deco-[~]:bg-yellow-300 cosense-deco-[~]:text-black
+cosense-title:m-0
+
+cosense-code-block:[&_.code-block-start]:[--cosense-badge-bg:var(--color-neutral-300)] cosense-code-block:[&_.code-block-start]:text-black
+
+cosense-code:bg-neutral-150 cosense-code:before:content-['`'] cosense-code:after:content-['`'] cosense-code:text-neutral-600
     "
   >
+    <p class="mb-2 text-neutral-400"><time>作成日: {post.data.date?.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</time></p>
     <Content />
   </article>
 
