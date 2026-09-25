@@ -231,13 +231,17 @@ export const toHastEither = (
     type: 'cosenseComponent',
     name: node.name,
     attributes: node.attributes,
-    fallback: defaultHastHandlers.line(node.line, ctx)[0] as ElementContent,
-    fallbackEnd:
-      node.closeLine === null
-        ? null
-        : (defaultHastHandlers.line(node.closeLine, ctx)[0] as ElementContent),
+    fallback: tagLine(node.line, ctx),
+    fallbackEnd: node.closeLine === null ? null : tagLine(node.closeLine, ctx),
     children: node.children.flatMap((child) => block(child, ctx)),
   })
+
+  /** タグだけの行の要素。既定の `line` は行ごとに要素を 1 つ返すので、それを取り出す。 */
+  const tagLine = (node: LineBlock, ctx: HastContext): ElementContent =>
+    pipe(
+      Option.fromNullable(defaultHastHandlers.line(node, ctx)[0]),
+      Option.getOrElse(() => text('')),
+    )
 
   const block = (node: GroupedBlock, ctx: HastContext): ElementContent[] =>
     node.type === 'component' ? [component(node, ctx)] : ctx.node(node)

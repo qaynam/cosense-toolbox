@@ -7,12 +7,7 @@
 import type { HastHighlighter } from '@cosense-toolbox/cosense-x'
 import { codeLanguageOf } from '@cosense-toolbox/parser/compile'
 import type { AstroConfig } from 'astro'
-import {
-  type BundledLanguage,
-  type ShikiTransformer,
-  bundledLanguages,
-  createHighlighter,
-} from 'shiki'
+import { type BundledLanguage, bundledLanguages, createHighlighter } from 'shiki'
 
 type MarkdownConfig = AstroConfig['markdown']
 
@@ -84,8 +79,7 @@ export const astroShikiHighlighter = (markdown: MarkdownConfig): CodeHighlighter
         : highlighter.codeToHast(code, {
             lang,
             ...themed,
-            // Astro の設定の型は Astro が入れた shiki の版のもの。版が分かれると型だけ合わなくなるので揃える。
-            transformers: transformers as ShikiTransformer[],
+            transformers,
           })
     }
   }

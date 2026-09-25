@@ -61,6 +61,16 @@ describe('コードブロックの色付け (highlight)', () => {
     )
   })
 
+  it('ハイライタが例外を投げたら、そのブロックは色付けせず 1 行ずつのまま出す', () => {
+    // shiki は読み込んでいない言語で例外を投げる。1 つのブロックのためにページ全体を落とさない。
+    const html = toHtml(parse(SOURCE), {
+      highlight: () => {
+        throw new Error('unknown language')
+      },
+    })
+    expect(html).toBe(toHtml(parse(SOURCE)))
+  })
+
   it('null を返すと色付けせず、1 行ずつのまま出す', () => {
     expect(toHtml(parse(SOURCE), { highlight: () => null })).toBe(toHtml(parse(SOURCE)))
   })

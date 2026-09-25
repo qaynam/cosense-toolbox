@@ -63,8 +63,7 @@ export const toHtml = (node: AnyNode, options: HtmlOptions = {}): string => {
     ...rest,
     ...(highlight === undefined ? {} : { highlight: asHastHighlighter(highlight) }),
   })
-  // hast-util-to-html が別の版の @types/hast を見ていることがあるので、型だけ合わせる。実行時には同じ形。
-  const html = hastToHtml(hast as Parameters<typeof hastToHtml>[0], {
+  const html = hastToHtml(hast, {
     // highlight の文字列や handlers の raw ノードを、書いた人の意図どおり HTML として入れる。
     allowDangerousHtml: true,
     characterReferences: { useNamedReferences: true },

@@ -329,44 +329,63 @@ interface HighlightedBody {
   readonly style: string | undefined
 }
 
-const isElement = (node: unknown, tagName: string): node is Element =>
-  typeof node === 'object' &&
-  node !== null &&
-  (node as Element).type === 'element' &&
-  (node as Element).tagName === tagName
+/**
+ * raw ノードを hast の要素の中身として扱う。型の変換はここ 1 か所に閉じる。
+ *
+ * hast の型は raw を知らない。raw の型拡張は mdast-util-to-hast が持っているが、
+ * それに頼ると利用者の環境で型が効くかどうかが依存の入り方で変わるので、`RawNode` を自前で持っている。
+ * 実行時には、文字列にするとき (hast-util-to-html の allowDangerousHtml) にそのまま埋め込まれる。
+ */
+const asElementContents = (nodes: readonly HastContent[]): ElementContent[] =>
+  nodes as ElementContent[]
+
+/** 要素の中身に入るノードだけにする。Root の子には doctype も来うるため。 */
+const contentsOf = (result: Root | HastContent[]): ElementContent[] =>
+  Array.isArray(result)
+    ? asElementContents(result)
+    : result.children.filter((child): child is ElementContent => child.type !== 'doctype')
+
+const isBlank = (node: ElementContent): boolean => node.type === 'text' && node.value.trim() === ''
 
 /** 空白だけのテキストを除いた、ただ 1 つの子。 */
-const onlyChild = (children: readonly unknown[]): unknown => {
-  const meaningful = children.filter(
-    (child) => !((child as Text).type === 'text' && (child as Text).value.trim() === ''),
-  )
-  return meaningful.length === 1 ? meaningful[0] : undefined
+const onlyChildOf = (children: readonly ElementContent[]): Option.Option<ElementContent> => {
+  const meaningful = children.filter((child) => !isBlank(child))
+  return meaningful.length === 1 ? Option.fromNullable(meaningful[0]) : Option.none()
 }
+
+const elementNamed =
+  (tagName: string) =>
+  (node: ElementContent): Option.Option<Element> =>
+    node.type === 'element' && node.tagName === tagName ? Option.some(node) : Option.none()
+
+/** hast の決まりでは className は配列だが、shiki は class を文字列で付ける。どちらも読む。 */
+const classesOf = (value: Properties[string]): string[] =>
+  Array.isArray(value) ? value.map(String) : typeof value === 'string' ? classList(value) : []
 
 /**
  * ハイライタの出力をコードブロックの code の中身にする。
  * `pre > code` (shiki や lowlight の形) なら pre を剥がし、pre に付いたテーマの class と style を引き継ぐ。
  */
 const highlightedBody = (result: Root | HastContent[]): HighlightedBody => {
-  // raw ノードも hast の要素の中身として扱う。文字列にするときにそのまま埋め込まれる。
-  const children = (Array.isArray(result) ? result : result.children) as ElementContent[]
-  const pre = onlyChild(children)
-  if (isElement(pre, 'pre')) {
-    const code = onlyChild(pre.children)
-    if (isElement(code, 'code')) {
-      // hast の決まりでは className の配列だが、shiki は class を文字列で付ける。
-      const className = pre.properties.className ?? pre.properties.class
-      const style = pre.properties.style
-      return {
-        children: code.children,
-        className: Array.isArray(className)
-          ? className.map(String)
-          : classList(typeof className === 'string' ? className : undefined),
-        style: typeof style === 'string' ? style : undefined,
-      }
-    }
-  }
-  return { children, className: [], style: undefined }
+  const children = contentsOf(result)
+  return pipe(
+    onlyChildOf(children),
+    Option.flatMap(elementNamed('pre')),
+    Option.flatMap((pre) =>
+      pipe(
+        onlyChildOf(pre.children),
+        Option.flatMap(elementNamed('code')),
+        Option.map(
+          (code): HighlightedBody => ({
+            children: code.children,
+            className: classesOf(pre.properties.className ?? pre.properties.class),
+            style: typeof pre.properties.style === 'string' ? pre.properties.style : undefined,
+          }),
+        ),
+      ),
+    ),
+    Option.getOrElse((): HighlightedBody => ({ children, className: [], style: undefined })),
+  )
 }
 
 /**
@@ -383,12 +402,15 @@ const codeBlock = (node: CodeBlock, ctx: HastContext): ElementContent[] => {
 
   const highlighted = pipe(
     Option.fromNullable(ctx.options.highlight),
-    Option.flatMapNullable((highlight) =>
-      highlight(
+    // 例外を投げたら、そのブロックは色付けしない。shiki は読み込んでいない言語で投げるので、
+    // 1 つのブロックのためにページ全体の描画を落とさないようにする。
+    Option.flatMap((highlight) =>
+      Option.liftThrowable(highlight)(
         node.lines.map((codeLine) => codeLine.value).join('\n'),
         codeLanguageOf(node.filename),
       ),
     ),
+    Option.flatMapNullable((result) => result),
     Option.map(highlightedBody),
   )
   if (Option.isSome(highlighted)) {
@@ -568,7 +590,7 @@ export const toHast = (node: AnyNode, options: HastOptions = {}): Root => {
     if (handler === undefined) return ctx.children(target)
     const result = handler(target, ctx)
     // raw ノードも hast の要素の中身として扱う。文字列にするときにそのまま埋め込まれる。
-    return (Array.isArray(result) ? result : [result]) as ElementContent[]
+    return asElementContents(Array.isArray(result) ? result : [result])
   }
   const ctx: HastContext = {
     node: compile,
