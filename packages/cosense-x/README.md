@@ -194,13 +194,14 @@ const { data, contentType } = await fetchAsset('https://scrapbox.io/files/xxx.pn
 | `rehypePlugins` | hast に当てる rehype プラグイン |
 | `index` `filePath` `pageUrl` `tagUrl` `projectUrl` `unresolved` | リンクの解決 |
 | `title` | false ならタイトル行 (`<h1>`) を出さない |
-| `classNames` `showPads` `iconImageUrl` | `toHtml` の同名のオプションと同じ |
+| `classNames` `showPads` `iconImageUrl` | parser の `toHast` / `toHtml` の同名のオプションと同じ |
+| `handlers` | 記法ごとの出力の差し替え。parser の `toHast` の `handlers` と同じ。cosense-x のリンクの解決やコンポーネントより後に重ねる |
 | `highlight` | コードブロックの色付け。`(code, language) => hast \| null`。下を参照 |
 | `parseOptions` | パーサーに渡すオプション (記法の拡張など) |
 
 ### コードブロックの色付け
 
-`highlight` は `toHtml` の同名のオプションの hast 版。HTML の文字列ではなく hast を返す。
+`highlight` は parser の `toHast` の同名のオプションと同じで、HTML の文字列ではなく hast を返す。
 shiki の `codeToHast` の結果はそのまま返してよい。`pre > code` の形なら、code の中身を使い、pre の class と style (テーマの背景色や文字色) をコードブロックに移す。
 
 ```ts
@@ -232,7 +233,7 @@ await compile(source, {
   │ @cosense-toolbox/parser で AST にする
   ▼
 Cosense AST
-  │ toHast (.csnx ならコンポーネントの行をまとめる)
+  │ toHast (parser の toHast に、リンクの解決と .csnx のコンポーネントを足したもの)
   ▼
 hast ── rehype プラグイン
   │ hast-util-to-estree → estree-util-build-jsx → estree-util-to-js

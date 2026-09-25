@@ -48,6 +48,17 @@ collectLinks(page) // → ['プロジェクトA', 'あとで読む']
 toHtml(page)       // → '<div class="page"><h1 class="title">今日のメモ</h1>…'
 ```
 
+## 次のリリースでの変更
+
+HTML 系の出力を hast にまとめた。`toHtml` は `toHast` の出力を文字列にする近道になる。
+
+- `toHast` を足した。描画の規則はここにだけある。HTML の文字列が要らないとき (rehype や JSX) はこちらを使う
+- `handlers` は HTML の文字列ではなく hast のノードを返す。文字列のまま入れたいときは `{ type: 'raw', value }` を返す
+- `ctx.children(node)` は子の変換結果を平らな hast の配列で返す。`ctx.options` で既定値を埋めたオプションを読める
+- `createHtmlHandlers(options)` をやめ、`defaultHastHandlers` にした。オプションは `ctx.options` から読むので、既定の出力を包むときに渡し直さなくてよい
+- `highlight` は hast と `null` も返せる。HTML の文字列を返す今までの形も `toHtml` ではそのまま使える
+- テキストのエスケープは hast-util-to-html に揃えた。`<` と `&` だけを実体参照にする (`>` はそのまま)
+
 ## API
 
 モジュールごとに export が分かれている。使うものだけ import すればよい。
@@ -56,7 +67,7 @@ toHtml(page)       // → '<div class="page"><h1 class="title">今日のメモ</
 | :--- | :--- | :--- |
 | `@cosense-toolbox/parser` | テキストを AST にする | `parse` `parseLine` `tokenizeInline` `createParser` `asImageSrc` `normalizeLineEndings` |
 | `@cosense-toolbox/parser/utils` | ヘルパー。AST から取り出す | `visit` `find` `collect` `collectLinks` `firstImage` `rawTextOf` |
-| `@cosense-toolbox/parser/compile` | AST を別の形式にする | `toHtml` `toPlainText` `createCompiler` `NodeHandlers` |
+| `@cosense-toolbox/parser/compile` | AST を別の形式にする | `toHast` `toHtml` `defaultHastHandlers` `toPlainText` `createCompiler` |
 | `@cosense-toolbox/parser/extensions` | 記法を足す | `Extension` `InlineConstruct` `BracketRule` `customDecorations` |
 | `@cosense-toolbox/parser/schema` | 外から来た値を検証する | `decodePage` |
 
@@ -69,7 +80,7 @@ toHtml(page)       // → '<div class="page"><h1 class="title">今日のメモ</
 | [パース](https://cosense-toolbox.qaynam.dev/parser/parse/) | `parse` / `parseLine` / `tokenizeInline` / `createParser` |
 | [AST と位置情報](https://cosense-toolbox.qaynam.dev/parser/ast/) | ノードの構造と `position` の意味 |
 | [ヘルパー](https://cosense-toolbox.qaynam.dev/parser/utils/) | `visit` / `find` / `collect` など |
-| [HTML への変換](https://cosense-toolbox.qaynam.dev/parser/html/) | `toHtml` と 7 つのオプション |
+| [HTML への変換](https://cosense-toolbox.qaynam.dev/parser/html/) | `toHast` / `toHtml` と 7 つのオプション |
 | [独自形式への変換](https://cosense-toolbox.qaynam.dev/parser/compile/) | `toPlainText` / `createCompiler` |
 | [記法の拡張](https://cosense-toolbox.qaynam.dev/parser/extend/) | `Extension` と独自のノード型 |
 

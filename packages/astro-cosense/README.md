@@ -33,7 +33,7 @@ export default defineConfig({
 | `components` | すべてのページに渡すコンポーネントを default export するモジュールの、プロジェクトのルートからのパス |
 | `pageUrl` | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス |
 | `tagUrl` `projectUrl` `unresolved` | `compile` の同名のオプションと同じ |
-| `rehypePlugins` `classNames` `showPads` `iconImageUrl` `title` `parseOptions` | 同上 |
+| `rehypePlugins` `handlers` `classNames` `showPads` `iconImageUrl` `title` `parseOptions` | 同上 |
 | `syntaxHighlight` | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け) |
 | `assets` | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効 |
 
@@ -125,23 +125,20 @@ cosense({
 
 ```ts
 // src/shiki.ts
-import { escapeHtml } from '@cosense-toolbox/parser/compile'
+import type { HastHighlighter } from '@cosense-toolbox/parser/compile'
 import type { ShikiConfig } from 'astro'
 import { createHighlighter } from 'shiki'
 
 export const shikiConfig = { theme: 'github-light' } satisfies Partial<ShikiConfig>
 
 /** toHtml は highlight を同期で呼ぶので、使う言語は先に読み込んでおく */
-export const createCodeHighlight = async (langs: string[]) => {
+export const createCodeHighlight = async (langs: string[]): Promise<HastHighlighter> => {
   const shiki = await createHighlighter({ themes: [shikiConfig.theme], langs })
-  // toHtml が code で包むので、外側の <pre><code> だけを剥がす。行ごとの span.line は残す
-  return (code: string, lang: string) =>
+  // shiki の hast はそのまま返してよい。<pre><code> は剥がされ、テーマの色はコードブロックに移る
+  return (code, lang) =>
     shiki.getLoadedLanguages().includes(lang)
-      ? shiki
-          .codeToHtml(code, { lang, theme: shikiConfig.theme })
-          .replace(/^<pre[^>]*><code>/, '')
-          .replace(/<\/code><\/pre>$/, '')
-      : escapeHtml(code)
+      ? shiki.codeToHast(code, { lang, theme: shikiConfig.theme })
+      : null // 読み込んでいない言語は色付けしない
 }
 ```
 
@@ -192,7 +189,7 @@ const html = toHtml(parse(text), { highlight })
 ```
 
 - 色付けしていないブロック (shiki が知らない言語) は、まとめる親の要素が無い。ヘッダ行 (ファイル名) でカウンタを戻すと、後ろに並ぶ本体行で数えられる
-- `toHtml` に shiki の `structure: 'inline'` の出力を渡すと、行が `span.line` にならず `<br>` で区切られるので、行番号は付かない。上の `createCodeHighlight` のように、外側の `<pre><code>` だけを剥がす
+- `toHtml` に shiki の `structure: 'inline'` の出力を渡すと、行が `span.line` にならず `<br>` で区切られるので、行番号は付かない。上の `createCodeHighlight` のように `codeToHast` をそのまま返す
 
 ## content collection
 

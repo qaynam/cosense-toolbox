@@ -39,8 +39,8 @@ toPlainText(parse("タイトル\n[* 太字] と [リンク]"));
 createCompiler<Out>(options: { handlers; fallback }): (node) => Out
 ```
 
-HTML とテキスト以外を出すときに使います。
-`toHtml` も `toPlainText` もこれで書かれています。
+HTML 系 (hast / HTML の文字列) とテキスト以外を出すときに使います。
+`toPlainText` はこれで書かれています。HTML 系は `toHast` を使ってください。
 
 ```ts
 import { createCompiler } from "@cosense-toolbox/parser/compile";
@@ -55,8 +55,8 @@ const toMarkdown = createCompiler<string>({
 });
 ```
 
-`handlers` の書きかたは [`toHtml` の handlers](/parser/html/#handlers) と同じです。
-違いは、既定のハンドラに重ねるのではなく、一式を自分で用意する点です。
+`handlers` の書きかたは [`toHtml` の handlers](/parser/html/#handlers) と同じ `(node, ctx)` です。
+違いは、既定のハンドラに重ねるのではなく一式を自分で用意する点と、`ctx.children(node)` が子ごとの結果の配列を返す点です。
 ハンドラの無いノード型には `fallback` が使われます。
 
 `handlers` の型はノード型のマップから導出されるので、ノード型が増えても型が追随します。
