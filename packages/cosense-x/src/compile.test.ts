@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { codeLineNumbers, tableCellLineBreaks } from '@cosense-toolbox/parser/compile'
 import { tableCellNotation } from '@cosense-toolbox/parser/extensions'
+import { codeLineNumbers, tableCellLineBreaks } from '@cosense-toolbox/parser/html'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'

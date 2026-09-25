@@ -2,7 +2,7 @@
  * コードブロックの色付けの設定。astro.config.mjs の markdown.shikiConfig (.md と .csn / .csnx) と、
  * toHtml で描画するページで同じものを使う。
  */
-import type { HastHighlighter } from '@cosense-toolbox/parser/compile'
+import type { HastHighlighter } from '@cosense-toolbox/parser/html'
 import type { ShikiConfig } from 'astro'
 import { createHighlighter } from 'shiki'
 

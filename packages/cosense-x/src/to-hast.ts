@@ -1,7 +1,7 @@
 /**
  * to-hast.ts — Cosense の AST を hast (HTML の AST) にする。
  *
- * 出力する要素と class 名は `@cosense-toolbox/parser/compile` の `toHtml` と揃える。
+ * 出力する要素と class 名は `@cosense-toolbox/parser/html` の `toHtml` と揃える。
  * `@cosense-toolbox/style` がそのまま当たるようにするため。
  * hast にしておけば、rehype のプラグインを通してから JS にできる。
  */
@@ -22,7 +22,7 @@ import {
   safeHref,
   safeSrc,
   toHast as toHastOf,
-} from '@cosense-toolbox/parser/compile'
+} from '@cosense-toolbox/parser/html'
 import { Either, Match, Option, pipe } from 'effect'
 import type { Element, ElementContent, Parent, Properties, Root, Text } from 'hast'
 import {
@@ -34,7 +34,7 @@ import {
 import { type CosenseXError, orThrow } from './errors'
 import { type InlineComponent, type InlinePart, inlineComponentsOf } from './inline-components'
 
-export type { HastHighlighter } from '@cosense-toolbox/parser/compile'
+export type { HastHighlighter } from '@cosense-toolbox/parser/html'
 
 /**
  * コンポーネントの呼び出し。hast には無いノード型なので、JS にするときに専用の変換を通す。

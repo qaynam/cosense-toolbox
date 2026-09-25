@@ -1,6 +1,6 @@
 import { parse } from '@cosense-toolbox/parser'
-import { escapeHtml, tableCellLineBreaks, toHtml } from '@cosense-toolbox/parser/compile'
 import { tableCellNotation } from '@cosense-toolbox/parser/extensions'
+import { escapeHtml, tableCellLineBreaks, toHtml } from '@cosense-toolbox/parser/html'
 import type { Element, Root } from 'hast'
 import { fromHtml } from 'hast-util-from-html'
 import { toHtml as hastToHtmlRaw } from 'hast-util-to-html'

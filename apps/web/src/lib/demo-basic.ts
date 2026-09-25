@@ -1,5 +1,5 @@
 import { parse } from "@cosense-toolbox/parser";
-import { toHtml } from "@cosense-toolbox/parser/compile";
+import { toHtml } from "@cosense-toolbox/parser/html";
 import style from "@cosense-toolbox/style/style.css?raw";
 
 const source = [

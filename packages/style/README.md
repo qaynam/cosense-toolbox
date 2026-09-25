@@ -80,7 +80,7 @@ Cosense と同じく、字下げの右端に中点を出す。`toHtml` の既定
 
 ## コードブロックの行番号
 
-`@cosense-toolbox/parser/compile` の `codeLineNumbers()` を描画の拡張 (`extensions`) に渡すと、本体行に `data-line` と `data-line-digits` が付き、このスタイルが行の左に番号の欄を取って番号を出す。
+`@cosense-toolbox/parser/html` の `codeLineNumbers()` を描画の拡張 (`extensions`) に渡すと、本体行に `data-line` と `data-line-digits` が付き、このスタイルが行の左に番号の欄を取って番号を出す。
 欄の幅はブロックの最後の番号の桁数で決まる。番号は選択の対象にならないので、コードをコピーしても入らない。色は `--cosense-line-number` で変える。
 
 ## 名前の衝突を避ける

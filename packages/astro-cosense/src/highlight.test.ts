@@ -1,4 +1,4 @@
-import { codeLineNumbers } from '@cosense-toolbox/parser/compile'
+import { codeLineNumbers } from '@cosense-toolbox/parser/html'
 import type { AstroConfig } from 'astro'
 import { Option } from 'effect'
 import type { Element, Root } from 'hast'

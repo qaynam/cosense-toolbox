@@ -118,7 +118,7 @@ declare module "@cosense-toolbox/parser" {
 
 ```ts
 import { parse } from "@cosense-toolbox/parser";
-import { toHtml } from "@cosense-toolbox/parser/compile";
+import { toHtml } from "@cosense-toolbox/parser/html";
 
 // mention が { type: 'mention', user } を返すようにしておく
 const page = parse("メモ\n@qaynam に確認する", {

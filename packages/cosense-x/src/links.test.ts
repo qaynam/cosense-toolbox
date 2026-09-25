@@ -1,5 +1,5 @@
 import { parseLine } from '@cosense-toolbox/parser'
-import type { PageRefNode } from '@cosense-toolbox/parser/compile'
+import type { PageRefNode } from '@cosense-toolbox/parser/html'
 import { describe, expect, it } from 'vitest'
 import { createIndex, createLinkResolver, findByTitle } from './links'
 

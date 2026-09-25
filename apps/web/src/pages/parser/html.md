@@ -13,12 +13,12 @@ description: toHast / toHtml の出力と、pageUrl / iconImageUrl / highlight /
 toHtml(node: AnyNode, options?: HtmlOptions): string
 ```
 
-`@cosense-toolbox/parser/compile` から import します。
+`@cosense-toolbox/parser/html` から import します。
 引数はページ全体でなくてもよく、`parseLine` が返した 1 行でも、AST の任意のノードでも受け取ります。
 
 ```ts
 import { parse } from "@cosense-toolbox/parser";
-import { toHtml } from "@cosense-toolbox/parser/compile";
+import { toHtml } from "@cosense-toolbox/parser/html";
 
 const page = parse("タイトル\nこれは [リンク] です");
 
@@ -39,7 +39,7 @@ toHtml(page);
 オプションは `style` を除いて同じです。
 
 ```ts
-import { toHast } from "@cosense-toolbox/parser/compile";
+import { toHast } from "@cosense-toolbox/parser/html";
 
 toHast(page); // { type: 'root', children: [{ type: 'element', tagName: 'div', ... }] }
 ```
@@ -138,7 +138,7 @@ HTML の文字列を返す形は markdown-it の同名オプションと同じ�
 文字列はそのまま埋め込まれます。hast を返すこともでき、`null` を返すとそのブロックは色付けしません。
 `toHast` の `highlight` は hast か `null` だけを受け取ります。
 `language` はファイル名から推測した名前で、`code:hello.js` なら `js`、`code:python` なら `python` です。
-同じ決めかたの関数を `codeLanguageOf` として `@cosense-toolbox/parser/compile` から出しています。
+同じ決めかたの関数を `codeLanguageOf` として `@cosense-toolbox/parser/html` から出しています。
 
 ```ts
 import hljs from "highlight.js";
@@ -342,7 +342,7 @@ toHtml(page, {
 Cosense のセルには改行を書けないので、`\n` のような文字の並びを代わりに書いておき、描画のときに改行にします。
 
 ```ts
-import { tableCellLineBreaks, toHtml } from "@cosense-toolbox/parser/compile";
+import { tableCellLineBreaks, toHtml } from "@cosense-toolbox/parser/html";
 
 toHtml(parse("t\ntable:x\n 1 行目\\n2 行目"), {
   extensions: [tableCellLineBreaks("\\n")],
@@ -436,7 +436,7 @@ Cosense Web と同じく 1 行を 1 要素に切ります。
 `@cosense-toolbox/style` はそれを見て、行の左に番号の欄を取って番号を出します。
 
 ```ts
-import { codeLineNumbers, toHtml } from "@cosense-toolbox/parser/compile";
+import { codeLineNumbers, toHtml } from "@cosense-toolbox/parser/html";
 
 toHtml(page, { extensions: [codeLineNumbers()] });
 // <div class="line code-block" data-indent="1" data-line="1" data-line-digits="1">…</div>
@@ -520,7 +520,7 @@ KaTeX に渡したい場合は [`handlers`](#handlers) で差し替えてくだ�
 外部リンクを別タブで開く例を示します。
 
 ```ts
-import { safeHref, toHtml } from "@cosense-toolbox/parser/compile";
+import { safeHref, toHtml } from "@cosense-toolbox/parser/html";
 
 toHtml(page, {
   handlers: {

@@ -1,8 +1,8 @@
 // @ts-check
 import svelte from '@astrojs/svelte'
 import cosense from '@cosense-toolbox/astro'
-import { codeLineNumbers, tableCellLineBreaks } from '@cosense-toolbox/parser/compile'
 import { customDecorations, tableCellNotation } from '@cosense-toolbox/parser/extensions'
+import { codeLineNumbers, tableCellLineBreaks } from '@cosense-toolbox/parser/html'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'astro/config'
 import { pageUrl, tagUrl } from './src/urls.ts'

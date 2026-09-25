@@ -5,7 +5,7 @@
  * `markdown.shikiConfig` をそのまま使う。
  */
 import type { HastHighlighter, RenderOptions } from '@cosense-toolbox/cosense-x'
-import { codeLanguageOf } from '@cosense-toolbox/parser/compile'
+import { codeLanguageOf } from '@cosense-toolbox/parser/html'
 import type { AstroConfig } from 'astro'
 import { Effect, Match, Option, pipe } from 'effect'
 import { type BundledLanguage, bundledLanguages, createHighlighter } from 'shiki'

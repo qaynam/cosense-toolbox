@@ -83,7 +83,7 @@ cosense({
 ---
 import { cosenseIconUrl, fetchPageText } from '@cosense-toolbox/cosense-x/fetch'
 import { parse } from '@cosense-toolbox/parser'
-import { toHtml } from '@cosense-toolbox/parser/compile'
+import { toHtml } from '@cosense-toolbox/parser/html'
 import { localizeCosenseAssets } from 'virtual:cosense-x/assets'
 
 const project = 'help-jp'
@@ -127,7 +127,7 @@ cosense({
 
 ```ts
 // src/shiki.ts
-import type { HastHighlighter } from '@cosense-toolbox/parser/compile'
+import type { HastHighlighter } from '@cosense-toolbox/parser/html'
 import type { ShikiConfig } from 'astro'
 import { createHighlighter } from 'shiki'
 
@@ -157,7 +157,7 @@ export default defineConfig({
 ```astro
 ---
 import { parse } from '@cosense-toolbox/parser'
-import { toHtml } from '@cosense-toolbox/parser/compile'
+import { toHtml } from '@cosense-toolbox/parser/html'
 import { createCodeHighlight } from '../shiki'
 
 const highlight = await createCodeHighlight(['js', 'ts'])
@@ -168,12 +168,12 @@ const html = toHtml(parse(text), { highlight })
 
 ### 行番号
 
-`@cosense-toolbox/parser/compile` の `codeLineNumbers()` を描画の拡張 (`renderOptions.extensions`) に渡すと、コードブロックの本体行に行番号 (`data-line`) が付く。
+`@cosense-toolbox/parser/html` の `codeLineNumbers()` を描画の拡張 (`renderOptions.extensions`) に渡すと、コードブロックの本体行に行番号 (`data-line`) が付く。
 番号の表示は `@cosense-toolbox/style` と `@cosense-toolbox/tailwind` が持っていて、行の左の余白に出す。本文の位置は変わらず、コピーしたときに番号は入らない。
 
 ```js
 // astro.config.mjs
-import { codeLineNumbers } from '@cosense-toolbox/parser/compile'
+import { codeLineNumbers } from '@cosense-toolbox/parser/html'
 
 cosense({ renderOptions: { extensions: [codeLineNumbers()] } })
 ```
@@ -191,7 +191,7 @@ cosense({ renderOptions: { extensions: [codeLineNumbers()] } })
 
 ```js
 // astro.config.mjs
-import { tableCellLineBreaks } from '@cosense-toolbox/parser/compile'
+import { tableCellLineBreaks } from '@cosense-toolbox/parser/html'
 import { tableCellNotation } from '@cosense-toolbox/parser/extensions'
 
 cosense({

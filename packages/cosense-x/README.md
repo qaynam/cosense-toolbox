@@ -218,10 +218,10 @@ await compile(source, {
 })
 ```
 
-- `language` はファイル名から推測した名前。`code:hello.js` なら `js`、`code:python` なら `python`。`@cosense-toolbox/parser/compile` の `codeLanguageOf` と同じ
+- `language` はファイル名から推測した名前。`code:hello.js` なら `js`、`code:python` なら `python`。`@cosense-toolbox/parser/html` の `codeLanguageOf` と同じ
 - 行をまたぐ出力 (highlight.js など) は、本体を 1 つの要素にまとめる。行で切ると要素が壊れるため
 - 例外を投げたブロックは、色付けせずに出す
-- 行番号は `renderOptions: { extensions: [codeLineNumbers()] }` で付ける (`@cosense-toolbox/parser/compile`)
+- 行番号は `renderOptions: { extensions: [codeLineNumbers()] }` で付ける (`@cosense-toolbox/parser/html`)
 - `null` を返すと、色付けせず 1 行ずつのまま出す
 - `highlight` は同期で呼ぶ。shiki のように言語を非同期で読み込むものは、先に読み込んでおく
 - `pre > code` を探して剥がすので、rehype のハイライタ (`@shikijs/rehype` など) はそのままでは当たらない。`highlight` を使う
