@@ -13,5 +13,7 @@ const { metadata } = Astro.props
 ---
 
 <Base title={metadata.title} description={metadata.description}>
-  <slot />
+  <article class="cosense">
+    <slot />
+  </article>
 </Base>

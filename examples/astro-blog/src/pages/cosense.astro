@@ -1,31 +1,45 @@
 ---
 /**
- * 公開プロジェクトのページを、ビルド時に Cosense の API から取ってきて描画する。
+ * Cosense のページを、ビルド時に API から取ってきて描画する。
  * ネットワークにつながらなければ、このページだけ案内を出して飛ばす。
  */
-import { fetchPageText } from '@cosense-toolbox/cosense-x/fetch'
+import { cosenseIconUrl, fetchPageText } from '@cosense-toolbox/cosense-x/fetch'
 import { parse } from '@cosense-toolbox/parser'
 import { toHtml } from '@cosense-toolbox/parser/compile'
+import { localizeCosenseAssets } from 'virtual:cosense-x/assets'
 import Base from '../layouts/Base.astro'
 
-const project = 'help-jp'
-const title = 'ブラケティング'
+const project = 'qaynam'
+const title = 'MCPについて'
+// 非公開プロジェクトのページを取るときは、.env に Cosense の Personal Access Token を書く。
+const pat = import.meta.env.COSENSE_PAT
 
 let html: string | null = null
 try {
-  const text = await fetchPageText(project, title)
-  html = toHtml(parse(text), {
+  const text = await fetchPageText(project, title, pat ? { pat } : {})
+  const rendered = toHtml(parse(text), {
     pageUrl: (target) => `https://scrapbox.io/${project}/${encodeURIComponent(target)}`,
+    iconImageUrl: (icon) => cosenseIconUrl(project, icon.user),
   })
+  // Cosense 上の画像とアイコンは別のサイトからは読めず、リダイレクト先の URL もすぐ切れるので、
+  // ビルド時に取ってきてサイトの中 (dist/_cosense/) に置いた URL に差し替える。
+  html = await localizeCosenseAssets(rendered)
 } catch (error) {
   console.warn(`[cosense] ${project}/${title} を取得できなかった:`, error)
 }
 ---
 
 <Base title={title}>
-  <p>
-    <a href={`https://scrapbox.io/${project}/${encodeURIComponent(title)}`}>/{project}/{title}</a>
-    をビルド時に取ってきて描画している。
-  </p>
-  {html === null ? <p>取得できなかった (オフラインでビルドした)。</p> : <Fragment set:html={html} />}
+  <blockquote class="mb-10 border-l-2 border-neutral-700 bg-gray-100 py-3 pl-4 pr-3 text-stone-700 text-sm">
+    <a class="text-blue-700 underline" target="_blank" href={`https://scrapbox.io/${project}/${encodeURIComponent(title)}`}>/{project}/{title}</a>
+  をビルド時に取ってきて描画しています。
+  </blockquote>
+
+  {
+    html === null ? (
+      <p>取得できませんでした</p>
+    ) : (
+      <article class="cosense cosense-title:text-4xl" set:html={html} />
+    )
+  }
 </Base>

@@ -1,5 +1,5 @@
 ---
-import '@cosense-toolbox/style/style.css'
+import '../styles/global.css'
 
 interface Props {
   title: string
@@ -16,11 +16,11 @@ const { title, description } = Astro.props
     <title>{title} | cosense-x example</title>
     {description && <meta name="description" content={description} />}
   </head>
-  <body>
-    <header>
-      <a href="/">cosense-x example</a>
-      <a href="/about/">about</a>
-      <a href="/cosense/">Cosense から取得</a>
+  <body class="mx-auto max-w-3xl p-4 font-sans">
+    <header class="mb-8 flex flex-wrap gap-4">
+      <a class="text-blue-700 underline" href="/">cosense-x example</a>
+      <a class="text-blue-700 underline" href="/about/">about</a>
+      <a class="text-blue-700 underline" href="/cosense/">Cosense から取得</a>
     </header>
     <main>
       <slot />
@@ -28,16 +28,3 @@ const { title, description } = Astro.props
   </body>
 </html>
 
-<style>
-  body {
-    max-width: 48rem;
-    margin: 0 auto;
-    padding: 1rem;
-    font-family: system-ui, sans-serif;
-  }
-  header {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-</style>

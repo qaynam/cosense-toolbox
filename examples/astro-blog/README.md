@@ -21,4 +21,5 @@ bun run --filter '@cosense-toolbox/example-astro-blog' dev
 | `src/pages/tags/[tag].astro` | タグごとの記事一覧 |
 | `src/pages/cosense.astro` | 公開プロジェクトのページを、ビルド時に Cosense の API から取ってきて描画する。ネットワークにつながらなければ案内だけを出す |
 | `src/components/cosense.ts` | すべてのページに渡すコンポーネント |
+| `src/styles/global.css` | Tailwind CSS と `@cosense-toolbox/tailwind`。記事は `class="cosense"` の要素で包んでいる |
 | `src/urls.ts` | ページとタグの URL の規則。`astro.config.mjs` と各ページで共有する |

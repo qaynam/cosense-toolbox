@@ -151,16 +151,30 @@ graph.twoHop['posts/react.csn']
 
 ## Cosense からの取得 (`./fetch`)
 
-公開プロジェクトのページを 1 枚取ってくる。
+ページを 1 枚取ってくる。非公開プロジェクトは `pat` に Personal Access Token を渡す。
 
 ```ts
 import { fetchPage, fetchPageText } from '@cosense-toolbox/cosense-x/fetch'
 
 const text = await fetchPageText('help-jp', 'ブラケティング') // 本文そのまま
 const page = await fetchPage('help-jp', 'ブラケティング') // { title, text, created, updated }
+const secret = await fetchPageText('my-private', 'メモ', { pat: process.env.COSENSE_PAT })
 ```
 
-非公開プロジェクト (トークンが要るもの) には、まだ対応していない。
+Cosense 上の画像やファイル (`https://scrapbox.io/files/…` とアイコン) も取ってこられる。
+
+```ts
+import { cosenseIconUrl, fetchAsset, isCosenseAssetUrl } from '@cosense-toolbox/cosense-x/fetch'
+
+cosenseIconUrl('help-jp', 'cosense') // → https://scrapbox.io/api/pages/help-jp/cosense/icon
+isCosenseAssetUrl('https://scrapbox.io/files/xxx.png') // → true
+const { data, contentType } = await fetchAsset('https://scrapbox.io/files/xxx.png', { pat })
+```
+
+- これらのファイルは `Cross-Origin-Resource-Policy: same-origin` を返すので、別のサイトの `<img>` からは読めない
+- リダイレクト先の URL は期限付き (`/files/` は 5 分) なので、解決した URL を埋め込んでもすぐ表示されなくなる
+- そのため静的なサイトでは、中身を取ってきてサイトの中に置く。Astro 統合はこれを自動で行う
+- `fetchAsset` はリダイレクトを自分で辿り、PAT は Cosense への要求にだけ付ける。リダイレクト先の Google Cloud Storage や Gyazo には送らない
 
 ## API
 
@@ -168,7 +182,7 @@ const page = await fetchPage('help-jp', 'ブラケティング') // { title, tex
 | :--- | :--- |
 | `@cosense-toolbox/cosense-x` | `compile` `toHast` `readPage` `createIndex` `createLinkResolver` `parseComponentTag` `parseClosingTag` `findInlineComponents` `splitFrontmatter` `readFrontmatter` `collectMetadata` `normalizeTitle` `titleToSlug` |
 | `@cosense-toolbox/cosense-x/graph` | `scanPages` `buildGraph` `readPage` `createIndex` `normalizeTitle` `titleToSlug` |
-| `@cosense-toolbox/cosense-x/fetch` | `fetchPage` `fetchPageText` |
+| `@cosense-toolbox/cosense-x/fetch` | `fetchPage` `fetchPageText` `fetchAsset` `isCosenseAssetUrl` `cosenseIconUrl` |
 
 `compile` の主なオプション:
 
