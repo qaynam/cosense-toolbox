@@ -12,6 +12,7 @@
       "**/node_modules/**",
       "**/.turbo/**",
       "**/.wrangler/**",
+      "packages/textmate/grammars/**",
       "**/public/**",
       "apps/web/**",
       "examples/**/*.astro",
