@@ -208,6 +208,11 @@ export interface ResolvedHastOptions {
 
 /** ハンドラの中から再帰的に変換するための入口と、オプション。 */
 export interface HastContext {
+  /**
+   * 今描いているノードの祖先。根 (`toHast` に渡したノード) から親までの順に並ぶ。
+   * 「テーブルのセルの中の text だけ」のように、どこにあるかで出力を変えるときに使う。
+   */
+  readonly ancestors: readonly AnyNode[]
   /** ノード 1 つを変換する (そのノード型のハンドラを通る) */
   readonly node: (node: AnyNode) => ElementContent[]
   /** 子ノードをすべて変換し、平らな配列で返す */
@@ -741,7 +746,9 @@ export const toHast = (node: AnyNode, options: HastOptions = {}): Root => {
   const handlers: HastHandlers = { ...defaultHastHandlers, ...options.handlers }
   const extensions = options.extensions ?? []
 
-  const render = (target: AnyNode): ElementContent[] =>
+  const resolved = resolveOptions(options)
+
+  const render = (target: AnyNode, ctx: HastContext): ElementContent[] =>
     pipe(
       entryOf<HastHandler<AnyNodeType>>(handlers, target.type),
       Option.match({
@@ -750,7 +757,7 @@ export const toHast = (node: AnyNode, options: HastOptions = {}): Root => {
       }),
     )
 
-  const extend = (target: AnyNode, output: ElementContent[]): ElementContent[] =>
+  const extend = (target: AnyNode, output: ElementContent[], ctx: HastContext): ElementContent[] =>
     extensions.reduce(
       (current, extension) =>
         pipe(
@@ -763,12 +770,25 @@ export const toHast = (node: AnyNode, options: HastOptions = {}): Root => {
       output,
     )
 
-  const compile = (target: AnyNode): ElementContent[] => extend(target, render(target))
-
-  const ctx: HastContext = {
-    node: compile,
-    children: (parent) => childrenOf(parent).flatMap(compile),
-    options: resolveOptions(options),
+  /**
+   * `target` を描くときの文脈。`ctx.node` / `ctx.children` で描くノードは、
+   * 渡したノードに依らず `target` の下にあるものとして描く。
+   * ハンドラが中身を差し替えた写し (`{ ...node, children }`) を渡しても、祖先が重ならないようにするため。
+   */
+  const contextOf = (target: AnyNode, ancestors: readonly AnyNode[]): HastContext => {
+    const inside = [...ancestors, target]
+    return {
+      ancestors,
+      node: (child) => compile(child, inside),
+      children: (parent) => childrenOf(parent).flatMap((child) => compile(child, inside)),
+      options: resolved,
+    }
   }
-  return { type: 'root', children: compile(node) }
+
+  const compile = (target: AnyNode, ancestors: readonly AnyNode[]): ElementContent[] => {
+    const ctx = contextOf(target, ancestors)
+    return extend(target, render(target, ctx), ctx)
+  }
+
+  return { type: 'root', children: compile(node, []) }
 }

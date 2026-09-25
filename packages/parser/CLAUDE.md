@@ -153,7 +153,7 @@ src/
     to-hast.ts          公式の hast コンパイラ。描画の規則はここだけに持つ
                         （pageUrl / iconImageUrl / highlight / classNames / showPads / handlers）
     to-html.ts          toHast の出力を文字列にする近道（highlight は HTML の文字列も受け付ける / style）
-    table-cell-line-breaks.ts  描画の拡張。セルの中の文字列を <br> にする
+    table-cell-line-breaks.ts  描画の拡張。セルの中の text ノードの文字列を <br> にする
     to-plain-text.ts    参照実装
   utils/                visit / links
   fixtures/             conformance.json（記法仕様）
