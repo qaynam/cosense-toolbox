@@ -74,7 +74,9 @@
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
-    "effect": "^3.22.1"
+    "@types/hast": "^3.0.4",
+    "effect": "^3.22.1",
+    "hast-util-to-html": "^9.0.5"
   },
   "devDependencies": {
     "fast-check": "^3.23.1",
