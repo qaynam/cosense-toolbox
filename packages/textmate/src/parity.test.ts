@@ -9,6 +9,7 @@ import { readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 
 import { computeTokens, TOKEN_TYPES } from "@cosense-toolbox/language-server/tokens"
+import { Array as Arr, Order, pipe, Record as Rec } from "effect"
 import { createHighlighterCore, type HighlighterCore } from "shiki/core"
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript"
 import { createOnigurumaEngine } from "shiki/engine/oniguruma"
@@ -20,20 +21,26 @@ import { cosense, cosenseX, type Notation, SCOPES } from "./index"
 const repoRoot = join(import.meta.dirname, "../../..")
 
 const NOTATION_OF: ReadonlyMap<string, Notation> = new Map(
-  Object.entries(SCOPES).map(([notation, scope]) => [scope, notation as Notation]),
+  Arr.map(Rec.toEntries(SCOPES), ([notation, scope]) => [scope, notation] as const),
 )
 
 /** Notations per character, one entry per line. `\n` is not a character here. */
 type Marks = string[][]
 
 const marksFromServer = (text: string, components: boolean): Marks => {
-  const lines = text.split("\n")
-  const marks = lines.map((line) => Array.from(line, () => new Set<string>()))
-  for (const token of computeTokens(text, { components })) {
-    for (let c = token.char; c < token.char + token.length; c++)
-      marks[token.line]?.[c]?.add(token.type)
-  }
-  return marks.map((line) => line.map((set) => [...set].sort().join(" ")))
+  const tokens = computeTokens(text, { components })
+  return text.split("\n").map((line, n) =>
+    Array.from(line, (_, c) =>
+      pipe(
+        tokens,
+        Arr.filter((t) => t.line === n && c >= t.char && c < t.char + t.length),
+        Arr.map((t) => t.type),
+        Arr.dedupe,
+        Arr.sort(Order.string),
+        Arr.join(" "),
+      ),
+    ),
+  )
 }
 
 /**
