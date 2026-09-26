@@ -1,7 +1,7 @@
 # Zed 拡張: Cosense
 
 `.csn` と `.csnx` に色を付ける。色は tree-sitter ではなく、
-[`@cosense-toolbox/language-server`](../../packages/language-server) が返す
+[`@cosense-toolbox/lsp`](../../packages/lsp) が返す
 **LSP の semantic tokens** から来る。`@cosense-toolbox/parser` をそのまま使うので、
 記法の解釈が Cosense の描画とずれない。
 
@@ -11,7 +11,7 @@
 
    ```sh
    bun install
-   bun run --filter '@cosense-toolbox/language-server' build
+   bun run --filter '@cosense-toolbox/lsp' build
    ```
 
 2. Zed で `zed: install dev extension` を実行し、このディレクトリを選ぶ。
@@ -48,7 +48,7 @@
 ```jsonc
 {
   "lsp": {
-    "cosense-language-server": {
+    "csn-lsp": {
       "initialization_options": {
         // ページを読む場所。ワークスペースからの相対パス。省略するとワークスペース全体を読む
         "sources": ["examples/astro-blog/src"],

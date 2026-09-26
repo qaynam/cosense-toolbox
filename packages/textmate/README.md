@@ -65,7 +65,7 @@ VS Code 拡張の `contributes.grammars` などには、このファイルを指
 ## Language Server との関係
 
 Zed は TextMate 文法を読まないので、Zed の色は
-[`@cosense-toolbox/language-server`](../language-server) の semantic tokens から来る。
+[`@cosense-toolbox/lsp`](../lsp) の semantic tokens から来る。
 こちらはパーサーそのもので読み、この文法は正規表現でそれに寄せている。
 
 両者が同じところに同じ色を付けることは、テストで 1 文字ずつ突き合わせて確かめている

@@ -60,6 +60,7 @@
       "version": "0.1.0-beta.0",
       "dependencies": {
         "@cosense-toolbox/cosense-x": "workspace:*",
+        "@cosense-toolbox/lsp": "workspace:*",
         "@cosense-toolbox/parser": "workspace:*",
         "effect": "^3.22.1",
         "shiki": "^4.2.0",
@@ -104,11 +105,11 @@
         "vitest": "^2.1.8",
       },
     },
-    "packages/language-server": {
-      "name": "@cosense-toolbox/language-server",
+    "packages/lsp": {
+      "name": "@cosense-toolbox/lsp",
       "version": "0.1.0-beta.0",
       "bin": {
-        "cosense-language-server": "./dist/main.mjs",
+        "csn-lsp": "./dist/main.mjs",
       },
       "dependencies": {
         "@cosense-toolbox/parser": "workspace:*",
@@ -167,7 +168,7 @@
         "effect": "^3.22.1",
       },
       "devDependencies": {
-        "@cosense-toolbox/language-server": "workspace:*",
+        "@cosense-toolbox/lsp": "workspace:*",
         "shiki": "^4.4.3",
         "tsdown": "^0.22.14",
         "typescript": "^6.0.0",
@@ -274,7 +275,7 @@
 
     "@cosense-toolbox/example-astro-blog": ["@cosense-toolbox/example-astro-blog@workspace:examples/astro-blog"],
 
-    "@cosense-toolbox/language-server": ["@cosense-toolbox/language-server@workspace:packages/language-server"],
+    "@cosense-toolbox/lsp": ["@cosense-toolbox/lsp@workspace:packages/lsp"],
 
     "@cosense-toolbox/parser": ["@cosense-toolbox/parser@workspace:packages/parser"],
 

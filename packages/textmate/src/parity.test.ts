@@ -8,7 +8,7 @@
 import { readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 
-import { computeTokens, TOKEN_TYPES } from "@cosense-toolbox/language-server/tokens"
+import { computeTokens, TOKEN_TYPES } from "@cosense-toolbox/lsp/tokens"
 import { Array as Arr, Order, pipe, Record as Rec } from "effect"
 import { createHighlighterCore, type HighlighterCore } from "shiki/core"
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript"

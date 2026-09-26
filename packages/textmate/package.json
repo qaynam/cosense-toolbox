@@ -41,7 +41,7 @@
     "effect": "^3.22.1"
   },
   "devDependencies": {
-    "@cosense-toolbox/language-server": "workspace:*",
+    "@cosense-toolbox/lsp": "workspace:*",
     "shiki": "^4.4.3",
     "tsdown": "^0.22.14",
     "typescript": "^6.0.0",

@@ -7,7 +7,7 @@ export type Scope = `${string}.cosense`
 /**
  * The TextMate scope each Cosense notation is drawn as.
  *
- * Keys are the token names @cosense-toolbox/language-server reasons in, so the two
+ * Keys are the token names @cosense-toolbox/lsp reasons in, so the two
  * highlighters describe the same things; the parity test holds them to it. Each scope
  * starts with a name themes already colour (`markup.bold`, `string.other.link`, ...), so
  * any Shiki or VS Code theme draws Cosense without knowing about it.

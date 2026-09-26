@@ -9,7 +9,7 @@ use zed_extension_api::{
 /// `semantic_tokens` is turned on for the language — its default is "off" — so see the README.
 struct CosenseExtension;
 
-const SERVER_RELATIVE: &str = "packages/language-server/dist/main.mjs";
+const SERVER_RELATIVE: &str = "packages/lsp/dist/main.mjs";
 
 impl zed::Extension for CosenseExtension {
     fn new() -> Self {
@@ -36,7 +36,7 @@ impl zed::Extension for CosenseExtension {
         }
 
         // An installed copy next, for anyone who wants the highlighting without the repository.
-        if let Some(installed) = worktree.which("cosense-language-server") {
+        if let Some(installed) = worktree.which("csn-lsp") {
             return Ok(Command {
                 command: installed,
                 args: vec!["--stdio".into()],

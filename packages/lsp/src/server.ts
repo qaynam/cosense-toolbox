@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { Array as Arr, Effect, Option, pipe, Ref } from "effect"
 import {
   type CompletionItem,

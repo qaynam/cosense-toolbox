@@ -12,7 +12,14 @@
 import { fileURLToPath } from "node:url"
 
 import { readPage } from "@cosense-toolbox/cosense-x/graph"
-import type { AstroConfig, AstroIntegration, ContentEntryType, HookParameters } from "astro"
+import type {
+  AstroConfig,
+  AstroIntegration,
+  AstroIntegrationLogger,
+  ContentEntryType,
+  HookParameters,
+} from "astro"
+import { Array as Arr, Effect, pipe } from "effect"
 
 import { ASSET_STORE_KEY, type AssetStore, createAssetStore, rehypeCosenseAssets } from "./assets"
 import {
@@ -21,7 +28,8 @@ import {
   customHighlighter,
   type SyntaxHighlightOption,
 } from "./highlight"
-import { createSiteCache, EXTENSIONS, idOf } from "./site"
+import { type CosenseLintOptions, type LintResult, lintSite } from "./lint"
+import { createSiteCache, EXTENSIONS, idOf, isCosenseFile } from "./site"
 import {
   ASSETS_MODULE_ID,
   type AstroCompileOptions,
@@ -79,7 +87,55 @@ export interface CosenseIntegrationOptions extends AstroCompileOptions {
    * @defaultValue `'astro'`
    */
   readonly syntaxHighlight?: SyntaxHighlightOption
+  /**
+   * ビルドの前に、`srcDir` の下のページのリンク切れを調べる。エディタの診断
+   * (`@cosense-toolbox/lsp`) と同じ判定で、`unresolvedLinks: 'error'` ならビルドを止める。
+   * 省略すると調べない。
+   *
+   * @example `{ unresolvedLinks: 'error' }`
+   */
+  readonly lint?: CosenseLintOptions
 }
+
+/** サイトのリンク切れを調べ、見つかったものをログに出す。 */
+const reportLint = (
+  config: AstroConfig,
+  lint: CosenseLintOptions,
+  compileOptions: AstroCompileOptions,
+  logger: AstroIntegrationLogger,
+): Effect.Effect<LintResult> =>
+  pipe(
+    lintSite(
+      fileURLToPath(config.root),
+      fileURLToPath(config.srcDir),
+      lint,
+      compileOptions.parseOptions,
+    ),
+    Effect.tap(({ errors, warnings }) =>
+      Effect.all([
+        Effect.forEach(warnings, (warning) => Effect.sync(() => logger.warn(warning))),
+        Effect.forEach(errors, (error) => Effect.sync(() => logger.error(error))),
+      ]),
+    ),
+  )
+
+/** ビルドでは、error があれば失敗してビルドを止める。 */
+const stopOnErrors = ({ errors }: LintResult): Effect.Effect<void, Error> =>
+  Arr.match(errors, {
+    onEmpty: () => Effect.void,
+    onNonEmpty: (found) =>
+      Effect.fail(new Error(`リンク切れが ${found.length} 件あるので、ビルドを止めた`)),
+  })
+
+/**
+ * 開発中は止めずに知らせるだけにする。何も無いときも 1 行出して、調べたことが分かるようにする。
+ */
+const noteWhenClean =
+  (logger: AstroIntegrationLogger) =>
+  ({ errors, warnings }: LintResult): Effect.Effect<void> =>
+    Arr.isEmptyReadonlyArray([...errors, ...warnings])
+      ? Effect.sync(() => logger.info("リンク切れは見つからなかった"))
+      : Effect.void
 
 /** `{base}/_cosense/`。base の末尾の `/` の有無を吸収する。 */
 const assetsPathOf = (config: AstroConfig): string => `${config.base.replace(/\/$/, "")}/_cosense/`
@@ -135,6 +191,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
     components,
     assets: assetsOptions = {},
     syntaxHighlight = "astro",
+    lint,
     ...compileOptions
   } = options
   // config:setup で作る。ビルドの始まりと終わりのフックからも使う。
@@ -232,6 +289,30 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
       "astro:config:done": ({ config, injectTypes }) => {
         astroConfig = config
         injectTypes({ filename: "types.d.ts", content: INJECTED_TYPES })
+      },
+
+      "astro:build:start": async ({ logger }) => {
+        if (lint === undefined || astroConfig === undefined) return
+        await Effect.runPromise(
+          Effect.flatMap(reportLint(astroConfig, lint, compileOptions, logger), stopOnErrors),
+        )
+      },
+
+      // 開発中は起動したときと、ページを足した・変えた・消したときに調べ直す。
+      "astro:server:setup": ({ server, logger }) => {
+        if (lint === undefined || astroConfig === undefined) return
+        const config = astroConfig
+        const check = () =>
+          Effect.runFork(
+            Effect.flatMap(reportLint(config, lint, compileOptions, logger), noteWhenClean(logger)),
+          )
+        const onChange = (file: string) => {
+          if (isCosenseFile(file)) check()
+        }
+        server.watcher.on("add", onChange)
+        server.watcher.on("change", onChange)
+        server.watcher.on("unlink", onChange)
+        check()
       },
 
       // 置き場のディレクトリはビルドをまたいで残し、中身の変わらないファイルは取り直さない。
