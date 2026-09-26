@@ -127,6 +127,7 @@
       "version": "0.1.0-beta.0",
       "devDependencies": {
         "@cosense-toolbox/parser": "workspace:*",
+        "@cosense-toolbox/style": "workspace:*",
         "@tailwindcss/node": "^4.3.3",
         "effect": "^3.22.1",
         "playwright-core": "^1.56.1",
