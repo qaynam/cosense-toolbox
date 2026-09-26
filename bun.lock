@@ -19,6 +19,22 @@
         "typescript-eslint": "^8.70.1",
       },
     },
+    "apps/vscode-cosense": {
+      "name": "vscode-cosense",
+      "version": "0.1.0",
+      "dependencies": {
+        "vscode-languageclient": "^10.1.2",
+      },
+      "devDependencies": {
+        "@cosense-toolbox/lsp": "workspace:*",
+        "@cosense-toolbox/textmate": "workspace:*",
+        "@types/vscode": "^1.100.0",
+        "effect": "^3.22.1",
+        "tsdown": "^0.22.14",
+        "typescript": "^6.0.0",
+        "vitest": "^2.1.8",
+      },
+    },
     "apps/web": {
       "name": "@cosense-toolbox/web",
       "version": "0.0.1",
@@ -648,6 +664,8 @@
     "@types/react-dom": ["@types/react-dom@19.3.0", "https://npm.flatt.tech/@types/react-dom/-/react-dom-19.3.0.tgz", { "peerDependencies": { "@types/react": "^19.3.0" } }, "sha512-ZI7bU42mZXXKHn/qNLEw2IrbiINU7X5+vfgdixBHkCNpYWXjKgfQ/P+uyGb5CjOLB9UcnTeg3rylQtV2hym44Q=="],
 
     "@types/unist": ["@types/unist@3.0.3", "https://npm.flatt.tech/@types/unist/-/unist-3.0.3.tgz", {}, "sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q=="],
+
+    "@types/vscode": ["@types/vscode@1.138.0", "", {}, "sha512-DhlvrucJa8n6EHst7qQcXOcjLKs/VRTQy55plLO+RN74jonYsr/t9dd66zBnAyz1tpDig0okQAxuoPHpVNje2g=="],
 
     "@typescript-eslint/eslint-plugin": ["@typescript-eslint/eslint-plugin@8.70.1", "", { "dependencies": { "@eslint-community/regexpp": "^4.12.2", "@typescript-eslint/scope-manager": "8.70.1", "@typescript-eslint/type-utils": "8.70.1", "@typescript-eslint/utils": "8.70.1", "@typescript-eslint/visitor-keys": "8.70.1", "ignore": "^7.0.5", "natural-compare": "^1.4.0", "ts-api-utils": "^2.5.0" }, "peerDependencies": { "@typescript-eslint/parser": "^8.70.1", "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0", "typescript": ">=4.8.4 <6.1.0" } }, "sha512-nDNrUQ/4ruSNYbu749TRY7cfrzPtoLHEXSNBI8aaNY32LlZCajixqRf3FqcKC4p5Cam4VOHYx/t+i5+nKXvrqA=="],
 
@@ -1489,6 +1507,8 @@
 
     "volar-service-yaml": ["volar-service-yaml@0.0.70", "https://npm.flatt.tech/volar-service-yaml/-/volar-service-yaml-0.0.70.tgz", { "dependencies": { "vscode-uri": "^3.0.8", "yaml-language-server": "~1.20.0" }, "peerDependencies": { "@volar/language-service": "~2.4.0" }, "optionalPeers": ["@volar/language-service"] }, "sha512-0c8bXDBeoATF9F6iPIlOuYTuZAC4c+yi0siQo920u7eiBJk8oQmUmg9cDUbR4+Gl++bvGP4plj3fErbJuPqdcQ=="],
 
+    "vscode-cosense": ["vscode-cosense@workspace:apps/vscode-cosense"],
+
     "vscode-css-languageservice": ["vscode-css-languageservice@6.3.10", "https://npm.flatt.tech/vscode-css-languageservice/-/vscode-css-languageservice-6.3.10.tgz", { "dependencies": { "@vscode/l10n": "^0.0.18", "vscode-languageserver-textdocument": "^1.0.12", "vscode-languageserver-types": "3.17.5", "vscode-uri": "^3.1.0" } }, "sha512-eq5N9Er3fC4vA9zd9EFhyBG90wtCCuXgRSpAndaOgXMh1Wgep5lBgRIeDgjZBW9pa+332yC9+49cZMW8jcL3MA=="],
 
     "vscode-html-languageservice": ["vscode-html-languageservice@5.6.2", "https://npm.flatt.tech/vscode-html-languageservice/-/vscode-html-languageservice-5.6.2.tgz", { "dependencies": { "@vscode/l10n": "^0.0.18", "vscode-languageserver-textdocument": "^1.0.12", "vscode-languageserver-types": "^3.17.5", "vscode-uri": "^3.1.0" } }, "sha512-ulCrSnFnfQ16YzvwnYUgEbUEl/ZG7u2eV27YhvLObSHKkb8fw1Z9cgsnUwjTEeDIdJDoTDTDpxuhQwoenoLNMg=="],
@@ -1496,6 +1516,8 @@
     "vscode-json-languageservice": ["vscode-json-languageservice@4.1.8", "https://npm.flatt.tech/vscode-json-languageservice/-/vscode-json-languageservice-4.1.8.tgz", { "dependencies": { "jsonc-parser": "^3.0.0", "vscode-languageserver-textdocument": "^1.0.1", "vscode-languageserver-types": "^3.16.0", "vscode-nls": "^5.0.0", "vscode-uri": "^3.0.2" } }, "sha512-0vSpg6Xd9hfV+eZAaYN63xVVMOTmJ4GgHxXnkLCh+9RsQBkWKIghzLhW2B9ebfG+LQQg8uLtsQ2aUKjTgE+QOg=="],
 
     "vscode-jsonrpc": ["vscode-jsonrpc@9.0.3", "", {}, "sha512-qETYf9PCl1lVfwR+oBmMfc4vP2nqLNA35ABxorw3j06+xlKRgDVxbLgKm4Y/xPL0YWdeDjLoI4ImICIT3nB0zQ=="],
+
+    "vscode-languageclient": ["vscode-languageclient@10.1.2", "", { "dependencies": { "minimatch": "^10.2.6", "semver": "^7.8.1", "vscode-languageserver-protocol": "3.18.4", "vscode-languageserver-textdocument": "1.0.15" } }, "sha512-cOv5SMvtAhfVeo5m2r9L2rVHAD0J5CFOsmvH1WgNmPaI61VYjJNc3XUDLOKeFSDtWoAXIEoK6KetuBEL/3hErg=="],
 
     "vscode-languageserver": ["vscode-languageserver@10.1.2", "", { "dependencies": { "vscode-languageserver-protocol": "3.18.4" }, "bin": { "installServerIntoExtension": "bin/installServerIntoExtension" } }, "sha512-pXPWde3RytdeBVEs6PulOOT5OpeXC5GkWRpcT11f5rNn41jviQsAYPyAqJ/0oVGETQLKPJtYbHNiMPlfLb0NTQ=="],
 
@@ -1676,6 +1698,8 @@
     "vscode-html-languageservice/vscode-languageserver-types": ["vscode-languageserver-types@3.17.5", "https://npm.flatt.tech/vscode-languageserver-types/-/vscode-languageserver-types-3.17.5.tgz", {}, "sha512-Ld1VelNuX9pdF39h2Hgaeb5hEZM2Z3jUrrMgWQAu82jMtZp7p3vJT3BzToKtZI7NgQssZje5o0zryOrhQvzQAg=="],
 
     "vscode-json-languageservice/vscode-languageserver-types": ["vscode-languageserver-types@3.18.0", "https://npm.flatt.tech/vscode-languageserver-types/-/vscode-languageserver-types-3.18.0.tgz", {}, "sha512-8TsGPNMIMiiBdkORgRSvLjuiEIiAFtO+KssmYWxQ+uSVvlf7RjK8YKCOjPzZ+YA04jXEV7+7LvkSmHkhpNS99g=="],
+
+    "vscode-languageclient/vscode-languageserver-textdocument": ["vscode-languageserver-textdocument@1.0.15", "", {}, "sha512-Gsfr9S8LU3S6885cS+NaleasJ0n3V5y/SOTqHCifQiXWFw3G9w9/YItDfwHrlCz+dSZWWZ8ilYVMcJe7Sz7Sxw=="],
 
     "wrap-ansi/ansi-styles": ["ansi-styles@6.2.3", "https://npm.flatt.tech/ansi-styles/-/ansi-styles-6.2.3.tgz", {}, "sha512-4Dj6M28JB+oAH8kFkTLUo+a2jwOFkuqb3yucU0CANcRRUbxS0cP0nZYCGjcc3BNXwRIsUVmDGgzawme7zvJHvg=="],
 
