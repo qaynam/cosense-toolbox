@@ -28,8 +28,8 @@ import {
   customHighlighter,
   type SyntaxHighlightOption,
 } from "./highlight"
-import { type CosenseLintOptions, lintSite } from "./lint"
-import { createSiteCache, EXTENSIONS, idOf } from "./site"
+import { type CosenseLintOptions, type LintResult, lintSite } from "./lint"
+import { createSiteCache, EXTENSIONS, idOf, isCosenseFile } from "./site"
 import {
   ASSETS_MODULE_ID,
   type AstroCompileOptions,
@@ -97,15 +97,13 @@ export interface CosenseIntegrationOptions extends AstroCompileOptions {
   readonly lint?: CosenseLintOptions
 }
 
-/**
- * サイトのリンク切れを調べてログに出す。error があれば失敗し、ビルドを止める。
- */
-const runLint = (
+/** サイトのリンク切れを調べ、見つかったものをログに出す。 */
+const reportLint = (
   config: AstroConfig,
   lint: CosenseLintOptions,
   compileOptions: AstroCompileOptions,
   logger: AstroIntegrationLogger,
-): Effect.Effect<void, Error> =>
+): Effect.Effect<LintResult> =>
   pipe(
     lintSite(
       fileURLToPath(config.root),
@@ -119,14 +117,25 @@ const runLint = (
         Effect.forEach(errors, (error) => Effect.sync(() => logger.error(error))),
       ]),
     ),
-    Effect.flatMap(({ errors }) =>
-      Arr.match(errors, {
-        onEmpty: () => Effect.void,
-        onNonEmpty: (found) =>
-          Effect.fail(new Error(`リンク切れが ${found.length} 件あるので、ビルドを止めた`)),
-      }),
-    ),
   )
+
+/** ビルドでは、error があれば失敗してビルドを止める。 */
+const stopOnErrors = ({ errors }: LintResult): Effect.Effect<void, Error> =>
+  Arr.match(errors, {
+    onEmpty: () => Effect.void,
+    onNonEmpty: (found) =>
+      Effect.fail(new Error(`リンク切れが ${found.length} 件あるので、ビルドを止めた`)),
+  })
+
+/**
+ * 開発中は止めずに知らせるだけにする。何も無いときも 1 行出して、調べたことが分かるようにする。
+ */
+const noteWhenClean =
+  (logger: AstroIntegrationLogger) =>
+  ({ errors, warnings }: LintResult): Effect.Effect<void> =>
+    Arr.isEmptyReadonlyArray([...errors, ...warnings])
+      ? Effect.sync(() => logger.info("リンク切れは見つからなかった"))
+      : Effect.void
 
 /** `{base}/_cosense/`。base の末尾の `/` の有無を吸収する。 */
 const assetsPathOf = (config: AstroConfig): string => `${config.base.replace(/\/$/, "")}/_cosense/`
@@ -284,7 +293,26 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
 
       "astro:build:start": async ({ logger }) => {
         if (lint === undefined || astroConfig === undefined) return
-        await Effect.runPromise(runLint(astroConfig, lint, compileOptions, logger))
+        await Effect.runPromise(
+          Effect.flatMap(reportLint(astroConfig, lint, compileOptions, logger), stopOnErrors),
+        )
+      },
+
+      // 開発中は起動したときと、ページを足した・変えた・消したときに調べ直す。
+      "astro:server:setup": ({ server, logger }) => {
+        if (lint === undefined || astroConfig === undefined) return
+        const config = astroConfig
+        const check = () =>
+          Effect.runFork(
+            Effect.flatMap(reportLint(config, lint, compileOptions, logger), noteWhenClean(logger)),
+          )
+        const onChange = (file: string) => {
+          if (isCosenseFile(file)) check()
+        }
+        server.watcher.on("add", onChange)
+        server.watcher.on("change", onChange)
+        server.watcher.on("unlink", onChange)
+        check()
       },
 
       // 置き場のディレクトリはビルドをまたいで残し、中身の変わらないファイルは取り直さない。
