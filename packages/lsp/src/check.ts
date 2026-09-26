@@ -1,11 +1,12 @@
 import { relative, resolve, sep } from "node:path"
 import { parseArgs } from "node:util"
 
-import { Array as Arr, Effect, Match, Option, pipe } from "effect"
+import type { ParseOptions } from "@cosense-toolbox/parser"
+import { Array as Arr, Effect, Match, Option, pipe, Predicate } from "effect"
 import { type Diagnostic, DiagnosticSeverity } from "vscode-languageserver/node"
 
 import { severityOf, unresolvedLinkDiagnostics, type UnresolvedSeverity } from "./diagnostics"
-import { parseOptionsOf, type Settings } from "./settings"
+import { defaultSettings, parseOptionsOf } from "./settings"
 import { indexOf, type PageFile, readPageFiles } from "./workspace"
 
 /**
@@ -31,10 +32,27 @@ export interface CheckResult {
   readonly exitCode: number
 }
 
-/** How a check is set up, from the command line. */
-interface CheckArgs {
+/** Where to look and how to read, for `checkSite`. */
+export interface CheckSiteOptions {
+  /** The directories whose `.csn` / `.csnx` pages are read, and checked against each other. */
   readonly roots: ReadonlyArray<string>
-  readonly settings: Settings
+  /** How a link to a missing page is reported; `off` reports none. */
+  readonly unresolvedLinks: UnresolvedSeverity
+  /** How to parse: a site's notation extensions, as its build parses with. */
+  readonly parseOptions?: ParseOptions
+  /** Whether a `---` fence on a page's first line opens YAML to skip (default: true). */
+  readonly frontmatter?: boolean
+}
+
+export type ReportLevel = "error" | "warning" | "information" | "hint"
+
+/** One thing found: where, counting lines and columns from 1, how loudly, and what. */
+export interface Report {
+  readonly path: string
+  readonly line: number
+  readonly column: number
+  readonly level: ReportLevel
+  readonly message: string
 }
 
 /**
@@ -43,7 +61,7 @@ interface CheckArgs {
  */
 const DEFAULT_LEVEL: UnresolvedSeverity = "error"
 
-const argsOf = (args: ReadonlyArray<string>, cwd: string): Option.Option<CheckArgs> =>
+const argsOf = (args: ReadonlyArray<string>, cwd: string): Option.Option<CheckSiteOptions> =>
   pipe(
     Option.liftThrowable(parseArgs)({
       args: [...args],
@@ -60,72 +78,77 @@ const argsOf = (args: ReadonlyArray<string>, cwd: string): Option.Option<CheckAr
         onEmpty: () => [cwd],
         onNonEmpty: (directories) => Arr.map(directories, (directory) => resolve(cwd, directory)),
       }),
-      settings: {
-        sources: [],
-        // Each marker is one character, so a string of them is the list.
+      unresolvedLinks: pipe(
+        Option.fromNullable(values["unresolved-links"]),
+        Option.match({ onNone: () => DEFAULT_LEVEL, onSome: severityOf }),
+      ),
+      // Each marker is one character, so a string of them is the list.
+      parseOptions: parseOptionsOf({
+        ...defaultSettings,
         decorations: Array.from(values.decorations ?? ""),
-        unresolvedLinks: pipe(
-          Option.fromNullable(values["unresolved-links"]),
-          Option.match({ onNone: () => DEFAULT_LEVEL, onSome: severityOf }),
-        ),
-        frontmatter: values["no-frontmatter"] !== true,
-      },
+      }),
+      frontmatter: values["no-frontmatter"] !== true,
     })),
   )
 
-const levelName = (severity: DiagnosticSeverity | undefined): string =>
+const levelOf = (severity: DiagnosticSeverity | undefined): ReportLevel =>
   Match.value(severity).pipe(
-    Match.when(DiagnosticSeverity.Error, () => "error"),
-    Match.when(DiagnosticSeverity.Warning, () => "warning"),
-    Match.when(DiagnosticSeverity.Information, () => "information"),
-    Match.orElse(() => "hint"),
+    Match.when(DiagnosticSeverity.Error, (): ReportLevel => "error"),
+    Match.when(DiagnosticSeverity.Warning, (): ReportLevel => "warning"),
+    Match.when(DiagnosticSeverity.Information, (): ReportLevel => "information"),
+    Match.orElse((): ReportLevel => "hint"),
   )
 
-/** One report line: `path:line:column level message`, counting lines and columns from 1. */
+/** A file's diagnostic as a report, counting from 1 where the LSP counts from 0. */
+const reportOf =
+  (file: PageFile) =>
+  ({ range, severity, message }: Diagnostic): Report => ({
+    path: file.path,
+    line: range.start.line + 1,
+    column: range.start.character + 1,
+    level: levelOf(severity),
+    // The LSP lets a message be markup; a report is text either way.
+    message: Predicate.isString(message) ? message : message.value,
+  })
+
+/**
+ * Every link to a missing page under `roots`, file by file in the order they were read.
+ * The judgement is the editor's own, so what an editor flags is what is reported here.
+ */
+export const checkSite = ({
+  roots,
+  unresolvedLinks,
+  parseOptions = {},
+  frontmatter = true,
+}: CheckSiteOptions): Effect.Effect<ReadonlyArray<Report>> =>
+  Effect.map(readPageFiles(roots, { frontmatter }), (files) => {
+    const index = indexOf(files)
+    return Arr.flatMap(files, (file) =>
+      Arr.map(
+        unresolvedLinkDiagnostics(index, file.text, {
+          severity: unresolvedLinks,
+          components: file.path.endsWith(".csnx"),
+          parseOptions,
+          frontmatter,
+        }),
+        reportOf(file),
+      ),
+    )
+  })
+
+/** A report as a line of output: `path:line:column level message`, `path` from `cwd`. */
 const lineOf =
-  (location: string) =>
-  ({ range, severity, message }: Diagnostic): string =>
-    `${location}:${range.start.line + 1}:${range.start.character + 1} ${levelName(severity)} ${message}`
-
-/** Every file's reports, in the order the files were read. */
-const reportsOf = (
-  files: ReadonlyArray<PageFile>,
-  settings: Settings,
-  cwd: string,
-): ReadonlyArray<{ readonly line: string; readonly diagnostic: Diagnostic }> => {
-  const index = indexOf(files)
-  return Arr.flatMap(files, (file) =>
-    Arr.map(
-      unresolvedLinkDiagnostics(index, file.text, {
-        severity: settings.unresolvedLinks,
-        components: file.path.endsWith(".csnx"),
-        parseOptions: parseOptionsOf(settings),
-        frontmatter: settings.frontmatter,
-      }),
-      (diagnostic) => ({
-        line: lineOf(relative(cwd, file.path).split(sep).join("/"))(diagnostic),
-        diagnostic,
-      }),
-    ),
-  )
-}
+  (cwd: string) =>
+  ({ path, line, column, level, message }: Report): string =>
+    `${relative(cwd, path).split(sep).join("/")}:${line}:${column} ${level} ${message}\n`
 
 /** Runs a check as `args` asks, from `cwd`. Never fails: a bad option is exit code 2. */
 export const runCheck = (args: ReadonlyArray<string>, cwd: string): Effect.Effect<CheckResult> =>
   Option.match(argsOf(args, cwd), {
     onNone: () => Effect.succeed({ output: USAGE, exitCode: 2 }),
-    onSome: ({ roots, settings }) =>
-      pipe(
-        readPageFiles(roots, { frontmatter: settings.frontmatter }),
-        Effect.map((files) => reportsOf(files, settings, cwd)),
-        Effect.map((reports) => ({
-          output: Arr.map(reports, ({ line }) => `${line}\n`).join(""),
-          exitCode: Arr.some(
-            reports,
-            ({ diagnostic }) => diagnostic.severity === DiagnosticSeverity.Error,
-          )
-            ? 1
-            : 0,
-        })),
-      ),
+    onSome: (options) =>
+      Effect.map(checkSite(options), (reports) => ({
+        output: Arr.map(reports, lineOf(cwd)).join(""),
+        exitCode: Arr.some(reports, ({ level }) => level === "error") ? 1 : 0,
+      })),
   })

@@ -2,10 +2,11 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 
+import { customDecorations } from "@cosense-toolbox/parser/extensions"
 import { Effect } from "effect"
 import { describe, expect, it } from "vitest"
 
-import { runCheck } from "./check"
+import { checkSite, runCheck } from "./check"
 
 const site = async (files: Record<string, string>): Promise<string> => {
   const root = await mkdtemp(join(tmpdir(), "csn-check-"))
@@ -79,5 +80,35 @@ describe("csn-lsp check", () => {
     const { output, exitCode } = await check(root, "--fix")
     expect(exitCode).toBe(2)
     expect(output).toContain("Usage: csn-lsp check")
+  })
+})
+
+describe("checkSite", () => {
+  it("gives each report its file, its line and column counted from 1, and its level", async () => {
+    const root = await site({ "posts/a.csn": "投稿\n本文 [無いページ]" })
+    const reports = await Effect.runPromise(
+      checkSite({ roots: [root], unresolvedLinks: "warning" }),
+    )
+    expect(reports).toEqual([
+      {
+        path: join(root, "posts/a.csn"),
+        line: 2,
+        column: 4,
+        level: "warning",
+        message: "リンク先のページが見つからない: [無いページ]",
+      },
+    ])
+  })
+
+  it("parses with the parse options it is given, as a site's build does", async () => {
+    const root = await site({ "a.csn": "投稿\n[! 注意]" })
+    const reports = await Effect.runPromise(
+      checkSite({
+        roots: [root],
+        unresolvedLinks: "error",
+        parseOptions: { extensions: [customDecorations(["!"])] },
+      }),
+    )
+    expect(reports).toEqual([])
   })
 })

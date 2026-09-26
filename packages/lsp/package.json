@@ -8,6 +8,10 @@
     "csn-lsp": "./dist/main.mjs"
   },
   "exports": {
+    "./check": {
+      "types": "./dist/check.d.mts",
+      "default": "./dist/check.mjs"
+    },
     "./completion": {
       "types": "./dist/completion.d.mts",
       "default": "./dist/completion.mjs"
