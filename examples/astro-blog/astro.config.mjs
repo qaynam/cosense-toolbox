@@ -27,14 +27,10 @@ export default defineConfig({
       components: "./src/components/cosense.ts",
       pageUrl,
       tagUrl,
-      // パースの設定。表のセルの中でも、行と同じく記法を読む。
       parseOptions: {
         extensions: [customDecorations(["|", "!", "~", "#"]), tableCellNotation()],
       },
-      // リンク切れはビルドの前に調べてログに出す。"error" にするとビルドを止める。
-      lint: { unresolvedLinks: "warning" },
-      // 描画の設定。parser の toHast に渡る。行番号 (data-line) を付け、表示は @cosense-toolbox/tailwind が持つ。
-      // 表のセルの中の \n は改行にする。
+      lint: { unresolvedLinks: "error" },
       renderOptions: { extensions: [codeLineNumbers(), tableCellLineBreaks("\\n")] },
       assets: { pat: process.env.COSENSE_PAT },
     }),
