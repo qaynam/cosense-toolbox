@@ -1,11 +1,11 @@
 {
-  "name": "@cosense-toolbox/language-server",
+  "name": "@cosense-toolbox/lsp",
   "version": "0.1.0-beta.0",
   "type": "module",
   "description": "Language server for .csn and .csnx: semantic tokens for Cosense notation.",
   "license": "MIT",
   "bin": {
-    "cosense-language-server": "./dist/main.mjs"
+    "csn-lsp": "./dist/main.mjs"
   },
   "exports": {
     "./completion": {

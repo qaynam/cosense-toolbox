@@ -7,6 +7,6 @@ repository = "https://github.com/qaynam/cosense-toolbox"
 
 languages = ["languages/csn", "languages/csnx"]
 
-[language_servers.cosense-language-server]
+[language_servers.csn-lsp]
 name = "Cosense Language Server"
 languages = ["Cosense", "Cosense X"]
