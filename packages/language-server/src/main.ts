@@ -152,7 +152,9 @@ documents.onDidChangeContent(({ document }) => {
 
 // A closed document's diagnostics would otherwise linger in the editor's problem list.
 documents.onDidClose(({ document }) => {
-  void connection.sendDiagnostics({ uri: document.uri, diagnostics: [] })
+  Effect.runFork(
+    Effect.promise(() => connection.sendDiagnostics({ uri: document.uri, diagnostics: [] })),
+  )
 })
 
 connection.onCompletion(({ textDocument: { uri }, position }): CompletionItem[] =>

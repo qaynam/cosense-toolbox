@@ -4,12 +4,12 @@ import {
   parse,
   type ParseOptions,
 } from "@cosense-toolbox/parser"
-import { visit } from "@cosense-toolbox/parser/utils"
-import { Array as Arr, Match, Option, pipe } from "effect"
+import { Array as Arr, Match, Option, pipe, Schema } from "effect"
 import { type Diagnostic, DiagnosticSeverity } from "vscode-languageserver/node"
 
 import { normalizeForMatch } from "./completion"
 import { COMPONENT_LINE, fenceOf } from "./tokens"
+import { branch, gather, leaf } from "./tree"
 import type { Index } from "./workspace"
 
 /**
@@ -20,24 +20,18 @@ import type { Index } from "./workspace"
  */
 
 /** How loudly an unresolved link is reported, as the reader sets it. */
-export type UnresolvedSeverity = "off" | "hint" | "information" | "warning" | "error"
+export const UnresolvedSeverity = Schema.Literal("off", "hint", "information", "warning", "error")
 
-const SEVERITIES: ReadonlyArray<UnresolvedSeverity> = [
-  "off",
-  "hint",
-  "information",
-  "warning",
-  "error",
-]
+export type UnresolvedSeverity = typeof UnresolvedSeverity.Type
 
 /**
  * The severity a setting names, or `warning` for one that is missing or unknown: the build
  * warns about the same links by default (`unresolved: "warn"`).
  */
 export const severityOf = (setting: unknown): UnresolvedSeverity =>
-  pipe(
-    Arr.findFirst(SEVERITIES, (severity) => severity === setting),
-    Option.getOrElse((): UnresolvedSeverity => "warning"),
+  Option.getOrElse(
+    Schema.decodeUnknownOption(UnresolvedSeverity)(setting),
+    (): UnresolvedSeverity => "warning",
   )
 
 /** The LSP's severity for a setting, or None for `off`. */
@@ -61,6 +55,12 @@ export interface UnresolvedLinkOptions {
   readonly frontmatter?: boolean
 }
 
+/** A `[title]` link, and the line it is on in the file. */
+interface LinkAt {
+  readonly link: NodeOfType<"internalLink">
+  readonly line: number
+}
+
 /**
  * Every `[title]` link in the body, with the line it is on in the file. The title line holds
  * no links, and neither does a `.csnx` component line.
@@ -72,7 +72,7 @@ const linksIn = (
     parseOptions = {},
     frontmatter = true,
   }: Omit<UnresolvedLinkOptions, "severity">,
-): ReadonlyArray<{ readonly link: NodeOfType<"internalLink">; readonly line: number }> => {
+): ReadonlyArray<LinkAt> => {
   const lines = normalizeLineEndings(text).split("\n")
   // The parser never sees the frontmatter, so its line numbers start after the fence.
   const offset = Option.match(fenceOf(lines, frontmatter), {
@@ -82,21 +82,18 @@ const linksIn = (
   const isComponentLine = (line: number) =>
     components && COMPONENT_LINE.test(lines[line + offset] ?? "")
 
-  const links: { link: NodeOfType<"internalLink">; line: number }[] = []
-  visit(parse(lines.slice(offset).join("\n"), parseOptions), (node) =>
+  return gather(parse(lines.slice(offset).join("\n"), parseOptions), (node) =>
     Match.value(node).pipe(
-      Match.when({ type: "title" }, () => "skip" as const),
+      Match.when({ type: "title" }, () => leaf<LinkAt>([])),
       Match.when({ type: "line" }, (line) =>
-        isComponentLine(line.position.start.line) ? ("skip" as const) : undefined,
+        isComponentLine(line.position.start.line) ? leaf<LinkAt>([]) : branch<LinkAt>([]),
       ),
-      Match.when({ type: "internalLink" }, (link) => {
-        links.push({ link, line: link.position.start.line + offset })
-        return undefined
-      }),
-      Match.orElse(() => undefined),
+      Match.when({ type: "internalLink" }, (link) =>
+        branch([{ link, line: link.position.start.line + offset }]),
+      ),
+      Match.orElse(() => branch<LinkAt>([])),
     ),
   )
-  return links
 }
 
 /** A diagnostic for each `[title]` link in `text` whose page is not in `index`. */

@@ -8,8 +8,9 @@ import type {
 } from "@cosense-toolbox/parser"
 import { normalizeLineEndings, parse } from "@cosense-toolbox/parser"
 import { customDecorations } from "@cosense-toolbox/parser/extensions"
-import { visit } from "@cosense-toolbox/parser/utils"
 import { Array as Arr, Match, Option, Order, pipe } from "effect"
+
+import { branch, gather, leaf, type Picked } from "./tree"
 
 /**
  * Cosense notation as LSP semantic tokens.
@@ -143,15 +144,16 @@ export const withNotations = (
   parseOptions: ParseOptions,
   notations: ReadonlyArray<Notation>,
 ): ParseOptions =>
-  Arr.isNonEmptyReadonlyArray(notations)
-    ? {
-        ...parseOptions,
-        extensions: [
-          ...(parseOptions.extensions ?? []),
-          customDecorations(Arr.map(notations, (notation) => notation.marker)),
-        ],
-      }
-    : parseOptions
+  Arr.match(notations, {
+    onEmpty: () => parseOptions,
+    onNonEmpty: (added): ParseOptions => ({
+      ...parseOptions,
+      extensions: [
+        ...(parseOptions.extensions ?? []),
+        customDecorations(Arr.map(added, (notation) => notation.marker)),
+      ],
+    }),
+  })
 
 /** Leaf inline nodes that map 1:1. Each sits on one line, so no splitting is needed. */
 const INLINE_TOKEN_TYPE: Partial<Record<AnyNodeType, BuiltinTokenType>> = {
@@ -253,34 +255,57 @@ const valueAt = (text: string, from: number): Option.Option<readonly [ValueType,
     Match.orElse(() => Option.none()),
   )
 
-/** The tokens of one attribute and where the next may start, or None once the tag has closed. */
-type AttributeStep = Option.Option<readonly [ReadonlyArray<RawToken>, number]>
+/** The tokens of one attribute, and where the next may start. */
+type Step = readonly [ReadonlyArray<RawToken>, number]
 
+/** `at` past any whitespace. */
+const skipSpace = (text: string, at: number): number => at + matchLength(SPACE, text, at)
+
+/** Whether the tag closes at `at`, with `>` or `/>`, or the line ends there. */
+const closesAt = (text: string, at: number): boolean =>
+  at >= text.length || text.startsWith(">", at) || text.startsWith("/>", at)
+
+/**
+ * An attribute named over `[at, nameEnd)`: the name, then `=` and a value if one follows.
+ * A name with no `=` after it stands alone, as JSX reads `<Dialog open>`.
+ */
+const attribute = (line: number, text: string, at: number, nameEnd: number): Step => {
+  const name = token("attribute", line, at, nameEnd)
+  const afterName = skipSpace(text, nameEnd)
+  return pipe(
+    Option.liftPredicate(afterName, (equals) => text.charAt(equals) === "="),
+    Option.map((equals) => skipSpace(text, equals + 1)),
+    Option.match({
+      onNone: (): Step => [[name], afterName],
+      onSome: (valueStart): Step =>
+        pipe(
+          valueAt(text, valueStart),
+          Option.match({
+            onNone: (): Step => [[name], valueStart],
+            onSome: ([type, end]): Step => [[name, token(type, line, valueStart, end)], end],
+          }),
+        ),
+    }),
+  )
+}
+
+/** One attribute from `from`, or None once the tag has closed. */
 const attributeStep =
   (line: number, text: string) =>
-  (from: number): AttributeStep => {
-    const at = from + matchLength(SPACE, text, from)
-    if (at >= text.length || text.startsWith(">", at) || text.startsWith("/>", at)) {
-      return Option.none()
-    }
-    const nameEnd = at + matchLength(ATTRIBUTE_NAME, text, at)
-    // Not a name: step over the character, since the tag may still go on after it.
-    if (nameEnd === at) return Option.some([[], at + 1])
-
-    const name = token("attribute", line, at, nameEnd)
-    const afterName = nameEnd + matchLength(SPACE, text, nameEnd)
-    if (text.charAt(afterName) !== "=") return Option.some([[name], afterName])
-
-    const valueStart = afterName + 1 + matchLength(SPACE, text, afterName + 1)
-    return pipe(
-      valueAt(text, valueStart),
-      Option.match({
-        onNone: () => [[name], valueStart] as const,
-        onSome: ([type, end]) => [[name, token(type, line, valueStart, end)], end] as const,
-      }),
-      Option.some,
+  (from: number): Option.Option<Step> =>
+    pipe(
+      Option.liftPredicate(skipSpace(text, from), (at) => !closesAt(text, at)),
+      Option.map((at) =>
+        pipe(
+          Option.liftPredicate(at + matchLength(ATTRIBUTE_NAME, text, at), (end) => end > at),
+          Option.match({
+            // Not a name: step over the character, since the tag may still go on after it.
+            onNone: (): Step => [[], at + 1],
+            onSome: (nameEnd) => attribute(line, text, at, nameEnd),
+          }),
+        ),
+      ),
     )
-  }
 
 /**
  * The tag that opens a component line, read as JSX: its name, then each attribute and its
@@ -313,7 +338,7 @@ export const frontmatterEnd = (lines: ReadonlyArray<string>): Option.Option<numb
 export const fenceOf = (
   lines: ReadonlyArray<string>,
   frontmatter: boolean,
-): Option.Option<number> => (frontmatter ? frontmatterEnd(lines) : Option.none())
+): Option.Option<number> => Option.flatMap(onlyIf(frontmatter, lines), frontmatterEnd)
 
 /** What the node visitor needs to know about the file around the parsed body. */
 interface Page {
@@ -371,19 +396,9 @@ const notationTokens = (
     }),
   )
 
-/** What one node contributes, and whether the visitor goes on into its children. */
-interface NodeTokens {
-  readonly tokens: ReadonlyArray<RawToken>
-  readonly descend: boolean
-}
-
-const leaf = (tokens: ReadonlyArray<RawToken>): NodeTokens => ({ tokens, descend: false })
-
-const branch = (tokens: ReadonlyArray<RawToken>): NodeTokens => ({ tokens, descend: true })
-
 const nodeTokens =
   (page: Page) =>
-  (node: AnyNode): NodeTokens => {
+  (node: AnyNode): Picked<RawToken> => {
     const lineOf = (position: Position) => position.start.line + page.offset
     const shift = (position: Position): Position => ({
       start: { ...position.start, line: position.start.line + page.offset },
@@ -479,20 +494,17 @@ export const computeTokens = (text: string, options: ComputeTokensOptions = {}):
     notations,
   }
 
-  const tokens: RawToken[] = Option.match(fence, {
+  const frontmatterTokens = Option.match(fence, {
     onNone: () => [],
-    onSome: (end) => [...lineSpans("frontmatter", lines, 0, end)],
+    onSome: (end) => lineSpans("frontmatter", lines, 0, end),
   })
-  const tokensOf = nodeTokens(page)
-  const parseOptions = withNotations(options.parseOptions ?? {}, notations)
-  visit(parse(lines.slice(page.offset).join("\n"), parseOptions), (node) => {
-    const { tokens: own, descend } = tokensOf(node)
-    tokens.push(...own)
-    return descend ? undefined : "skip"
-  })
+  const body = parse(
+    lines.slice(page.offset).join("\n"),
+    withNotations(options.parseOptions ?? {}, notations),
+  )
 
   return pipe(
-    tokens,
+    [...frontmatterTokens, ...gather(body, nodeTokens(page))],
     Arr.filter((t) => t.length > 0),
     Arr.sort(BY_POSITION),
   )
@@ -505,11 +517,14 @@ export const computeTokens = (text: string, options: ComputeTokensOptions = {}):
 const legendIndex = (legend: ReadonlyArray<string>) => {
   const placeOf = (type: string): Option.Option<number> =>
     Option.liftPredicate(legend.indexOf(type), (index) => index >= 0)
-  const fallback = (token: RawToken) => Option.getOrElse(placeOf(LSP_TYPE[token.type]), () => 0)
+  const drawnAs = (token: RawToken) => Option.getOrElse(placeOf(LSP_TYPE[token.type]), () => 0)
   return (token: RawToken): number =>
-    token.type === "notation"
-      ? Option.getOrElse(placeOf(token.name), () => fallback(token))
-      : fallback(token)
+    Match.value(token).pipe(
+      Match.when({ type: "notation" }, (notation) =>
+        Option.getOrElse(placeOf(notation.name), () => drawnAs(notation)),
+      ),
+      Match.orElse(drawnAs),
+    )
 }
 
 /**

@@ -3,7 +3,7 @@ import { readdir, readFile } from "node:fs/promises"
 import { basename, extname, join, relative, resolve, sep } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
-import { Array as Arr, Effect, Option, pipe } from "effect"
+import { Array as Arr, Effect, Match, Option, pipe } from "effect"
 
 /**
  * The pages a workspace holds, read from disk.
@@ -57,21 +57,30 @@ const entriesOf = (directory: string): Effect.Effect<ReadonlyArray<Dirent>> =>
     Effect.orElseSucceed(() => []),
   )
 
+/** The page files one entry of `directory` holds: itself, what is under it, or none. */
+const filesAt = (directory: string, entry: Dirent): Effect.Effect<ReadonlyArray<string>> =>
+  Match.value(entry).pipe(
+    Match.when(
+      (dir) => dir.isDirectory() && Arr.contains(SKIP_DIRECTORIES, dir.name),
+      () => Effect.succeed([]),
+    ),
+    Match.when(
+      (dir) => dir.isDirectory(),
+      () => pageFiles(join(directory, entry.name)),
+    ),
+    Match.when(
+      (file) => Arr.contains(PAGE_EXTENSIONS, extname(file.name)),
+      () => Effect.succeed([join(directory, entry.name)]),
+    ),
+    Match.orElse(() => Effect.succeed([])),
+  )
+
 /** Every page file under `directory`, depth-first, in the order the directory lists them. */
 const pageFiles = (directory: string): Effect.Effect<ReadonlyArray<string>> =>
   pipe(
     entriesOf(directory),
     Effect.map(Arr.filter((entry) => !entry.name.startsWith("."))),
-    Effect.flatMap(
-      Effect.forEach((entry) => {
-        const path = join(directory, entry.name)
-        return entry.isDirectory()
-          ? Arr.contains(SKIP_DIRECTORIES, entry.name)
-            ? Effect.succeed([])
-            : pageFiles(path)
-          : Effect.succeed(Arr.contains(PAGE_EXTENSIONS, extname(entry.name)) ? [path] : [])
-      }),
-    ),
+    Effect.flatMap(Effect.forEach((entry) => filesAt(directory, entry))),
     Effect.map(Arr.flatten),
   )
 
@@ -111,7 +120,14 @@ const firstLine = (text: string): Option.Option<string> =>
 const titleOf = (path: string, text: string, frontmatter: boolean): string =>
   pipe(
     text.replace(/\r\n?/g, "\n"),
-    (normalized) => (frontmatter ? withoutFrontmatter(normalized) : normalized),
+    (normalized) =>
+      Option.getOrElse(
+        Option.map(
+          Option.liftPredicate(normalized, () => frontmatter),
+          withoutFrontmatter,
+        ),
+        () => normalized,
+      ),
     firstLine,
     Option.getOrElse(() => basename(path, extname(path))),
   )
@@ -182,8 +198,9 @@ export const rootsOf = (
   pipe(
     Arr.filterMap(folders ?? [], ({ uri }) => Option.liftThrowable(fileURLToPath)(uri)),
     Arr.flatMap((folder) =>
-      Arr.isNonEmptyReadonlyArray(sources)
-        ? Arr.map(sources, (source) => resolve(folder, source))
-        : [folder],
+      Arr.match(sources, {
+        onEmpty: () => [folder],
+        onNonEmpty: (under) => Arr.map(under, (source) => resolve(folder, source)),
+      }),
     ),
   )

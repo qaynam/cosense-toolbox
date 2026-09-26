@@ -1,6 +1,6 @@
 import type { ParseOptions } from "@cosense-toolbox/parser"
 import { customDecorations } from "@cosense-toolbox/parser/extensions"
-import { Array as Arr, Predicate } from "effect"
+import { Array as Arr, Option, pipe, Record as Rec, Schema } from "effect"
 
 import { severityOf, type UnresolvedSeverity } from "./diagnostics"
 
@@ -39,27 +39,44 @@ export const defaultSettings: Settings = {
   frontmatter: true,
 }
 
-/** One field of the options, which the editor may send in any shape or not at all. */
-const fieldOf = (options: unknown, key: string): unknown =>
-  Predicate.isRecord(options) ? options[key] : undefined
+/** `schema`'s reading of `value`, or `fallback` when `value` is not of that shape. */
+const decodeOr =
+  <A, I>(schema: Schema.Schema<A, I>, fallback: A) =>
+  (value: unknown): A =>
+    Option.getOrElse(Schema.decodeUnknownOption(schema)(value), () => fallback)
 
-/** The non-empty strings of a list; anything else counts as not set. */
+/** The options as an object, which the editor may send in any shape or not at all. */
+const OptionsObject = Schema.Record({ key: Schema.String, value: Schema.Unknown })
+
+/**
+ * The non-empty strings of a list. Anything else in it is dropped rather than failing the
+ * whole list, and anything but a list counts as none.
+ */
 const stringsOf = (value: unknown): ReadonlyArray<string> =>
-  Array.isArray(value)
-    ? Arr.filter(value, (item): item is string => Predicate.isString(item) && item !== "")
-    : []
+  Arr.filter(decodeOr(Schema.Array(Schema.Unknown), [])(value), Schema.is(Schema.NonEmptyString))
 
-/** A boolean setting, or `fallback` when it is anything else. */
-const booleanOf = (value: unknown, fallback: boolean): boolean =>
-  Predicate.isBoolean(value) ? value : fallback
-
-export const settingsOf = (options: unknown): Settings => ({
-  sources: stringsOf(fieldOf(options, "sources")),
-  decorations: stringsOf(fieldOf(options, "decorations")),
-  unresolvedLinks: severityOf(fieldOf(options, "unresolvedLinks")),
-  frontmatter: booleanOf(fieldOf(options, "frontmatter"), defaultSettings.frontmatter),
-})
+/**
+ * Each setting read on its own, so one of the wrong shape falls back to its default
+ * without taking the others with it.
+ */
+export const settingsOf = (options: unknown): Settings => {
+  const field = (key: keyof Settings): unknown =>
+    pipe(
+      Schema.decodeUnknownOption(OptionsObject)(options),
+      Option.flatMap(Rec.get(key)),
+      Option.getOrUndefined,
+    )
+  return {
+    sources: stringsOf(field("sources")),
+    decorations: stringsOf(field("decorations")),
+    unresolvedLinks: severityOf(field("unresolvedLinks")),
+    frontmatter: decodeOr(Schema.Boolean, defaultSettings.frontmatter)(field("frontmatter")),
+  }
+}
 
 /** How the pages are parsed, so the server reads notation as the site's build does. */
 export const parseOptionsOf = ({ decorations }: Settings): ParseOptions =>
-  Arr.isNonEmptyReadonlyArray(decorations) ? { extensions: [customDecorations(decorations)] } : {}
+  Arr.match(decorations, {
+    onEmpty: (): ParseOptions => ({}),
+    onNonEmpty: (markers): ParseOptions => ({ extensions: [customDecorations(markers)] }),
+  })

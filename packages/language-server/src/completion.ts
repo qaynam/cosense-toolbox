@@ -1,6 +1,6 @@
 import { normalizeLineEndings, parse, type ParseOptions } from "@cosense-toolbox/parser"
 import { collect } from "@cosense-toolbox/parser/utils"
-import { Array as Arr, Option, pipe } from "effect"
+import { Array as Arr, Match, Option, pipe } from "effect"
 import {
   type CompletionItem,
   CompletionItemKind,
@@ -220,7 +220,11 @@ const candidate =
             start: { line, character: detection.replaceStart },
             end: { line, character: detection.replaceEnd },
           },
-          newText: detection.kind === "hashtag" ? `#${asTagName(page.title)}` : `[${page.title}]`,
+          newText: Match.value(detection.kind).pipe(
+            Match.when("hashtag", () => `#${asTagName(page.title)}`),
+            Match.when("link", () => `[${page.title}]`),
+            Match.exhaustive,
+          ),
         },
         sortText: `${normalized} ${page.location}`,
       })),
