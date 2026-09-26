@@ -1,13 +1,9 @@
 import type { Dirent } from "node:fs"
 import { readdir, readFile } from "node:fs/promises"
-import { basename, extname, join } from "node:path"
+import { basename, extname, join, relative, resolve, sep } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
-import { parse } from "@cosense-toolbox/parser"
-import { collectLinks } from "@cosense-toolbox/parser/utils"
 import { Array as Arr, Effect, Option, pipe } from "effect"
-
-import { normalizeForMatch } from "./completion"
 
 /**
  * The pages a workspace holds, read from disk.
@@ -18,12 +14,20 @@ import { normalizeForMatch } from "./completion"
  */
 export interface Page {
   readonly title: string
-  /** `file://` URI of the file the title came from, absent for a link with no page yet. */
-  readonly uri?: string
+  /** `file://` URI of the page's file. */
+  readonly uri: string
+  /**
+   * Where the file is, from the root it was found under, with `/` between directories. Shown
+   * next to the title so two pages of one title can be told apart.
+   */
+  readonly location: string
 }
 
 export interface Index {
-  /** Every page, those with a file first, then the ones only linked to. */
+  /**
+   * Every page file, in the order the roots and their directories list them. A link to a
+   * page is not a page: only a file is, since only a file has a first line to be its title.
+   */
   readonly pages: ReadonlyArray<Page>
 }
 
@@ -110,61 +114,56 @@ const titleOf = (path: string, text: string): string =>
     Option.getOrElse(() => basename(path, extname(path))),
   )
 
-/** One page file, as its page and the titles its `[link]`s and `#tag`s point at. */
-interface PageFile {
-  readonly page: Page
-  readonly links: ReadonlyArray<string>
-}
+/** `path` from `root`, with `/` between directories whatever the platform. */
+const locationOf = (root: string, path: string): string => relative(root, path).split(sep).join("/")
 
 /** A file that cannot be read is left out of the index rather than failing it. */
-const readPageFile = (path: string): Effect.Effect<Option.Option<PageFile>> =>
+const readPage = (root: string, path: string): Effect.Effect<Option.Option<Page>> =>
   pipe(
     Effect.tryPromise(() => readFile(path, "utf8")),
     Effect.map((text) =>
       Option.some({
-        page: { title: titleOf(path, text), uri: pathToFileURL(path).href },
-        links: collectLinks(parse(text)),
+        title: titleOf(path, text),
+        uri: pathToFileURL(path).href,
+        location: locationOf(root, path),
       }),
     ),
     Effect.orElseSucceed(() => Option.none()),
   )
 
-// --- The index ----------------------------------------------------------------------------
+/** The pages under one root. */
+const pagesUnder = (root: string): Effect.Effect<ReadonlyArray<Page>> =>
+  pipe(
+    pageFiles(root),
+    Effect.flatMap(Effect.forEach((path) => readPage(root, path))),
+    Effect.map(Arr.getSomes),
+  )
 
 /**
- * The files' pages, then the pages only linked to.
- *
- * Pages that are only linked to are indexed as well, without a uri. Cosense lets a link
- * name a page that does not exist yet, and offering those back is most of what makes its
- * completion feel like it knows the project. A file wins over a link of the same name: it
- * is the one that can be opened.
+ * Read every page under `roots` and index it. Roots may overlap (`src` and `src/content`),
+ * so a file found twice is kept once, where it was first found.
  */
-const indexOf = (files: ReadonlyArray<PageFile>): Index => {
-  const key = (title: string) => normalizeForMatch(title)
-  // A later file of the same title takes the earlier one's place, as a Map built from
-  // entries does.
-  const withFiles = new Map(files.map(({ page }) => [key(page.title), page] as const))
-  const onlyLinked = pipe(
-    files,
-    Arr.flatMap(({ links }) => links),
-    Arr.filter((title) => !withFiles.has(key(title))),
-    Arr.dedupeWith((a, b) => key(a) === key(b)),
-    Arr.map((title): Page => ({ title })),
-  )
-  return { pages: [...withFiles.values(), ...onlyLinked] }
-}
-
-/** Read every page under `roots` and index it. */
 export const readIndex = (roots: ReadonlyArray<string>): Effect.Effect<Index> =>
   pipe(
-    Effect.forEach(roots, pageFiles),
-    Effect.map(Arr.flatten),
-    Effect.flatMap(Effect.forEach(readPageFile)),
-    Effect.map((files) => indexOf(Arr.getSomes(files))),
+    Effect.forEach(roots, pagesUnder),
+    Effect.map((found) => ({
+      pages: Arr.dedupeWith(Arr.flatten(found), (a, b) => a.uri === b.uri),
+    })),
   )
 
-/** The workspace roots an initialize request names, as filesystem paths. */
+/**
+ * Where to read pages: each workspace folder, or each of `sources` under it when the reader
+ * has set them. A folder that is not a `file://` URI has no files to read.
+ */
 export const rootsOf = (
   folders: ReadonlyArray<{ readonly uri: string }> | null | undefined,
+  sources: ReadonlyArray<string>,
 ): ReadonlyArray<string> =>
-  Arr.filterMap(folders ?? [], ({ uri }) => Option.liftThrowable(fileURLToPath)(uri))
+  pipe(
+    Arr.filterMap(folders ?? [], ({ uri }) => Option.liftThrowable(fileURLToPath)(uri)),
+    Arr.flatMap((folder) =>
+      Arr.isNonEmptyReadonlyArray(sources)
+        ? Arr.map(sources, (source) => resolve(folder, source))
+        : [folder],
+    ),
+  )

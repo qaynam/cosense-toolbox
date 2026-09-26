@@ -41,23 +41,36 @@
      Cosense ではインデントの空白だけの行もコードブロックや表の一部で、空白を消すと
      本当の空行になり、そこでブロックが終わってしまう。
 
-## 存在しないページへのリンク
+## サーバーの設定
 
-`[ページ名]` のリンク先に、その題名のファイルが無ければ診断を出す。題名はファイルの 1 行目で、
-大文字小文字と、空白と `_` の違いは無視する。`#タグ` と `[/別プロジェクト/ページ]` は対象にしない。
-
-強さは `initialization_options` の `unresolvedLinks` で変えられる。既定は `"warning"`。
+`initialization_options` に書く。どれも省略できる。
 
 ```jsonc
 {
   "lsp": {
     "cosense-language-server": {
-      // "off" | "hint" | "information" | "warning" | "error"
-      "initialization_options": { "unresolvedLinks": "error" },
+      "initialization_options": {
+        // ページを読む場所。ワークスペースからの相対パス。省略するとワークスペース全体を読む
+        "sources": ["examples/astro-blog/src"],
+        // サイトの customDecorations と同じ記号。省略すると [! 注意] をリンクとして読む
+        "decorations": ["|", "!", "~", "#"],
+        // 存在しないページへのリンクの診断。"off" | "hint" | "information" | "warning" | "error"
+        "unresolvedLinks": "warning",
+      },
     },
   },
 }
 ```
+
+### 補完
+
+`[` の中と `#` の後で、`sources` の下にある `.csn` / `.csnx` のページを候補に出す。題名はファイルの 1 行目で、
+候補の横にはそのファイルの場所 (`sources` からのパス) を出す。
+
+### 存在しないページへのリンク
+
+`[ページ名]` のリンク先に、その題名のファイルが無ければ診断を出す。大文字小文字と、空白と `_` の違いは無視する。
+`#タグ` と `[/別プロジェクト/ページ]` は対象にしない。
 
 ワークスペースのページは起動時と保存のたびに読み直す。新しいページは、保存するまで存在しないものとして扱う。
 

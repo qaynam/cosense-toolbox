@@ -1,4 +1,4 @@
-import { normalizeLineEndings, parse } from "@cosense-toolbox/parser"
+import { normalizeLineEndings, parse, type ParseOptions } from "@cosense-toolbox/parser"
 import { collect } from "@cosense-toolbox/parser/utils"
 import { Array as Arr, Option, pipe } from "effect"
 import {
@@ -135,8 +135,12 @@ export const detectCompletion = (
  * Inside code, a bracket is not notation. The cursor must be strictly between the
  * backticks (not touching them) to count as inside an inline span.
  */
-const isInCode = (text: string, { line, character }: Position): boolean => {
-  const page = parse(text)
+const isInCode = (
+  text: string,
+  { line, character }: Position,
+  parseOptions: ParseOptions,
+): boolean => {
+  const page = parse(text, parseOptions)
   return (
     Arr.some(
       collect(page, "codeBlock"),
@@ -152,13 +156,17 @@ const isInCode = (text: string, { line, character }: Position): boolean => {
   )
 }
 
-/** `detectCompletion` for one line of a document, suppressed inside code. */
+/**
+ * `detectCompletion` for one line of a document, suppressed inside code. `parseOptions` are
+ * the site's notation extensions, parsed with as the site's build parses.
+ */
 export const detectCompletionInDocument = (
   text: string,
   position: Position,
+  parseOptions: ParseOptions = {},
 ): Option.Option<CompletionDetection> =>
   pipe(
-    Option.liftPredicate(text, (document) => !isInCode(document, position)),
+    Option.liftPredicate(text, (document) => !isInCode(document, position, parseOptions)),
     Option.map((document) => normalizeLineEndings(document).split("\n")[position.line] ?? ""),
     Option.flatMap((line) => detectCompletion(line, position.character)),
   )
@@ -190,14 +198,15 @@ const candidate =
   (page: Page): Option.Option<CompletionItem> => {
     const query = normalizeForMatch(detection.query)
     const normalized = normalizeForMatch(page.title)
-    const missing = page.uri === undefined
     return pipe(
       Option.some(page),
       Option.filter(() => detection.kind === "link" || isTaggable(page.title)),
       Option.filter(() => query === "" || normalized.includes(query)),
       Option.map((): CompletionItem => ({
         label: page.title,
-        kind: missing ? CompletionItemKind.Reference : CompletionItemKind.File,
+        kind: CompletionItemKind.File,
+        // Where the file is, so two pages of one title can be told apart.
+        detail: page.location,
         // The whole notation is replaced, brackets included: the reader typed the `[`,
         // and leaving it in place would give `[[title]]`.
         textEdit: {
@@ -207,41 +216,40 @@ const candidate =
           },
           newText: detection.kind === "hashtag" ? `#${asTagName(page.title)}` : `[${page.title}]`,
         },
-        // A page that exists sorts above one that is only linked to.
-        sortText: `${missing ? "1" : "0"}${normalized}`,
-        // exactOptionalPropertyTypes: an absent detail is left out, not set to undefined.
-        ...(missing ? { detail: "まだページがありません" } : {}),
+        sortText: `${normalized} ${page.location}`,
       })),
     )
   }
 
 /** The pages that complete what is typed at `position`, or none outside a link or a tag. */
-export const completionItems = (index: Index, text: string, position: Position): CompletionItem[] =>
+export const completionItems = (
+  index: Index,
+  text: string,
+  position: Position,
+  parseOptions: ParseOptions = {},
+): CompletionItem[] =>
   pipe(
-    detectCompletionInDocument(text, position),
+    detectCompletionInDocument(text, position, parseOptions),
     Option.match({
       onNone: () => [],
       onSome: (detection) => Arr.filterMap(index.pages, candidate(detection, position.line)),
     }),
   )
 
-/**
- * The file of the page named at `position`, opened at its top. None for a page that is
- * only linked to: it has no file to open yet.
- */
+/** The file of the page named at `position`, opened at its top. None for a missing page. */
 export const definitionOf = (
   index: Index,
   text: string,
   position: Position,
+  parseOptions: ParseOptions = {},
 ): Option.Option<Definition> =>
   pipe(
-    detectCompletionInDocument(text, position),
+    detectCompletionInDocument(text, position, parseOptions),
     Option.map(({ query }) => normalizeForMatch(query)),
     Option.flatMap((key) =>
       Arr.findFirst(index.pages, (page) => normalizeForMatch(page.title) === key),
     ),
-    Option.flatMap((page) => Option.fromNullable(page.uri)),
-    Option.map((uri) => {
+    Option.map(({ uri }) => {
       const start = { line: 0, character: 0 }
       return { uri, range: { start, end: start } }
     }),

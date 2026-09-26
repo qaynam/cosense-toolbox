@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Array as Arr, Effect, Option, pipe, Predicate, Ref } from "effect"
+import { Array as Arr, Effect, Option, pipe, Ref } from "effect"
 import {
   type CompletionItem,
   createConnection,
@@ -13,7 +13,8 @@ import {
 import { TextDocument } from "vscode-languageserver-textdocument"
 
 import { completionItems, definitionOf } from "./completion"
-import { severityOf, unresolvedLinkDiagnostics } from "./diagnostics"
+import { unresolvedLinkDiagnostics } from "./diagnostics"
+import { defaultSettings, parseOptionsOf, settingsOf } from "./settings"
 import { computeTokens, encodeTokens, LEGEND } from "./tokens"
 import { emptyIndex, type Index, readIndex, rootsOf } from "./workspace"
 
@@ -30,8 +31,23 @@ const CSNX_LANGUAGE_IDS: ReadonlyArray<string> = ["csnx", "cosense-x"]
 const readsComponents = (document: TextDocument): boolean =>
   Arr.contains(CSNX_LANGUAGE_IDS, document.languageId) || document.uri.endsWith(".csnx")
 
+// --- Settings -----------------------------------------------------------------------------
+
+/** What the reader set in the editor's initialization options (see settings.ts). */
+const settings = Ref.unsafeMake(defaultSettings)
+
+const currentSettings = () => Effect.runSync(Ref.get(settings))
+
+/** How to parse, so notation reads as the site's build reads it. */
+const currentParseOptions = () => parseOptionsOf(currentSettings())
+
 const semanticTokensOf = (document: TextDocument): SemanticTokens => ({
-  data: encodeTokens(computeTokens(document.getText(), { components: readsComponents(document) })),
+  data: encodeTokens(
+    computeTokens(document.getText(), {
+      components: readsComponents(document),
+      parseOptions: currentParseOptions(),
+    }),
+  ),
 })
 
 /**
@@ -58,18 +74,6 @@ const roots = Ref.unsafeMake<ReadonlyArray<string>>([])
 /** The index as it stands; empty until it has been read once. */
 const currentIndex = (): Index => Option.getOrElse(Effect.runSync(Ref.get(index)), () => emptyIndex)
 
-// --- Settings -----------------------------------------------------------------------------
-
-/**
- * How loudly a link to a missing page is reported. Set by the editor's initialization
- * options, as `{ "unresolvedLinks": "off" | "hint" | "information" | "warning" | "error" }`.
- */
-const severity = Ref.unsafeMake(severityOf(undefined))
-
-/** One field of the initialization options, which the editor may send in any shape or not at all. */
-const settingOf = (options: unknown, key: string): unknown =>
-  Predicate.isRecord(options) ? options[key] : undefined
-
 // --- Diagnostics --------------------------------------------------------------------------
 
 /**
@@ -78,8 +82,8 @@ const settingOf = (options: unknown, key: string): unknown =>
  */
 const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
   pipe(
-    Effect.all([Ref.get(index), Ref.get(severity)]),
-    Effect.flatMap(([read, level]) =>
+    Effect.all([Ref.get(index), Ref.get(settings)]),
+    Effect.flatMap(([read, set]) =>
       Option.match(read, {
         onNone: () => Effect.void,
         onSome: (pages) =>
@@ -87,8 +91,9 @@ const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
             connection.sendDiagnostics({
               uri: document.uri,
               diagnostics: unresolvedLinkDiagnostics(pages, document.getText(), {
-                severity: level,
+                severity: set.unresolvedLinks,
                 components: readsComponents(document),
+                parseOptions: parseOptionsOf(set),
               }),
             }),
           ),
@@ -113,8 +118,9 @@ const refreshIndex = (): void => {
 // --- Handlers -----------------------------------------------------------------------------
 
 connection.onInitialize(({ workspaceFolders, initializationOptions }): InitializeResult => {
-  Effect.runSync(Ref.set(roots, rootsOf(workspaceFolders)))
-  Effect.runSync(Ref.set(severity, severityOf(settingOf(initializationOptions, "unresolvedLinks"))))
+  const read = settingsOf(initializationOptions)
+  Effect.runSync(Ref.set(settings, read))
+  Effect.runSync(Ref.set(roots, rootsOf(workspaceFolders, read.sources)))
   refreshIndex()
   return {
     capabilities: {
@@ -150,7 +156,8 @@ documents.onDidClose(({ document }) => {
 connection.onCompletion(({ textDocument: { uri }, position }): CompletionItem[] =>
   withDocument(
     uri,
-    (document) => completionItems(currentIndex(), document.getText(), position),
+    (document) =>
+      completionItems(currentIndex(), document.getText(), position, currentParseOptions()),
     [],
   ),
 )
@@ -158,7 +165,10 @@ connection.onCompletion(({ textDocument: { uri }, position }): CompletionItem[] 
 connection.onDefinition(({ textDocument: { uri }, position }): Definition | null =>
   withDocument(
     uri,
-    (document) => Option.getOrNull(definitionOf(currentIndex(), document.getText(), position)),
+    (document) =>
+      Option.getOrNull(
+        definitionOf(currentIndex(), document.getText(), position, currentParseOptions()),
+      ),
     null,
   ),
 )

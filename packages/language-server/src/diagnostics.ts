@@ -1,4 +1,9 @@
-import { type NodeOfType, normalizeLineEndings, parse } from "@cosense-toolbox/parser"
+import {
+  type NodeOfType,
+  normalizeLineEndings,
+  parse,
+  type ParseOptions,
+} from "@cosense-toolbox/parser"
 import { visit } from "@cosense-toolbox/parser/utils"
 import { Array as Arr, Match, Option, pipe } from "effect"
 import { type Diagnostic, DiagnosticSeverity } from "vscode-languageserver/node"
@@ -50,6 +55,8 @@ export interface UnresolvedLinkOptions {
   readonly severity: UnresolvedSeverity
   /** `.csnx`: a component line is JSX, and a bracket in it is not a link. */
   readonly components?: boolean
+  /** How to parse: the site's notation extensions, so `[! 注意]` is not read as a link. */
+  readonly parseOptions?: ParseOptions
 }
 
 /**
@@ -59,6 +66,7 @@ export interface UnresolvedLinkOptions {
 const linksIn = (
   text: string,
   components: boolean,
+  parseOptions: ParseOptions,
 ): ReadonlyArray<{ readonly link: NodeOfType<"internalLink">; readonly line: number }> => {
   const lines = normalizeLineEndings(text).split("\n")
   // The parser never sees the frontmatter, so its line numbers start after the fence.
@@ -67,7 +75,7 @@ const linksIn = (
     components && COMPONENT_LINE.test(lines[line + offset] ?? "")
 
   const links: { link: NodeOfType<"internalLink">; line: number }[] = []
-  visit(parse(lines.slice(offset).join("\n")), (node) =>
+  visit(parse(lines.slice(offset).join("\n"), parseOptions), (node) =>
     Match.value(node).pipe(
       Match.when({ type: "title" }, () => "skip" as const),
       Match.when({ type: "line" }, (line) =>
@@ -83,24 +91,20 @@ const linksIn = (
   return links
 }
 
-/** A diagnostic for each `[title]` link in `text` whose page no file in `index` holds. */
+/** A diagnostic for each `[title]` link in `text` whose page is not in `index`. */
 export const unresolvedLinkDiagnostics = (
   index: Index,
   text: string,
   options: UnresolvedLinkOptions,
 ): Diagnostic[] => {
-  const withFile = new Set(
-    Arr.filterMap(index.pages, (page) =>
-      Option.map(Option.fromNullable(page.uri), () => normalizeForMatch(page.title)),
-    ),
-  )
+  const withFile = new Set(Arr.map(index.pages, (page) => normalizeForMatch(page.title)))
   return pipe(
     lspSeverity(options.severity),
     Option.match({
       onNone: () => [],
       onSome: (severity) =>
         pipe(
-          linksIn(text, options.components ?? false),
+          linksIn(text, options.components ?? false, options.parseOptions ?? {}),
           Arr.filter(({ link }) => !withFile.has(normalizeForMatch(link.target))),
           Arr.map(({ link, line }): Diagnostic => ({
             range: {

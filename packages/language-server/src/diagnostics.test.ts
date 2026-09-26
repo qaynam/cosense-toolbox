@@ -2,14 +2,13 @@ import { describe, expect, it } from "vitest"
 import { DiagnosticSeverity } from "vscode-languageserver/node"
 
 import { severityOf, unresolvedLinkDiagnostics } from "./diagnostics"
+import { defaultSettings, parseOptionsOf } from "./settings"
 import type { Index } from "./workspace"
 
 const index: Index = {
   pages: [
-    { title: "設計メモ", uri: "file:///w/design.csn" },
-    { title: "Side Kanban", uri: "file:///w/kanban.csn" },
-    // Only linked to somewhere: there is no file to open.
-    { title: "まだ無いページ" },
+    { title: "設計メモ", uri: "file:///w/design.csn", location: "design.csn" },
+    { title: "Side Kanban", uri: "file:///w/kanban.csn", location: "kanban.csn" },
   ],
 }
 
@@ -29,8 +28,16 @@ describe("unresolvedLinkDiagnostics", () => {
     expect(flagged("T\n[side_kanban] [SIDE KANBAN]")).toEqual([])
   })
 
-  it("flags a page that is only linked to, since it has no file yet", () => {
-    expect(flagged("T\n[まだ無いページ]")).toEqual(["[まだ無いページ]"])
+  it("reads the decorations it is told about as decorations, not links to check", () => {
+    const text = "T\n[! 注意] [無いページ]"
+    const decorated = unresolvedLinkDiagnostics(index, text, {
+      severity: "warning",
+      parseOptions: parseOptionsOf({ ...defaultSettings, decorations: ["!"] }),
+    })
+    expect(decorated.map((d) => d.message)).toEqual([
+      "リンク先のページが見つからない: [無いページ]",
+    ])
+    expect(flagged(text)).toEqual(["[! 注意]", "[無いページ]"])
   })
 
   it("leaves tags and links to other projects alone", () => {

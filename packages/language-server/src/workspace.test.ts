@@ -5,7 +5,7 @@ import { join } from "node:path"
 import { Effect } from "effect"
 import { describe, expect, it } from "vitest"
 
-import { readIndex } from "./workspace"
+import { readIndex, rootsOf } from "./workspace"
 
 const workspace = async (files: Record<string, string>): Promise<string> => {
   const root = await mkdtemp(join(tmpdir(), "csn-"))
@@ -39,23 +39,21 @@ describe("readIndex", () => {
     expect(await titles({ "b.csn": "---\ntitle: x\n---\n" })).toEqual(["b"])
   })
 
-  it("indexes a page that is only linked to, so it can still be completed", async () => {
-    const found = await titles({ "a.csn": "投稿\n[まだ無いページ] と #タグ" })
-    expect(found).toEqual(["まだ無いページ", "タグ", "投稿"].sort())
+  it("indexes only pages that have a file: a link to a page is not a page", async () => {
+    expect(await titles({ "a.csn": "投稿\n[まだ無いページ] と #タグ" })).toEqual(["投稿"])
   })
 
-  it("gives a file's page a uri and a linked-only page none", async () => {
-    const root = await workspace({ "a.csn": "投稿\n[まだ無いページ]" })
-    const { pages } = await Effect.runPromise(readIndex([root]))
-    expect(pages.find((p) => p.title === "投稿")?.uri).toMatch(/^file:\/\/.*a\.csn$/)
-    expect(pages.find((p) => p.title === "まだ無いページ")?.uri).toBeUndefined()
+  it("gives each page its file's uri and where it is under the root it was found in", async () => {
+    const root = await workspace({ "notes/b.csnx": "メモ\n本文" })
+    const [page] = (await Effect.runPromise(readIndex([root]))).pages
+    expect(page?.uri).toMatch(/^file:\/\/.*\/notes\/b\.csnx$/)
+    expect(page?.location).toBe("notes/b.csnx")
   })
 
-  it("lets a real page win over a link of the same name", async () => {
-    const root = await workspace({ "a.csn": "投稿\n[設計メモ]", "b.csn": "設計メモ\n中身" })
-    const { pages } = await Effect.runPromise(readIndex([root]))
-    expect(pages.filter((p) => p.title === "設計メモ")).toHaveLength(1)
-    expect(pages.find((p) => p.title === "設計メモ")?.uri).toBeDefined()
+  it("reads only under the roots it is given", async () => {
+    const root = await workspace({ "src/a.csn": "中のページ", "other/b.csn": "外のページ" })
+    const { pages } = await Effect.runPromise(readIndex([join(root, "src")]))
+    expect(pages.map((page) => [page.title, page.location])).toEqual([["中のページ", "a.csn"]])
   })
 
   it("does not walk into directories that never hold pages", async () => {
@@ -67,5 +65,24 @@ describe("readIndex", () => {
     expect(await titles({ "a.csnx": "コンポーネントのページ\n<Modal />" })).toEqual([
       "コンポーネントのページ",
     ])
+  })
+})
+
+describe("rootsOf", () => {
+  const folders = [{ uri: "file:///w/site" }]
+
+  it("reads the whole workspace folder when no sources are set", () => {
+    expect(rootsOf(folders, [])).toEqual(["/w/site"])
+  })
+
+  it("reads each source under each workspace folder when they are set", () => {
+    expect(rootsOf(folders, ["src/content", "src/pages"])).toEqual([
+      "/w/site/src/content",
+      "/w/site/src/pages",
+    ])
+  })
+
+  it("skips a folder that is not a file:// URI", () => {
+    expect(rootsOf([{ uri: "untitled:x" }], [])).toEqual([])
   })
 })

@@ -92,16 +92,15 @@ describe("detectCompletionInDocument", () => {
 describe("completionItems", () => {
   const index: Index = {
     pages: [
-      { title: "設計メモ", uri: "file:///w/design.csn" },
-      { title: "Side Kanban", uri: "file:///w/kanban.csn" },
-      { title: "まだ無いページ" },
+      { title: "設計メモ", uri: "file:///w/notes/design.csn", location: "notes/design.csn" },
+      { title: "Side Kanban", uri: "file:///w/kanban.csn", location: "kanban.csn" },
     ],
   }
   const labels = (text: string, character: number) =>
     completionItems(index, text, { line: 1, character }).map((item) => item.label)
 
   it("offers every page in an empty bracket, and none outside a link or a tag", () => {
-    expect(labels("T\n[]", 1)).toEqual(["設計メモ", "Side Kanban", "まだ無いページ"])
+    expect(labels("T\n[]", 1)).toEqual(["設計メモ", "Side Kanban"])
     expect(labels("T\n本文", 1)).toEqual([])
   })
 
@@ -111,9 +110,11 @@ describe("completionItems", () => {
 
   it("leaves out after # a page whose title a tag cannot hold, but not one with a space", () => {
     // A space folds to `_` in a tag, so "Side Kanban" is `#Side_Kanban`; a bracket cannot.
-    const withBracket: Index = { pages: [...index.pages, { title: "配列[0]" }] }
+    const withBracket: Index = {
+      pages: [...index.pages, { title: "配列[0]", uri: "file:///w/a.csn", location: "a.csn" }],
+    }
     const tags = completionItems(withBracket, "T\n#", { line: 1, character: 1 })
-    expect(tags.map((item) => item.label)).toEqual(["設計メモ", "Side Kanban", "まだ無いページ"])
+    expect(tags.map((item) => item.label)).toEqual(["設計メモ", "Side Kanban"])
   })
 
   it("replaces the whole notation, writing a tag's space as _", () => {
@@ -122,26 +123,29 @@ describe("completionItems", () => {
       range: { start: { line: 1, character: 0 }, end: { line: 1, character: 4 } },
       newText: "[設計メモ]",
     })
-    const [tag] = completionItems({ pages: [{ title: "a b" }] }, "T\n#a", {
-      line: 1,
-      character: 2,
-    })
+    const [tag] = completionItems(
+      { pages: [{ title: "a b", uri: "file:///w/ab.csn", location: "ab.csn" }] },
+      "T\n#a",
+      {
+        line: 1,
+        character: 2,
+      },
+    )
     expect(tag?.textEdit).toMatchObject({ newText: "#a_b" })
   })
 
-  it("sorts a page with a file above one that is only linked to, and says it is missing", () => {
+  it("shows where the page's file is, next to its title", () => {
     const items = completionItems(index, "T\n[]", { line: 1, character: 1 })
-    const missing = items.find((item) => item.label === "まだ無いページ")
-    const present = items.find((item) => item.label === "設計メモ")
-    expect(missing?.detail).toBe("まだページがありません")
-    expect(present?.detail).toBeUndefined()
-    expect((present?.sortText ?? "") < (missing?.sortText ?? "")).toBe(true)
+    expect(items.map((item) => [item.label, item.detail])).toEqual([
+      ["設計メモ", "notes/design.csn"],
+      ["Side Kanban", "kanban.csn"],
+    ])
   })
 })
 
 describe("definitionOf", () => {
   const index: Index = {
-    pages: [{ title: "設計メモ", uri: "file:///w/design.csn" }, { title: "まだ無いページ" }],
+    pages: [{ title: "設計メモ", uri: "file:///w/design.csn", location: "design.csn" }],
   }
 
   it("opens the file of the page a link names, at its top", () => {

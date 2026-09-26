@@ -3,6 +3,7 @@ import type {
   AnyNodeType,
   Decoration,
   NodeOfType,
+  ParseOptions,
   Position,
 } from "@cosense-toolbox/parser"
 import { normalizeLineEndings, parse } from "@cosense-toolbox/parser"
@@ -387,6 +388,8 @@ const nodeTokens =
 export interface ComputeTokensOptions {
   /** `.csnx` also reads a line that is one component tag. `.csn` never does. */
   readonly components?: boolean
+  /** How to parse: the site's notation extensions, so `[! 注意]` is not read as a link. */
+  readonly parseOptions?: ParseOptions
 }
 
 /** Pure text -> tokens. The LSP delta encoding lives in encodeTokens, so this stays testable. */
@@ -406,7 +409,7 @@ export const computeTokens = (text: string, options: ComputeTokensOptions = {}):
     onSome: (end) => [...lineSpans("frontmatter", lines, 0, end)],
   })
   const tokensOf = nodeTokens(page)
-  visit(parse(lines.slice(page.offset).join("\n")), (node) => {
+  visit(parse(lines.slice(page.offset).join("\n"), options.parseOptions), (node) => {
     const { tokens: own, descend } = tokensOf(node)
     tokens.push(...own)
     return descend ? undefined : "skip"

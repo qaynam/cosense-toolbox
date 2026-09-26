@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { defaultSettings, parseOptionsOf } from "./settings"
 import { computeTokens, encodeTokens, LEGEND, TOKEN_TYPES } from "./tokens"
 
 const typesOn = (text: string, line: number, options = {}) =>
@@ -133,5 +134,13 @@ describe("encodeTokens", () => {
     const [link] = encodeTokens([{ line: 0, char: 0, length: 1, type: "link" }]).slice(3, 4)
     const [tag] = encodeTokens([{ line: 0, char: 0, length: 1, type: "hashtag" }]).slice(3, 4)
     expect(link).not.toBe(tag)
+  })
+})
+
+describe("parse options", () => {
+  it("do not colour a bracket as a link when its marker is a listed decoration", () => {
+    const parseOptions = parseOptionsOf({ ...defaultSettings, decorations: ["!"] })
+    expect(typesOn("T\n[! 注意]", 1, { parseOptions })).not.toContain("link")
+    expect(typesOn("T\n[! 注意]", 1)).toContain("link")
   })
 })
