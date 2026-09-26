@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Array as Arr, Effect, Option, pipe, Ref } from "effect"
+import { Array as Arr, Effect, Option, pipe, Predicate, Ref } from "effect"
 import {
   type CompletionItem,
   createConnection,
@@ -13,8 +13,9 @@ import {
 import { TextDocument } from "vscode-languageserver-textdocument"
 
 import { completionItems, definitionOf } from "./completion"
+import { severityOf, unresolvedLinkDiagnostics } from "./diagnostics"
 import { computeTokens, encodeTokens, LEGEND } from "./tokens"
-import { emptyIndex, readIndex, rootsOf } from "./workspace"
+import { emptyIndex, type Index, readIndex, rootsOf } from "./workspace"
 
 const connection = createConnection(ProposedFeatures.all)
 const documents = new TextDocuments(TextDocument)
@@ -51,25 +52,69 @@ const withDocument = <A>(uri: string, answer: (document: TextDocument) => A, fal
  * because a title only changes by someone writing it, and re-reading on every keystroke
  * would walk the whole tree while the reader is typing.
  */
-const index = Ref.unsafeMake(emptyIndex)
+const index = Ref.unsafeMake<Option.Option<Index>>(Option.none())
 const roots = Ref.unsafeMake<ReadonlyArray<string>>([])
 
-/** Reads the index again in the background; requests meanwhile answer from the last one. */
+/** The index as it stands; empty until it has been read once. */
+const currentIndex = (): Index => Option.getOrElse(Effect.runSync(Ref.get(index)), () => emptyIndex)
+
+// --- Settings -----------------------------------------------------------------------------
+
+/**
+ * How loudly a link to a missing page is reported. Set by the editor's initialization
+ * options, as `{ "unresolvedLinks": "off" | "hint" | "information" | "warning" | "error" }`.
+ */
+const severity = Ref.unsafeMake(severityOf(undefined))
+
+/** One field of the initialization options, which the editor may send in any shape or not at all. */
+const settingOf = (options: unknown, key: string): unknown =>
+  Predicate.isRecord(options) ? options[key] : undefined
+
+// --- Diagnostics --------------------------------------------------------------------------
+
+/**
+ * Sends `document`'s links to missing pages. Nothing until the index has been read once:
+ * against an empty index every link would be flagged, only to be cleared a moment later.
+ */
+const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
+  pipe(
+    Effect.all([Ref.get(index), Ref.get(severity)]),
+    Effect.flatMap(([read, level]) =>
+      Option.match(read, {
+        onNone: () => Effect.void,
+        onSome: (pages) =>
+          Effect.promise(() =>
+            connection.sendDiagnostics({
+              uri: document.uri,
+              diagnostics: unresolvedLinkDiagnostics(pages, document.getText(), {
+                severity: level,
+                components: readsComponents(document),
+              }),
+            }),
+          ),
+      }),
+    ),
+  )
+
+/**
+ * Reads the index again in the background; requests meanwhile answer from the last one.
+ * A page may have appeared or gone, so every open document is checked again after.
+ */
 const refreshIndex = (): void => {
   pipe(
     Ref.get(roots),
     Effect.flatMap(readIndex),
-    Effect.flatMap((next) => Ref.set(index, next)),
+    Effect.flatMap((next) => Ref.set(index, Option.some(next))),
+    Effect.flatMap(() => Effect.forEach(documents.all(), publishDiagnostics, { discard: true })),
     Effect.runFork,
   )
 }
 
-const currentIndex = () => Effect.runSync(Ref.get(index))
-
 // --- Handlers -----------------------------------------------------------------------------
 
-connection.onInitialize(({ workspaceFolders }): InitializeResult => {
+connection.onInitialize(({ workspaceFolders, initializationOptions }): InitializeResult => {
   Effect.runSync(Ref.set(roots, rootsOf(workspaceFolders)))
+  Effect.runSync(Ref.set(severity, severityOf(settingOf(initializationOptions, "unresolvedLinks"))))
   refreshIndex()
   return {
     capabilities: {
@@ -91,6 +136,16 @@ connection.onInitialize(({ workspaceFolders }): InitializeResult => {
 // A title only changes when a page is written, so the index is rebuilt then rather than
 // on a timer or on every request.
 documents.onDidSave(refreshIndex)
+
+// Opening a document counts as a change, so this covers both.
+documents.onDidChangeContent(({ document }) => {
+  Effect.runFork(publishDiagnostics(document))
+})
+
+// A closed document's diagnostics would otherwise linger in the editor's problem list.
+documents.onDidClose(({ document }) => {
+  void connection.sendDiagnostics({ uri: document.uri, diagnostics: [] })
+})
 
 connection.onCompletion(({ textDocument: { uri }, position }): CompletionItem[] =>
   withDocument(

@@ -60,6 +60,21 @@ impl zed::Extension for CosenseExtension {
             env: worktree.shell_env(),
         })
     }
+
+    /// The reader's `initialization_options`, passed through as they are. This is where the
+    /// server's settings live, such as `unresolvedLinks` (how loudly a link to a missing page
+    /// is reported).
+    fn language_server_initialization_options(
+        &mut self,
+        language_server_id: &LanguageServerId,
+        worktree: &Worktree,
+    ) -> Result<Option<zed::serde_json::Value>> {
+        Ok(
+            LspSettings::for_worktree(language_server_id.as_ref(), worktree)
+                .ok()
+                .and_then(|settings| settings.initialization_options),
+        )
+    }
 }
 
 zed::register_extension!(CosenseExtension);

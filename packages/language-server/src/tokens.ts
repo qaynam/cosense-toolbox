@@ -176,7 +176,7 @@ const decorationTokenTypes = (node: Decoration): ReadonlyArray<TokenType> =>
 
 // --- Component lines (`.csnx`) ----------------------------------------------------------
 
-const COMPONENT_LINE = /^\s*<\/?[A-Z][A-Za-z0-9_.]*(\s|\/?>)/
+export const COMPONENT_LINE = /^\s*<\/?[A-Z][A-Za-z0-9_.]*(\s|\/?>)/
 const TAG_OPEN = /^(\s*<\/?)([A-Z][A-Za-z0-9_.]*)/
 const ATTRIBUTE_NAME = /^[A-Za-z_:][A-Za-z0-9_:.-]*/
 const SPACE = /^\s*/
@@ -260,7 +260,7 @@ const componentTokens = (line: number, text: string): ReadonlyArray<RawToken> =>
 // --- The page ---------------------------------------------------------------------------
 
 /** The last line of the `---` fence around YAML at the very top, if the file opens with one. */
-const frontmatterEnd = (lines: ReadonlyArray<string>): Option.Option<number> =>
+export const frontmatterEnd = (lines: ReadonlyArray<string>): Option.Option<number> =>
   pipe(
     Option.liftPredicate(lines, (all) => all[0]?.trim() === "---"),
     Option.flatMap(Arr.findFirstIndex((line, index) => index > 0 && line.trim() === "---")),

@@ -41,6 +41,26 @@
      Cosense ではインデントの空白だけの行もコードブロックや表の一部で、空白を消すと
      本当の空行になり、そこでブロックが終わってしまう。
 
+## 存在しないページへのリンク
+
+`[ページ名]` のリンク先に、その題名のファイルが無ければ診断を出す。題名はファイルの 1 行目で、
+大文字小文字と、空白と `_` の違いは無視する。`#タグ` と `[/別プロジェクト/ページ]` は対象にしない。
+
+強さは `initialization_options` の `unresolvedLinks` で変えられる。既定は `"warning"`。
+
+```jsonc
+{
+  "lsp": {
+    "cosense-language-server": {
+      // "off" | "hint" | "information" | "warning" | "error"
+      "initialization_options": { "unresolvedLinks": "error" },
+    },
+  },
+}
+```
+
+ワークスペースのページは起動時と保存のたびに読み直す。新しいページは、保存するまで存在しないものとして扱う。
+
 ## 色を変える
 
 トークンの名前は Cosense のものにしてある（`link`、`quote`、`bold` など）。
