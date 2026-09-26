@@ -12,7 +12,14 @@
 import { fileURLToPath } from "node:url"
 
 import { readPage } from "@cosense-toolbox/cosense-x/graph"
-import type { AstroConfig, AstroIntegration, ContentEntryType, HookParameters } from "astro"
+import type {
+  AstroConfig,
+  AstroIntegration,
+  AstroIntegrationLogger,
+  ContentEntryType,
+  HookParameters,
+} from "astro"
+import { Array as Arr, Effect, pipe } from "effect"
 
 import { ASSET_STORE_KEY, type AssetStore, createAssetStore, rehypeCosenseAssets } from "./assets"
 import {
@@ -21,6 +28,7 @@ import {
   customHighlighter,
   type SyntaxHighlightOption,
 } from "./highlight"
+import { type CosenseLintOptions, lintSite } from "./lint"
 import { createSiteCache, EXTENSIONS, idOf } from "./site"
 import {
   ASSETS_MODULE_ID,
@@ -79,7 +87,46 @@ export interface CosenseIntegrationOptions extends AstroCompileOptions {
    * @defaultValue `'astro'`
    */
   readonly syntaxHighlight?: SyntaxHighlightOption
+  /**
+   * ビルドの前に、`srcDir` の下のページのリンク切れを調べる。エディタの診断
+   * (`@cosense-toolbox/lsp`) と同じ判定で、`unresolvedLinks: 'error'` ならビルドを止める。
+   * 省略すると調べない。
+   *
+   * @example `{ unresolvedLinks: 'error' }`
+   */
+  readonly lint?: CosenseLintOptions
 }
+
+/**
+ * サイトのリンク切れを調べてログに出す。error があれば失敗し、ビルドを止める。
+ */
+const runLint = (
+  config: AstroConfig,
+  lint: CosenseLintOptions,
+  compileOptions: AstroCompileOptions,
+  logger: AstroIntegrationLogger,
+): Effect.Effect<void, Error> =>
+  pipe(
+    lintSite(
+      fileURLToPath(config.root),
+      fileURLToPath(config.srcDir),
+      lint,
+      compileOptions.parseOptions,
+    ),
+    Effect.tap(({ errors, warnings }) =>
+      Effect.all([
+        Effect.forEach(warnings, (warning) => Effect.sync(() => logger.warn(warning))),
+        Effect.forEach(errors, (error) => Effect.sync(() => logger.error(error))),
+      ]),
+    ),
+    Effect.flatMap(({ errors }) =>
+      Arr.match(errors, {
+        onEmpty: () => Effect.void,
+        onNonEmpty: (found) =>
+          Effect.fail(new Error(`リンク切れが ${found.length} 件あるので、ビルドを止めた`)),
+      }),
+    ),
+  )
 
 /** `{base}/_cosense/`。base の末尾の `/` の有無を吸収する。 */
 const assetsPathOf = (config: AstroConfig): string => `${config.base.replace(/\/$/, "")}/_cosense/`
@@ -135,6 +182,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
     components,
     assets: assetsOptions = {},
     syntaxHighlight = "astro",
+    lint,
     ...compileOptions
   } = options
   // config:setup で作る。ビルドの始まりと終わりのフックからも使う。
@@ -232,6 +280,11 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
       "astro:config:done": ({ config, injectTypes }) => {
         astroConfig = config
         injectTypes({ filename: "types.d.ts", content: INJECTED_TYPES })
+      },
+
+      "astro:build:start": async ({ logger }) => {
+        if (lint === undefined || astroConfig === undefined) return
+        await Effect.runPromise(runLint(astroConfig, lint, compileOptions, logger))
       },
 
       // 置き場のディレクトリはビルドをまたいで残し、中身の変わらないファイルは取り直さない。

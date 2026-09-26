@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@cosense-toolbox/cosense-x": "workspace:*",
+    "@cosense-toolbox/lsp": "workspace:*",
     "@cosense-toolbox/parser": "workspace:*",
     "effect": "^3.22.1",
     "shiki": "^4.2.0"

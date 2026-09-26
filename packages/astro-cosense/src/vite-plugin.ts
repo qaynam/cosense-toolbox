@@ -46,8 +46,22 @@ const CONTENT_TYPES: Readonly<Record<string, string>> = {
 
 export interface AstroCompileOptions extends Omit<
   CompileOptions,
-  "filePath" | "format" | "index" | "jsxImportSource" | "elementAttributeNameCase" | "renderOptions"
+  | "filePath"
+  | "format"
+  | "index"
+  | "jsxImportSource"
+  | "elementAttributeNameCase"
+  | "renderOptions"
+  | "unresolved"
 > {
+  /**
+   * サイトに無いページへのリンクの出し方。`'text'` はテキストにする (非公開のページの名前が
+   * URL に漏れない)。`'link'` はタイトルから作った URL へのリンクにする。
+   * リンク切れを知らせるのは `lint` の役目。
+   *
+   * @defaultValue `'text'`
+   */
+  readonly unresolvedLinks?: "text" | "link"
   /**
    * 描画の設定。parser の `toHast` のオプションがそのまま渡る
    * (`extensions` / `handlers` / `classNames` / `showPads` / `iconImageUrl` / `title`)。
@@ -55,6 +69,17 @@ export interface AstroCompileOptions extends Omit<
    */
   readonly renderOptions?: AstroRenderOptions
 }
+
+/** 統合の compile の設定を、`compile` が受け取る形にする。 */
+export const compileOptionsOf = ({
+  unresolvedLinks,
+  ...rest
+}: AstroCompileOptions): Omit<AstroCompileOptions, "unresolvedLinks"> &
+  Pick<CompileOptions, "unresolved"> =>
+  Option.match(Option.fromNullable(unresolvedLinks), {
+    onNone: () => rest,
+    onSome: (unresolved) => ({ ...rest, unresolved }),
+  })
 
 export interface VitePluginOptions {
   readonly root: URL
@@ -145,7 +170,7 @@ export const vitePluginCosense = (options: VitePluginOptions): Plugin => {
         const { index } = await loadSite()
         const highlight = Option.fromNullable(await options.highlighter?.(code))
         const result = await compile(code, {
-          ...options.compile,
+          ...compileOptionsOf(options.compile),
           renderOptions: renderOptionsWith(options.compile.renderOptions, highlight),
           filePath: idOf(root, id),
           index,

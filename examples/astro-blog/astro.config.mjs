@@ -31,7 +31,8 @@ export default defineConfig({
       parseOptions: {
         extensions: [customDecorations(["|", "!", "~", "#"]), tableCellNotation()],
       },
-      unresolved: "warn",
+      // リンク切れはビルドの前に調べてログに出す。"error" にするとビルドを止める。
+      lint: { unresolvedLinks: "warning" },
       // 描画の設定。parser の toHast に渡る。行番号 (data-line) を付け、表示は @cosense-toolbox/tailwind が持つ。
       // 表のセルの中の \n は改行にする。
       renderOptions: { extensions: [codeLineNumbers(), tableCellLineBreaks("\\n")] },
