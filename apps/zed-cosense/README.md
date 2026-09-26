@@ -1,4 +1,4 @@
-# Zed 拡張: Cosense X
+# Zed 拡張: Cosense
 
 `.csn` と `.csnx` に色を付ける。色は tree-sitter ではなく、
 [`@cosense-toolbox/language-server`](../../packages/language-server) が返す

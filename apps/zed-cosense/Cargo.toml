@@ -1,5 +1,5 @@
 [package]
-name = "zed_cosense_x"
+name = "zed_cosense"
 version = "0.1.0"
 edition = "2021"
 publish = false

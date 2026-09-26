@@ -5,4 +5,4 @@ bun.lock
 **/*.generated.ts
 # 入れ子の .gitignore は prettier に読まれない。ビルドの出力をここでも除く。
 packages/textmate/grammars/
-apps/zed-cosense-x/target/
+apps/zed-cosense/target/

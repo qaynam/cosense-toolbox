@@ -752,7 +752,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "zed_cosense_x"
+name = "zed_cosense"
 version = "0.1.0"
 dependencies = [
  "zed_extension_api",
