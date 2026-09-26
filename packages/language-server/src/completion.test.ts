@@ -134,12 +134,17 @@ describe("completionItems", () => {
     expect(tag?.textEdit).toMatchObject({ newText: "#a_b" })
   })
 
-  it("shows where the page's file is, next to its title", () => {
+  it("shows the page's file name next to its title, short enough not to be cut off", () => {
     const items = completionItems(index, "T\n[]", { line: 1, character: 1 })
     expect(items.map((item) => [item.label, item.detail])).toEqual([
-      ["設計メモ", "notes/design.csn"],
+      ["設計メモ", "design.csn"],
       ["Side Kanban", "kanban.csn"],
     ])
+  })
+
+  it("shows the whole path in the documentation, for when the name is not enough", () => {
+    const items = completionItems(index, "T\n[]", { line: 1, character: 1 })
+    expect(items.map((item) => item.documentation)).toEqual(["notes/design.csn", "kanban.csn"])
   })
 })
 

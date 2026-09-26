@@ -188,6 +188,10 @@ export const isTaggable = (title: string): boolean => !/[\s[\]#]/.test(asTagName
 
 // --- Answers ------------------------------------------------------------------------------
 
+/** The last part of a `/`-separated location. */
+const fileNameOf = (location: string): string =>
+  Option.getOrElse(Arr.last(location.split("/")), () => location)
+
 /**
  * A page as a candidate for `detection`, or None when it does not fit: a tag cannot hold a
  * space or a bracket, so a page whose title does is not offered after `#` (accepting it
@@ -205,8 +209,10 @@ const candidate =
       Option.map((): CompletionItem => ({
         label: page.title,
         kind: CompletionItemKind.File,
-        // Where the file is, so two pages of one title can be told apart.
-        detail: page.location,
+        // The file name alone: a whole path is cut off in the menu before the name shows.
+        detail: fileNameOf(page.location),
+        // The whole path, where the editor shows more room once the item is selected.
+        documentation: page.location,
         // The whole notation is replaced, brackets included: the reader typed the `[`,
         // and leaving it in place would give `[[title]]`.
         textEdit: {
