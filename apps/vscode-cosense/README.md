@@ -25,6 +25,19 @@ Language Server は拡張の中に同梱しているので、`csn-lsp` を別に
 
    コマンドからなら `code --extensionDevelopmentPath=apps/vscode-cosense examples/astro-blog` でも同じ。
 
+## インストールする
+
+いつもの VS Code に入れるなら、`.vsix` にまとめてから入れる。
+
+```sh
+cd apps/vscode-cosense
+bun run package                                  # vscode-cosense-0.1.0.vsix ができる
+code --install-extension vscode-cosense-0.1.0.vsix
+```
+
+`.vsix` に入るのは `dist/`・`syntaxes/`・設定ファイルだけ (`.vscodeignore`)。拡張と Language Server は依存ごと
+`dist/` にまとめてあるので、`node_modules` は入れない (`--no-dependencies`)。
+
 ## 設定
 
 | 設定                      | 内容                                                                                   | 既定               |
@@ -48,5 +61,5 @@ Language Server は拡張の中に同梱しているので、`csn-lsp` を別に
 
 ## 分かっていないこと
 
-- 公開 (`vsce package`) の準備はまだしていない。`publisher` は仮の値
+- Marketplace への公開の準備はまだしていない。`publisher` は仮の値
 - 色はテーマによって変わる。semantic tokens を無効にしているテーマでは、TextMate 文法の色だけになる

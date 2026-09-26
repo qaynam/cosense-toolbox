@@ -104,7 +104,8 @@
   "scripts": {
     "build": "tsdown && bun scripts/copy-grammars.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "package": "bun run build && vsce package --no-dependencies"
   },
   "dependencies": {
     "vscode-languageclient": "^10.1.2"
@@ -113,6 +114,7 @@
     "@cosense-toolbox/lsp": "workspace:*",
     "@cosense-toolbox/textmate": "workspace:*",
     "@types/vscode": "^1.100.0",
+    "@vscode/vsce": "^4.0.0",
     "effect": "^3.22.1",
     "tsdown": "^0.22.14",
     "typescript": "^6.0.0",
