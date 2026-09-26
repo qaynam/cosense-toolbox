@@ -1,14 +1,14 @@
 export interface Tool {
-  href: string;
-  title: string;
+  href: string
+  title: string
   /** カードに出る説明。1〜2 行に収める */
-  description: string;
+  description: string
   /** カードの下に小さく出す補足 */
-  note?: string;
+  note?: string
   /** カードの角に出す字形 */
-  icon: string;
+  icon: string
   /** アイコンの色。実際の値は global.css の [data-accent] が持つ */
-  accent: "blue" | "orange";
+  accent: "blue" | "orange"
 }
 
 /**
@@ -28,9 +28,8 @@ export const TOOLS: Tool[] = [
   {
     href: "/builder/",
     title: "テーマ作成",
-    description:
-      "色を変えながら疑似 Cosense 画面で確かめて、userCSS を書き出す。",
+    description: "色を変えながら疑似 Cosense 画面で確かめて、userCSS を書き出す。",
     icon: "◐",
     accent: "orange",
   },
-];
+]

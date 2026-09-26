@@ -5,7 +5,7 @@
  * 非公開プロジェクトは `pat` (Personal Access Token) を渡すと読める。
  */
 
-const API_ORIGIN = 'https://scrapbox.io'
+const API_ORIGIN = "https://scrapbox.io"
 
 export interface FetchOptions {
   /** 差し替え用。テストや、キャッシュを挟みたいときに渡す */
@@ -31,14 +31,14 @@ const pageUrl = (project: string, title: string, origin: string): string =>
 
 /** Cosense の API に送るヘッダ。PAT はここでだけ付ける。 */
 const headersFor = (options: FetchOptions): Record<string, string> =>
-  options.pat === undefined ? {} : { 'x-personal-access-token': options.pat }
+  options.pat === undefined ? {} : { "x-personal-access-token": options.pat }
 
 const request = async (url: string, options: FetchOptions): Promise<Response> => {
   const response = await (options.fetch ?? globalThis.fetch)(url, {
     headers: headersFor(options),
   })
   if (!response.ok) {
-    const body = await response.text().catch(() => '')
+    const body = await response.text().catch(() => "")
     throw new Error(`Cosense のページを取得できない: ${response.status} ${url}\n${body}`)
   }
   return response
@@ -77,7 +77,7 @@ export const fetchPage = async (
   const page = (await (await request(url, options)).json()) as PageResponse
   return {
     title: page.title,
-    text: page.lines.map((line) => line.text).join('\n'),
+    text: page.lines.map((line) => line.text).join("\n"),
     created: isoOf(page.created),
     updated: isoOf(page.updated),
   }
@@ -91,12 +91,12 @@ export const fetchPage = async (
  */
 export const isCosenseAssetUrl = (
   url: string,
-  options: Pick<FetchOptions, 'origin'> = {},
+  options: Pick<FetchOptions, "origin"> = {},
 ): boolean => {
   const origin = options.origin ?? API_ORIGIN
   if (!url.startsWith(`${origin}/`)) return false
   const path = url.slice(origin.length)
-  return path.startsWith('/files/') || (path.startsWith('/api/pages/') && path.endsWith('/icon'))
+  return path.startsWith("/files/") || (path.startsWith("/api/pages/") && path.endsWith("/icon"))
 }
 
 /**
@@ -106,10 +106,10 @@ export const isCosenseAssetUrl = (
 export const cosenseIconUrl = (
   project: string,
   user: string,
-  options: Pick<FetchOptions, 'origin'> = {},
+  options: Pick<FetchOptions, "origin"> = {},
 ): string => {
-  const path = user.startsWith('/')
-    ? user.split('/').map(encodeURIComponent).join('/')
+  const path = user.startsWith("/")
+    ? user.split("/").map(encodeURIComponent).join("/")
     : `/${encodeURIComponent(project)}/${encodeURIComponent(user)}`
   return `${options.origin ?? API_ORIGIN}/api/pages${path}/icon`
 }
@@ -140,10 +140,10 @@ export const fetchAsset = (url: string, options: FetchOptions = {}): Promise<Fet
       )
     }
     const response = await fetch(current, {
-      redirect: 'manual',
+      redirect: "manual",
       headers: new URL(current).origin === origin ? headersFor(options) : {},
     })
-    const location = response.headers.get('location')
+    const location = response.headers.get("location")
     if (response.status >= 300 && response.status < 400 && location !== null) {
       return follow(new URL(location, current).href, redirects + 1)
     }
@@ -152,7 +152,7 @@ export const fetchAsset = (url: string, options: FetchOptions = {}): Promise<Fet
     }
     return {
       data: new Uint8Array(await response.arrayBuffer()),
-      contentType: response.headers.get('content-type') ?? '',
+      contentType: response.headers.get("content-type") ?? "",
     }
   }
 

@@ -17,7 +17,7 @@
  *
  * 要素をすべて `_components` 経由で引くので、`props.components` で `a` や `img` も差し替えられる。
  */
-import { Either, Option, pipe } from 'effect'
+import { Either, Option, pipe } from "effect"
 import type {
   Expression,
   ObjectExpression,
@@ -25,28 +25,29 @@ import type {
   Property,
   SpreadElement,
   Statement,
-} from 'estree'
+} from "estree"
 import type {
   JSXAttribute,
   JSXElement,
   JSXExpressionContainer,
   JSXIdentifier,
   JSXMemberExpression,
-} from 'estree-jsx'
-import { buildJsx } from 'estree-util-build-jsx'
-import { toJs } from 'estree-util-to-js'
-import { valueToEstree } from 'estree-util-value-to-estree'
-import type { Root } from 'hast'
-import { type Handle, toEstree } from 'hast-util-to-estree'
-import { type PluggableList, unified } from 'unified'
-import { type CosenseXError, orThrow } from './errors'
-import type { Frontmatter } from './frontmatter'
-import { type LinkOptions, linkResolution, reportLinks } from './links'
-import type { PageMetadata } from './metadata'
-import { type Format, type ReadOptions, type ReadResult, readPageEither } from './read'
-import { type CosenseComponent, type RenderOptions, toHastEither } from './to-hast'
+} from "estree-jsx"
+import { buildJsx } from "estree-util-build-jsx"
+import { toJs } from "estree-util-to-js"
+import { valueToEstree } from "estree-util-value-to-estree"
+import type { Root } from "hast"
+import { type Handle, toEstree } from "hast-util-to-estree"
+import { type PluggableList, unified } from "unified"
 
-export interface CompileOptions extends LinkOptions, Omit<ReadOptions, 'filePath'> {
+import { type CosenseXError, orThrow } from "./errors"
+import type { Frontmatter } from "./frontmatter"
+import { type LinkOptions, linkResolution, reportLinks } from "./links"
+import type { PageMetadata } from "./metadata"
+import { type Format, type ReadOptions, readPageEither, type ReadResult } from "./read"
+import { type CosenseComponent, type RenderOptions, toHastEither } from "./to-hast"
+
+export interface CompileOptions extends LinkOptions, Omit<ReadOptions, "filePath"> {
   /** 形式 (`format`) を省いたときは、このパスの拡張子で決める */
   readonly filePath?: string
   /**
@@ -60,7 +61,7 @@ export interface CompileOptions extends LinkOptions, Omit<ReadOptions, 'filePath
    *
    * @defaultValue `jsxImportSource` が `react` なら `'react'`、それ以外は `'html'`
    */
-  readonly elementAttributeNameCase?: 'html' | 'react'
+  readonly elementAttributeNameCase?: "html" | "react"
   /**
    * 描画の設定。parser の `toHast` のオプションに、cosense-x の `title` を足したもの
    * (`handlers` / `extensions` / `highlight` / `classNames` / `showPads` / `iconImageUrl` / `title`)。
@@ -81,12 +82,12 @@ export interface CompileResult {
   readonly warnings: readonly string[]
 }
 
-const COMPONENTS = '_components'
+const COMPONENTS = "_components"
 
-const identifier = (name: string) => ({ type: 'Identifier' as const, name })
-const jsxIdentifier = (name: string): JSXIdentifier => ({ type: 'JSXIdentifier', name })
+const identifier = (name: string) => ({ type: "Identifier" as const, name })
+const jsxIdentifier = (name: string): JSXIdentifier => ({ type: "JSXIdentifier", name })
 const jsxMember = (name: string): JSXMemberExpression => ({
-  type: 'JSXMemberExpression',
+  type: "JSXMemberExpression",
   object: jsxIdentifier(COMPONENTS),
   property: jsxIdentifier(name),
 })
@@ -99,33 +100,33 @@ const jsxMember = (name: string): JSXMemberExpression => ({
 const handleComponent: Handle = (node: CosenseComponent, state) => {
   const children = state.all(node)
   const attributes: JSXAttribute[] = node.attributes.map((attribute) => ({
-    type: 'JSXAttribute',
-    name: state.createJsxAttributeName(attribute.name) as JSXAttribute['name'],
+    type: "JSXAttribute",
+    name: state.createJsxAttributeName(attribute.name) as JSXAttribute["name"],
     value:
       attribute.value === true
         ? null
-        : typeof attribute.value === 'string'
-          ? { type: 'Literal', value: attribute.value }
-          : { type: 'JSXExpressionContainer', expression: valueToEstree(attribute.value) },
+        : typeof attribute.value === "string"
+          ? { type: "Literal", value: attribute.value }
+          : { type: "JSXExpressionContainer", expression: valueToEstree(attribute.value) },
   }))
   const call: JSXElement = {
-    type: 'JSXElement',
+    type: "JSXElement",
     openingElement: {
-      type: 'JSXOpeningElement',
+      type: "JSXOpeningElement",
       name: jsxMember(node.name),
       attributes,
       selfClosing: children.length === 0,
     },
     closingElement:
-      children.length === 0 ? null : { type: 'JSXClosingElement', name: jsxMember(node.name) },
+      children.length === 0 ? null : { type: "JSXClosingElement", name: jsxMember(node.name) },
     children,
   }
   const fallbackLine = state.handle(node.fallback)
   const fallbackEnd = node.fallbackEnd === null ? null : state.handle(node.fallbackEnd)
   const fallback: Expression = {
-    type: 'JSXFragment',
-    openingFragment: { type: 'JSXOpeningFragment' },
-    closingFragment: { type: 'JSXClosingFragment' },
+    type: "JSXFragment",
+    openingFragment: { type: "JSXOpeningFragment" },
+    closingFragment: { type: "JSXClosingFragment" },
     // 同じノードを 2 か所に置くと、後段の変換がその場で書き換えたときに両方壊れるので複製する。
     children: [
       ...(fallbackLine ? [fallbackLine] : []),
@@ -134,11 +135,11 @@ const handleComponent: Handle = (node: CosenseComponent, state) => {
     ],
   } as Expression
   const container: JSXExpressionContainer = {
-    type: 'JSXExpressionContainer',
+    type: "JSXExpressionContainer",
     expression: {
-      type: 'ConditionalExpression',
+      type: "ConditionalExpression",
       test: {
-        type: 'MemberExpression',
+        type: "MemberExpression",
         object: identifier(COMPONENTS),
         property: identifier(node.name),
         computed: false,
@@ -164,11 +165,11 @@ const routeThroughComponents = (tree: unknown): ReadonlySet<string> => {
       for (const item of value) walk(item)
       return
     }
-    if (value === null || typeof value !== 'object') return
+    if (value === null || typeof value !== "object") return
     const node = value as { type?: string; name?: { type: string; name: string } }
     if (
-      (node.type === 'JSXOpeningElement' || node.type === 'JSXClosingElement') &&
-      node.name?.type === 'JSXIdentifier' &&
+      (node.type === "JSXOpeningElement" || node.type === "JSXClosingElement") &&
+      node.name?.type === "JSXIdentifier" &&
       /^[a-z]/.test(node.name.name)
     ) {
       used.add(node.name.name)
@@ -182,11 +183,11 @@ const routeThroughComponents = (tree: unknown): ReadonlySet<string> => {
 
 const exportConst = (name: string, value: Expression): Statement =>
   ({
-    type: 'ExportNamedDeclaration',
+    type: "ExportNamedDeclaration",
     declaration: {
-      type: 'VariableDeclaration',
-      kind: 'const',
-      declarations: [{ type: 'VariableDeclarator', id: identifier(name), init: value }],
+      type: "VariableDeclaration",
+      kind: "const",
+      declarations: [{ type: "VariableDeclarator", id: identifier(name), init: value }],
     },
     specifiers: [],
     source: null,
@@ -195,25 +196,23 @@ const exportConst = (name: string, value: Expression): Statement =>
 
 /** `{ div: 'div', ..., ...props.components }` */
 const componentsObject = (used: ReadonlySet<string>): ObjectExpression => ({
-  type: 'ObjectExpression',
+  type: "ObjectExpression",
   properties: [
-    ...[...used].sort().map(
-      (name): Property => ({
-        type: 'Property',
-        key: identifier(name),
-        value: { type: 'Literal', value: name },
-        kind: 'init',
-        method: false,
-        shorthand: false,
-        computed: false,
-      }),
-    ),
+    ...[...used].sort().map((name): Property => ({
+      type: "Property",
+      key: identifier(name),
+      value: { type: "Literal", value: name },
+      kind: "init",
+      method: false,
+      shorthand: false,
+      computed: false,
+    })),
     {
-      type: 'SpreadElement',
+      type: "SpreadElement",
       argument: {
-        type: 'MemberExpression',
-        object: identifier('props'),
-        property: identifier('components'),
+        type: "MemberExpression",
+        object: identifier("props"),
+        property: identifier("components"),
         computed: false,
         optional: false,
       },
@@ -223,32 +222,32 @@ const componentsObject = (used: ReadonlySet<string>): ObjectExpression => ({
 
 const contentFunction = (body: Expression, used: ReadonlySet<string>): Statement =>
   ({
-    type: 'ExportDefaultDeclaration',
+    type: "ExportDefaultDeclaration",
     declaration: {
-      type: 'FunctionDeclaration',
-      id: identifier('CosenseContent'),
+      type: "FunctionDeclaration",
+      id: identifier("CosenseContent"),
       params: [
         {
-          type: 'AssignmentPattern',
-          left: identifier('props'),
-          right: { type: 'ObjectExpression', properties: [] },
+          type: "AssignmentPattern",
+          left: identifier("props"),
+          right: { type: "ObjectExpression", properties: [] },
         },
       ],
       body: {
-        type: 'BlockStatement',
+        type: "BlockStatement",
         body: [
           {
-            type: 'VariableDeclaration',
-            kind: 'const',
+            type: "VariableDeclaration",
+            kind: "const",
             declarations: [
               {
-                type: 'VariableDeclarator',
+                type: "VariableDeclarator",
                 id: identifier(COMPONENTS),
                 init: componentsObject(used),
               },
             ],
           },
-          { type: 'ReturnStatement', argument: body },
+          { type: "ReturnStatement", argument: body },
         ],
       },
       generator: false,
@@ -281,7 +280,7 @@ const prepare = (source: string, options: CompileOptions): Either.Either<Prepare
       toHastEither(read.page, {
         ...options.renderOptions,
         resolveLink,
-        ...(read.format === 'csnx'
+        ...(read.format === "csnx"
           ? {
               components: {
                 source: read.body,
@@ -310,30 +309,30 @@ const runRehype = async (hast: Root, plugins: PluggableList | undefined): Promis
 
 /** hast から JS のモジュールを作る。 */
 const generate = (tree: Root, read: ReadResult, options: CompileOptions): string => {
-  const jsxImportSource = options.jsxImportSource ?? 'react'
+  const jsxImportSource = options.jsxImportSource ?? "react"
   const estree = toEstree(tree, {
     elementAttributeNameCase:
-      options.elementAttributeNameCase ?? (jsxImportSource === 'react' ? 'react' : 'html'),
+      options.elementAttributeNameCase ?? (jsxImportSource === "react" ? "react" : "html"),
     handlers: { cosenseComponent: handleComponent },
   })
 
   const statement = estree.body[0]
   const body: Expression =
-    statement?.type === 'ExpressionStatement'
+    statement?.type === "ExpressionStatement"
       ? statement.expression
-      : { type: 'Literal', value: null }
+      : { type: "Literal", value: null }
   const used = routeThroughComponents(body)
 
   const program: Program = {
-    type: 'Program',
-    sourceType: 'module',
+    type: "Program",
+    sourceType: "module",
     body: [
-      exportConst('frontmatter', valueToEstree(read.frontmatter) as Expression),
-      exportConst('metadata', valueToEstree(read.metadata) as Expression),
+      exportConst("frontmatter", valueToEstree(read.frontmatter) as Expression),
+      exportConst("metadata", valueToEstree(read.metadata) as Expression),
       contentFunction(body, used),
     ],
   }
-  buildJsx(program, { runtime: 'automatic', importSource: jsxImportSource })
+  buildJsx(program, { runtime: "automatic", importSource: jsxImportSource })
   return toJs(program).value
 }
 

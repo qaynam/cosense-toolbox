@@ -4,11 +4,18 @@
   "type": "module",
   "description": "Language server for .csn and .csnx: semantic tokens for Cosense notation.",
   "license": "MIT",
-  "bin": { "cosense-language-server": "./dist/main.mjs" },
-  "exports": {
-    "./tokens": { "types": "./dist/tokens.d.mts", "default": "./dist/tokens.mjs" }
+  "bin": {
+    "cosense-language-server": "./dist/main.mjs"
   },
-  "files": ["dist"],
+  "exports": {
+    "./tokens": {
+      "types": "./dist/tokens.d.mts",
+      "default": "./dist/tokens.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
@@ -22,7 +29,7 @@
   },
   "devDependencies": {
     "tsdown": "^0.22.14",
-    "typescript": "^5.9.0",
+    "typescript": "^6.0.0",
     "vitest": "^2.1.9"
   }
 }

@@ -47,13 +47,13 @@ export interface NodeBase {
 
 /** 記法として解釈されなかった素のテキスト。 */
 export interface TextNode extends NodeBase {
-  readonly type: 'text'
+  readonly type: "text"
   readonly value: string
 }
 
 /** `[title]` — 同じプロジェクト内のページへのリンク。 */
 export interface InternalLink extends NodeBase {
-  readonly type: 'internalLink'
+  readonly type: "internalLink"
   /** 表示テキスト。内部リンクでは target と同じ */
   readonly label: string
   /** リンク先のページタイトル */
@@ -62,14 +62,14 @@ export interface InternalLink extends NodeBase {
 
 /** 裸の URL、`[url]`、`[url label]`、`[label url]`。 */
 export interface ExternalLink extends NodeBase {
-  readonly type: 'externalLink'
+  readonly type: "externalLink"
   readonly label: string
   readonly target: string
 }
 
 /** `[/project/title]` — 別プロジェクトのページへのリンク。 */
 export interface ProjectLink extends NodeBase {
-  readonly type: 'projectLink'
+  readonly type: "projectLink"
   readonly label: string
   /** `/project/title` 形式のまま */
   readonly target: string
@@ -80,19 +80,19 @@ export interface ProjectLink extends NodeBase {
 
 /** `#tag` — 内部リンクと同じくページを指すが、記法が異なるので別ノードにする。 */
 export interface Hashtag extends NodeBase {
-  readonly type: 'hashtag'
+  readonly type: "hashtag"
   readonly value: string
 }
 
 /** バッククォートで囲んだインラインコード。 */
 export interface InlineCode extends NodeBase {
-  readonly type: 'inlineCode'
+  readonly type: "inlineCode"
   readonly value: string
 }
 
 /** `[url.png]` / `[[url.png]]` (large) / `[linkUrl imageUrl]` (link 付き)。 */
 export interface ImageNode extends NodeBase {
-  readonly type: 'image'
+  readonly type: "image"
   readonly src: string
   /** `[[...]]` で囲まれた大きい表示 */
   readonly large?: boolean
@@ -102,7 +102,7 @@ export interface ImageNode extends NodeBase {
 
 /** `[user.icon]` / `[user.icon*N]`。 */
 export interface IconNode extends NodeBase {
-  readonly type: 'icon'
+  readonly type: "icon"
   readonly user: string
   /** 連打の個数 (1..20)。記法上省略されていても 1 が入る */
   readonly count: number
@@ -110,7 +110,7 @@ export interface IconNode extends NodeBase {
 
 /** `[$ 数式]`。中身は解釈せず生のまま返す (KaTeX 等に渡す想定)。 */
 export interface FormulaNode extends NodeBase {
-  readonly type: 'formula'
+  readonly type: "formula"
   readonly value: string
 }
 
@@ -121,7 +121,7 @@ export interface FormulaNode extends NodeBase {
  * Markdown のように入れ子の強調へ分解せずフラグの集合として表す。
  */
 export interface Decoration extends NodeBase {
-  readonly type: 'decoration'
+  readonly type: "decoration"
   /** 装飾記号を除いた中身の生テキスト */
   readonly value: string
   /** 書かれた文字装飾記法の記号を、出現順・重複なしで並べたもの。`[*** x]` なら `['*']` */
@@ -162,7 +162,7 @@ export type InlineNode = InlineNodeMap[InlineNodeType]
 
 /** ページの 1 行目。`code:` / `table:` として解釈しない (Cosense ではタイトル専用の行)。 */
 export interface TitleBlock extends NodeBase {
-  readonly type: 'title'
+  readonly type: "title"
   /** タイトル行の生テキスト。Cosense ではこれがページの識別子でもある */
   readonly value: string
   readonly children: readonly InlineNode[]
@@ -170,7 +170,7 @@ export interface TitleBlock extends NodeBase {
 
 /** `code:filename` ブロックの本体 1 行。記法は解釈しない。 */
 export interface CodeLine extends NodeBase {
-  readonly type: 'codeLine'
+  readonly type: "codeLine"
   /**
    * ブロックの左端に揃えた中身。ヘッダより 1 段深いところを左端とみなすので、
    * それより深いインデントはコード自身の字下げとして残る。
@@ -180,7 +180,7 @@ export interface CodeLine extends NodeBase {
 
 /** `code:filename` + それより深いインデントの行。 */
 export interface CodeBlock extends NodeBase {
-  readonly type: 'codeBlock'
+  readonly type: "codeBlock"
   readonly filename: string
   /** ヘッダ行のインデント。本体行はこれより深い */
   readonly indent: number
@@ -195,7 +195,7 @@ export interface CodeBlock extends NodeBase {
  * それ以外は書いたままの文字になる (拡張 `tableCellNotation` で変えられる)。
  */
 export interface TableCell extends NodeBase {
-  readonly type: 'tableCell'
+  readonly type: "tableCell"
   /** セルに書かれた文字列そのまま */
   readonly value: string
   readonly children: readonly InlineNode[]
@@ -203,13 +203,13 @@ export interface TableCell extends NodeBase {
 
 /** テーブルの 1 行。タブ区切りでセルに分割済み。 */
 export interface TableRow extends NodeBase {
-  readonly type: 'tableRow'
+  readonly type: "tableRow"
   readonly cells: readonly TableCell[]
 }
 
 /** `table:name` + それより深いインデントの行。 */
 export interface TableBlock extends NodeBase {
-  readonly type: 'table'
+  readonly type: "table"
   readonly name: string
   readonly indent: number
   readonly rows: readonly TableRow[]
@@ -217,7 +217,7 @@ export interface TableBlock extends NodeBase {
 
 /** 通常の行。 */
 export interface LineBlock extends NodeBase {
-  readonly type: 'line'
+  readonly type: "line"
   /** 行頭の空白 (半角スペース / タブ / 全角スペース) の文字数 */
   readonly indent: number
   /** `>` で始まる引用行 */
@@ -254,7 +254,7 @@ export type TopLevelBlock = TitleBlock | CodeBlock | TableBlock | LineBlock
 
 /** パース結果のルート。 */
 export interface Page extends NodeBase {
-  readonly type: 'page'
+  readonly type: "page"
   readonly children: readonly TopLevelBlock[]
 }
 
@@ -281,7 +281,7 @@ export type NodeOfType<K extends AnyNodeType> = AnyNodeMap[K]
  * 記法を判定する側は「何のノードか」だけを決め、位置の付与は走査側がまとめて行う。
  * こうしておくと、記法を 1 つ足すたびにオフセット計算を書き足さずに済む。
  */
-export type WithoutPosition<T> = T extends unknown ? Omit<T, 'position'> : never
+export type WithoutPosition<T> = T extends unknown ? Omit<T, "position"> : never
 
 /** 位置を持たないインラインノード。記法ルールの戻り値。 */
 export type InlineNodeInit = WithoutPosition<InlineNode>

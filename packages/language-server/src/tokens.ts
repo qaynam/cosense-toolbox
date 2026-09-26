@@ -4,10 +4,10 @@ import type {
   Decoration,
   NodeOfType,
   Position,
-} from '@cosense-toolbox/parser'
-import { normalizeLineEndings, parse } from '@cosense-toolbox/parser'
-import { visit } from '@cosense-toolbox/parser/utils'
-import { Array as Arr, Match, Option, Order, Record as Rec, pipe } from 'effect'
+} from "@cosense-toolbox/parser"
+import { normalizeLineEndings, parse } from "@cosense-toolbox/parser"
+import { visit } from "@cosense-toolbox/parser/utils"
+import { Array as Arr, Match, Option, Order, pipe, Record as Rec } from "effect"
 
 /**
  * Cosense notation as LSP semantic tokens.
@@ -18,32 +18,32 @@ import { Array as Arr, Match, Option, Order, Record as Rec, pipe } from 'effect'
  * LEGEND below is what is sent, and LSP_TYPE is the translation.
  */
 export const TOKEN_TYPES = [
-  'title',
-  'link',
-  'projectLink',
-  'externalLink',
-  'hashtag',
-  'code',
-  'codeBlock',
-  'formula',
-  'icon',
-  'quote',
-  'bold',
-  'italic',
-  'strike',
-  'underline',
-  'image',
-  'table',
-  'bold2',
-  'bold3',
+  "title",
+  "link",
+  "projectLink",
+  "externalLink",
+  "hashtag",
+  "code",
+  "codeBlock",
+  "formula",
+  "icon",
+  "quote",
+  "bold",
+  "italic",
+  "strike",
+  "underline",
+  "image",
+  "table",
+  "bold2",
+  "bold3",
   // `.csnx` only: a line that opens with a component tag. The tag's name, its attribute
   // names, and the two kinds of value, as JSX reads them.
-  'component',
-  'attribute',
-  'attributeValue',
-  'expression',
+  "component",
+  "attribute",
+  "attributeValue",
+  "expression",
   // The YAML at the top of the file, which is not Cosense notation at all.
-  'frontmatter',
+  "frontmatter",
 ] as const
 
 export type TokenType = (typeof TOKEN_TYPES)[number]
@@ -62,18 +62,18 @@ export interface RawToken {
  * colours appear without the reader configuring anything.
  */
 export const LEGEND = [
-  'namespace',
-  'type',
-  'function',
-  'variable',
-  'property',
-  'parameter',
-  'decorator',
-  'macro',
-  'keyword',
-  'string',
-  'number',
-  'comment',
+  "namespace",
+  "type",
+  "function",
+  "variable",
+  "property",
+  "parameter",
+  "decorator",
+  "macro",
+  "keyword",
+  "string",
+  "number",
+  "comment",
 ] as const
 
 /**
@@ -83,29 +83,29 @@ export const LEGEND = [
  * gives each type a single colour.
  */
 const LSP_TYPE: Record<TokenType, (typeof LEGEND)[number]> = {
-  title: 'namespace',
-  link: 'function',
-  projectLink: 'function',
-  externalLink: 'string',
-  icon: 'function',
-  image: 'string',
-  hashtag: 'decorator',
-  code: 'string',
-  codeBlock: 'string',
-  formula: 'number',
-  table: 'property',
-  quote: 'comment',
-  frontmatter: 'comment',
-  component: 'type',
-  attribute: 'parameter',
-  attributeValue: 'string',
-  expression: 'variable',
-  bold: 'keyword',
-  bold2: 'keyword',
-  bold3: 'keyword',
-  italic: 'macro',
-  strike: 'comment',
-  underline: 'variable',
+  title: "namespace",
+  link: "function",
+  projectLink: "function",
+  externalLink: "string",
+  icon: "function",
+  image: "string",
+  hashtag: "decorator",
+  code: "string",
+  codeBlock: "string",
+  formula: "number",
+  table: "property",
+  quote: "comment",
+  frontmatter: "comment",
+  component: "type",
+  attribute: "parameter",
+  attributeValue: "string",
+  expression: "variable",
+  bold: "keyword",
+  bold2: "keyword",
+  bold3: "keyword",
+  italic: "macro",
+  strike: "comment",
+  underline: "variable",
 }
 
 /** Each notation's place in LEGEND: the number that goes on the wire. */
@@ -115,14 +115,14 @@ const LEGEND_INDEX: { readonly [T in TokenType]: number } = Rec.map(LSP_TYPE, (t
 
 /** Leaf inline nodes that map 1:1. Each sits on one line, so no splitting is needed. */
 const INLINE_TOKEN_TYPE: Partial<Record<AnyNodeType, TokenType>> = {
-  internalLink: 'link',
-  externalLink: 'externalLink',
-  projectLink: 'projectLink',
-  hashtag: 'hashtag',
-  inlineCode: 'code',
-  image: 'image',
-  icon: 'icon',
-  formula: 'formula',
+  internalLink: "link",
+  externalLink: "externalLink",
+  projectLink: "projectLink",
+  hashtag: "hashtag",
+  inlineCode: "code",
+  image: "image",
+  icon: "icon",
+  formula: "formula",
 }
 
 /** Top to bottom, then left to right: the order the LSP encoding needs. */
@@ -159,18 +159,18 @@ const boldTokenType = (sizeLevel: number): TokenType =>
   Match.value(sizeLevel).pipe(
     Match.when(
       (level) => level >= 2,
-      (): TokenType => 'bold3',
+      (): TokenType => "bold3",
     ),
-    Match.when(1, (): TokenType => 'bold2'),
-    Match.orElse((): TokenType => 'bold'),
+    Match.when(1, (): TokenType => "bold2"),
+    Match.orElse((): TokenType => "bold"),
   )
 
 /** Every decoration a run carries, since Cosense applies all of them: `[-* x]` is both. */
 const decorationTokenTypes = (node: Decoration): ReadonlyArray<TokenType> =>
   Arr.getSomes([
-    onlyIf(node.underline, 'underline' as const),
-    onlyIf(node.strike, 'strike' as const),
-    onlyIf(node.italic, 'italic' as const),
+    onlyIf(node.underline, "underline" as const),
+    onlyIf(node.strike, "strike" as const),
+    onlyIf(node.italic, "italic" as const),
     onlyIf(node.bold, boldTokenType(node.sizeLevel)),
   ])
 
@@ -192,24 +192,24 @@ const quotedEnd = (text: string, from: number): number =>
 /** Where `{ ... }` opened at `from` ends, counting nested braces: after its `}`, or the line's end. */
 const bracedEnd = (text: string, from: number): number =>
   pipe(
-    text.slice(from).split(''),
-    Arr.scan(0, (depth, char) => (char === '{' ? depth + 1 : char === '}' ? depth - 1 : depth)),
+    text.slice(from).split(""),
+    Arr.scan(0, (depth, char) => (char === "{" ? depth + 1 : char === "}" ? depth - 1 : depth)),
     // scan starts with the depth before any character; the rest line up with the characters.
     Arr.drop(1),
     Arr.findFirstIndex((depth) => depth === 0),
     Option.match({ onNone: () => text.length, onSome: (index) => from + index + 1 }),
   )
 
-type ValueType = 'attributeValue' | 'expression'
+type ValueType = "attributeValue" | "expression"
 
 /** The attribute value that starts at `from`: its type and where it ends. */
 const valueAt = (text: string, from: number): Option.Option<readonly [ValueType, number]> =>
   Match.value(text.charAt(from)).pipe(
     Match.when(
       (char) => char === '"' || char === "'",
-      () => Option.some(['attributeValue', quotedEnd(text, from)] as const),
+      () => Option.some(["attributeValue", quotedEnd(text, from)] as const),
     ),
-    Match.when('{', () => Option.some(['expression', bracedEnd(text, from)] as const)),
+    Match.when("{", () => Option.some(["expression", bracedEnd(text, from)] as const)),
     Match.orElse(() => Option.none()),
   )
 
@@ -220,16 +220,16 @@ const attributeStep =
   (line: number, text: string) =>
   (from: number): AttributeStep => {
     const at = from + matchLength(SPACE, text, from)
-    if (at >= text.length || text.startsWith('>', at) || text.startsWith('/>', at)) {
+    if (at >= text.length || text.startsWith(">", at) || text.startsWith("/>", at)) {
       return Option.none()
     }
     const nameEnd = at + matchLength(ATTRIBUTE_NAME, text, at)
     // Not a name: step over the character, since the tag may still go on after it.
     if (nameEnd === at) return Option.some([[], at + 1])
 
-    const name = token('attribute', line, at, nameEnd)
+    const name = token("attribute", line, at, nameEnd)
     const afterName = nameEnd + matchLength(SPACE, text, nameEnd)
-    if (text.charAt(afterName) !== '=') return Option.some([[name], afterName])
+    if (text.charAt(afterName) !== "=") return Option.some([[name], afterName])
 
     const valueStart = afterName + 1 + matchLength(SPACE, text, afterName + 1)
     return pipe(
@@ -250,8 +250,8 @@ const attributeStep =
 const componentTokens = (line: number, text: string): ReadonlyArray<RawToken> =>
   pipe(
     Option.fromNullable(TAG_OPEN.exec(text)),
-    Option.map(([head, lead = '', name = '']) => [
-      token('component', line, lead.length, lead.length + name.length),
+    Option.map(([head, lead = "", name = ""]) => [
+      token("component", line, lead.length, lead.length + name.length),
       ...Arr.flatten(Arr.unfold(head.length, attributeStep(line, text))),
     ]),
     Option.getOrElse(() => []),
@@ -262,8 +262,8 @@ const componentTokens = (line: number, text: string): ReadonlyArray<RawToken> =>
 /** The last line of the `---` fence around YAML at the very top, if the file opens with one. */
 const frontmatterEnd = (lines: ReadonlyArray<string>): Option.Option<number> =>
   pipe(
-    Option.liftPredicate(lines, (all) => all[0]?.trim() === '---'),
-    Option.flatMap(Arr.findFirstIndex((line, index) => index > 0 && line.trim() === '---')),
+    Option.liftPredicate(lines, (all) => all[0]?.trim() === "---"),
+    Option.flatMap(Arr.findFirstIndex((line, index) => index > 0 && line.trim() === "---")),
   )
 
 /** What the node visitor needs to know about the file around the parsed body. */
@@ -297,12 +297,12 @@ const componentLine = (page: Page, line: number): Option.Option<string> =>
   )
 
 /** The `>` and spaces that open a quote line, from its indentation onwards. */
-const quoteToken = (page: Page, node: NodeOfType<'line'>, line: number): Option.Option<RawToken> =>
+const quoteToken = (page: Page, node: NodeOfType<"line">, line: number): Option.Option<RawToken> =>
   pipe(
-    onlyIf(node.quote, page.lines[line] ?? ''),
+    onlyIf(node.quote, page.lines[line] ?? ""),
     Option.map((text) => matchLength(/^[> ]*/, text, node.indent)),
     Option.filter((length) => length > 0),
-    Option.map((length) => token('quote', line, node.indent, node.indent + length)),
+    Option.map((length) => token("quote", line, node.indent, node.indent + length)),
   )
 
 /** What one node contributes, and whether the visitor goes on into its children. */
@@ -324,14 +324,14 @@ const nodeTokens =
       end: { ...position.end, line: position.end.line + page.offset },
     })
     return Match.value(node).pipe(
-      Match.discriminators('type')({
+      Match.discriminators("type")({
         // A page that opens with a component has no title line: the tag is what it is.
         title: (title) =>
           leaf(
             pipe(
               componentLine(page, lineOf(title.position)),
               Option.match({
-                onNone: () => [spanToken('title', shift(title.position))],
+                onNone: () => [spanToken("title", shift(title.position))],
                 onSome: (text) => componentTokens(lineOf(title.position), text),
               }),
             ),
@@ -339,7 +339,7 @@ const nodeTokens =
         codeBlock: (block) =>
           leaf(
             lineSpans(
-              'codeBlock',
+              "codeBlock",
               page.lines,
               lineOf(block.position),
               block.position.end.line + page.offset,
@@ -348,7 +348,7 @@ const nodeTokens =
         table: (table) =>
           leaf(
             lineSpans(
-              'table',
+              "table",
               page.lines,
               lineOf(table.position),
               table.position.end.line + page.offset,
@@ -391,7 +391,7 @@ export interface ComputeTokensOptions {
 
 /** Pure text -> tokens. The LSP delta encoding lives in encodeTokens, so this stays testable. */
 export const computeTokens = (text: string, options: ComputeTokensOptions = {}): RawToken[] => {
-  const lines = normalizeLineEndings(text).split('\n')
+  const lines = normalizeLineEndings(text).split("\n")
   // Frontmatter is YAML, so the Cosense parser must not see it: `---` would otherwise read
   // as a strikethrough marker and the keys as plain text on the title line.
   const fence = frontmatterEnd(lines)
@@ -403,13 +403,13 @@ export const computeTokens = (text: string, options: ComputeTokensOptions = {}):
 
   const tokens: RawToken[] = Option.match(fence, {
     onNone: () => [],
-    onSome: (end) => [...lineSpans('frontmatter', lines, 0, end)],
+    onSome: (end) => [...lineSpans("frontmatter", lines, 0, end)],
   })
   const tokensOf = nodeTokens(page)
-  visit(parse(lines.slice(page.offset).join('\n')), (node) => {
+  visit(parse(lines.slice(page.offset).join("\n")), (node) => {
     const { tokens: own, descend } = tokensOf(node)
     tokens.push(...own)
-    return descend ? undefined : 'skip'
+    return descend ? undefined : "skip"
   })
 
   return pipe(

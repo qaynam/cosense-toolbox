@@ -1,5 +1,6 @@
-import { Option } from 'effect'
-import type { InternalBracketRule } from '../internal-types'
+import { Option } from "effect"
+
+import type { InternalBracketRule } from "../internal-types"
 
 const ICON_RE = /^(.+)\.icon(?:\*(\d+))?$/
 
@@ -14,5 +15,5 @@ export const iconRule: InternalBracketRule = (inner) => {
   const raw = match[2]
   const count = raw ? Math.min(Math.max(Number.parseInt(raw, 10), MIN_COUNT), MAX_COUNT) : MIN_COUNT
 
-  return Option.some({ type: 'icon', user: match[1] ?? '', count })
+  return Option.some({ type: "icon", user: match[1] ?? "", count })
 }

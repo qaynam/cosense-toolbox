@@ -1,16 +1,17 @@
-import { Option } from 'effect'
-import { shiftOrigin } from '../../core/position'
-import type { InlineNodeInit } from '../../types'
-import type { InternalBracketRule } from '../internal-types'
-import type { BracketRuleContext } from '../types'
+import { Option } from "effect"
+
+import { shiftOrigin } from "../../core/position"
+import type { InlineNodeInit } from "../../types"
+import type { InternalBracketRule } from "../internal-types"
+import type { BracketRuleContext } from "../types"
 
 /** 意味を持つ文字装飾記法の記号。 */
-export const OFFICIAL_MARKERS = '*/-_'
+export const OFFICIAL_MARKERS = "*/-_"
 
 const MAX_SIZE_LEVEL = 4
 
 /** 文字クラスの中で特別扱いされる文字を潰す。 */
-const escapeForCharClass = (chars: string): string => chars.replace(/[\\\]^-]/g, '\\$&')
+const escapeForCharClass = (chars: string): string => chars.replace(/[\\\]^-]/g, "\\$&")
 
 /** 出現順を保ったまま重複を落とす。`[*** x]` の markers は `['*']` になる。 */
 const uniqueChars = (marks: string): readonly string[] => [...new Set(marks)]
@@ -37,21 +38,21 @@ export const buildDecorationRule = (
     const match = inner.match(pattern)
     if (!match) return Option.none()
 
-    const marks = match[1] ?? ''
-    const value = match[2] ?? ''
+    const marks = match[1] ?? ""
+    const value = match[2] ?? ""
     const stars = (marks.match(/\*/g) ?? []).length
 
     // 正規表現が末尾まで貪欲にマッチするので、中身は inner の末尾側の部分文字列になる。
     const valueOffset = inner.length - value.length
 
     return Option.some({
-      type: 'decoration',
+      type: "decoration",
       value,
       markers: uniqueChars(marks),
       bold: stars > 0,
-      italic: marks.includes('/'),
-      strike: marks.includes('-'),
-      underline: marks.includes('_'),
+      italic: marks.includes("/"),
+      strike: marks.includes("-"),
+      underline: marks.includes("_"),
       sizeLevel: Math.min(Math.max(stars - 1, 0), MAX_SIZE_LEVEL),
       children: ctx.tokenize(value, shiftOrigin(ctx.innerOrigin, valueOffset), false),
     })

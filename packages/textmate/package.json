@@ -13,8 +13,20 @@
     "./cosense-x.tmLanguage.json": "./grammars/cosense-x.tmLanguage.json",
     "./package.json": "./package.json"
   },
-  "files": ["dist", "grammars", "README.md", "LICENSE"],
-  "keywords": ["cosense", "scrapbox", "textmate", "tmlanguage", "shiki", "syntax-highlighting"],
+  "files": [
+    "dist",
+    "grammars",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "cosense",
+    "scrapbox",
+    "textmate",
+    "tmlanguage",
+    "shiki",
+    "syntax-highlighting"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/qaynam/cosense-toolbox.git",
@@ -32,7 +44,7 @@
     "@cosense-toolbox/language-server": "workspace:*",
     "shiki": "^4.4.3",
     "tsdown": "^0.22.14",
-    "typescript": "^5.9.0",
+    "typescript": "^6.0.0",
     "vitest": "^2.1.9"
   },
   "publishConfig": {

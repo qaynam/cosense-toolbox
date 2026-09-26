@@ -2,70 +2,71 @@
  * 位置情報と全域性の不変条件。個別ケースでは網羅できない
  * 「装飾の中の再帰でオフセットがずれる」類のバグをここで捕まえる。
  */
-import { Either } from 'effect'
-import fc from 'fast-check'
-import { describe, expect, it } from 'vitest'
-import { childrenOf, rawTextOf } from './ast'
-import { tableCellNotation } from './extensions'
-import type { Extension } from './inline/types'
-import { parse, parseLine } from './parse'
-import { decodePage } from './schema'
-import { stripPositions } from './test-helpers'
-import type { AnyNode, InlineNode } from './types'
-import { visit } from './utils/visit'
+import { Either } from "effect"
+import fc from "fast-check"
+import { describe, expect, it } from "vitest"
+
+import { childrenOf, rawTextOf } from "./ast"
+import { tableCellNotation } from "./extensions"
+import type { Extension } from "./inline/types"
+import { parse, parseLine } from "./parse"
+import { decodePage } from "./schema"
+import { stripPositions } from "./test-helpers"
+import type { AnyNode, InlineNode } from "./types"
+import { visit } from "./utils/visit"
 
 /** 記法の断片。完全ランダムな文字列では記法の経路をほとんど通らないので組み合わせで作る。 */
 const fragment = fc.oneof(
   fc.constantFrom(
-    '[リンク]',
-    '#tag',
-    '`code`',
-    '[* 太字]',
-    '[- 打消し]',
-    '[$ x^2]',
-    '[a.icon]',
-    '[a.icon*3]',
-    'https://x.test/a',
-    '[https://x.test/a.png]',
-    '[https://x.test/a https://y.test/b.png]',
-    '[[強調]]',
-    '[[https://x.test/a.png]]',
-    '[/proj/page]',
-    '[* [内側] だ]',
-    '[',
-    ']',
-    '[]',
-    '  ',
-    'あいう',
-    'text',
-    '#',
-    '`',
+    "[リンク]",
+    "#tag",
+    "`code`",
+    "[* 太字]",
+    "[- 打消し]",
+    "[$ x^2]",
+    "[a.icon]",
+    "[a.icon*3]",
+    "https://x.test/a",
+    "[https://x.test/a.png]",
+    "[https://x.test/a https://y.test/b.png]",
+    "[[強調]]",
+    "[[https://x.test/a.png]]",
+    "[/proj/page]",
+    "[* [内側] だ]",
+    "[",
+    "]",
+    "[]",
+    "  ",
+    "あいう",
+    "text",
+    "#",
+    "`",
   ),
-  fc.string().map((s) => s.replace(/[\r\n]/g, '')),
+  fc.string().map((s) => s.replace(/[\r\n]/g, "")),
 )
 
-const lineArb = fc.array(fragment, { maxLength: 8 }).map((parts) => parts.join(''))
+const lineArb = fc.array(fragment, { maxLength: 8 }).map((parts) => parts.join(""))
 
-const prefixArb = fc.constantFrom('', ' ', '  ', '\t', '> ', '>', '$ ', '　')
+const prefixArb = fc.constantFrom("", " ", "  ", "\t", "> ", ">", "$ ", "　")
 
 const contentLineArb = fc.tuple(prefixArb, lineArb).map(([prefix, body]) => `${prefix}${body}`)
 
 const sourceArb = fc
   .array(contentLineArb, { minLength: 1, maxLength: 6 })
-  .map((lines) => lines.join('\n'))
+  .map((lines) => lines.join("\n"))
 
-describe('全域性', () => {
-  it('どんな入力でも例外を投げずに Page を返す', () => {
+describe("全域性", () => {
+  it("どんな入力でも例外を投げずに Page を返す", () => {
     fc.assert(
       fc.property(fc.string(), (source) => {
-        expect(parse(source).type).toBe('page')
+        expect(parse(source).type).toBe("page")
       }),
     )
   })
 })
 
-describe('位置情報', () => {
-  it('すべてのノードの範囲がソースの中に収まる', () => {
+describe("位置情報", () => {
+  it("すべてのノードの範囲がソースの中に収まる", () => {
     fc.assert(
       fc.property(sourceArb, (source) => {
         const normalized = source
@@ -78,7 +79,7 @@ describe('位置情報', () => {
     )
   })
 
-  it('子の範囲は親の範囲に収まる', () => {
+  it("子の範囲は親の範囲に収まる", () => {
     fc.assert(
       fc.property(sourceArb, (source) => {
         const check = (node: AnyNode) => {
@@ -93,7 +94,7 @@ describe('位置情報', () => {
     )
   })
 
-  it('行の子ノードは重なりも隙間もなく本文を覆う', () => {
+  it("行の子ノードは重なりも隙間もなく本文を覆う", () => {
     fc.assert(
       fc.property(contentLineArb, (text) => {
         const line = parseLine(text)
@@ -107,23 +108,23 @@ describe('位置情報', () => {
         const first = children[0]
         const last = children[children.length - 1]
         expect(last?.position.end.offset).toBe(line.position.end.offset)
-        expect(children.map((n) => rawTextOf(text, n)).join('')).toBe(
+        expect(children.map((n) => rawTextOf(text, n)).join("")).toBe(
           text.slice(first?.position.start.offset ?? 0),
         )
       }),
     )
   })
 
-  it('装飾の子ノードもソース上の生テキストと一致する', () => {
+  it("装飾の子ノードもソース上の生テキストと一致する", () => {
     fc.assert(
       fc.property(contentLineArb, (text) => {
-        visit(parseLine(text), 'decoration', (decoration) => {
+        visit(parseLine(text), "decoration", (decoration) => {
           for (const child of decoration.children) {
             expect(rawTextOf(text, child)).toBe(
               text.slice(child.position.start.offset, child.position.end.offset),
             )
           }
-          expect(decoration.children.map((n) => rawTextOf(text, n)).join('')).toBe(decoration.value)
+          expect(decoration.children.map((n) => rawTextOf(text, n)).join("")).toBe(decoration.value)
         })
       }),
     )
@@ -133,36 +134,36 @@ describe('位置情報', () => {
 /** 1 行のテーブル。セルの中身は行と同じ記法の断片から作り、タブだけ取り除く。 */
 const tableArb = fc
   .array(
-    lineArb.map((cell) => cell.replace(/\t/g, '')),
+    lineArb.map((cell) => cell.replace(/\t/g, "")),
     { minLength: 1, maxLength: 4 },
   )
-  .map((cells) => `t\ntable:x\n ${cells.join('\t')}`)
+  .map((cells) => `t\ntable:x\n ${cells.join("\t")}`)
 
-describe('テーブルのセル', () => {
+describe("テーブルのセル", () => {
   it.each<[string, readonly Extension[]]>([
-    ['既定', []],
-    ['tableCellNotation()', [tableCellNotation()]],
-    ["tableCellNotation(['decoration'])", [tableCellNotation(['decoration'])]],
-  ])('%s でも、子ノードは重なりも隙間もなくセルを覆い、テキストは書いたまま', (_, extensions) => {
+    ["既定", []],
+    ["tableCellNotation()", [tableCellNotation()]],
+    ["tableCellNotation(['decoration'])", [tableCellNotation(["decoration"])]],
+  ])("%s でも、子ノードは重なりも隙間もなくセルを覆い、テキストは書いたまま", (_, extensions) => {
     fc.assert(
       fc.property(tableArb, (source) => {
-        visit(parse(source, { extensions }), 'tableCell', (cell) => {
-          expect(cell.children.map((n) => rawTextOf(source, n)).join('')).toBe(cell.value)
+        visit(parse(source, { extensions }), "tableCell", (cell) => {
+          expect(cell.children.map((n) => rawTextOf(source, n)).join("")).toBe(cell.value)
           for (const [index, child] of cell.children.entries()) {
             const previous = cell.children[index - 1]
             if (previous) expect(child.position.start.offset).toBe(previous.position.end.offset)
-            if (child.type === 'text') expect(child.value).toBe(rawTextOf(source, child))
+            if (child.type === "text") expect(child.value).toBe(rawTextOf(source, child))
           }
         })
       }),
     )
   })
 
-  it('既定ではリンク・外部リンク・別プロジェクトへのリンク・タグ以外のノードを作らない', () => {
-    const links = new Set(['text', 'internalLink', 'externalLink', 'projectLink', 'hashtag'])
+  it("既定ではリンク・外部リンク・別プロジェクトへのリンク・タグ以外のノードを作らない", () => {
+    const links = new Set(["text", "internalLink", "externalLink", "projectLink", "hashtag"])
     fc.assert(
       fc.property(tableArb, (source) => {
-        visit(parse(source), 'tableCell', (cell) => {
+        visit(parse(source), "tableCell", (cell) => {
           for (const child of cell.children) expect(links.has(child.type)).toBe(true)
         })
       }),
@@ -170,13 +171,13 @@ describe('テーブルのセル', () => {
   })
 })
 
-describe('ラウンドトリップ', () => {
-  it('記法ノードの生テキストを単体で解析すると同じノードになる', () => {
+describe("ラウンドトリップ", () => {
+  it("記法ノードの生テキストを単体で解析すると同じノードになる", () => {
     // text ノードは前後の文脈で意味が変わりうる (`[a]#tag` の `#tag` など) ので対象外。
     fc.assert(
       fc.property(lineArb, (text) => {
         for (const node of parseLine(text).children) {
-          if (node.type === 'text') continue
+          if (node.type === "text") continue
           const raw = rawTextOf(text, node)
           const reparsed = parseLine(raw).children
           expect(reparsed).toHaveLength(1)
@@ -187,21 +188,21 @@ describe('ラウンドトリップ', () => {
   })
 })
 
-describe('parse と parseLine の整合', () => {
-  it('ページの中の行と単独でパースした行が一致する', () => {
+describe("parse と parseLine の整合", () => {
+  it("ページの中の行と単独でパースした行が一致する", () => {
     fc.assert(
       fc.property(contentLineArb, (text) => {
         const source = `タイトル\n${text}`
         const fromPage = parse(source).children[1]
-        if (fromPage?.type !== 'line') return
-        expect(parseLine(text, { line: 1, offset: 'タイトル\n'.length })).toEqual(fromPage)
+        if (fromPage?.type !== "line") return
+        expect(parseLine(text, { line: 1, offset: "タイトル\n".length })).toEqual(fromPage)
       }),
     )
   })
 })
 
-describe('Schema との整合', () => {
-  it('parse の出力は常に PageSchema を通る', () => {
+describe("Schema との整合", () => {
+  it("parse の出力は常に PageSchema を通る", () => {
     fc.assert(
       fc.property(sourceArb, (source) => {
         const decoded = decodePage(JSON.parse(JSON.stringify(parse(source))))

@@ -3,14 +3,14 @@
  * 既存の順序を動かさないこと (順序が変わると `[* [リンク]ですね]` のような
  * 入れ子ケースの解釈が変わる)。新しいルールは 1 ファイル 1 ルールで追加する。
  */
-import type { InternalBracketRule } from '../internal-types'
-import { decorationRule } from './decoration'
-import { formulaRule } from './formula'
-import { iconRule } from './icon'
-import { imageExtensionRule } from './image-extension'
-import { internalLinkRule } from './internal-link'
-import { projectLinkRule } from './project-link'
-import { urlRule } from './url'
+import type { InternalBracketRule } from "../internal-types"
+import { decorationRule } from "./decoration"
+import { formulaRule } from "./formula"
+import { iconRule } from "./icon"
+import { imageExtensionRule } from "./image-extension"
+import { internalLinkRule } from "./internal-link"
+import { projectLinkRule } from "./project-link"
+import { urlRule } from "./url"
 
 /** 中身に角括弧を含んでいても成立しうるルール。 */
 export const bracketRules: readonly InternalBracketRule[] = [formulaRule, decorationRule]

@@ -4,19 +4,19 @@
  * `.md` / `.mdx` のコードブロックと見た目を揃えるため、`markdown.syntaxHighlight` と
  * `markdown.shikiConfig` をそのまま使う。
  */
-import type { HastHighlighter, RenderOptions } from '@cosense-toolbox/cosense-x'
-import { codeLanguageOf } from '@cosense-toolbox/parser/html'
-import type { AstroConfig } from 'astro'
-import { Effect, Match, Option, pipe } from 'effect'
-import { type BundledLanguage, bundledLanguages, createHighlighter } from 'shiki'
+import type { HastHighlighter, RenderOptions } from "@cosense-toolbox/cosense-x"
+import { codeLanguageOf } from "@cosense-toolbox/parser/html"
+import type { AstroConfig } from "astro"
+import { Effect, Match, Option, pipe } from "effect"
+import { type BundledLanguage, bundledLanguages, createHighlighter } from "shiki"
 
-type MarkdownConfig = AstroConfig['markdown']
+type MarkdownConfig = AstroConfig["markdown"]
 
 /**
  * `.csn` / `.csnx` のコードブロックの色付け。
  * `'astro'` は `markdown.syntaxHighlight` / `markdown.shikiConfig` に従い、関数なら自分で色付けする。
  */
-export type SyntaxHighlightOption = 'astro' | false | HastHighlighter
+export type SyntaxHighlightOption = "astro" | false | HastHighlighter
 
 /**
  * `source` のコードブロックの言語を読み込んでから、色付けする関数を返す。
@@ -30,17 +30,17 @@ const CODE_BLOCK = /^[ \t]*code:(.+)$/gm
 /** ページに出てくるコードブロックの言語名。`highlight` に渡るのと同じ決め方。 */
 export const codeLanguagesIn = (source: string): string[] => [
   ...new Set(
-    [...source.matchAll(CODE_BLOCK)].map((match) => codeLanguageOf((match[1] ?? '').trim())),
+    [...source.matchAll(CODE_BLOCK)].map((match) => codeLanguageOf((match[1] ?? "").trim())),
   ),
 ]
 
 /** shiki を使う設定なら、色付けしない言語 (`excludeLangs`) の一覧。shiki を使わない設定なら None。 */
 const shikiExclusionsOf = (
-  setting: MarkdownConfig['syntaxHighlight'],
+  setting: MarkdownConfig["syntaxHighlight"],
 ): Option.Option<readonly string[]> =>
   Match.value(setting).pipe(
-    Match.when('shiki', () => Option.some([])),
-    Match.when({ type: 'shiki' }, (config) => Option.some(config.excludeLangs ?? [])),
+    Match.when("shiki", () => Option.some([])),
+    Match.when({ type: "shiki" }, (config) => Option.some(config.excludeLangs ?? [])),
     Match.orElse(() => Option.none()),
   )
 
@@ -58,7 +58,7 @@ export const astroShikiHighlighter = (markdown: MarkdownConfig): CodeHighlighter
   )
 
 const shikiHighlighter = (
-  { langs, langAlias, theme, themes, defaultColor, transformers }: MarkdownConfig['shikiConfig'],
+  { langs, langAlias, theme, themes, defaultColor, transformers }: MarkdownConfig["shikiConfig"],
   excluded: ReadonlySet<string>,
 ): CodeHighlighter => {
   const multiple = Object.keys(themes).length > 0
@@ -114,7 +114,7 @@ export const customHighlighter =
 /**
  * 利用者が統合に渡す描画の設定。色付けは統合が `syntaxHighlight` から作って渡すので含めない。
  */
-export type AstroRenderOptions = Omit<RenderOptions, 'highlight'>
+export type AstroRenderOptions = Omit<RenderOptions, "highlight">
 
 /**
  * 利用者の `renderOptions` に、統合が作った色付けを足す。色付けしない設定なら何も足さない。

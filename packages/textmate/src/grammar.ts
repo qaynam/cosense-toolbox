@@ -11,8 +11,9 @@
  * half of each, every `include` names a repository entry that exists, and every scope ends
  * in `.cosense`. A typo in any of those fails to compile instead of silently colouring nothing.
  */
-import { Array as Arr, Brand, Match, Option, Record as Rec, pipe } from 'effect'
-import { SCOPES, type Scope } from './scopes'
+import { Array as Arr, Brand, Match, Option, pipe, Record as Rec } from "effect"
+
+import { type Scope, SCOPES } from "./scopes"
 
 // --- The output: what Shiki and VS Code read ------------------------------------------
 
@@ -44,7 +45,7 @@ export interface Grammar {
 // --- Regexes ----------------------------------------------------------------------------
 
 /** A regex in Oniguruma syntax. Branded so a scope or a label cannot be passed as one. */
-type Regex = string & Brand.Brand<'Regex'>
+type Regex = string & Brand.Brand<"Regex">
 const Regex = Brand.nominal<Regex>()
 
 /** A regex written raw: backslashes are the regex's, not the string literal's. */
@@ -52,10 +53,10 @@ const re = (strings: TemplateStringsArray, ...parts: ReadonlyArray<Regex | numbe
   Regex(String.raw(strings, ...parts))
 
 const oneOf = (alternatives: Arr.NonEmptyReadonlyArray<Regex>): Regex =>
-  Regex(alternatives.map((alternative) => `(?:${alternative})`).join('|'))
+  Regex(alternatives.map((alternative) => `(?:${alternative})`).join("|"))
 
-/** Indentation, as the parser counts it: full-width spaces indent too. */
-const INDENT = re`[ \t　]*`
+/** Indentation, as the parser counts it: full-width spaces (U+3000) indent too. */
+const INDENT = re`[ \t\u3000]*`
 
 const IMAGE_EXT = re`\.(?i:png|jpe?g|gif|webp|svg|bmp|avif)`
 
@@ -91,21 +92,21 @@ const COMPONENT_LINE = re`\s*</?[A-Z][A-Za-z0-9_.]*(?:[^\S\n]|/?>)`
 // --- Rules, typed -----------------------------------------------------------------------
 
 type RepositoryKey =
-  | 'head'
-  | 'frontmatter'
-  | 'code-block'
-  | 'table-block'
-  | 'component'
-  | 'component-tag'
-  | 'expression'
-  | 'quote'
-  | 'inline'
-  | 'inline-in-emphasis'
-  | 'nested-bracket'
-  | 'bare-bracket'
+  | "head"
+  | "frontmatter"
+  | "code-block"
+  | "table-block"
+  | "component"
+  | "component-tag"
+  | "expression"
+  | "quote"
+  | "inline"
+  | "inline-in-emphasis"
+  | "nested-bracket"
+  | "bare-bracket"
 
 /** `0` is the whole match; this grammar never needs more than three groups. */
-type CaptureGroup = '0' | '1' | '2' | '3'
+type CaptureGroup = "0" | "1" | "2" | "3"
 
 interface Capture {
   readonly scopes: ReadonlyArray<Scope>
@@ -115,13 +116,13 @@ interface Capture {
 type Captures = Readonly<Partial<Record<CaptureGroup, Capture>>>
 
 interface Include {
-  readonly _tag: 'Include'
+  readonly _tag: "Include"
   readonly key: RepositoryKey
 }
 
 /** A single-line match. */
 interface Single {
-  readonly _tag: 'Single'
+  readonly _tag: "Single"
   readonly scopes: ReadonlyArray<Scope>
   readonly regex: Regex
   readonly captures: Captures
@@ -129,7 +130,7 @@ interface Single {
 
 /** From `begin` to `end`, with `patterns` tried in between. */
 interface Region {
-  readonly _tag: 'Region'
+  readonly _tag: "Region"
   readonly scopes: ReadonlyArray<Scope>
   readonly begin: Regex
   readonly end: Regex
@@ -142,19 +143,19 @@ interface Region {
 
 /** Several patterns tried in order, with no scope of their own. */
 interface Group {
-  readonly _tag: 'Group'
+  readonly _tag: "Group"
   readonly patterns: ReadonlyArray<Pattern>
 }
 
 type Pattern = Include | Single | Region | Group
 
-const include = (key: RepositoryKey): Pattern => ({ _tag: 'Include', key })
+const include = (key: RepositoryKey): Pattern => ({ _tag: "Include", key })
 
 const single = (
   regex: Regex,
   options: { readonly scopes?: ReadonlyArray<Scope>; readonly captures?: Captures } = {},
 ): Pattern => ({
-  _tag: 'Single',
+  _tag: "Single",
   regex,
   scopes: options.scopes ?? [],
   captures: options.captures ?? {},
@@ -169,7 +170,7 @@ const region = (options: {
   readonly patterns?: ReadonlyArray<Pattern>
   readonly endPatternLast?: boolean
 }): Pattern => ({
-  _tag: 'Region',
+  _tag: "Region",
   begin: options.begin,
   end: options.end,
   scopes: options.scopes ?? [],
@@ -179,7 +180,7 @@ const region = (options: {
   endPatternLast: options.endPatternLast ?? false,
 })
 
-const group = (patterns: ReadonlyArray<Pattern>): Pattern => ({ _tag: 'Group', patterns })
+const group = (patterns: ReadonlyArray<Pattern>): Pattern => ({ _tag: "Group", patterns })
 
 const scoped = (...scopes: ReadonlyArray<Scope>): Capture => ({ scopes, patterns: [] })
 
@@ -248,7 +249,7 @@ const markerConditions = (emphasis: Emphasis): Regex =>
       markerCondition(re`/`, emphasis.italic),
       markerCondition(re`\-`, emphasis.strike),
       markerCondition(re`_`, emphasis.underline),
-    ].join(''),
+    ].join(""),
   )
 
 /**
@@ -264,7 +265,7 @@ const emphasisRules: ReadonlyArray<Pattern> = Arr.filterMap(MARKER_SETS, (emphas
         scopes,
         begin: re`\[${markerConditions(emphasis)}(?=${MARKERS}+\s.*\])${MARKERS}+\s+`,
         end: CLOSE_ON_LINE,
-        patterns: [include('inline-in-emphasis'), include('nested-bracket')],
+        patterns: [include("inline-in-emphasis"), include("nested-bracket")],
       }),
     ),
   ),
@@ -281,7 +282,7 @@ const strongRules: ReadonlyArray<Pattern> = [
   ),
   single(re`\[\[(${UNTIL_DOUBLE_CLOSE}+)\]\]`, {
     scopes: [SCOPES.bold],
-    captures: { 1: readAs(include('inline-in-emphasis')) },
+    captures: { 1: readAs(include("inline-in-emphasis")) },
   }),
 ]
 
@@ -290,7 +291,7 @@ const formulaRule: Pattern = region({
   scopes: [SCOPES.formula],
   begin: re`\[(?=\$)${CLOSES}`,
   end: CLOSE_ON_LINE,
-  patterns: [include('bare-bracket')],
+  patterns: [include("bare-bracket")],
 })
 
 /**
@@ -316,9 +317,9 @@ const simpleTargetRules = (allowImagePath: boolean): ReadonlyArray<Pattern> =>
 
 /** What follows the bracketed notation in both contexts, in the parser's order. */
 const unbracketedRules: ReadonlyArray<Pattern> = [
-  single(Regex('`[^`]*`'), { scopes: [SCOPES.code] }),
+  single(Regex("`[^`]*`"), { scopes: [SCOPES.code] }),
   // `#tag`, only at the start or after a space: a `#` inside a word is just a character.
-  single(re`(?:^|(?<=[ \t　]))#[^\s\[\]#]+`, { scopes: [SCOPES.hashtag] }),
+  single(re`(?:^|(?<=[ \t\u3000]))#[^\s\[\]#]+`, { scopes: [SCOPES.hashtag] }),
   // A URL outside brackets is always a link, even to an image.
   single(re`(?i:https?)://[^\s\]]+`, { scopes: [SCOPES.externalLink] }),
 ]
@@ -329,15 +330,15 @@ const unbracketedRules: ReadonlyArray<Pattern> = [
  * A block is its header and every line indented deeper. Deeper is approximated as
  * "the header's indentation, then more", which is exact when a page indents one way.
  */
-const block = (keyword: 'code' | 'table', scope: Scope, patterns: ReadonlyArray<Pattern>) =>
+const block = (keyword: "code" | "table", scope: Scope, patterns: ReadonlyArray<Pattern>) =>
   region({
     scopes: [scope],
     begin: re`^(${INDENT})(${Regex(keyword)}:)(.+)$`,
     beginCaptures: {
-      2: scoped('keyword.other.block.cosense'),
-      3: scoped('entity.name.section.block.cosense'),
+      2: scoped("keyword.other.block.cosense"),
+      3: scoped("entity.name.section.block.cosense"),
     },
-    end: re`^(?!\1[ \t　])`,
+    end: re`^(?!\1[ \t\u3000])`,
     patterns,
   })
 
@@ -351,7 +352,7 @@ const head = (dialect: DialectInfo): Pattern => {
   return group([
     region({
       begin: re`\A(?=---[ \t]*$)`,
-      patterns: [include('frontmatter')],
+      patterns: [include("frontmatter")],
       // Ends on the line after the fence either way; only a title line is captured.
       end: dialect.components ? re`^(?:(?=${COMPONENT_LINE})|(.*)$)` : re`^(.*)$`,
       endCaptures: { 1: scoped(SCOPES.title) },
@@ -363,38 +364,38 @@ const head = (dialect: DialectInfo): Pattern => {
 }
 
 /** Every other entry the grammar can `include`. The mapped type makes a missing one an error. */
-const REPOSITORY: { readonly [K in Exclude<RepositoryKey, 'head'>]: Pattern } = {
+const REPOSITORY: { readonly [K in Exclude<RepositoryKey, "head">]: Pattern } = {
   frontmatter: region({
     scopes: [SCOPES.frontmatter],
     begin: re`\A---[ \t]*$`,
     end: re`^---[ \t]*$`,
   }),
-  'code-block': block('code', SCOPES.codeBlock, []),
-  'table-block': block('table', SCOPES.table, [
-    single(re`\t`, { scopes: ['punctuation.separator.table-cell.cosense'] }),
+  "code-block": block("code", SCOPES.codeBlock, []),
+  "table-block": block("table", SCOPES.table, [
+    single(re`\t`, { scopes: ["punctuation.separator.table-cell.cosense"] }),
   ]),
   // A component tag owns its line: nothing on it is Cosense notation, and the text after
   // the tag is plain.
   component: region({
-    scopes: ['meta.tag.component.cosense'],
+    scopes: ["meta.tag.component.cosense"],
     begin: re`^(?=${COMPONENT_LINE})`,
     end: re`$`,
-    patterns: [include('component-tag')],
+    patterns: [include("component-tag")],
   }),
   // The tag itself, read as JSX.
-  'component-tag': region({
+  "component-tag": region({
     begin: re`^(\s*)(</?)([A-Z][A-Za-z0-9_.]*)`,
     beginCaptures: {
-      2: scoped('punctuation.definition.tag.begin.cosense'),
+      2: scoped("punctuation.definition.tag.begin.cosense"),
       3: scoped(SCOPES.component),
     },
     end: re`(/?>)|(?=$)`,
-    endCaptures: { 1: scoped('punctuation.definition.tag.end.cosense') },
+    endCaptures: { 1: scoped("punctuation.definition.tag.end.cosense") },
     patterns: [
       single(re`[A-Za-z_:][A-Za-z0-9_:.\-]*`, { scopes: [SCOPES.attribute] }),
-      single(re`=`, { scopes: ['punctuation.separator.key-value.cosense'] }),
+      single(re`=`, { scopes: ["punctuation.separator.key-value.cosense"] }),
       single(re`"[^"]*(?:"|$)|'[^']*(?:'|$)`, { scopes: [SCOPES.attributeValue] }),
-      include('expression'),
+      include("expression"),
     ],
   }),
   // `{...}`: a JavaScript expression. Braces nest; a few literals are told apart.
@@ -402,21 +403,21 @@ const REPOSITORY: { readonly [K in Exclude<RepositoryKey, 'head'>]: Pattern } = 
     scopes: [SCOPES.expression],
     begin: re`\{`,
     end: re`\}|(?=$)`,
-    beginCaptures: { 0: scoped('punctuation.section.embedded.begin.cosense') },
-    endCaptures: { 0: scoped('punctuation.section.embedded.end.cosense') },
+    beginCaptures: { 0: scoped("punctuation.section.embedded.begin.cosense") },
+    endCaptures: { 0: scoped("punctuation.section.embedded.end.cosense") },
     patterns: [
-      include('expression'),
-      single(re`"[^"]*"|'[^']*'`, { scopes: ['string.quoted.cosense'] }),
-      single(re`\b\d+(?:\.\d+)?\b`, { scopes: ['constant.numeric.cosense'] }),
-      single(re`\b(?:true|false|null|undefined)\b`, { scopes: ['constant.language.cosense'] }),
+      include("expression"),
+      single(re`"[^"]*"|'[^']*'`, { scopes: ["string.quoted.cosense"] }),
+      single(re`\b\d+(?:\.\d+)?\b`, { scopes: ["constant.numeric.cosense"] }),
+      single(re`\b(?:true|false|null|undefined)\b`, { scopes: ["constant.language.cosense"] }),
     ],
   }),
   quote: region({
-    scopes: ['markup.quote.cosense'],
+    scopes: ["markup.quote.cosense"],
     begin: re`^${INDENT}(>[> ]*)`,
     beginCaptures: { 1: scoped(SCOPES.quote) },
     end: re`$`,
-    patterns: [include('inline')],
+    patterns: [include("inline")],
   }),
   inline: group([
     ...strongRules,
@@ -425,7 +426,7 @@ const REPOSITORY: { readonly [K in Exclude<RepositoryKey, 'head'>]: Pattern } = 
     ...simpleTargetRules(true),
     ...unbracketedRules,
   ]),
-  'inline-in-emphasis': group([
+  "inline-in-emphasis": group([
     ...strongRules,
     formulaRule,
     ...simpleTargetRules(false),
@@ -433,15 +434,15 @@ const REPOSITORY: { readonly [K in Exclude<RepositoryKey, 'head'>]: Pattern } = 
   ]),
   // A bracket that is no notation, but whose `]` must not close the one around it:
   // in `[* a [] b]` the emphasis runs to the last `]`, as the parser counts depth.
-  'nested-bracket': region({
+  "nested-bracket": region({
     begin: re`\[`,
     end: CLOSE_ON_LINE,
-    patterns: [include('inline-in-emphasis'), include('nested-bracket')],
+    patterns: [include("inline-in-emphasis"), include("nested-bracket")],
   }),
-  'bare-bracket': region({
+  "bare-bracket": region({
     begin: re`\[`,
     end: CLOSE_ON_LINE,
-    patterns: [include('bare-bracket')],
+    patterns: [include("bare-bracket")],
   }),
 }
 
@@ -457,12 +458,12 @@ const nonEmpty = <A>(items: ReadonlyArray<A>): Option.Option<ReadonlyArray<A>> =
 /** TextMate gives a rule several scopes by separating them with spaces. */
 const nameField = (scopes: ReadonlyArray<Scope>): Partial<Rule> =>
   field(
-    'name',
-    Option.map(nonEmpty(scopes), (list) => list.join(' ')),
+    "name",
+    Option.map(nonEmpty(scopes), (list) => list.join(" ")),
   )
 
 const patternsField = (patterns: ReadonlyArray<Pattern>): Partial<Rule> =>
-  field('patterns', Option.map(nonEmpty(patterns), Arr.map(encode)))
+  field("patterns", Option.map(nonEmpty(patterns), Arr.map(encode)))
 
 const encodeCaptures = (captures: Captures): Option.Option<Record<string, Rule>> =>
   pipe(
@@ -477,21 +478,21 @@ const encodeCaptures = (captures: Captures): Option.Option<Record<string, Rule>>
 
 const encode = (pattern: Pattern): Rule =>
   Match.value(pattern).pipe(
-    Match.tag('Include', ({ key }) => ({ include: `#${key}` })),
-    Match.tag('Group', ({ patterns }) => patternsField(patterns)),
-    Match.tag('Single', (rule) => ({
+    Match.tag("Include", ({ key }) => ({ include: `#${key}` })),
+    Match.tag("Group", ({ patterns }) => patternsField(patterns)),
+    Match.tag("Single", (rule) => ({
       ...nameField(rule.scopes),
       match: rule.regex,
-      ...field('captures', encodeCaptures(rule.captures)),
+      ...field("captures", encodeCaptures(rule.captures)),
     })),
-    Match.tag('Region', (rule) => ({
+    Match.tag("Region", (rule) => ({
       ...nameField(rule.scopes),
       begin: rule.begin,
       end: rule.end,
-      ...field('beginCaptures', encodeCaptures(rule.beginCaptures)),
-      ...field('endCaptures', encodeCaptures(rule.endCaptures)),
+      ...field("beginCaptures", encodeCaptures(rule.beginCaptures)),
+      ...field("endCaptures", encodeCaptures(rule.endCaptures)),
       ...patternsField(rule.patterns),
-      ...field('applyEndPatternLast', onlyIf(rule.endPatternLast, true)),
+      ...field("applyEndPatternLast", onlyIf(rule.endPatternLast, true)),
     })),
     Match.exhaustive,
   )
@@ -499,7 +500,7 @@ const encode = (pattern: Pattern): Rule =>
 // --- Dialects ---------------------------------------------------------------------------
 
 /** `.csn`, and `.csnx`, which also reads a line that is one component tag. */
-export type Dialect = 'cosense' | 'cosense-x'
+export type Dialect = "cosense" | "cosense-x"
 
 interface DialectInfo {
   readonly displayName: string
@@ -508,19 +509,19 @@ interface DialectInfo {
 }
 
 const DIALECTS: { readonly [D in Dialect]: DialectInfo } = {
-  cosense: { displayName: 'Cosense', extension: 'csn', components: false },
-  'cosense-x': { displayName: 'Cosense X', extension: 'csnx', components: true },
+  cosense: { displayName: "Cosense", extension: "csn", components: false },
+  "cosense-x": { displayName: "Cosense X", extension: "csnx", components: true },
 }
 
 /** What a line can be, in the order the parser decides it. */
 const linePatterns = (dialect: DialectInfo): ReadonlyArray<Pattern> =>
   Arr.getSomes([
-    Option.some(include('head')),
-    Option.some(include('code-block')),
-    Option.some(include('table-block')),
-    onlyIf(dialect.components, include('component')),
-    Option.some(include('quote')),
-    Option.some(include('inline')),
+    Option.some(include("head")),
+    Option.some(include("code-block")),
+    Option.some(include("table-block")),
+    onlyIf(dialect.components, include("component")),
+    Option.some(include("quote")),
+    Option.some(include("inline")),
   ])
 
 export const buildGrammar = (dialect: Dialect): Grammar => {

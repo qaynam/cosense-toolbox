@@ -1,53 +1,69 @@
 ---
 const props = Astro.props
-const youtubeVideoIdPattern = new RegExp("(?:youtube\.com\/(?:[^\\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^\"&?\\/\s]{11})");
-const vimeoVideoIdPattern = new RegExp("vimeo\.com\/(?:.*#|.*/videos/)?([0-9]+)");
+const youtubeVideoIdPattern =
+  /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/
+const vimeoVideoIdPattern = /vimeo\.com\/(?:.*#|.*\/videos\/)?([0-9]+)/
 
-const YoutubePattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
-const VimeoPattern = /^(https?:\/\/)?(www\.)?(vimeo\.com)\/.+$/;
-const xpattern = /^(https?:\/\/)?(www\.)?(x\.com|twitter\.com)\/.+$/;
+const YoutubePattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/
+const VimeoPattern = /^(https?:\/\/)?(www\.)?(vimeo\.com)\/.+$/
+const xpattern = /^(https?:\/\/)?(www\.)?(x\.com|twitter\.com)\/.+$/
 
 function convertToYoutubeEmbedUrl(url: string): string {
-const videoIdMatch = url.match(youtubeVideoIdPattern)
-  const videoId = videoIdMatch ? videoIdMatch[1] : null;
+  const videoIdMatch = url.match(youtubeVideoIdPattern)
+  const videoId = videoIdMatch ? videoIdMatch[1] : null
   if (videoId) {
-    return `https://www.youtube.com/embed/${videoId}`;
+    return `https://www.youtube.com/embed/${videoId}`
   } else {
-    return url;
+    return url
   }
 }
 
 function convertToVimeoEmbedUrl(url: string): string {
   const videoIdMatch = url.match(vimeoVideoIdPattern)
-  const videoId = videoIdMatch ? videoIdMatch[1] : null;
+  const videoId = videoIdMatch ? videoIdMatch[1] : null
   if (videoId) {
-    return `https://player.vimeo.com/video/${videoId}`;
+    return `https://player.vimeo.com/video/${videoId}`
   } else {
-    return url;
+    return url
   }
 }
-
 ---
 
-
-
 {YoutubePattern.test(props.href) ? (
-<div class="aspect-video">
-  <iframe width="100%" height="100%" src={convertToYoutubeEmbedUrl(props.href)}  frameborder="0" allow="accelerometer; autoplay
-; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-</div>
-) :
-  VimeoPattern.test(props.href) ? (
-<div class="aspect-video">
-  <iframe title="vimeo-player" src={convertToVimeoEmbedUrl(props.href)} width="100%" height="100%" frameborder="0" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"   allowfullscreen></iframe>
-</div>
-) :
-xpattern.test(props.href) ? (
-<>
-  <script async src="https://platform.x.com/widgets.js" charset="utf-8"></script>
-  <blockquote class="twitter-tweet"><a href={props.href}></a></blockquote>
-</>
-) :
-(
-  <a {...props}><slot/></a>
+  <div class="aspect-video">
+    <iframe
+      width="100%"
+      height="100%"
+      src={convertToYoutubeEmbedUrl(props.href)}
+      frameborder="0"
+      allow="accelerometer; autoplay
+; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allowfullscreen
+    ></iframe>
+  </div>
+) : VimeoPattern.test(props.href) ? (
+  <div class="aspect-video">
+    <iframe
+      title="vimeo-player"
+      src={convertToVimeoEmbedUrl(props.href)}
+      width="100%"
+      height="100%"
+      frameborder="0"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+      allowfullscreen
+    ></iframe>
+  </div>
+) : xpattern.test(props.href) ? (
+  <>
+    <script async src="https://platform.x.com/widgets.js" charset="utf-8"></script>
+    <blockquote class="twitter-tweet">
+      <a href={props.href}></a>
+    </blockquote>
+  </>
+) : (
+  <a {...props}>
+    <slot />
+  </a>
 )}

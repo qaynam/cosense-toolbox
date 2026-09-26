@@ -1,6 +1,7 @@
-import { Option } from 'effect'
-import { OFFICIAL_MARKERS, buildDecorationRule } from '../inline/bracket-rules/decoration'
-import type { Extension } from '../inline/types'
+import { Option } from "effect"
+
+import { buildDecorationRule, OFFICIAL_MARKERS } from "../inline/bracket-rules/decoration"
+import type { Extension } from "../inline/types"
 
 /**
  * 文字装飾記法として読む記号を増やす拡張。
@@ -9,7 +10,7 @@ import type { Extension } from '../inline/types'
  * 渡した記号は既定の記号と混ぜられ、`[*' x]` は太字かつ `markers: ['*', "'"]` になる。
  */
 export const customDecorations = (markers: readonly string[]): Extension => {
-  const rule = buildDecorationRule(OFFICIAL_MARKERS + markers.join(''))
+  const rule = buildDecorationRule(OFFICIAL_MARKERS + markers.join(""))
   // 拡張のルールは null で返す形なので、中のルールの Option を外す。
   return { bracketRules: [(inner, ctx) => Option.getOrNull(rule(inner, ctx))] }
 }

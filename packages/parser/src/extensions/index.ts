@@ -4,9 +4,9 @@
  * 拡張を使わない利用者のバンドルに入らないよう、メインエントリからは切り離してある。
  * コンパイラを書くための型 (`NodeHandlers` 等) は `./compile` に、描画の拡張 (`RenderExtension`) は `./html` にある。
  */
-export { customDecorations } from './custom-decoration'
-export { tableCellNotation } from './table-cell-notation'
-export type { Origin } from '../core/position'
+export { customDecorations } from "./custom-decoration"
+export { tableCellNotation } from "./table-cell-notation"
+export type { Origin } from "../core/position"
 export type {
   BracketRule,
   BracketRuleContext,
@@ -14,5 +14,5 @@ export type {
   Extension,
   InlineConstruct,
   InlineContext,
-} from '../inline/types'
-export type { InlineNodeInit, WithoutPosition } from '../types'
+} from "../inline/types"
+export type { InlineNodeInit, WithoutPosition } from "../types"

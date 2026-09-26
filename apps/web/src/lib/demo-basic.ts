@@ -1,6 +1,6 @@
-import { parse } from "@cosense-toolbox/parser";
-import { toHtml } from "@cosense-toolbox/parser/html";
-import style from "@cosense-toolbox/style/style.css?raw";
+import { parse } from "@cosense-toolbox/parser"
+import { toHtml } from "@cosense-toolbox/parser/html"
+import style from "@cosense-toolbox/style/style.css?raw"
 
 const source = [
   "その他の書き方",
@@ -77,9 +77,9 @@ const source = [
   "",
   "[- 打ち消し線]",
   " `[- 打ち消し]` ⇒ [- 打ち消し]",
-].join("\n");
+].join("\n")
 
-const body = toHtml(parse(source));
+const body = toHtml(parse(source))
 
 export const html = `<!doctype html>
 <html lang="ja">
@@ -90,4 +90,4 @@ export const html = `<!doctype html>
   <body>
     ${body}
   </body>
-</html>`;
+</html>`

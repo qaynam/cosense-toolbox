@@ -1,12 +1,12 @@
 /**
  * scan.ts — 記法の知識を持たない文字列走査のプリミティブ。
  */
-import { Option } from 'effect'
+import { Option } from "effect"
 
 /** 行頭の空白 (半角スペース / タブ / 全角スペース)。インデント判定の単一ソース。 */
-const LEADING_WHITESPACE_RE = /^[ \t　]*/
+const LEADING_WHITESPACE_RE = /^[ \t\u3000]*/
 
-export const leadingWhitespace = (s: string): string => LEADING_WHITESPACE_RE.exec(s)?.[0] ?? ''
+export const leadingWhitespace = (s: string): string => LEADING_WHITESPACE_RE.exec(s)?.[0] ?? ""
 
 /**
  * `openIdx` の `[` に対応する `]` の位置。深さを数えるので
@@ -16,8 +16,8 @@ export const findClosingBracket = (s: string, openIdx: number): Option.Option<nu
   let depth = 0
   for (let i = openIdx; i < s.length; i++) {
     const ch = s[i]
-    if (ch === '[') depth++
-    else if (ch === ']') {
+    if (ch === "[") depth++
+    else if (ch === "]") {
       depth--
       if (depth === 0) return Option.some(i)
     }
@@ -29,5 +29,5 @@ export const findClosingBracket = (s: string, openIdx: number): Option.Option<nu
 export const isTagBoundary = (s: string, index: number): boolean => {
   if (index === 0) return true
   const prev = s[index - 1]
-  return prev === ' ' || prev === '\t' || prev === '　'
+  return prev === " " || prev === "\t" || prev === "　"
 }

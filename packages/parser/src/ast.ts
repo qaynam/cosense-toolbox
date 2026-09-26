@@ -1,7 +1,7 @@
 /**
  * ast.ts — AST に対する基本操作。パースはしない。
  */
-import type { AnyNode } from './types'
+import type { AnyNode } from "./types"
 
 /** 型を知らないノードの子。mdast と同じく `children` 配列があればそれが子。 */
 const unknownChildren = (node: unknown): readonly AnyNode[] => {
@@ -17,32 +17,32 @@ const unknownChildren = (node: unknown): readonly AnyNode[] => {
  */
 export const childrenOf = (node: AnyNode): readonly AnyNode[] => {
   switch (node.type) {
-    case 'page':
+    case "page":
       return node.children
-    case 'title':
+    case "title":
       return node.children
-    case 'codeBlock':
+    case "codeBlock":
       return node.lines
-    case 'table':
+    case "table":
       return node.rows
-    case 'tableRow':
+    case "tableRow":
       return node.cells
-    case 'line':
+    case "line":
       return node.children
-    case 'tableCell':
+    case "tableCell":
       return node.children
-    case 'decoration':
+    case "decoration":
       return node.children
-    case 'codeLine':
-    case 'text':
-    case 'internalLink':
-    case 'externalLink':
-    case 'projectLink':
-    case 'hashtag':
-    case 'inlineCode':
-    case 'image':
-    case 'icon':
-    case 'formula':
+    case "codeLine":
+    case "text":
+    case "internalLink":
+    case "externalLink":
+    case "projectLink":
+    case "hashtag":
+    case "inlineCode":
+    case "image":
+    case "icon":
+    case "formula":
       return []
     default: {
       // ノード型を足したのにここを更新していないとコンパイルエラーになる。

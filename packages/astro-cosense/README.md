@@ -11,33 +11,33 @@ Cosense (旧 Scrapbox) の記法で書いた `.csn` / `.csnx` を、Astro のペ
 
 ```js
 // astro.config.mjs
-import svelte from '@astrojs/svelte'
-import cosense from '@cosense-toolbox/astro'
-import { defineConfig } from 'astro/config'
+import svelte from "@astrojs/svelte"
+import cosense from "@cosense-toolbox/astro"
+import { defineConfig } from "astro/config"
 
 export default defineConfig({
   integrations: [
     svelte(),
     cosense({
-      components: './src/components/cosense.ts',
+      components: "./src/components/cosense.ts",
       pageUrl: (page) => `/posts/${encodeURIComponent(page.slug)}/`,
       tagUrl: (tag) => `/tags/${encodeURIComponent(tag)}/`,
-      unresolved: 'warn',
+      unresolved: "warn",
     }),
   ],
 })
 ```
 
-| オプション | 内容 |
-| :--- | :--- |
-| `components` | すべてのページに渡すコンポーネントを default export するモジュールの、プロジェクトのルートからのパス |
-| `pageUrl` | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス |
-| `tagUrl` `projectUrl` `unresolved` | `compile` の同名のオプションと同じ |
-| `parseOptions` | パースの設定。parser の `parse` のオプション (`extensions` など) がそのまま渡る |
-| `renderOptions` | 描画の設定。parser の `toHast` のオプション (`extensions` `handlers` `classNames` `showPads` `iconImageUrl`) と `title` がそのまま渡る。色付けは `syntaxHighlight` で決める |
-| `rehypePlugins` | `compile` の同名のオプションと同じ |
-| `syntaxHighlight` | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け) |
-| `assets` | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効 |
+| オプション                         | 内容                                                                                                                                                                        |
+| :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `components`                       | すべてのページに渡すコンポーネントを default export するモジュールの、プロジェクトのルートからのパス                                                                        |
+| `pageUrl`                          | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス                                                                             |
+| `tagUrl` `projectUrl` `unresolved` | `compile` の同名のオプションと同じ                                                                                                                                          |
+| `parseOptions`                     | パースの設定。parser の `parse` のオプション (`extensions` など) がそのまま渡る                                                                                             |
+| `renderOptions`                    | 描画の設定。parser の `toHast` のオプション (`extensions` `handlers` `classNames` `showPads` `iconImageUrl`) と `title` がそのまま渡る。色付けは `syntaxHighlight` で決める |
+| `rehypePlugins`                    | `compile` の同名のオプションと同じ                                                                                                                                          |
+| `syntaxHighlight`                  | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け)                          |
+| `assets`                           | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効                                          |
 
 ## Cosense 上の画像とファイル
 
@@ -72,7 +72,7 @@ cosense({
 
 ```js
 cosense({
-  assets: { pat: process.env.COSENSE_PAT, links: 'download' },
+  assets: { pat: process.env.COSENSE_PAT, links: "download" },
 })
 ```
 
@@ -81,17 +81,18 @@ cosense({
 
 ```astro
 ---
-import { cosenseIconUrl, fetchPageText } from '@cosense-toolbox/cosense-x/fetch'
-import { parse } from '@cosense-toolbox/parser'
-import { toHtml } from '@cosense-toolbox/parser/html'
-import { localizeCosenseAssets } from 'virtual:cosense-x/assets'
+import { cosenseIconUrl, fetchPageText } from "@cosense-toolbox/cosense-x/fetch"
+import { parse } from "@cosense-toolbox/parser"
+import { toHtml } from "@cosense-toolbox/parser/html"
+import { localizeCosenseAssets } from "virtual:cosense-x/assets"
 
-const project = 'help-jp'
-const text = await fetchPageText(project, 'ブラケティング')
+const project = "help-jp"
+const text = await fetchPageText(project, "ブラケティング")
 const html = await localizeCosenseAssets(
   toHtml(parse(text), { iconImageUrl: (icon) => cosenseIconUrl(project, icon.user) }),
 )
 ---
+
 <article class="cosense" set:html={html} />
 ```
 
@@ -104,7 +105,7 @@ const html = await localizeCosenseAssets(
 
 ```js
 export default defineConfig({
-  markdown: { shikiConfig: { theme: 'github-light' } },
+  markdown: { shikiConfig: { theme: "github-light" } },
   integrations: [cosense()],
 })
 ```
@@ -127,11 +128,11 @@ cosense({
 
 ```ts
 // src/shiki.ts
-import type { HastHighlighter } from '@cosense-toolbox/parser/html'
-import type { ShikiConfig } from 'astro'
-import { createHighlighter } from 'shiki'
+import type { HastHighlighter } from "@cosense-toolbox/parser/html"
+import type { ShikiConfig } from "astro"
+import { createHighlighter } from "shiki"
 
-export const shikiConfig = { theme: 'github-light' } satisfies Partial<ShikiConfig>
+export const shikiConfig = { theme: "github-light" } satisfies Partial<ShikiConfig>
 
 /** toHtml は highlight を同期で呼ぶので、使う言語は先に読み込んでおく */
 export const createCodeHighlight = async (langs: string[]): Promise<HastHighlighter> => {
@@ -146,7 +147,7 @@ export const createCodeHighlight = async (langs: string[]): Promise<HastHighligh
 
 ```js
 // astro.config.mjs
-import { shikiConfig } from './src/shiki.ts'
+import { shikiConfig } from "./src/shiki.ts"
 
 export default defineConfig({
   markdown: { shikiConfig },
@@ -156,13 +157,14 @@ export default defineConfig({
 
 ```astro
 ---
-import { parse } from '@cosense-toolbox/parser'
-import { toHtml } from '@cosense-toolbox/parser/html'
-import { createCodeHighlight } from '../shiki'
+import { parse } from "@cosense-toolbox/parser"
+import { toHtml } from "@cosense-toolbox/parser/html"
+import { createCodeHighlight } from "../shiki"
 
-const highlight = await createCodeHighlight(['js', 'ts'])
+const highlight = await createCodeHighlight(["js", "ts"])
 const html = toHtml(parse(text), { highlight })
 ---
+
 <article class="cosense" set:html={html} />
 ```
 
@@ -173,7 +175,7 @@ const html = toHtml(parse(text), { highlight })
 
 ```js
 // astro.config.mjs
-import { codeLineNumbers } from '@cosense-toolbox/parser/html'
+import { codeLineNumbers } from "@cosense-toolbox/parser/html"
 
 cosense({ renderOptions: { extensions: [codeLineNumbers()] } })
 ```
@@ -191,12 +193,12 @@ cosense({ renderOptions: { extensions: [codeLineNumbers()] } })
 
 ```js
 // astro.config.mjs
-import { tableCellLineBreaks } from '@cosense-toolbox/parser/html'
-import { tableCellNotation } from '@cosense-toolbox/parser/extensions'
+import { tableCellLineBreaks } from "@cosense-toolbox/parser/html"
+import { tableCellNotation } from "@cosense-toolbox/parser/extensions"
 
 cosense({
   parseOptions: { extensions: [tableCellNotation()] },
-  renderOptions: { extensions: [tableCellLineBreaks('\\n')] },
+  renderOptions: { extensions: [tableCellLineBreaks("\\n")] },
 })
 ```
 
@@ -204,11 +206,11 @@ cosense({
 
 ```ts
 // src/content.config.ts
-import { defineCollection } from 'astro:content'
-import { glob } from 'astro/loaders'
+import { defineCollection } from "astro:content"
+import { glob } from "astro/loaders"
 
 const posts = defineCollection({
-  loader: glob({ pattern: '**/*.{csn,csnx}', base: './src/content/posts' }),
+  loader: glob({ pattern: "**/*.{csn,csnx}", base: "./src/content/posts" }),
 })
 
 export const collections = { posts }
@@ -220,9 +222,10 @@ Cosense では 1 行目がタイトルなので、frontmatter に書かなくて
 
 ```astro
 ---
-import { render } from 'astro:content'
+import { render } from "astro:content"
 const { Content } = await render(post)
 ---
+
 <Content />
 ```
 
@@ -247,7 +250,7 @@ layout: ../layouts/Page.astro
 
 ```astro
 ---
-import graph from 'virtual:cosense-x/graph'
+import graph from "virtual:cosense-x/graph"
 const backlinks = graph.backlinks[post.filePath]
 const twoHop = graph.twoHop[post.filePath]
 ---
@@ -264,8 +267,9 @@ Astro の中で描画されるので、Svelte などのコンポーネントも�
 ```astro
 ---
 // CounterIsland.astro
-import Counter from './Counter.svelte'
+import Counter from "./Counter.svelte"
 ---
+
 <Counter client:load {...Astro.props} />
 ```
 

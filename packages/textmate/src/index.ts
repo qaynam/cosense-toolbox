@@ -4,11 +4,11 @@
  * Each export is a Shiki `LanguageRegistration` as it stands, and the same objects are
  * published as `.tmLanguage.json` for editors that read TextMate grammars.
  */
-import { type Grammar, buildGrammar } from './grammar'
+import { buildGrammar, type Grammar } from "./grammar"
 
-export type { Dialect, Grammar, Rule } from './grammar'
-export { type Notation, SCOPES } from './scopes'
+export type { Dialect, Grammar, Rule } from "./grammar"
+export { type Notation, SCOPES } from "./scopes"
 
-export const cosense: Grammar = buildGrammar('cosense')
+export const cosense: Grammar = buildGrammar("cosense")
 
-export const cosenseX: Grammar = buildGrammar('cosense-x')
+export const cosenseX: Grammar = buildGrammar("cosense-x")

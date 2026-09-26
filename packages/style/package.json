@@ -4,15 +4,26 @@
   "description": "Default stylesheet for the HTML that @cosense-toolbox/parser renders.",
   "license": "MIT",
   "type": "module",
-  "sideEffects": ["**/*.css"],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "style": "./style.css",
   "exports": {
     ".": "./style.css",
     "./style.css": "./style.css",
     "./package.json": "./package.json"
   },
-  "files": ["style.css", "README.md", "LICENSE"],
-  "keywords": ["cosense", "scrapbox", "css", "stylesheet"],
+  "files": [
+    "style.css",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "cosense",
+    "scrapbox",
+    "css",
+    "stylesheet"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/qaynam/cosense-toolbox.git",

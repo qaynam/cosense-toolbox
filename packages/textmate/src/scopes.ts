@@ -13,34 +13,34 @@ export type Scope = `${string}.cosense`
  * any Shiki or VS Code theme draws Cosense without knowing about it.
  */
 export const SCOPES = {
-  title: 'markup.heading.cosense',
-  link: 'string.other.link.internal.cosense',
-  projectLink: 'string.other.link.project.cosense',
-  externalLink: 'markup.underline.link.external.cosense',
-  hashtag: 'entity.name.tag.hashtag.cosense',
-  code: 'markup.inline.raw.cosense',
-  codeBlock: 'markup.raw.block.cosense',
-  formula: 'constant.other.formula.cosense',
-  icon: 'string.other.link.icon.cosense',
+  title: "markup.heading.cosense",
+  link: "string.other.link.internal.cosense",
+  projectLink: "string.other.link.project.cosense",
+  externalLink: "markup.underline.link.external.cosense",
+  hashtag: "entity.name.tag.hashtag.cosense",
+  code: "markup.inline.raw.cosense",
+  codeBlock: "markup.raw.block.cosense",
+  formula: "constant.other.formula.cosense",
+  icon: "string.other.link.icon.cosense",
   // Only the `>` marker, as the language server marks it. The whole line also carries
   // `markup.quote.cosense` so themes can tint it.
-  quote: 'punctuation.definition.quote.begin.cosense',
-  bold: 'markup.bold.cosense',
-  italic: 'markup.italic.cosense',
-  strike: 'markup.strikethrough.cosense',
-  underline: 'markup.underline.cosense',
-  image: 'markup.underline.link.image.cosense',
-  table: 'markup.other.table.cosense',
+  quote: "punctuation.definition.quote.begin.cosense",
+  bold: "markup.bold.cosense",
+  italic: "markup.italic.cosense",
+  strike: "markup.strikethrough.cosense",
+  underline: "markup.underline.cosense",
+  image: "markup.underline.link.image.cosense",
+  table: "markup.other.table.cosense",
   // `[** x]` and louder: still bold to a theme, but a level apart for anyone who wants it.
-  bold2: 'markup.bold.level2.cosense',
-  bold3: 'markup.bold.level3.cosense',
+  bold2: "markup.bold.level2.cosense",
+  bold3: "markup.bold.level3.cosense",
   // `.csnx` only: the tag that opens a component line, read as JSX. The whole line also
   // carries `meta.tag.component.cosense`.
-  component: 'support.class.component.cosense',
-  attribute: 'entity.other.attribute-name.cosense',
-  attributeValue: 'string.quoted.attribute-value.cosense',
-  expression: 'meta.embedded.expression.cosense',
-  frontmatter: 'comment.block.frontmatter.cosense',
+  component: "support.class.component.cosense",
+  attribute: "entity.other.attribute-name.cosense",
+  attributeValue: "string.quoted.attribute-value.cosense",
+  expression: "meta.embedded.expression.cosense",
+  frontmatter: "comment.block.frontmatter.cosense",
 } as const satisfies Record<string, Scope>
 
 export type Notation = keyof typeof SCOPES

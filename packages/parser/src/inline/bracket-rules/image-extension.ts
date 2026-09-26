@@ -1,6 +1,7 @@
-import { Option } from 'effect'
-import { hasImageExtension } from '../../core/image-url'
-import type { InternalBracketRule } from '../internal-types'
+import { Option } from "effect"
+
+import { hasImageExtension } from "../../core/image-url"
+import type { InternalBracketRule } from "../internal-types"
 
 /**
  * URL ではなく拡張子だけで画像と分かる中身 (`[a.png]`)。
@@ -10,5 +11,5 @@ import type { InternalBracketRule } from '../internal-types'
  */
 export const imageExtensionRule: InternalBracketRule = (inner, ctx) =>
   ctx.allowDecoration && hasImageExtension(inner)
-    ? Option.some({ type: 'image', src: inner })
+    ? Option.some({ type: "image", src: inner })
     : Option.none()

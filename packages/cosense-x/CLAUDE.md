@@ -48,7 +48,8 @@ parser の §1 と同じ。
   **`effect` の `Array` モジュールは使わない**（parser の §4 と同じ理由）。配列は素の `map` / `filter` / `reduce` で扱う。
 - class を使わない。トップレベルに可変の状態を置かない（`sideEffects: false` を保つ）。
 - 集計は `map` / `flatMap` / `reduce` / `Object.fromEntries` で組み立てる。
-  `reduce` の中で累積値を spread し続ける書き方は biome が止めるので、再帰か `Object.fromEntries` にする。
+  `reduce` の中で累積値を spread し続ける書き方は O(n²) になるので、再帰か `Object.fromEntries` にする
+  (ESLint では止まらないので、レビューで見る)。
 - 状態を持って畳む処理（コンポーネントの開始タグと閉じタグの対応）は、読み取り専用の状態を返す
   `step` を `reduce` で畳む。途中で失敗しうるなら `Either` の中で畳む。
 - 次のものは、関数の中に閉じた `let` とループでよい。
@@ -71,7 +72,8 @@ parser の §1 と同じ。
 bun run typecheck
 bun run test
 bun run build
-bunx biome check src *.ts
+bunx eslint src *.ts
+bunx prettier --check .
 ```
 
 加えて §2 の effect 漏れ検証と、`examples/astro-blog` の `astro build` が通ること。

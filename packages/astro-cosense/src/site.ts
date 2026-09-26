@@ -4,32 +4,33 @@
  * リンクの解決には全ページのタイトルが要るので、1 ファイルずつのコンパイルの前にまとめて読む。
  * パースは軽いので、全ページを先読みしても問題にならない。
  */
-import { readFile, readdir } from 'node:fs/promises'
-import { join, relative, sep } from 'node:path'
+import { readdir, readFile } from "node:fs/promises"
+import { join, relative, sep } from "node:path"
+
 import {
+  buildGraph,
+  createIndex,
   type Graph,
   type PageIndex,
   type ReadOptions,
-  buildGraph,
-  createIndex,
   readPage,
-} from '@cosense-toolbox/cosense-x/graph'
+} from "@cosense-toolbox/cosense-x/graph"
 
-export const EXTENSIONS = ['.csn', '.csnx'] as const
+export const EXTENSIONS = [".csn", ".csnx"] as const
 
 export const isCosenseFile = (path: string): boolean =>
   EXTENSIONS.some((extension) => path.endsWith(extension))
 
 /** ルートからの相対パス (区切りは `/`)。Astro の content collection の `filePath` と同じ形。 */
 export const idOf = (root: string, absolute: string): string =>
-  relative(root, absolute).split(sep).join('/')
+  relative(root, absolute).split(sep).join("/")
 
 export interface Site {
   readonly index: PageIndex
   readonly graph: Graph
 }
 
-const SKIP_DIRECTORIES = new Set(['node_modules', '.astro', 'dist'])
+const SKIP_DIRECTORIES = new Set(["node_modules", ".astro", "dist"])
 
 /** `directory` の下の `.csn` / `.csnx`。読めないディレクトリ (まだ無い src/content など) は空とみなす。 */
 const listFiles = async (directory: string): Promise<string[]> => {
@@ -53,11 +54,11 @@ const listFiles = async (directory: string): Promise<string[]> => {
 export const scanSite = async (
   root: string,
   directory: string,
-  options: Pick<ReadOptions, 'parseOptions'> = {},
+  options: Pick<ReadOptions, "parseOptions"> = {},
 ): Promise<Site> => {
   const files = await listFiles(directory)
   const sources = await Promise.all(
-    files.map(async (file) => ({ id: idOf(root, file), source: await readFile(file, 'utf8') })),
+    files.map(async (file) => ({ id: idOf(root, file), source: await readFile(file, "utf8") })),
   )
   const index = createIndex(
     sources.map(({ id, source }) => {
@@ -84,7 +85,7 @@ export interface SiteCache {
 export const createSiteCache = (
   root: string,
   directory: string,
-  options: Pick<ReadOptions, 'parseOptions'> = {},
+  options: Pick<ReadOptions, "parseOptions"> = {},
 ): SiteCache => {
   // dev サーバーでファイルが変わるたびに捨てて読み直すので、ここだけは状態を持つ。
   // モジュールのトップレベルではなく、統合ごとに作るこの関数の中に閉じ込めている。

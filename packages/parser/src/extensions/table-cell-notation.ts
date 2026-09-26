@@ -1,5 +1,5 @@
-import type { Extension } from '../inline/types'
-import type { InlineNode } from '../types'
+import type { Extension } from "../inline/types"
+import type { InlineNode } from "../types"
 
 /**
  * テーブルのセルの中でも、行と同じく記法を読む拡張。Cosense Web には無い振る舞い。
@@ -11,6 +11,6 @@ import type { InlineNode } from '../types'
  * parse(source, { extensions: [tableCellNotation()] })              // すべての記法
  * parse(source, { extensions: [tableCellNotation(['decoration'])] }) // リンクと装飾だけ
  */
-export const tableCellNotation = (types?: readonly InlineNode['type'][]): Extension => ({
+export const tableCellNotation = (types?: readonly InlineNode["type"][]): Extension => ({
   keepInTableCell: types === undefined ? () => true : (node) => types.includes(node.type),
 })

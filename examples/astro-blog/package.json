@@ -7,8 +7,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "typecheck": "astro check",
-    "format": "biome format --fix"
+    "typecheck": "astro check"
   },
   "dependencies": {
     "@astrojs/svelte": "^9.0.1",

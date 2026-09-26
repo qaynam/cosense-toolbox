@@ -1,24 +1,19 @@
 ---
-import ToolCard from "../components/ToolCard.astro";
-import Base from "../layouts/Base.astro";
-import { TOOLS } from "../lib/tools";
+import ToolCard from "../components/ToolCard.astro"
+import Base from "../layouts/Base.astro"
+import { TOOLS } from "../lib/tools"
 ---
 
 <Base home>
   <section class="home-hero">
-    <img
-      class="home-logo"
-      src="/beaver.png"
-      alt=""
-      width="112"
-      height="112"
-      fetchpriority="high"
-    />
+    <img class="home-logo" src="/beaver.png" alt="" width="112" height="112" fetchpriority="high" />
     <h1>Cosense Toolbox</h1>
     <p>Cosense をもっと面白く、もっと強力に使うための道具を置いています。</p>
   </section>
 
   <div class="tool-grid">
-    {TOOLS.map((tool) => <ToolCard tool={tool} />)}
+    {TOOLS.map((tool) => (
+      <ToolCard tool={tool} />
+    ))}
   </div>
 </Base>

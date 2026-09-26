@@ -3,29 +3,29 @@
  *
  * `createCompiler` のハンドラ機構をひととおり使った参照実装も兼ねる。
  */
-import type { AnyNode } from '../types'
-import { type NodeHandlers, createCompiler } from './create-compiler'
+import type { AnyNode } from "../types"
+import { createCompiler, type NodeHandlers } from "./create-compiler"
 
-const INDENT_UNIT = '  '
+const INDENT_UNIT = "  "
 
 const handlers: NodeHandlers<string> = {
-  page: (node, ctx) => ctx.children(node).join('\n'),
+  page: (node, ctx) => ctx.children(node).join("\n"),
 
   title: (node) => node.value,
 
   line: (node, ctx) => {
-    const body = ctx.children(node).join('')
-    const quote = node.quote ? '> ' : ''
+    const body = ctx.children(node).join("")
+    const quote = node.quote ? "> " : ""
     return INDENT_UNIT.repeat(node.indent) + quote + body
   },
 
   codeBlock: (node, ctx) =>
-    [`${INDENT_UNIT.repeat(node.indent)}${node.filename}`, ...ctx.children(node)].join('\n'),
+    [`${INDENT_UNIT.repeat(node.indent)}${node.filename}`, ...ctx.children(node)].join("\n"),
   codeLine: (node) => node.value,
 
-  table: (node, ctx) => [node.name, ...ctx.children(node)].join('\n'),
-  tableRow: (node, ctx) => ctx.children(node).join('\t'),
-  tableCell: (node, ctx) => ctx.children(node).join(''),
+  table: (node, ctx) => [node.name, ...ctx.children(node)].join("\n"),
+  tableRow: (node, ctx) => ctx.children(node).join("\t"),
+  tableCell: (node, ctx) => ctx.children(node).join(""),
 
   text: (node) => node.value,
   internalLink: (node) => node.label,
@@ -36,13 +36,13 @@ const handlers: NodeHandlers<string> = {
   formula: (node) => node.value,
   icon: (node) => node.user,
   image: (node) => node.src,
-  decoration: (node, ctx) => ctx.children(node).join(''),
+  decoration: (node, ctx) => ctx.children(node).join(""),
 }
 
 // ハンドラの無いノード (拡張が足した独自ノード) でも中身は落とさない。
 const compile = createCompiler<string>({
   handlers,
-  fallback: (node, ctx) => ctx.children(node).join(''),
+  fallback: (node, ctx) => ctx.children(node).join(""),
 })
 
 /** ページ (または任意のノード) を記法抜きのテキストにする。 */

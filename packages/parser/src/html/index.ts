@@ -15,7 +15,7 @@ export {
   safeHref,
   safeSrc,
   toHast,
-} from './to-hast'
+} from "./to-hast"
 export type {
   HastContent,
   HastContext,
@@ -30,8 +30,8 @@ export type {
   RenderExtension,
   RenderTransform,
   ResolvedHastOptions,
-} from './to-hast'
-export { escapeHtml, toHtml } from './to-html'
-export type { Highlighter, HtmlOptions } from './to-html'
-export { codeLineNumbers } from './code-line-numbers'
-export { tableCellLineBreaks } from './table-cell-line-breaks'
+} from "./to-hast"
+export { escapeHtml, toHtml } from "./to-html"
+export type { Highlighter, HtmlOptions } from "./to-html"
+export { codeLineNumbers } from "./code-line-numbers"
+export { tableCellLineBreaks } from "./table-cell-line-breaks"

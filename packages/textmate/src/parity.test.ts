@@ -5,14 +5,19 @@
  * and VS Code colour it from this grammar. Both are held to the same answer here, over the
  * parser's conformance fixtures and the example posts.
  */
-import { readFileSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
-import { TOKEN_TYPES, computeTokens } from '@cosense-toolbox/language-server/tokens'
-import { type HighlighterGeneric, createHighlighter, createJavaScriptRegexEngine } from 'shiki'
-import { beforeAll, describe, expect, it } from 'vitest'
-import { type Notation, SCOPES, cosense, cosenseX } from './index'
+import { readdirSync, readFileSync } from "node:fs"
+import { join } from "node:path"
 
-const repoRoot = join(import.meta.dirname, '../../..')
+import { computeTokens, TOKEN_TYPES } from "@cosense-toolbox/language-server/tokens"
+import { createHighlighterCore, type HighlighterCore } from "shiki/core"
+import { createJavaScriptRegexEngine } from "shiki/engine/javascript"
+import { createOnigurumaEngine } from "shiki/engine/oniguruma"
+import minLight from "shiki/themes/min-light.mjs"
+import { beforeAll, describe, expect, it } from "vitest"
+
+import { cosense, cosenseX, type Notation, SCOPES } from "./index"
+
+const repoRoot = join(import.meta.dirname, "../../..")
 
 const NOTATION_OF: ReadonlyMap<string, Notation> = new Map(
   Object.entries(SCOPES).map(([notation, scope]) => [scope, notation as Notation]),
@@ -22,17 +27,14 @@ const NOTATION_OF: ReadonlyMap<string, Notation> = new Map(
 type Marks = string[][]
 
 const marksFromServer = (text: string, components: boolean): Marks => {
-  const lines = text.split('\n')
+  const lines = text.split("\n")
   const marks = lines.map((line) => Array.from(line, () => new Set<string>()))
   for (const token of computeTokens(text, { components })) {
     for (let c = token.char; c < token.char + token.length; c++)
       marks[token.line]?.[c]?.add(token.type)
   }
-  return marks.map((line) => line.map((set) => [...set].sort().join(' ')))
+  return marks.map((line) => line.map((set) => [...set].sort().join(" ")))
 }
-
-// biome-ignore lint/suspicious/noExplicitAny: the highlighter's language union is not needed here
-type Highlighter = HighlighterGeneric<any, any>
 
 /**
  * Shiki skips an empty line without handing it to the grammar, so the state before it
@@ -42,16 +44,16 @@ type Highlighter = HighlighterGeneric<any, any>
  * but "a line indented by nothing". Its one character is never compared: the line it
  * stands for has none.
  */
-const VISIBLE_EMPTY_LINE = '\u200b'
+const VISIBLE_EMPTY_LINE = "\u200b"
 
-const marksFromGrammar = (shiki: Highlighter, text: string, lang: string): Marks =>
+const marksFromGrammar = (shiki: HighlighterCore, text: string, lang: string): Marks =>
   shiki
     .codeToTokensBase(
       text
-        .split('\n')
-        .map((line) => (line === '' ? VISIBLE_EMPTY_LINE : line))
-        .join('\n'),
-      { lang, theme: 'min-light', includeExplanation: 'scopeName' },
+        .split("\n")
+        .map((line) => (line === "" ? VISIBLE_EMPTY_LINE : line))
+        .join("\n"),
+      { lang, theme: "min-light", includeExplanation: "scopeName" },
     )
     .map((line) =>
       line.flatMap((token) =>
@@ -59,7 +61,7 @@ const marksFromGrammar = (shiki: Highlighter, text: string, lang: string): Marks
           const notations = part.scopes
             .map((scope) => NOTATION_OF.get(scope.scopeName))
             .filter((notation) => notation !== undefined)
-          return Array.from(part.content, () => [...new Set(notations)].sort().join(' '))
+          return Array.from(part.content, () => [...new Set(notations)].sort().join(" "))
         }),
       ),
     )
@@ -71,10 +73,10 @@ interface Sample {
 }
 
 const conformance = JSON.parse(
-  readFileSync(join(repoRoot, 'packages/parser/src/fixtures/conformance.json'), 'utf8'),
-) as Record<'inline' | 'page', { description: string; input: string }[]>
+  readFileSync(join(repoRoot, "packages/parser/src/fixtures/conformance.json"), "utf8"),
+) as Record<"inline" | "page", { description: string; input: string }[]>
 
-const postsDir = join(repoRoot, 'examples/astro-blog/src')
+const postsDir = join(repoRoot, "examples/astro-blog/src")
 
 const samples: Sample[] = [
   // Inline cases are one line; a title goes above so they are read as body.
@@ -88,25 +90,30 @@ const samples: Sample[] = [
     text: c.input,
     components: false,
   })),
-  ...readdirSync(postsDir, { recursive: true, encoding: 'utf8' })
+  ...readdirSync(postsDir, { recursive: true, encoding: "utf8" })
     .filter((path) => /\.csnx?$/.test(path))
     .map((path) => ({
       name: `example: ${path}`,
-      text: readFileSync(join(postsDir, path), 'utf8').replace(/\r\n?/g, '\n'),
-      components: path.endsWith('.csnx'),
+      text: readFileSync(join(postsDir, path), "utf8").replace(/\r\n?/g, "\n"),
+      components: path.endsWith(".csnx"),
     })),
   {
-    name: 'every emphasis marker at once',
-    text: 'T\n[-* 打ち消し太字] [_/ 下線斜体] [** 大] [**** 特大] [[強調 [page]]]',
+    name: "full-width spaces indent and bound tags",
+    text: "T\ncode:a.js\n\u3000x\n本文\u3000#tag\n\u3000[page]",
     components: false,
   },
   {
-    name: 'component tags read as JSX',
+    name: "every emphasis marker at once",
+    text: "T\n[-* 打ち消し太字] [_/ 下線斜体] [** 大] [**** 特大] [[強調 [page]]]",
+    components: false,
+  },
+  {
+    name: "component tags read as JSX",
     text: '<Callout type="warn" title=\'注意\'>\n <Counter start={10} style={{ a: 1 }} />\n <Note href="[page]"> から [page] #tag\n</Callout>',
     components: true,
   },
   {
-    name: 'frontmatter, then a component',
+    name: "frontmatter, then a component",
     text: '---\ntitle: 投稿\n---\nはじめての投稿\n<Callout type="warn">\n [page] #tag\n</Callout>',
     components: true,
   },
@@ -114,47 +121,47 @@ const samples: Sample[] = [
 
 /** Lines where the two disagree, as `line N: grammar ≠ server`, for a readable failure. */
 const disagreements = (grammar: Marks, server: Marks, text: string): string[] =>
-  text.split('\n').flatMap((line, n) => {
+  text.split("\n").flatMap((line, n) => {
     const g = grammar[n] ?? []
     const s = server[n] ?? []
-    const differs = Array.from(line).some((_, c) => (g[c] ?? '') !== (s[c] ?? ''))
+    const differs = Array.from(line).some((_, c) => (g[c] ?? "") !== (s[c] ?? ""))
     if (!differs) return []
     const show = (marks: string[]) =>
-      Array.from(line, (ch, c) => (marks[c] ? `${ch}{${marks[c]}}` : ch)).join('')
+      Array.from(line, (ch, c) => (marks[c] ? `${ch}{${marks[c]}}` : ch)).join("")
     return [`line ${n}: ${JSON.stringify(line)}\n  grammar: ${show(g)}\n  server:  ${show(s)}`]
   })
 
 describe.each([
-  ['oniguruma', undefined],
-  ['JavaScript', createJavaScriptRegexEngine()],
-])('with the %s regex engine', (_, engine) => {
-  let shiki: Highlighter
+  ["oniguruma", () => createOnigurumaEngine(import("shiki/wasm"))],
+  ["JavaScript", () => createJavaScriptRegexEngine()],
+])("with the %s regex engine", (_, engine) => {
+  let shiki: HighlighterCore
 
   beforeAll(async () => {
-    shiki = await createHighlighter({
-      themes: ['min-light'],
+    shiki = await createHighlighterCore({
+      themes: [minLight],
       langs: [cosense, cosenseX],
-      ...(engine ? { engine } : {}),
+      engine: engine(),
     })
   })
 
-  it.each(samples.map((s) => [s.name, s] as const))('matches the server: %s', (_, sample) => {
+  it.each(samples.map((s) => [s.name, s] as const))("matches the server: %s", (_, sample) => {
     const grammar = marksFromGrammar(
       shiki,
       sample.text,
-      sample.components ? 'cosense-x' : 'cosense',
+      sample.components ? "cosense-x" : "cosense",
     )
     const server = marksFromServer(sample.text, sample.components)
     expect(disagreements(grammar, server, sample.text)).toEqual([])
   })
 })
 
-describe('SCOPES', () => {
-  it('names every notation the server does, and no other', () => {
+describe("SCOPES", () => {
+  it("names every notation the server does, and no other", () => {
     expect(Object.keys(SCOPES).sort()).toEqual([...TOKEN_TYPES].sort())
   })
 
-  it('gives each notation its own scope, so none is read as another', () => {
+  it("gives each notation its own scope, so none is read as another", () => {
     expect(new Set(Object.values(SCOPES)).size).toBe(Object.keys(SCOPES).length)
   })
 })
