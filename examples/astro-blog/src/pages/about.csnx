@@ -3,7 +3,7 @@ layout: ../layouts/Page.astro
 ---
 このサイトについて
 このページは src/pages/about.csnx から作られている。
-記事: [はじめての投稿]
+記事: [Cosenseで書く] [test]
 <Callout title="メモ">
 ページとしても .csnx を置ける。
 </Callout>
