@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { normalizeTitle, resolveRelativePath, titleToSlug } from "./title"
+import { normalizeTitle, titleToSlug } from "./title"
 
 describe("normalizeTitle", () => {
   it("大文字小文字を区別しない", () => {
@@ -27,23 +27,5 @@ describe("titleToSlug", () => {
 
   it("日本語はそのまま残す", () => {
     expect(titleToSlug("今日のメモ")).toBe("今日のメモ")
-  })
-})
-
-describe("resolveRelativePath", () => {
-  it("同じディレクトリのファイルを指す", () => {
-    expect(resolveRelativePath("posts/a.csn", "./b.csn")).toBe("posts/b.csn")
-  })
-
-  it(".. で親ディレクトリに上がる", () => {
-    expect(resolveRelativePath("posts/2024/a.csn", "../notes/b.csnx")).toBe("posts/notes/b.csnx")
-  })
-
-  it("絶対パスの基点を保つ", () => {
-    expect(resolveRelativePath("/src/posts/a.csn", "./b.csn")).toBe("/src/posts/b.csn")
-  })
-
-  it("ルートより上には出ない", () => {
-    expect(resolveRelativePath("a.csn", "../../b.csn")).toBe("b.csn")
   })
 })

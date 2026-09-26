@@ -1,0 +1,7 @@
+# Zed が dev extension を入れるたびに作り直すもの。
+# `target/` は cargo の、`extension.wasm` はそれを component に包んだ成果物。
+target/
+extension.wasm
+
+# Zed が extension.toml の [grammars] を見て clone してくる。いまは grammar 無し。
+grammars/

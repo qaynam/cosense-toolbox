@@ -1,5 +1,5 @@
 /**
- * links.ts — `[title]` / `[./foo.csn]` / `#tag` を、手元のファイルだけで URL にする。
+ * links.ts — `[title]` / `#tag` を、手元のファイルだけで URL にする。
  *
  * Cosense にも API にも問い合わせない。オフラインで書いてもビルドできるようにするため。
  */
@@ -8,10 +8,10 @@ import type { PageRefNode } from "@cosense-toolbox/parser/html"
 import { Match, Option, pipe } from "effect"
 
 import { type CosenseXError, toError, unresolvedLinkError } from "./errors"
-import { isRelativePath, normalizeTitle, resolveRelativePath, titleToSlug } from "./title"
+import { normalizeTitle, titleToSlug } from "./title"
 import type { ResolvedLink } from "./to-hast"
 
-/** 索引に載るページ。`id` はファイルのパスで、`[./foo.csn]` の解決に使う。 */
+/** 索引に載るページ。`id` はファイルのパスで、グラフでページを区別するのに使う。 */
 export interface IndexedPage {
   readonly id: string
   readonly title: string
@@ -59,14 +59,6 @@ export const pageByTitle = (index: PageIndex, title: string): Option.Option<Inde
 export const findByTitle = (index: PageIndex, title: string): IndexedPage | undefined =>
   Option.getOrUndefined(pageByTitle(index, title))
 
-/** 索引から、`from` のファイルから見た相対パスでページを引く。 */
-export const pageByPath = (
-  index: PageIndex,
-  from: string,
-  relative: string,
-): Option.Option<IndexedPage> =>
-  Option.fromNullable(index.pages[resolveRelativePath(from, relative)])
-
 /**
  * 解決できないリンクの扱い。
  *
@@ -89,7 +81,7 @@ export interface LinkOptions {
    * 手元のページの索引。渡さなければ、`[title]` はすべて存在するページとみなしてリンクにする。
    */
   readonly index?: PageIndex
-  /** 今のファイルの id (索引と同じ基点のパス)。`[./foo.csn]` の解決に使う */
+  /** 今のファイルの id (索引と同じ基点のパス)。リンク切れの警告に、どのファイルかを添える */
   readonly filePath?: string
   /**
    * ページの URL。
@@ -149,12 +141,12 @@ export const linkResolution = (options: LinkOptions): ((node: PageRefNode) => Li
   const toTitle = (title: string): LinkResolution =>
     resolved({ href: pageUrl({ id: null, title, slug: titleToSlug(title) }) })
 
-  /** 索引に無いリンク。相対パスは `link` にしてもページの URL を作れないので、テキストにする。 */
-  const unresolved = (target: string, canLink: boolean): LinkResolution => {
+  /** 索引に無いリンク。 */
+  const unresolved = (target: string): LinkResolution => {
     const where = filePath === undefined ? "" : ` (${filePath})`
     const message = `リンク先のページが見つからない: [${target}]${where}`
     return Match.value(options.unresolved ?? "text").pipe(
-      Match.when("link", () => (canLink ? toTitle(target) : asText)),
+      Match.when("link", () => toTitle(target)),
       Match.when("warn", (): LinkResolution => ({ _tag: "warning", message })),
       Match.when("error", (): LinkResolution => ({
         _tag: "failure",
@@ -169,17 +161,8 @@ export const linkResolution = (options: LinkOptions): ((node: PageRefNode) => Li
     index === undefined
       ? toTitle(title)
       : Option.match(pageByTitle(index, title), {
-          onNone: () => unresolved(title, true),
+          onNone: () => unresolved(title),
           onSome: (page) => resolved({ href: pageUrl(page) }),
-        })
-
-  const byPath = (relative: string): LinkResolution =>
-    index === undefined || filePath === undefined
-      ? unresolved(relative, false)
-      : Option.match(pageByPath(index, filePath, relative), {
-          onNone: () => unresolved(relative, false),
-          // 相対パスはファイル名なので、表示はリンク先のタイトルにする。
-          onSome: (page) => resolved({ href: pageUrl(page), label: page.title }),
         })
 
   const fromUrl = (href: string | null): LinkResolution =>
@@ -187,9 +170,7 @@ export const linkResolution = (options: LinkOptions): ((node: PageRefNode) => Li
 
   return (node) =>
     Match.value(node).pipe(
-      Match.when({ type: "internalLink" }, (link) =>
-        isRelativePath(link.target) ? byPath(link.target) : byTitle(link.target),
-      ),
+      Match.when({ type: "internalLink" }, (link) => byTitle(link.target)),
       Match.when({ type: "hashtag" }, (tag) =>
         options.tagUrl === undefined ? byTitle(tag.value) : fromUrl(options.tagUrl(tag.value)),
       ),

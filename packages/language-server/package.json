@@ -1,0 +1,39 @@
+{
+  "name": "@cosense-toolbox/language-server",
+  "version": "0.1.0-beta.0",
+  "type": "module",
+  "description": "Language server for .csn and .csnx: semantic tokens for Cosense notation.",
+  "license": "MIT",
+  "bin": {
+    "cosense-language-server": "./dist/main.mjs"
+  },
+  "exports": {
+    "./completion": {
+      "types": "./dist/completion.d.mts",
+      "default": "./dist/completion.mjs"
+    },
+    "./tokens": {
+      "types": "./dist/tokens.d.mts",
+      "default": "./dist/tokens.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@cosense-toolbox/parser": "workspace:*",
+    "effect": "^3.22.1",
+    "vscode-languageserver": "^10.1.0",
+    "vscode-languageserver-textdocument": "^1.0.12"
+  },
+  "devDependencies": {
+    "tsdown": "^0.22.14",
+    "typescript": "^6.0.0",
+    "vitest": "^2.1.9"
+  }
+}

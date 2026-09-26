@@ -1,0 +1,553 @@
+import type {
+  AnyNode,
+  AnyNodeType,
+  Decoration,
+  NodeOfType,
+  ParseOptions,
+  Position,
+} from "@cosense-toolbox/parser"
+import { normalizeLineEndings, parse } from "@cosense-toolbox/parser"
+import { customDecorations } from "@cosense-toolbox/parser/extensions"
+import { Array as Arr, Match, Option, Order, pipe } from "effect"
+
+import { branch, gather, leaf, type Picked } from "./tree"
+
+/**
+ * Cosense notation as LSP semantic tokens.
+ *
+ * These names are the ones this package reasons in, and they are not what goes on the wire.
+ * A client announces the token types it knows at initialize and drops everything else —
+ * some send the LSP's own list and nothing more — so `quote` would simply never be drawn.
+ * LEGEND below is what is sent, and LSP_TYPE is the translation.
+ */
+export const TOKEN_TYPES = [
+  "title",
+  "link",
+  "projectLink",
+  "externalLink",
+  "hashtag",
+  "code",
+  "codeBlock",
+  "formula",
+  "icon",
+  "quote",
+  "bold",
+  "italic",
+  "strike",
+  "underline",
+  "image",
+  "table",
+  "bold2",
+  "bold3",
+  // `.csnx` only: a line that opens with a component tag. The tag's name, its attribute
+  // names, and the two kinds of value, as JSX reads them.
+  "component",
+  "attribute",
+  "attributeValue",
+  "expression",
+  // The YAML at the top of the file, which is not Cosense notation at all.
+  "frontmatter",
+  // A notation the caller defines (see `Notation`), such as `[! 注意]`. The token carries
+  // the name the caller gave it.
+  "notation",
+] as const
+
+export type TokenType = (typeof TOKEN_TYPES)[number]
+
+/** Every token type but `notation`, whose tokens also carry a name. */
+type BuiltinTokenType = Exclude<TokenType, "notation">
+
+interface Span {
+  readonly line: number
+  readonly char: number
+  readonly length: number
+}
+
+export type RawToken =
+  | (Span & { readonly type: BuiltinTokenType })
+  | (Span & { readonly type: "notation"; readonly name: string })
+
+/**
+ * A notation the caller adds to Cosense's: a marker that opens a decoration, as `!` opens
+ * `[! 注意]`, and the token type it is sent as. The marker is also taught to the parser, so
+ * the bracket is not read as a link.
+ */
+export interface Notation {
+  readonly marker: string
+  readonly name: string
+}
+
+/**
+ * The legend sent to the client: the LSP's own token types, in its own order.
+ *
+ * Every entry is in the set a client is expected to understand, which is what makes the
+ * colours appear without the reader configuring anything.
+ */
+export const LEGEND = [
+  "namespace",
+  "type",
+  "function",
+  "variable",
+  "property",
+  "parameter",
+  "decorator",
+  "macro",
+  "keyword",
+  "string",
+  "number",
+  "comment",
+] as const
+
+/**
+ * What each notation is drawn as. Chosen so that things a reader separates by eye land on
+ * different entries: a link is not a tag, and a quote is not a heading. `bold` and its
+ * louder siblings share one entry, because the LSP has no notion of weight and a theme
+ * gives each type a single colour.
+ */
+const LSP_TYPE: Record<TokenType, (typeof LEGEND)[number]> = {
+  title: "namespace",
+  link: "function",
+  projectLink: "function",
+  externalLink: "string",
+  icon: "function",
+  image: "string",
+  hashtag: "decorator",
+  code: "string",
+  codeBlock: "string",
+  formula: "number",
+  table: "property",
+  quote: "comment",
+  frontmatter: "comment",
+  component: "type",
+  attribute: "parameter",
+  attributeValue: "string",
+  expression: "variable",
+  bold: "keyword",
+  bold2: "keyword",
+  bold3: "keyword",
+  italic: "macro",
+  strike: "comment",
+  underline: "variable",
+  // What a caller's notation is sent as when the legend has no type of its name.
+  notation: "decorator",
+}
+
+/**
+ * LEGEND with the names of `notations` after it, each once: the legend for a client that
+ * accepts token types of the caller's own naming. The LSP's types keep their places.
+ */
+export const legendOf = (notations: ReadonlyArray<Notation>): ReadonlyArray<string> =>
+  Arr.dedupe([...LEGEND, ...Arr.map(notations, (notation) => notation.name)])
+
+/** `parseOptions` that also read the markers of `notations` as decorations. */
+export const withNotations = (
+  parseOptions: ParseOptions,
+  notations: ReadonlyArray<Notation>,
+): ParseOptions =>
+  Arr.match(notations, {
+    onEmpty: () => parseOptions,
+    onNonEmpty: (added): ParseOptions => ({
+      ...parseOptions,
+      extensions: [
+        ...(parseOptions.extensions ?? []),
+        customDecorations(Arr.map(added, (notation) => notation.marker)),
+      ],
+    }),
+  })
+
+/** Leaf inline nodes that map 1:1. Each sits on one line, so no splitting is needed. */
+const INLINE_TOKEN_TYPE: Partial<Record<AnyNodeType, BuiltinTokenType>> = {
+  internalLink: "link",
+  externalLink: "externalLink",
+  projectLink: "projectLink",
+  hashtag: "hashtag",
+  inlineCode: "code",
+  image: "image",
+  icon: "icon",
+  formula: "formula",
+}
+
+/** Top to bottom, then left to right: the order the LSP encoding needs. */
+const BY_POSITION: Order.Order<RawToken> = Order.combine(
+  Order.mapInput(Order.number, (token: RawToken) => token.line),
+  Order.mapInput(Order.number, (token: RawToken) => token.char),
+)
+
+const onlyIf = <A>(condition: boolean, value: A): Option.Option<A> =>
+  condition ? Option.some(value) : Option.none()
+
+/** A token over `[from, to)` of one line. */
+const token = (type: BuiltinTokenType, line: number, from: number, to: number): RawToken => ({
+  line,
+  char: from,
+  length: to - from,
+  type,
+})
+
+const spanToken = (type: BuiltinTokenType, position: Position): RawToken =>
+  token(type, position.start.line, position.start.column, position.end.column)
+
+/** How many characters from `from` the `^`-anchored `pattern` takes; 0 when it takes none. */
+const matchLength = (pattern: RegExp, text: string, from: number): number =>
+  pipe(
+    Option.fromNullable(pattern.exec(text.slice(from))),
+    Option.match({ onNone: () => 0, onSome: ([matched]) => matched.length }),
+  )
+
+// --- Emphasis ---------------------------------------------------------------------------
+
+/** Cosense sizes emphasis by asterisk count (`[*]`..`[*****]`); sizeLevel is 0-indexed. */
+const boldTokenType = (sizeLevel: number): BuiltinTokenType =>
+  Match.value(sizeLevel).pipe(
+    Match.when(
+      (level) => level >= 2,
+      (): BuiltinTokenType => "bold3",
+    ),
+    Match.when(1, (): BuiltinTokenType => "bold2"),
+    Match.orElse((): BuiltinTokenType => "bold"),
+  )
+
+/** Every decoration a run carries, since Cosense applies all of them: `[-* x]` is both. */
+const decorationTokenTypes = (node: Decoration): ReadonlyArray<BuiltinTokenType> =>
+  Arr.getSomes([
+    onlyIf(node.underline, "underline" as const),
+    onlyIf(node.strike, "strike" as const),
+    onlyIf(node.italic, "italic" as const),
+    onlyIf(node.bold, boldTokenType(node.sizeLevel)),
+  ])
+
+// --- Component lines (`.csnx`) ----------------------------------------------------------
+
+export const COMPONENT_LINE = /^\s*<\/?[A-Z][A-Za-z0-9_.]*(\s|\/?>)/
+const TAG_OPEN = /^(\s*<\/?)([A-Z][A-Za-z0-9_.]*)/
+const ATTRIBUTE_NAME = /^[A-Za-z_:][A-Za-z0-9_:.-]*/
+const SPACE = /^\s*/
+
+/** Where a quoted value opened at `from` ends: after its closing quote, or at the line's end. */
+const quotedEnd = (text: string, from: number): number =>
+  pipe(
+    text.indexOf(text.charAt(from), from + 1),
+    Option.liftPredicate((close) => close >= 0),
+    Option.match({ onNone: () => text.length, onSome: (close) => close + 1 }),
+  )
+
+/** Where `{ ... }` opened at `from` ends, counting nested braces: after its `}`, or the line's end. */
+const bracedEnd = (text: string, from: number): number =>
+  pipe(
+    text.slice(from).split(""),
+    Arr.scan(0, (depth, char) => (char === "{" ? depth + 1 : char === "}" ? depth - 1 : depth)),
+    // scan starts with the depth before any character; the rest line up with the characters.
+    Arr.drop(1),
+    Arr.findFirstIndex((depth) => depth === 0),
+    Option.match({ onNone: () => text.length, onSome: (index) => from + index + 1 }),
+  )
+
+type ValueType = "attributeValue" | "expression"
+
+/** The attribute value that starts at `from`: its type and where it ends. */
+const valueAt = (text: string, from: number): Option.Option<readonly [ValueType, number]> =>
+  Match.value(text.charAt(from)).pipe(
+    Match.when(
+      (char) => char === '"' || char === "'",
+      () => Option.some(["attributeValue", quotedEnd(text, from)] as const),
+    ),
+    Match.when("{", () => Option.some(["expression", bracedEnd(text, from)] as const)),
+    Match.orElse(() => Option.none()),
+  )
+
+/** The tokens of one attribute, and where the next may start. */
+type Step = readonly [ReadonlyArray<RawToken>, number]
+
+/** `at` past any whitespace. */
+const skipSpace = (text: string, at: number): number => at + matchLength(SPACE, text, at)
+
+/** Whether the tag closes at `at`, with `>` or `/>`, or the line ends there. */
+const closesAt = (text: string, at: number): boolean =>
+  at >= text.length || text.startsWith(">", at) || text.startsWith("/>", at)
+
+/**
+ * An attribute named over `[at, nameEnd)`: the name, then `=` and a value if one follows.
+ * A name with no `=` after it stands alone, as JSX reads `<Dialog open>`.
+ */
+const attribute = (line: number, text: string, at: number, nameEnd: number): Step => {
+  const name = token("attribute", line, at, nameEnd)
+  const afterName = skipSpace(text, nameEnd)
+  return pipe(
+    Option.liftPredicate(afterName, (equals) => text.charAt(equals) === "="),
+    Option.map((equals) => skipSpace(text, equals + 1)),
+    Option.match({
+      onNone: (): Step => [[name], afterName],
+      onSome: (valueStart): Step =>
+        pipe(
+          valueAt(text, valueStart),
+          Option.match({
+            onNone: (): Step => [[name], valueStart],
+            onSome: ([type, end]): Step => [[name, token(type, line, valueStart, end)], end],
+          }),
+        ),
+    }),
+  )
+}
+
+/** One attribute from `from`, or None once the tag has closed. */
+const attributeStep =
+  (line: number, text: string) =>
+  (from: number): Option.Option<Step> =>
+    pipe(
+      Option.liftPredicate(skipSpace(text, from), (at) => !closesAt(text, at)),
+      Option.map((at) =>
+        pipe(
+          Option.liftPredicate(at + matchLength(ATTRIBUTE_NAME, text, at), (end) => end > at),
+          Option.match({
+            // Not a name: step over the character, since the tag may still go on after it.
+            onNone: (): Step => [[], at + 1],
+            onSome: (nameEnd) => attribute(line, text, at, nameEnd),
+          }),
+        ),
+      ),
+    )
+
+/**
+ * The tag that opens a component line, read as JSX: its name, then each attribute and its
+ * value, up to the `>` that closes it. Text after the tag is left alone; it is neither
+ * Cosense notation nor part of the tag.
+ */
+const componentTokens = (line: number, text: string): ReadonlyArray<RawToken> =>
+  pipe(
+    Option.fromNullable(TAG_OPEN.exec(text)),
+    Option.map(([head, lead = "", name = ""]) => [
+      token("component", line, lead.length, lead.length + name.length),
+      ...Arr.flatten(Arr.unfold(head.length, attributeStep(line, text))),
+    ]),
+    Option.getOrElse(() => []),
+  )
+
+// --- The page ---------------------------------------------------------------------------
+
+/** The last line of the `---` fence around YAML at the very top, if the file opens with one. */
+export const frontmatterEnd = (lines: ReadonlyArray<string>): Option.Option<number> =>
+  pipe(
+    Option.liftPredicate(lines, (all) => all[0]?.trim() === "---"),
+    Option.flatMap(Arr.findFirstIndex((line, index) => index > 0 && line.trim() === "---")),
+  )
+
+/**
+ * `frontmatterEnd`, or None when the caller reads no frontmatter: a Cosense page has none,
+ * and a page whose title is `---` would otherwise lose its first lines to it.
+ */
+export const fenceOf = (
+  lines: ReadonlyArray<string>,
+  frontmatter: boolean,
+): Option.Option<number> => Option.flatMap(onlyIf(frontmatter, lines), frontmatterEnd)
+
+/** What the node visitor needs to know about the file around the parsed body. */
+interface Page {
+  readonly lines: ReadonlyArray<string>
+  /** Lines before the body: the frontmatter, which the parser never sees. */
+  readonly offset: number
+  readonly components: boolean
+  readonly notations: ReadonlyArray<Notation>
+}
+
+/** Each non-empty line from `first` to `last`, whole. */
+const lineSpans = (
+  type: BuiltinTokenType,
+  lines: ReadonlyArray<string>,
+  first: number,
+  last: number,
+): ReadonlyArray<RawToken> =>
+  Arr.filterMap(Arr.range(first, last), (line) =>
+    pipe(
+      Option.fromNullable(lines[line]),
+      Option.filter((text) => text.length > 0),
+      Option.map((text) => token(type, line, 0, text.length)),
+    ),
+  )
+
+/** The line's text, when the file reads components and the line opens with a tag. */
+const componentLine = (page: Page, line: number): Option.Option<string> =>
+  pipe(
+    Option.fromNullable(page.lines[line]),
+    Option.filter((text) => page.components && COMPONENT_LINE.test(text)),
+  )
+
+/** The `>` and spaces that open a quote line, from its indentation onwards. */
+const quoteToken = (page: Page, node: NodeOfType<"line">, line: number): Option.Option<RawToken> =>
+  pipe(
+    onlyIf(node.quote, page.lines[line] ?? ""),
+    Option.map((text) => matchLength(/^[> ]*/, text, node.indent)),
+    Option.filter((length) => length > 0),
+    Option.map((length) => token("quote", line, node.indent, node.indent + length)),
+  )
+
+/** A token for each of `notations` whose marker opens the decoration. */
+const notationTokens = (
+  notations: ReadonlyArray<Notation>,
+  node: Decoration,
+  position: Position,
+): ReadonlyArray<RawToken> =>
+  Arr.filterMap(notations, ({ marker, name }) =>
+    onlyIf(node.markers.includes(marker), {
+      line: position.start.line,
+      char: position.start.column,
+      length: position.end.column - position.start.column,
+      type: "notation" as const,
+      name,
+    }),
+  )
+
+const nodeTokens =
+  (page: Page) =>
+  (node: AnyNode): Picked<RawToken> => {
+    const lineOf = (position: Position) => position.start.line + page.offset
+    const shift = (position: Position): Position => ({
+      start: { ...position.start, line: position.start.line + page.offset },
+      end: { ...position.end, line: position.end.line + page.offset },
+    })
+    return Match.value(node).pipe(
+      Match.discriminators("type")({
+        // A page that opens with a component has no title line: the tag is what it is.
+        title: (title) =>
+          leaf(
+            pipe(
+              componentLine(page, lineOf(title.position)),
+              Option.match({
+                onNone: () => [spanToken("title", shift(title.position))],
+                onSome: (text) => componentTokens(lineOf(title.position), text),
+              }),
+            ),
+          ),
+        codeBlock: (block) =>
+          leaf(
+            lineSpans(
+              "codeBlock",
+              page.lines,
+              lineOf(block.position),
+              block.position.end.line + page.offset,
+            ),
+          ),
+        table: (table) =>
+          leaf(
+            lineSpans(
+              "table",
+              page.lines,
+              lineOf(table.position),
+              table.position.end.line + page.offset,
+            ),
+          ),
+        // A component tag owns its line, so nothing on it is Cosense notation.
+        line: (line) =>
+          pipe(
+            componentLine(page, lineOf(line.position)),
+            Option.match({
+              onSome: (text) => leaf(componentTokens(lineOf(line.position), text)),
+              onNone: () => branch(Option.toArray(quoteToken(page, line, lineOf(line.position)))),
+            }),
+          ),
+        // Descend: a decoration can wrap a link or an image (`[* [page]]`), and that child
+        // needs its own token over the same span.
+        decoration: (decoration) =>
+          branch([
+            ...decorationTokenTypes(decoration).map((type) =>
+              spanToken(type, shift(decoration.position)),
+            ),
+            ...notationTokens(page.notations, decoration, shift(decoration.position)),
+          ]),
+      }),
+      Match.orElse((other) =>
+        branch(
+          pipe(
+            Option.fromNullable(INLINE_TOKEN_TYPE[other.type]),
+            Option.map((type) => spanToken(type, shift(other.position))),
+            Option.toArray,
+          ),
+        ),
+      ),
+    )
+  }
+
+export interface ComputeTokensOptions {
+  /** `.csnx` also reads a line that is one component tag. `.csn` never does. */
+  readonly components?: boolean
+  /** How to parse: the site's notation extensions, so `[! 注意]` is not read as a link. */
+  readonly parseOptions?: ParseOptions
+  /** Notations the caller adds, each sent as a token of its own name (see `Notation`). */
+  readonly notations?: ReadonlyArray<Notation>
+  /**
+   * Whether a `---` fence on the first line opens YAML to skip (default: true). Off for
+   * Cosense pages, which have no frontmatter.
+   */
+  readonly frontmatter?: boolean
+}
+
+/** Pure text -> tokens. The LSP delta encoding lives in encodeTokens, so this stays testable. */
+export const computeTokens = (text: string, options: ComputeTokensOptions = {}): RawToken[] => {
+  const lines = normalizeLineEndings(text).split("\n")
+  const notations = options.notations ?? []
+  // Frontmatter is YAML, so the Cosense parser must not see it: `---` would otherwise read
+  // as a strikethrough marker and the keys as plain text on the title line.
+  const fence = fenceOf(lines, options.frontmatter ?? true)
+  const page: Page = {
+    lines,
+    offset: Option.match(fence, { onNone: () => 0, onSome: (end) => end + 1 }),
+    components: options.components ?? false,
+    notations,
+  }
+
+  const frontmatterTokens = Option.match(fence, {
+    onNone: () => [],
+    onSome: (end) => lineSpans("frontmatter", lines, 0, end),
+  })
+  const body = parse(
+    lines.slice(page.offset).join("\n"),
+    withNotations(options.parseOptions ?? {}, notations),
+  )
+
+  return pipe(
+    [...frontmatterTokens, ...gather(body, nodeTokens(page))],
+    Arr.filter((t) => t.length > 0),
+    Arr.sort(BY_POSITION),
+  )
+}
+
+/**
+ * Each token's place in `legend`: a notation's own name when the legend has it, else the
+ * LSP type its kind is drawn as.
+ */
+const legendIndex = (legend: ReadonlyArray<string>) => {
+  const placeOf = (type: string): Option.Option<number> =>
+    Option.liftPredicate(legend.indexOf(type), (index) => index >= 0)
+  const drawnAs = (token: RawToken) => Option.getOrElse(placeOf(LSP_TYPE[token.type]), () => 0)
+  return (token: RawToken): number =>
+    Match.value(token).pipe(
+      Match.when({ type: "notation" }, (notation) =>
+        Option.getOrElse(placeOf(notation.name), () => drawnAs(notation)),
+      ),
+      Match.orElse(drawnAs),
+    )
+}
+
+/**
+ * LSP relative encoding: [deltaLine, deltaStartChar, length, tokenType, tokenModifiers]*.
+ * `legend` is the one sent at initialize: LEGEND, or `legendOf(notations)`.
+ */
+export const encodeTokens = (
+  tokens: ReadonlyArray<RawToken>,
+  legend: ReadonlyArray<string> = LEGEND,
+): number[] => {
+  const indexOf = legendIndex(legend)
+  return pipe(
+    Arr.sort(tokens, BY_POSITION),
+    Arr.mapAccum({ line: 0, char: 0 }, (previous, t) => [
+      { line: t.line, char: t.char },
+      [
+        t.line - previous.line,
+        t.line === previous.line ? t.char - previous.char : t.char,
+        t.length,
+        indexOf(t),
+        0,
+      ],
+    ]),
+    ([, rows]) => Arr.flatten(rows),
+  )
+}

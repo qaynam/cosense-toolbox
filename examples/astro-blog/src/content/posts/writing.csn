@@ -1,10 +1,15 @@
-Cosense で書く
+Cosenseで書く
 code:frontmatter.yml
  date: 2026-09-05
  description: Cosense の記法でブログ記事を書く方法
+
 [frontmatter] も対応している。
-code:code
+
+code:csnx
  ---
+  title: Cosenseで書く
+  date: 2026-09-05
+  description: Cosense の記法でブログ記事を書く方法
  ---
 
 のような点線を書くか、最初の`code:frontmatter.yml`のように書くと、Cosense の画面でも frontmatter が書ける。
@@ -17,3 +22,11 @@ table:テーブ内で装飾記法を使う
  [** 箇条書き]	箇条書き
  [-- コメント]	コメント
  [https://scrapbox.io/files/665f0b8c962ee6001c15c172.png]	画像
+
+Cosense の記法そのものも、ファイル名を `.csn` にしたコードブロックで色付けされる
+code:記法の例.csn
+ はじめての投稿
+ [リンク] [/help-jp/Scrapbox] #タグ [user.icon]
+ [* 太字] [** 大きな太字] [/ 斜体] [- 打ち消し] [_ 下線]
+ `コード` [$ E = mc^2] [ラベル https://example.com]
+ > 引用の中の [リンク]

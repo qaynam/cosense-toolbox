@@ -3,6 +3,7 @@ import svelte from "@astrojs/svelte"
 import cosense from "@cosense-toolbox/astro"
 import { customDecorations, tableCellNotation } from "@cosense-toolbox/parser/extensions"
 import { codeLineNumbers, tableCellLineBreaks } from "@cosense-toolbox/parser/html"
+import { cosense as cosenseGrammar, cosenseX as cosenseXGrammar } from "@cosense-toolbox/textmate"
 import tailwindcss from "@tailwindcss/vite"
 import { defineConfig } from "astro/config"
 
@@ -14,7 +15,12 @@ try {
 
 export default defineConfig({
   vite: { plugins: [tailwindcss()] },
-  markdown: { shikiConfig: { theme: "catppuccin-latte" } },
+  markdown: {
+    shikiConfig: {
+      theme: "catppuccin-latte",
+      langs: [cosenseGrammar, cosenseXGrammar],
+    },
+  },
   integrations: [
     svelte(),
     cosense({

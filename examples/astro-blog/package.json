@@ -15,6 +15,7 @@
     "@cosense-toolbox/cosense-x": "workspace:*",
     "@cosense-toolbox/parser": "workspace:*",
     "@cosense-toolbox/tailwind": "workspace:*",
+    "@cosense-toolbox/textmate": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "7.2.3",
     "shiki": "^4.4.3",

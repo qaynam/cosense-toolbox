@@ -183,11 +183,8 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
         addContentEntryType({
           extensions: [...EXTENSIONS],
           async getEntryInfo({ fileUrl, contents }) {
-            // 説明文の中の相対パスのリンクをタイトルにするため、索引を渡して読む。
-            const { index } = await site.get()
             const { frontmatter, metadata, body } = readPage(contents, {
               filePath: idOf(root, fileURLToPath(fileUrl)),
-              index,
               ...(options.parseOptions === undefined ? {} : { parseOptions: options.parseOptions }),
             })
             // Cosense では 1 行目がタイトルなので、frontmatter に無くても title などを data に入れる。

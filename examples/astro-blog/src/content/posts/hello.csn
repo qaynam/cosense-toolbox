@@ -1,10 +1,10 @@
 ---
+title: はじめての投稿
 date: 2026-09-01
 ---
-はじめての投稿
+
 cosense-x で書いたブログ記事です。 #日記
 [Cosense で書く] に書き方をまとめた。
-相対パスでも書ける: [./notes/components.csnx]
 [書きかけの記事] は draft なのでリンクにならない。
 [/help-jp/ブラケティング] は Cosense の別プロジェクトへのリンク。
 
@@ -12,6 +12,7 @@ cosense-x で書いたブログ記事です。 #日記
  箇条書き 1
  箇条書き 2
   深い箇条書き
+
 code:hello.js
  function hello(name) {
    console.log(`hello ${name}`)
@@ -21,7 +22,7 @@ code:hello.js
 code:md
   # hello
   
-  `code`だね 
+  `code`だね
   
   ```ts
     export enum Color {

@@ -1,0 +1,55 @@
+{
+  "name": "@cosense-toolbox/textmate",
+  "version": "0.1.0-beta.0",
+  "type": "module",
+  "description": "TextMate grammars for Cosense notation (.csn / .csnx), ready for Shiki and VS Code.",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./cosense.tmLanguage.json": "./grammars/cosense.tmLanguage.json",
+    "./cosense-x.tmLanguage.json": "./grammars/cosense-x.tmLanguage.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "grammars",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "cosense",
+    "scrapbox",
+    "textmate",
+    "tmlanguage",
+    "shiki",
+    "syntax-highlighting"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qaynam/cosense-toolbox.git",
+    "directory": "packages/textmate"
+  },
+  "scripts": {
+    "build": "tsdown && bun scripts/emit-grammars.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "effect": "^3.22.1"
+  },
+  "devDependencies": {
+    "@cosense-toolbox/language-server": "workspace:*",
+    "shiki": "^4.4.3",
+    "tsdown": "^0.22.14",
+    "typescript": "^6.0.0",
+    "vitest": "^2.1.9"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "beta",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

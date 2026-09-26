@@ -5,11 +5,10 @@
  * unified 系が入らないよう、この層は JS の生成に関わるものを import しない。
  */
 import { normalizeLineEndings, type Page, parse, type ParseOptions } from "@cosense-toolbox/parser"
-import { Either, Option, pipe } from "effect"
+import { Either, pipe } from "effect"
 
 import { type CosenseXError, orThrow } from "./errors"
 import { type Frontmatter, readFrontmatterEither, splitFrontmatterEither } from "./frontmatter"
-import { pageByPath, type PageIndex } from "./links"
 import { collectMetadata, type CollectMetadataOptions, type PageMetadata } from "./metadata"
 
 /** `.csn` は素の Cosense 記法、`.csnx` はそれにコンポーネントの行を足したもの。 */
@@ -25,11 +24,6 @@ export interface ReadOptions {
   readonly filePath?: string
   /** パーサーに渡すオプション。記法の拡張 (`extensions`) を足せる */
   readonly parseOptions?: ParseOptions
-  /**
-   * 手元のページの索引。`filePath` と一緒に渡すと、説明文の中の相対パスのリンク
-   * (`[./foo.csn]`) をリンク先のタイトルにする。
-   */
-  readonly index?: PageIndex
 }
 
 export interface ReadResult {
@@ -51,18 +45,8 @@ export const readPageEither = (
 ): Either.Either<ReadResult, CosenseXError> => {
   const format = options.format ?? formatOf(options.filePath)
   const normalized = normalizeLineEndings(source)
-  const { index, filePath } = options
-  const metadataOptions = (body: string): CollectMetadataOptions => ({
-    ...(format === "csnx" ? { componentsSource: body } : {}),
-    ...(index === undefined || filePath === undefined
-      ? {}
-      : {
-          resolveRelativeLink: (target: string) =>
-            Option.getOrUndefined(
-              Option.map(pageByPath(index, filePath, target), (page) => page.title),
-            ),
-        }),
-  })
+  const metadataOptions = (body: string): CollectMetadataOptions =>
+    format === "csnx" ? { componentsSource: body } : {}
 
   return pipe(
     splitFrontmatterEither(normalized),
