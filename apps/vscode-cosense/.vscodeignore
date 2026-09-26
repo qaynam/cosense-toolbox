@@ -1,0 +1,10 @@
+# Only what VS Code loads goes into the package. The extension and its language server are
+# bundled into dist/, so no node_modules are needed.
+**
+!dist/extension.cjs
+!dist/*.mjs
+!syntaxes/*.json
+!language-configuration.json
+!package.json
+!README.md
+!LICENSE

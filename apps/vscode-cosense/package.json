@@ -1,0 +1,123 @@
+{
+  "name": "vscode-cosense",
+  "displayName": "Cosense",
+  "description": ".csn と .csnx の色付け、補完、リンク切れの診断。",
+  "version": "0.1.0",
+  "private": true,
+  "publisher": "cosense-toolbox",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qaynam/cosense-toolbox.git",
+    "directory": "apps/vscode-cosense"
+  },
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
+  "main": "./dist/extension.cjs",
+  "activationEvents": [],
+  "contributes": {
+    "languages": [
+      {
+        "id": "cosense",
+        "aliases": [
+          "Cosense",
+          "csn"
+        ],
+        "extensions": [
+          ".csn"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "cosense-x",
+        "aliases": [
+          "Cosense X",
+          "csnx"
+        ],
+        "extensions": [
+          ".csnx"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "cosense",
+        "scopeName": "text.cosense",
+        "path": "./syntaxes/cosense.tmLanguage.json"
+      },
+      {
+        "language": "cosense-x",
+        "scopeName": "text.cosense-x",
+        "path": "./syntaxes/cosense-x.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "Cosense",
+      "properties": {
+        "cosense.sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "ページを読む場所。ワークスペースからの相対パス。空ならワークスペース全体を読む。"
+        },
+        "cosense.decorations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "サイトの `customDecorations` と同じ記号 (例: `[\"|\", \"!\"]`)。`[! 注意]` をリンクではなく装飾記法として読む。"
+        },
+        "cosense.unresolvedLinks": {
+          "type": "string",
+          "enum": [
+            "off",
+            "hint",
+            "information",
+            "warning",
+            "error"
+          ],
+          "default": "warning",
+          "markdownDescription": "存在しないページへのリンクの診断の強さ。"
+        },
+        "cosense.frontmatter": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "1 行目の `---` を frontmatter (YAML) として飛ばすか。"
+        },
+        "cosense.server.path": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "使う Language Server (`csn-lsp` の `dist/main.mjs`) のパス。空なら拡張に同梱したものを使う。"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsdown && bun scripts/copy-grammars.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "package": "bun run build && vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^10.1.2"
+  },
+  "devDependencies": {
+    "@cosense-toolbox/lsp": "workspace:*",
+    "@cosense-toolbox/textmate": "workspace:*",
+    "@types/vscode": "^1.100.0",
+    "@vscode/vsce": "^4.0.0",
+    "effect": "^3.22.1",
+    "tsdown": "^0.22.14",
+    "typescript": "^6.0.0",
+    "vitest": "^2.1.8"
+  }
+}
