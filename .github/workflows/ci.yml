@@ -1,0 +1,61 @@
+name: ci
+
+# 変わったパッケージと、それに依存するパッケージだけを検査する。
+# どのパッケージが変わったかは turbo の --affected が git の差分から決める
+# (ルートの eslint / prettier の設定や turbo.json・bun.lock が変わったときは全パッケージ)。
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # PR は新しい push が来たら古い実行を止める。main は push ごとに最後まで走らせる。
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: lint / format / typecheck / test / build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # 差分の基点。PR は base ブランチの先頭、main への push は push する前の先頭。
+      TURBO_SCM_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # 基点のコミットと比べるので、履歴をすべて取る
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+
+      - name: 依存のキャッシュ
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
+      - name: turbo のキャッシュ
+        uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-
+
+      - run: bun install --frozen-lockfile
+
+      # 1 回の turbo でまとめて走らせ、パッケージどうしを並列にする。
+      # 失敗しても、それに依存しないタスクは続けて、落ちたものを 1 回で全部出す。
+      - name: 検査
+        run: >-
+          bunx turbo run
+          lint lint:root format:check format:check:root typecheck test build
+          --affected
+          --continue=dependencies-successful
+          --output-logs=errors-only
