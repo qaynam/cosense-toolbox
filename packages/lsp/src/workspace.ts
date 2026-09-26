@@ -135,7 +135,6 @@ const titleOf = (path: string, text: string, frontmatter: boolean): string =>
 /** `path` from `root`, with `/` between directories whatever the platform. */
 const locationOf = (root: string, path: string): string => relative(root, path).split(sep).join("/")
 
-/** A file that cannot be read is left out of the index rather than failing it. */
 /** How the pages are read. */
 export interface ReadIndexOptions {
   /**
@@ -145,47 +144,68 @@ export interface ReadIndexOptions {
   readonly frontmatter?: boolean
 }
 
-const readPage = (
+/** A page file as read: the page it makes, where it is on disk, and its text. */
+export interface PageFile {
+  readonly page: Page
+  readonly path: string
+  readonly text: string
+}
+
+/** A file that cannot be read is left out rather than failing the rest. */
+const readPageFile = (
   root: string,
   path: string,
   { frontmatter = true }: ReadIndexOptions,
-): Effect.Effect<Option.Option<Page>> =>
+): Effect.Effect<Option.Option<PageFile>> =>
   pipe(
     Effect.tryPromise(() => readFile(path, "utf8")),
     Effect.map((text) =>
       Option.some({
-        title: titleOf(path, text, frontmatter),
-        uri: pathToFileURL(path).href,
-        location: locationOf(root, path),
+        page: {
+          title: titleOf(path, text, frontmatter),
+          uri: pathToFileURL(path).href,
+          location: locationOf(root, path),
+        },
+        path,
+        text,
       }),
     ),
     Effect.orElseSucceed(() => Option.none()),
   )
 
-/** The pages under one root. */
-const pagesUnder =
+/** The page files under one root. */
+const filesUnder =
   (options: ReadIndexOptions) =>
-  (root: string): Effect.Effect<ReadonlyArray<Page>> =>
+  (root: string): Effect.Effect<ReadonlyArray<PageFile>> =>
     pipe(
       pageFiles(root),
-      Effect.flatMap(Effect.forEach((path) => readPage(root, path, options))),
+      Effect.flatMap(Effect.forEach((path) => readPageFile(root, path, options))),
       Effect.map(Arr.getSomes),
     )
 
 /**
- * Read every page under `roots` and index it. Roots may overlap (`src` and `src/content`),
- * so a file found twice is kept once, where it was first found.
+ * Every page file under `roots`. Roots may overlap (`src` and `src/content`), so a file
+ * found twice is kept once, where it was first found.
  */
+export const readPageFiles = (
+  roots: ReadonlyArray<string>,
+  options: ReadIndexOptions = {},
+): Effect.Effect<ReadonlyArray<PageFile>> =>
+  pipe(
+    Effect.forEach(roots, filesUnder(options)),
+    Effect.map((found) => Arr.dedupeWith(Arr.flatten(found), (a, b) => a.path === b.path)),
+  )
+
+/** The pages of `files`, as an index. */
+export const indexOf = (files: ReadonlyArray<PageFile>): Index => ({
+  pages: Arr.map(files, (file) => file.page),
+})
+
+/** Read every page under `roots` and index it. */
 export const readIndex = (
   roots: ReadonlyArray<string>,
   options: ReadIndexOptions = {},
-): Effect.Effect<Index> =>
-  pipe(
-    Effect.forEach(roots, pagesUnder(options)),
-    Effect.map((found) => ({
-      pages: Arr.dedupeWith(Arr.flatten(found), (a, b) => a.uri === b.uri),
-    })),
-  )
+): Effect.Effect<Index> => Effect.map(readPageFiles(roots, options), indexOf)
 
 /**
  * Where to read pages: each workspace folder, or each of `sources` under it when the reader

@@ -2,7 +2,7 @@
   "name": "@cosense-toolbox/lsp",
   "version": "0.1.0-beta.0",
   "type": "module",
-  "description": "Language server for .csn and .csnx: semantic tokens for Cosense notation.",
+  "description": "Language server for .csn and .csnx, and a check of a whole site's links: csn-lsp.",
   "license": "MIT",
   "bin": {
     "csn-lsp": "./dist/main.mjs"
@@ -18,7 +18,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "tsdown",
