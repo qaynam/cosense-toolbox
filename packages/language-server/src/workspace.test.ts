@@ -34,6 +34,14 @@ describe("readIndex", () => {
     expect(found).toEqual(["本当の題"])
   })
 
+  it("takes a first line of --- as the title when frontmatter is off", async () => {
+    const root = await workspace({ "a.csn": "---\ntitle: x\n---\n本文" })
+    const titlesWith = async (frontmatter: boolean) =>
+      (await Effect.runPromise(readIndex([root], { frontmatter }))).pages.map((p) => p.title)
+    expect(await titlesWith(false)).toEqual(["---"])
+    expect(await titlesWith(true)).toEqual(["本文"])
+  })
+
   it("falls back to the file name when there is nothing to read", async () => {
     expect(await titles({ "無題.csn": "" })).toEqual(["無題"])
     expect(await titles({ "b.csn": "---\ntitle: x\n---\n" })).toEqual(["b"])

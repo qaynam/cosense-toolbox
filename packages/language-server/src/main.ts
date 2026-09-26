@@ -46,6 +46,7 @@ const semanticTokensOf = (document: TextDocument): SemanticTokens => ({
     computeTokens(document.getText(), {
       components: readsComponents(document),
       parseOptions: currentParseOptions(),
+      frontmatter: currentSettings().frontmatter,
     }),
   ),
 })
@@ -94,6 +95,7 @@ const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
                 severity: set.unresolvedLinks,
                 components: readsComponents(document),
                 parseOptions: parseOptionsOf(set),
+                frontmatter: set.frontmatter,
               }),
             }),
           ),
@@ -107,8 +109,8 @@ const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
  */
 const refreshIndex = (): void => {
   pipe(
-    Ref.get(roots),
-    Effect.flatMap(readIndex),
+    Effect.all([Ref.get(roots), Ref.get(settings)]),
+    Effect.flatMap(([at, set]) => readIndex(at, { frontmatter: set.frontmatter })),
     Effect.flatMap((next) => Ref.set(index, Option.some(next))),
     Effect.flatMap(() => Effect.forEach(documents.all(), publishDiagnostics, { discard: true })),
     Effect.runFork,

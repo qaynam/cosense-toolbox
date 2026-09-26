@@ -11,21 +11,28 @@ describe("settingsOf", () => {
         sources: ["examples/astro-blog/src"],
         decorations: ["|", "!"],
         unresolvedLinks: "error",
+        frontmatter: false,
       }),
     ).toEqual({
       sources: ["examples/astro-blog/src"],
       decorations: ["|", "!"],
       unresolvedLinks: "error",
+      frontmatter: false,
     })
   })
 
   it("falls back to the defaults when there are no options", () => {
     expect(settingsOf(undefined)).toEqual(defaultSettings)
-    expect(defaultSettings).toEqual({ sources: [], decorations: [], unresolvedLinks: "warning" })
+    expect(defaultSettings).toEqual({
+      sources: [],
+      decorations: [],
+      unresolvedLinks: "warning",
+      frontmatter: true,
+    })
   })
 
   it("keeps the strings of a list and drops what is not one", () => {
-    expect(settingsOf({ sources: "src", decorations: ["!", 1, ""] })).toEqual({
+    expect(settingsOf({ sources: "src", decorations: ["!", 1, ""], frontmatter: "no" })).toEqual({
       ...defaultSettings,
       decorations: ["!"],
     })

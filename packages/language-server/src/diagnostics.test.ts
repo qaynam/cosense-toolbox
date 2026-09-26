@@ -89,6 +89,18 @@ describe("unresolvedLinkDiagnostics", () => {
   })
 })
 
+describe("unresolvedLinkDiagnostics with frontmatter: false", () => {
+  it("reads the lines after a first line of --- as the page, not as YAML", () => {
+    const text = "---\n[無いページ]\n---\n本文"
+    const at = (frontmatter: boolean) =>
+      unresolvedLinkDiagnostics(index, text, { severity: "warning", frontmatter }).map(
+        (d) => d.range.start.line,
+      )
+    expect(at(false)).toEqual([1])
+    expect(at(true)).toEqual([])
+  })
+})
+
 describe("severityOf", () => {
   it("reads the setting the editor sends", () => {
     expect(severityOf("error")).toBe("error")

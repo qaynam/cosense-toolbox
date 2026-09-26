@@ -108,9 +108,11 @@ const firstLine = (text: string): Option.Option<string> =>
  *
  * An empty file falls back to its name, so it stays linkable.
  */
-const titleOf = (path: string, text: string): string =>
+const titleOf = (path: string, text: string, frontmatter: boolean): string =>
   pipe(
-    firstLine(withoutFrontmatter(text.replace(/\r\n?/g, "\n"))),
+    text.replace(/\r\n?/g, "\n"),
+    (normalized) => (frontmatter ? withoutFrontmatter(normalized) : normalized),
+    firstLine,
     Option.getOrElse(() => basename(path, extname(path))),
   )
 
@@ -118,12 +120,25 @@ const titleOf = (path: string, text: string): string =>
 const locationOf = (root: string, path: string): string => relative(root, path).split(sep).join("/")
 
 /** A file that cannot be read is left out of the index rather than failing it. */
-const readPage = (root: string, path: string): Effect.Effect<Option.Option<Page>> =>
+/** How the pages are read. */
+export interface ReadIndexOptions {
+  /**
+   * Whether a `---` fence on the first line opens YAML to skip (default: true). Off for
+   * Cosense pages, which have no frontmatter: a page titled `---` keeps its title.
+   */
+  readonly frontmatter?: boolean
+}
+
+const readPage = (
+  root: string,
+  path: string,
+  { frontmatter = true }: ReadIndexOptions,
+): Effect.Effect<Option.Option<Page>> =>
   pipe(
     Effect.tryPromise(() => readFile(path, "utf8")),
     Effect.map((text) =>
       Option.some({
-        title: titleOf(path, text),
+        title: titleOf(path, text, frontmatter),
         uri: pathToFileURL(path).href,
         location: locationOf(root, path),
       }),
@@ -132,20 +147,25 @@ const readPage = (root: string, path: string): Effect.Effect<Option.Option<Page>
   )
 
 /** The pages under one root. */
-const pagesUnder = (root: string): Effect.Effect<ReadonlyArray<Page>> =>
-  pipe(
-    pageFiles(root),
-    Effect.flatMap(Effect.forEach((path) => readPage(root, path))),
-    Effect.map(Arr.getSomes),
-  )
+const pagesUnder =
+  (options: ReadIndexOptions) =>
+  (root: string): Effect.Effect<ReadonlyArray<Page>> =>
+    pipe(
+      pageFiles(root),
+      Effect.flatMap(Effect.forEach((path) => readPage(root, path, options))),
+      Effect.map(Arr.getSomes),
+    )
 
 /**
  * Read every page under `roots` and index it. Roots may overlap (`src` and `src/content`),
  * so a file found twice is kept once, where it was first found.
  */
-export const readIndex = (roots: ReadonlyArray<string>): Effect.Effect<Index> =>
+export const readIndex = (
+  roots: ReadonlyArray<string>,
+  options: ReadIndexOptions = {},
+): Effect.Effect<Index> =>
   pipe(
-    Effect.forEach(roots, pagesUnder),
+    Effect.forEach(roots, pagesUnder(options)),
     Effect.map((found) => ({
       pages: Arr.dedupeWith(Arr.flatten(found), (a, b) => a.uri === b.uri),
     })),

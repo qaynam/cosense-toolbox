@@ -8,6 +8,10 @@
     "cosense-language-server": "./dist/main.mjs"
   },
   "exports": {
+    "./completion": {
+      "types": "./dist/completion.d.mts",
+      "default": "./dist/completion.mjs"
+    },
     "./tokens": {
       "types": "./dist/tokens.d.mts",
       "default": "./dist/tokens.mjs"

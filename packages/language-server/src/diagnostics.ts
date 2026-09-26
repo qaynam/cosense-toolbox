@@ -9,7 +9,7 @@ import { Array as Arr, Match, Option, pipe } from "effect"
 import { type Diagnostic, DiagnosticSeverity } from "vscode-languageserver/node"
 
 import { normalizeForMatch } from "./completion"
-import { COMPONENT_LINE, frontmatterEnd } from "./tokens"
+import { COMPONENT_LINE, fenceOf } from "./tokens"
 import type { Index } from "./workspace"
 
 /**
@@ -57,6 +57,8 @@ export interface UnresolvedLinkOptions {
   readonly components?: boolean
   /** How to parse: the site's notation extensions, so `[! 注意]` is not read as a link. */
   readonly parseOptions?: ParseOptions
+  /** Whether a `---` fence on the first line opens YAML to skip (default: true). */
+  readonly frontmatter?: boolean
 }
 
 /**
@@ -65,12 +67,18 @@ export interface UnresolvedLinkOptions {
  */
 const linksIn = (
   text: string,
-  components: boolean,
-  parseOptions: ParseOptions,
+  {
+    components = false,
+    parseOptions = {},
+    frontmatter = true,
+  }: Omit<UnresolvedLinkOptions, "severity">,
 ): ReadonlyArray<{ readonly link: NodeOfType<"internalLink">; readonly line: number }> => {
   const lines = normalizeLineEndings(text).split("\n")
   // The parser never sees the frontmatter, so its line numbers start after the fence.
-  const offset = Option.match(frontmatterEnd(lines), { onNone: () => 0, onSome: (end) => end + 1 })
+  const offset = Option.match(fenceOf(lines, frontmatter), {
+    onNone: () => 0,
+    onSome: (end) => end + 1,
+  })
   const isComponentLine = (line: number) =>
     components && COMPONENT_LINE.test(lines[line + offset] ?? "")
 
@@ -104,7 +112,7 @@ export const unresolvedLinkDiagnostics = (
       onNone: () => [],
       onSome: (severity) =>
         pipe(
-          linksIn(text, options.components ?? false, options.parseOptions ?? {}),
+          linksIn(text, options),
           Arr.filter(({ link }) => !withFile.has(normalizeForMatch(link.target))),
           Arr.map(({ link, line }): Diagnostic => ({
             range: {

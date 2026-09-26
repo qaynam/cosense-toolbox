@@ -8,7 +8,7 @@ import { severityOf, type UnresolvedSeverity } from "./diagnostics"
  * What the reader can set, through the editor's initialization options:
  *
  * ```json
- * { "sources": ["src"], "decorations": ["!"], "unresolvedLinks": "warning" }
+ * { "sources": ["src"], "decorations": ["!"], "unresolvedLinks": "warning", "frontmatter": true }
  * ```
  */
 export interface Settings {
@@ -25,12 +25,18 @@ export interface Settings {
   readonly decorations: ReadonlyArray<string>
   /** How loudly a link to a missing page is reported. */
   readonly unresolvedLinks: UnresolvedSeverity
+  /**
+   * Whether a `---` fence on a page's first line opens YAML to skip. Off for Cosense pages,
+   * which have no frontmatter: a page titled `---` would otherwise lose its first lines.
+   */
+  readonly frontmatter: boolean
 }
 
 export const defaultSettings: Settings = {
   sources: [],
   decorations: [],
   unresolvedLinks: "warning",
+  frontmatter: true,
 }
 
 /** One field of the options, which the editor may send in any shape or not at all. */
@@ -43,10 +49,15 @@ const stringsOf = (value: unknown): ReadonlyArray<string> =>
     ? Arr.filter(value, (item): item is string => Predicate.isString(item) && item !== "")
     : []
 
+/** A boolean setting, or `fallback` when it is anything else. */
+const booleanOf = (value: unknown, fallback: boolean): boolean =>
+  Predicate.isBoolean(value) ? value : fallback
+
 export const settingsOf = (options: unknown): Settings => ({
   sources: stringsOf(fieldOf(options, "sources")),
   decorations: stringsOf(fieldOf(options, "decorations")),
   unresolvedLinks: severityOf(fieldOf(options, "unresolvedLinks")),
+  frontmatter: booleanOf(fieldOf(options, "frontmatter"), defaultSettings.frontmatter),
 })
 
 /** How the pages are parsed, so the server reads notation as the site's build does. */

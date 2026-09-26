@@ -56,6 +56,8 @@
         "decorations": ["|", "!", "~", "#"],
         // 存在しないページへのリンクの診断。"off" | "hint" | "information" | "warning" | "error"
         "unresolvedLinks": "warning",
+        // 1 行目の --- を frontmatter (YAML) として飛ばすか。frontmatter の無いページなら false
+        "frontmatter": true,
       },
     },
   },

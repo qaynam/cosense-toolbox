@@ -157,8 +157,14 @@ describe.each([
 })
 
 describe("SCOPES", () => {
-  it("names every notation the server does, and no other", () => {
-    expect(Object.keys(SCOPES).sort()).toEqual([...TOKEN_TYPES].sort())
+  it("names every notation the server knows by itself, and no other", () => {
+    expect(Object.keys(SCOPES).sort()).toEqual(
+      TOKEN_TYPES.filter((type) => type !== "notation").sort(),
+    )
+  })
+
+  it("has no scope for a notation the server's caller defines, which a grammar cannot know", () => {
+    expect(Object.keys(SCOPES)).not.toContain("notation")
   })
 
   it("gives each notation its own scope, so none is read as another", () => {

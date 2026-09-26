@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest"
 
 import { defaultSettings, parseOptionsOf } from "./settings"
-import { computeTokens, encodeTokens, LEGEND, TOKEN_TYPES } from "./tokens"
+import { computeTokens, encodeTokens, LEGEND, legendOf, type RawToken, TOKEN_TYPES } from "./tokens"
 
 const typesOn = (text: string, line: number, options = {}) =>
   computeTokens(text, options)
     .filter((t) => t.line === line)
     .map((t) => t.type)
+
+/** The token type of each encoded token: the fourth of every five numbers. */
+const typesIn = (data: ReadonlyArray<number>) => data.filter((_, index) => index % 5 === 3)
 
 describe("computeTokens", () => {
   it("reads the first line as the title", () => {
@@ -122,12 +125,17 @@ describe("encodeTokens", () => {
     expect(data.slice(10, 13)).toEqual([0, 8, 2])
   })
 
-  it("sends only types the client is expected to know", () => {
-    const data = encodeTokens(TOKEN_TYPES.map((type, i) => ({ line: i, char: 0, length: 1, type })))
-    for (let i = 3; i < data.length; i += 5) {
-      expect(data[i]).toBeLessThan(LEGEND.length)
-      expect(LEGEND[data[i] as number]).toBeTypeOf("string")
-    }
+  it("sends only types the client is expected to know, a notation of no known name included", () => {
+    const everyKind: RawToken[] = [
+      ...TOKEN_TYPES.filter((type) => type !== "notation").map((type, line) => ({
+        line,
+        char: 0,
+        length: 1,
+        type,
+      })),
+      { line: 99, char: 0, length: 1, type: "notation", name: "not-in-the-legend" },
+    ]
+    expect(Math.max(...typesIn(encodeTokens(everyKind)))).toBeLessThan(LEGEND.length)
   })
 
   it("keeps a link and a tag apart, since a reader tells them apart", () => {
@@ -142,5 +150,58 @@ describe("parse options", () => {
     const parseOptions = parseOptionsOf({ ...defaultSettings, decorations: ["!"] })
     expect(typesOn("T\n[! 注意]", 1, { parseOptions })).not.toContain("link")
     expect(typesOn("T\n[! 注意]", 1)).toContain("link")
+  })
+})
+
+describe("notations the caller defines", () => {
+  const notations = [
+    { marker: "!", name: "warning" },
+    { marker: "~", name: "note" },
+  ]
+  const tokensOn = (text: string, line: number) =>
+    computeTokens(text, { notations }).filter((t) => t.line === line)
+
+  it("read a bracket opened by their marker as that notation, not a link", () => {
+    expect(tokensOn("T\n[! 注意]", 1)).toEqual([
+      { line: 1, char: 0, length: 6, type: "notation", name: "warning" },
+    ])
+  })
+
+  it("keep Cosense's own markers alongside: `[!* x]` is the notation and bold", () => {
+    expect(tokensOn("T\n[!* 強い注意]", 1).map((t) => t.type)).toEqual(
+      expect.arrayContaining(["notation", "bold"]),
+    )
+  })
+
+  it("are not read at all when not given, as the parser reads them", () => {
+    expect(typesOn("T\n[! 注意]", 1)).toEqual(["link"])
+  })
+
+  it("are added to the legend after the LSP's own types, once each", () => {
+    expect(legendOf([...notations, { marker: "?", name: "warning" }])).toEqual([
+      ...LEGEND,
+      "warning",
+      "note",
+    ])
+  })
+
+  it("encode as their own type in a legend that has it", () => {
+    const legend = legendOf(notations)
+    const [, , , type] = encodeTokens(computeTokens("T\n[~ 補足]", { notations }).slice(1), legend)
+    expect(legend[type as number]).toBe("note")
+  })
+
+  it("encode as a decorator in the LSP's own legend, which every client knows", () => {
+    const [, , , type] = encodeTokens(computeTokens("T\n[~ 補足]", { notations }).slice(1))
+    expect(LEGEND[type as number]).toBe("decorator")
+  })
+})
+
+describe("frontmatter: false", () => {
+  it("reads a first line of --- as the title, since a Cosense page has no frontmatter", () => {
+    const text = "---\na: 1\n---\n本文"
+    expect(typesOn(text, 0, { frontmatter: false })).toEqual(["title"])
+    expect(typesOn(text, 1, { frontmatter: false })).toEqual([])
+    expect(typesOn(text, 0)).toEqual(["frontmatter"])
   })
 })
