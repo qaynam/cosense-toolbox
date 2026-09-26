@@ -45,12 +45,7 @@ const listFiles = async (directory: string): Promise<string[]> => {
   return nested.flat().sort()
 }
 
-/**
- * `directory` の下を読んで、索引とグラフを作る。id は `root` からの相対パス。
- *
- * 説明文の中の相対パスのリンクをタイトルにするには索引が要るので、
- * タイトルだけで索引を作ってから、索引を渡して読み直す。ファイルの読み込みは 1 回だけ。
- */
+/** `directory` の下を読んで、索引とグラフを作る。id は `root` からの相対パス。 */
 export const scanSite = async (
   root: string,
   directory: string,
@@ -60,19 +55,19 @@ export const scanSite = async (
   const sources = await Promise.all(
     files.map(async (file) => ({ id: idOf(root, file), source: await readFile(file, "utf8") })),
   )
+  const pages = sources.map(({ id, source }) => ({
+    id,
+    metadata: readPage(source, { ...options, filePath: id }).metadata,
+  }))
   const index = createIndex(
-    sources.map(({ id, source }) => {
-      const { metadata } = readPage(source, { ...options, filePath: id })
-      return { id, title: metadata.title, slug: metadata.slug, draft: metadata.draft }
-    }),
-  )
-  const graph = buildGraph(
-    sources.map(({ id, source }) => ({
+    pages.map(({ id, metadata }) => ({
       id,
-      metadata: readPage(source, { ...options, filePath: id, index }).metadata,
+      title: metadata.title,
+      slug: metadata.slug,
+      draft: metadata.draft,
     })),
   )
-  return { index, graph }
+  return { index, graph: buildGraph(pages) }
 }
 
 /** 索引とグラフを 1 つだけ持ち、Vite のプラグインと content collection で使い回す。 */

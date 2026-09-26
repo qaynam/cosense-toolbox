@@ -61,7 +61,7 @@ declare module "hast" {
   }
 }
 
-/** リンクの解決結果。`label` を返すと表示テキストを差し替える (相対パスのリンクで使う)。 */
+/** リンクの解決結果。`label` を返すと表示テキストを差し替える。 */
 export interface ResolvedLink {
   readonly href: string
   readonly label?: string

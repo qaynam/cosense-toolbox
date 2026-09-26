@@ -5,7 +5,6 @@ date: 2026-09-01
 
 cosense-x で書いたブログ記事です。 #日記
 [Cosense で書く] に書き方をまとめた。
-相対パスでも書ける: [./notes/components.csnx]
 [書きかけの記事] は draft なのでリンクにならない。
 [/help-jp/ブラケティング] は Cosense の別プロジェクトへのリンク。
 
