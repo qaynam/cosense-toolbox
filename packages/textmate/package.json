@@ -35,7 +35,8 @@
   "scripts": {
     "build": "tsdown && bun scripts/emit-grammars.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
     "effect": "^3.22.1"
