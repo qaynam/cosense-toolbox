@@ -6,7 +6,8 @@
   "workspaces": [
     "apps/*",
     "packages/*",
-    "examples/*"
+    "examples/*",
+    "tools/*"
   ],
   "scripts": {
     "build": "turbo run build",
@@ -17,7 +18,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "npm:publish": "bun scripts/publish.ts"
+    "release:version": "bun tools/release/src/version.ts",
+    "release:publish": "bun tools/release/src/publish.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

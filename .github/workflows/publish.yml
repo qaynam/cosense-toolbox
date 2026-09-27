@@ -1,16 +1,15 @@
 name: publish
 
+# packages/ のパッケージは、すべて同じバージョンで一緒に公開する。
+#   1. bun run release:version <版> でバージョンを揃えてコミットする
+#   2. v<版> のタグ (例: v0.1.0-beta.2) を push すると、ここで全部を公開する
+# 手で動かすときは、既定で公開せずに中身だけ確かめる。
 on:
   push:
     tags:
-      - "*-v*"
+      - "v*"
   workflow_dispatch:
     inputs:
-      package:
-        description: "packages/ 配下のディレクトリ名"
-        required: true
-        type: choice
-        options: [parser, style]
       dryRun:
         description: "公開せず中身だけ確認する"
         type: boolean
@@ -26,31 +25,6 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v5
-
-      - name: タグからパッケージとバージョンを取り出す
-        id: target
-        run: |
-          if [ "${{ github.event_name }}" = 'workflow_dispatch' ]; then
-            package='${{ inputs.package }}'
-            version=$(jq -r .version "packages/$package/package.json")
-          else
-            tag='${{ github.ref_name }}'
-            package="${tag%%-v*}"
-            version="${tag#*-v}"
-          fi
-          echo "package=$package" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "dir=packages/$package" >> "$GITHUB_OUTPUT"
-
-      - name: package.json のバージョンとタグが一致するか確かめる
-        run: |
-          dir='${{ steps.target.outputs.dir }}'
-          expected='${{ steps.target.outputs.version }}'
-          actual=$(jq -r .version "$dir/package.json")
-          if [ "$actual" != "$expected" ]; then
-            echo "::error::$dir は $actual だが、タグは $expected を指している"
-            exit 1
-          fi
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -71,10 +45,14 @@ jobs:
           bun run typecheck
           bun run test
 
+      # タグから公開するときは、タグの版とパッケージの版が一致しなければ止める (--expect)。
       - name: 公開する
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           npm --version
-          bun run npm:publish '${{ steps.target.outputs.package }}' \
-            ${{ inputs.dryRun == true && '--dry-run' || '' }}
+          if [ "${{ github.event_name }}" = 'push' ]; then
+            bun run release:publish --expect "${GITHUB_REF_NAME#v}"
+          else
+            bun run release:publish ${{ inputs.dryRun == true && '--dry-run' || '' }}
+          fi
