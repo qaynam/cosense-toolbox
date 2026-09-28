@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/parser",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "description": "Cosense (Scrapbox) notation parser — every node carries its source position. Zero runtime deps except effect.",
   "license": "MIT",
   "type": "module",
@@ -102,7 +102,6 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "beta",
     "registry": "https://registry.npmjs.org/"
   },
   "keywords": [

@@ -14,17 +14,19 @@ describe("initializationOptionsOf", () => {
       initializationOptionsOf(
         settings({
           sources: ["src"],
-          decorations: ["!"],
           unresolvedLinks: "error",
           frontmatter: false,
         }),
       ),
     ).toEqual({
       sources: ["src"],
-      decorations: ["!"],
       unresolvedLinks: "error",
       frontmatter: false,
     })
+  })
+
+  it("hands the server no decoration markers, since the server takes none", () => {
+    expect(initializationOptionsOf(settings({ decorations: ["!"] }))).toEqual({})
   })
 
   it("leaves out what is not set, so the server's defaults apply", () => {

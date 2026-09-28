@@ -68,14 +68,6 @@
           "default": [],
           "markdownDescription": "ページを読む場所。ワークスペースからの相対パス。空ならワークスペース全体を読む。"
         },
-        "cosense.decorations": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [],
-          "markdownDescription": "サイトの `customDecorations` と同じ記号 (例: `[\"|\", \"!\"]`)。`[! 注意]` をリンクではなく装飾記法として読む。"
-        },
         "cosense.unresolvedLinks": {
           "type": "string",
           "enum": [

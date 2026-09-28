@@ -271,6 +271,30 @@ describe("文字の装飾", () => {
     )
   })
 
+  it("見た目の付かない Cosense の記号の [! x] は装飾で、リンクにも何にもならない", () => {
+    expect(scopesOf("T\n[! 注意]", "[! 注意]")).toEqual([])
+  })
+
+  it("見た目の付く記号とほかの記号を混ぜると、見た目の付く記号のスコープだけが付く", () => {
+    expect(scopesOf("T\n[*! 強い注意]", "[*! 強い注意]")).toEqual([SCOPES.bold])
+  })
+
+  it("見た目の付かない記号の装飾の中も、リンクを読む", () => {
+    expect(scopesOf("T\n[! [ページ]です]", "[ページ]")).toEqual([SCOPES.link])
+  })
+
+  it("見た目の付かない記号の装飾も入れ子にならず、内側の [* x] はリンクになる", () => {
+    expect(scopesOf("T\n[! [* x]です]", "[* x]")).toEqual([SCOPES.link])
+  })
+
+  it("= も見た目の付かない装飾の記号で、[= x] はリンクにならない", () => {
+    expect(scopesOf("T\n[= x]", "[= x]")).toEqual([])
+  })
+
+  it("Cosense の記号でない @ で始まる括弧は、リンクになる", () => {
+    expect(scopesOf("T\n[@ x]", "[@ x]")).toEqual([SCOPES.link])
+  })
+
   it("記号の後に空白が無ければ装飾にならず、リンクになる", () => {
     expect(scopesOf("T\n[*太字]", "[*太字]")).toEqual([SCOPES.link])
   })

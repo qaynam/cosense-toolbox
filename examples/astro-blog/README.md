@@ -2,12 +2,28 @@
 
 `@cosense-toolbox/astro` を試すための小さなブログ。公開はしない。
 
+リポジトリのワークスペースには入っていない。`@cosense-toolbox/*` は npm に公開された版を使うので、利用者と同じ入れ方で動く。
+
 ```sh
+cd examples/astro-blog
 bun install
-bun run --filter '@cosense-toolbox/example-astro-blog' dev
+bun run dev
 ```
 
-パッケージ側を書き換えたときは、先に `bun run build` でパッケージをビルドしておく。
+## 手元のパッケージで試す
+
+公開前の変更を試すときは、そのパッケージをビルドして `bun link` でつなぐ。`package.json` と `bun.lock` は書き換わらない。
+
+```sh
+# パッケージ側 (例: packages/tailwind)
+bun run build
+bun link
+
+# examples/astro-blog
+bun link @cosense-toolbox/tailwind
+```
+
+npm の版に戻すときは `bun install --force`。
 
 ## 置いてあるもの
 

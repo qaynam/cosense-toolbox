@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/astro",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "description": "Astro integration for cosense-x: use .csn / .csnx (Cosense notation) as pages and content collections.",
   "license": "MIT",
   "type": "module",
@@ -54,7 +54,6 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "beta",
     "registry": "https://registry.npmjs.org/"
   },
   "keywords": [

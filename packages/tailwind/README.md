@@ -93,14 +93,7 @@ class 名は `toHtml` の既定 (`classNames` を渡さなかったとき) に�
 - 記号を並べると、それらをすべて持つ装飾に当たる。`cosense-deco-[-/]:` は `[-/ 文字]` など
 - 下線の記号 `_` は `cosense-deco-[\_]:` と書く。Tailwind は `[...]` の中の `_` を空白に変えるため
 - `"` は class 属性の中に書けないので使えない
-- パーサーが既定で装飾として読む記号は `*` `/` `-` `_` の 4 つだけ。`|` などほかの記号の装飾を使うときは、パースのときに [`customDecorations`](https://cosense-toolbox.qaynam.dev/parser/extend/) で記号を足す
-
-```js
-// astro.config.mjs (@cosense-toolbox/astro)
-import { customDecorations } from "@cosense-toolbox/parser/extensions"
-
-cosense({ parseOptions: { extensions: [customDecorations(["|"])] } })
-```
+- パーサーは Cosense の文字装飾の記号 (`!"#%&'()*+,-./{|}<>_~=`) をすべて装飾として読む。見た目が付くのは `*` `/` `-` `_` だけなので、`|` などほかの記号の見た目はここで付ける
 
 ## 一部だけ外す
 
@@ -160,7 +153,7 @@ bun run compare    # style.css とプラグインで、ブラウザの計算済�
 `bun run compare` は、parser の記法仕様のページをすべて描画し、style.css で表示したものとプラグインで表示したものの全要素のスタイルを突き合わせる。あわせて、modifier がどれも対象の要素で既定のスタイルに勝つことを確かめる。
 Chromium が要るので、`npx playwright install chromium` で入れるか、手元の Chromium を `CHROMIUM_PATH` で渡す。
 
-`examples/astro-blog` はこのパッケージの `dist/` を読む。プラグインを直したら `bun run build` してから example を動かす。作り直さないと、新しい modifier は Tailwind に知られていない variant として黙って捨てられる。
+`examples/astro-blog` は npm に公開された版を使う。直したプラグインを example で試すときは、`bun run build` してから `bun link` でつなぐ ([手元のパッケージで試す](../../examples/astro-blog/README.md#手元のパッケージで試す))。作り直さないと、新しい modifier は Tailwind に知られていない variant として黙って捨てられる。
 
 ## ライセンス
 

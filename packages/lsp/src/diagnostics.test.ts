@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest"
 import { DiagnosticSeverity } from "vscode-languageserver/node"
 
 import { severityOf, unresolvedLinkDiagnostics } from "./diagnostics"
-import { defaultSettings, parseOptionsOf } from "./settings"
 import type { Index } from "./workspace"
 
 const index: Index = {
@@ -28,16 +27,8 @@ describe("unresolvedLinkDiagnostics", () => {
     expect(flagged("T\n[side_kanban] [SIDE KANBAN]")).toEqual([])
   })
 
-  it("reads the decorations it is told about as decorations, not links to check", () => {
-    const text = "T\n[! 注意] [無いページ]"
-    const decorated = unresolvedLinkDiagnostics(index, text, {
-      severity: "warning",
-      parseOptions: parseOptionsOf({ ...defaultSettings, decorations: ["!"] }),
-    })
-    expect(decorated.map((d) => d.message)).toEqual([
-      "リンク先のページが見つからない: [無いページ]",
-    ])
-    expect(flagged(text)).toEqual(["[! 注意]", "[無いページ]"])
+  it("reads a bracket opened by a Cosense decoration marker as a decoration, not a link", () => {
+    expect(flagged("T\n[! 注意] [無いページ]")).toEqual(["[無いページ]"])
   })
 
   it("leaves tags and links to other projects alone", () => {

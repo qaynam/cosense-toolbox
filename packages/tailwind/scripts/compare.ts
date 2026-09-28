@@ -15,7 +15,6 @@ import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 
 import { parse } from "@cosense-toolbox/parser"
-import { customDecorations } from "@cosense-toolbox/parser/extensions"
 import { codeLineNumbers, type HtmlOptions, toHtml } from "@cosense-toolbox/parser/html"
 import { optimize } from "@tailwindcss/node"
 import { chromium, type Page } from "playwright-core"
@@ -44,11 +43,8 @@ const SAMPLE = [
   "  [*** 大きな見出し] と [[太字]]",
 ].join("\n")
 
-/**
- * 既定では装飾として読まない記号 (`|`) の装飾。`cosense-deco-[|]:` を確かめるために、
- * `customDecorations` で記号を足してパースする。
- */
-const CUSTOM_DECORATION = ["装飾の記号を足す", "[| 縦線] と [|*** 見出し]"].join("\n")
+/** 見た目の付かない記号 (`|`) の装飾。`cosense-deco-[|]:` を確かめるために描画する。 */
+const UNSTYLED_DECORATION = ["見た目の付かない装飾の記号", "[| 縦線] と [|*** 見出し]"].join("\n")
 
 /** 行の途中の記法はまとめて 1 ページにする。 */
 const sources = [
@@ -67,7 +63,7 @@ const options: HtmlOptions[] = [
 
 const bodies = options.flatMap((option) => [
   ...sources.map((source) => toHtml(parse(source), option)),
-  toHtml(parse(CUSTOM_DECORATION, { extensions: [customDecorations(["|"])] }), option),
+  toHtml(parse(UNSTYLED_DECORATION), option),
 ])
 
 /** Tailwind に class 名を渡して、`@tailwindcss/vite` と同じく平らにした CSS。 */

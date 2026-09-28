@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/lsp",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "type": "module",
   "description": "Language server for .csn and .csnx, and a check of a whole site's links: csn-lsp.",
   "license": "MIT",
@@ -59,7 +59,6 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "beta",
     "registry": "https://registry.npmjs.org/"
   }
 }

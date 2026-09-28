@@ -13,11 +13,11 @@
   },
   "dependencies": {
     "@astrojs/svelte": "^9.0.1",
-    "@cosense-toolbox/astro": "workspace:*",
-    "@cosense-toolbox/cosense-x": "workspace:*",
-    "@cosense-toolbox/parser": "workspace:*",
-    "@cosense-toolbox/tailwind": "workspace:*",
-    "@cosense-toolbox/textmate": "workspace:*",
+    "@cosense-toolbox/astro": "^0.1.0-beta.3",
+    "@cosense-toolbox/cosense-x": "^0.1.0-beta.3",
+    "@cosense-toolbox/parser": "^0.1.0-beta.3",
+    "@cosense-toolbox/tailwind": "^0.1.0-beta.3",
+    "@cosense-toolbox/textmate": "^0.1.0-beta.3",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "7.2.3",
     "shiki": "^4.4.3",
@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
+    "@types/node": "^24",
     "typescript": "^6.0.3"
   }
 }

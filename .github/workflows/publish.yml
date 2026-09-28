@@ -47,8 +47,6 @@ jobs:
 
       # タグから公開するときは、タグの版とパッケージの版が一致しなければ止める (--expect)。
       - name: 公開する
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           npm --version
           if [ "${{ github.event_name }}" = 'push' ]; then
