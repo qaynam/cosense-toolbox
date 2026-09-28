@@ -54,4 +54,8 @@ csn-lsp check src/content src/pages
   - `notations` で装飾の記号に名前を付け、その名前のトークンとして送れる (`[! 注意]` の `!` に `warning` など)。
     記号は Cosense の文字装飾の記号 (`!"#%&'()*+,-./{|}<>_~=`) に限る。ほかの記号 (`@` など) の括弧はリンクのまま
   - `frontmatter: false` で、1 行目の `---` を YAML として飛ばさずに読める
+  - `encodeTokens` は、legend にトークン自身の型名 (`title`、`link` など) か notation の名前があればその名前で送り、
+    無ければ LSP 標準の型 (`namespace`、`function` など) に直して送る。既定の legend (`LEGEND`) は LSP 標準の型だけなので、
+    VS Code や Zed のように標準の型で色を付けるエディタにはそのまま渡せる。自前の名前で色を付けるクライアントは、
+    `encodeTokens(tokens, [...TOKEN_TYPES, ...names])` のように自前の legend を渡す
 - `@cosense-toolbox/lsp/completion`: `detectCompletion` / `completionItems` / `definitionOf` など
