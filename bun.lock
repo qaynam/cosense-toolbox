@@ -74,7 +74,7 @@
     },
     "packages/astro-cosense": {
       "name": "@cosense-toolbox/astro",
-      "version": "0.1.0-beta.2",
+      "version": "0.1.0-beta.3",
       "dependencies": {
         "@cosense-toolbox/cosense-x": "workspace:*",
         "@cosense-toolbox/lsp": "workspace:*",
@@ -96,7 +96,7 @@
     },
     "packages/cosense-x": {
       "name": "@cosense-toolbox/cosense-x",
-      "version": "0.1.0-beta.2",
+      "version": "0.1.0-beta.3",
       "dependencies": {
         "@cosense-toolbox/parser": "workspace:*",
         "@types/estree": "^1.0.9",
@@ -124,7 +124,7 @@
     },
     "packages/lsp": {
       "name": "@cosense-toolbox/lsp",
-      "version": "0.1.0-beta.2",
+      "version": "0.1.0-beta.3",
       "bin": {
         "csn-lsp": "./dist/main.mjs",
       },
@@ -142,7 +142,7 @@
     },
     "packages/parser": {
       "name": "@cosense-toolbox/parser",
-      "version": "0.1.0-beta.2",
+      "version": "0.1.0-beta.3",
       "dependencies": {
         "@types/hast": "^3.0.4",
         "effect": "^3.22.1",
@@ -157,11 +157,11 @@
     },
     "packages/style": {
       "name": "@cosense-toolbox/style",
-      "version": "0.1.0-beta.2",
+      "version": "0.1.0-beta.3",
     },
     "packages/tailwind": {
       "name": "@cosense-toolbox/tailwind",
-      "version": "0.1.0-beta.2",
+      "version": "0.1.0-beta.3",
       "devDependencies": {
         "@cosense-toolbox/parser": "workspace:*",
         "@tailwindcss/node": "^4.3.3",
@@ -180,7 +180,7 @@
     },
     "packages/textmate": {
       "name": "@cosense-toolbox/textmate",
-      "version": "0.1.0-beta.2",
+      "version": "0.1.0-beta.3",
       "dependencies": {
         "effect": "^3.22.1",
       },
