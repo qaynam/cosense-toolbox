@@ -44,7 +44,7 @@ const SAMPLE = [
 ].join("\n")
 
 /** 見た目の付かない記号 (`|`) の装飾。`cosense-deco-[|]:` を確かめるために描画する。 */
-const CUSTOM_DECORATION = ["見た目の付かない装飾の記号", "[| 縦線] と [|*** 見出し]"].join("\n")
+const UNSTYLED_DECORATION = ["見た目の付かない装飾の記号", "[| 縦線] と [|*** 見出し]"].join("\n")
 
 /** 行の途中の記法はまとめて 1 ページにする。 */
 const sources = [
@@ -63,7 +63,7 @@ const options: HtmlOptions[] = [
 
 const bodies = options.flatMap((option) => [
   ...sources.map((source) => toHtml(parse(source), option)),
-  toHtml(parse(CUSTOM_DECORATION), option),
+  toHtml(parse(UNSTYLED_DECORATION), option),
 ])
 
 /** Tailwind に class 名を渡して、`@tailwindcss/vite` と同じく平らにした CSS。 */

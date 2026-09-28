@@ -146,7 +146,6 @@ describe("encodeTokens", () => {
 })
 
 describe("parse options", () => {
-  // A site's own notation: `[@x]` is a formula.
   const atFormula: Extension = {
     bracketRules: [(inner) => (inner.startsWith("@") ? { type: "formula", value: inner } : null)],
   }

@@ -11,9 +11,6 @@ import { severityOf, type UnresolvedSeverity } from "./diagnostics"
  *
  * Which markers open a decoration is not among them: that is Cosense's syntax, and the parser
  * reads every one of them (`[! 注意]` included) as Cosense Web does.
- *
- * ```
- * ```
  */
 export interface Settings {
   /**

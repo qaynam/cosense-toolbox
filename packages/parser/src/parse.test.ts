@@ -199,7 +199,6 @@ describe("table: ブロック", () => {
   })
 
   it("tableCellNotation と一緒に渡した拡張の記法も、セルの中で読む", () => {
-    // `[@x]` を数式として読む拡張
     const atFormula: Extension = {
       bracketRules: [(inner) => (inner.startsWith("@") ? { type: "formula", value: inner } : null)],
     }
@@ -263,7 +262,7 @@ describe("ブロックの境界", () => {
 })
 
 describe("装飾のマーカー", () => {
-  it("公式の装飾記号がそのまま markers に残る", () => {
+  it("見た目の付く装飾記号がそのまま markers に残る", () => {
     const node = firstInline("[*-/ x]")
     expect(node).toMatchObject({ type: "decoration", markers: ["*", "-", "/"] })
   })
