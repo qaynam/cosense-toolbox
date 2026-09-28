@@ -146,6 +146,14 @@ describe("completionItems", () => {
     const items = completionItems(index, "T\n[]", { line: 1, character: 1 })
     expect(items.map((item) => item.documentation)).toEqual(["notes/design.csn", "kanban.csn"])
   })
+
+  it("filters by the notation it writes, since a client compares that with what was typed", () => {
+    // The edit starts at the `[`, so a client filters by `[設` and must find it in the text.
+    const [link] = completionItems(index, "T\n[設]", { line: 1, character: 2 })
+    expect(link?.filterText).toBe("[設計メモ]")
+    const [tag] = completionItems(index, "T\n#設", { line: 1, character: 2 })
+    expect(tag?.filterText).toBe("#設計メモ")
+  })
 })
 
 describe("definitionOf", () => {

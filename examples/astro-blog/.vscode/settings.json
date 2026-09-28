@@ -1,0 +1,4 @@
+{
+  "cosense.decorations": ["|", "!", "~", "#"],
+  "cosense.unresolvedLinks": "error"
+}

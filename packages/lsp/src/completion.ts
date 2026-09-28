@@ -202,6 +202,11 @@ const candidate =
   (page: Page): Option.Option<CompletionItem> => {
     const query = normalizeForMatch(detection.query)
     const normalized = normalizeForMatch(page.title)
+    const notation = Match.value(detection.kind).pipe(
+      Match.when("hashtag", () => `#${asTagName(page.title)}`),
+      Match.when("link", () => `[${page.title}]`),
+      Match.exhaustive,
+    )
     return pipe(
       Option.some(page),
       Option.filter(() => detection.kind === "link" || isTaggable(page.title)),
@@ -220,12 +225,11 @@ const candidate =
             start: { line, character: detection.replaceStart },
             end: { line, character: detection.replaceEnd },
           },
-          newText: Match.value(detection.kind).pipe(
-            Match.when("hashtag", () => `#${asTagName(page.title)}`),
-            Match.when("link", () => `[${page.title}]`),
-            Match.exhaustive,
-          ),
+          newText: notation,
         },
+        // A client filters by the text from the edit's start to the cursor, `[設` here, so
+        // it has to find that in the notation rather than in the bare title.
+        filterText: notation,
         sortText: `${normalized} ${page.location}`,
       })),
     )

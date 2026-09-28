@@ -30,7 +30,6 @@ export default defineConfig({
       parseOptions: {
         extensions: [customDecorations(["|", "!", "~", "#"]), tableCellNotation()],
       },
-      lint: { unresolvedLinks: "error" },
       renderOptions: { extensions: [codeLineNumbers(), tableCellLineBreaks("\\n")] },
       assets: { pat: process.env.COSENSE_PAT },
     }),
