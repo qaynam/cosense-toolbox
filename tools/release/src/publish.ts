@@ -114,11 +114,28 @@ const publishOne = (workspace: Workspace) => {
               Effect.sync(() => console.log(`${name}@${version} を dist-tag "${tag}" で公開する`)),
             ),
             Effect.flatMap((tarball) =>
-              run(
-                `${name} を公開する`,
-                () =>
-                  $`npm publish ${tarball} --tag ${tag} --access public --registry ${REGISTRY} ${dryRun ? ["--dry-run"] : []}`,
-              ),
+              run(`${name} を公開する`, async () => {
+                // npm は 2FA をブラウザか OTP で確かめるが、どちらも端末からの入力を待つ。
+                // Bun Shell は子に端末を繋がないので、そのままだと確かめる前に EOTP で諦める。
+                // 公開だけは stdio を引き継いで起動し、npm 自身に訊かせる。
+                const child = Bun.spawn(
+                  [
+                    "npm",
+                    "publish",
+                    tarball,
+                    "--tag",
+                    tag,
+                    "--access",
+                    "public",
+                    "--registry",
+                    REGISTRY,
+                    ...(dryRun ? ["--dry-run"] : []),
+                  ],
+                  { stdio: ["inherit", "inherit", "inherit"] },
+                )
+                const code = await child.exited
+                if (code !== 0) throw new Error(`npm publish が ${code} で終わった`)
+              }),
             ),
           ),
     ),
