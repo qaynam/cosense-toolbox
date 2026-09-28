@@ -1,8 +1,6 @@
 name: example
 
-# examples/astro-blog はワークスペースに入っておらず、npm に公開された版を使う。
-# turbo の検査 (ci.yml) には入らないので、型とビルドはここで見る。lint と整形はルートのタスクが見る。
-# 公開された版に依存するので、パッケージの変更ではなく example の変更で走らせる。
+# example はワークスペースの外で npm の版を使うので、ci.yml (turbo) には入らない。
 on:
   pull_request:
     paths:
