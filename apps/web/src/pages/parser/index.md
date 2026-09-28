@@ -41,11 +41,11 @@ toHtml(page)
 これを実行するだけです。
 
 ```sh
-npm i @cosense-toolbox/parser@beta
+npm i @cosense-toolbox/parser
 ```
 
 ```sh
-bun add @cosense-toolbox/parser@beta
+bun add @cosense-toolbox/parser
 ```
 
 既定の見た目が必要であれば、[`@cosense-toolbox/style`](https://github.com/qaynam/cosense-toolbox/tree/main/packages/style) を別途入れてください。

@@ -6,7 +6,7 @@ Cosense 記法の TextMate 文法。`.csn` 用の `cosense` と、コンポー�
 Shiki の `LanguageRegistration` としてそのまま渡せるほか、`.tmLanguage.json` としても同梱している。
 
 ```sh
-npm i @cosense-toolbox/textmate@beta
+npm i @cosense-toolbox/textmate
 ```
 
 ## Shiki

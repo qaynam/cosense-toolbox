@@ -41,7 +41,7 @@ beta.0 から上げるときは次の 2 点に注意。
 ## インストール
 
 ```sh
-npm i @cosense-toolbox/parser@beta
+npm i @cosense-toolbox/parser
 ```
 
 既定の見た目が要るなら [`@cosense-toolbox/style`](https://github.com/qaynam/cosense-toolbox/tree/main/packages/style) を別途入れる。
