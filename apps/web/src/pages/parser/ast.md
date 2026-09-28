@@ -25,6 +25,7 @@ Page
 ## インラインノード
 
 `TitleBlock` と `LineBlock` の `children` に入るのが、インラインノードです。
+ただしタイトル行は Cosense Web と同じく記法を読まないので、`TitleBlock` の `children` は書いたままの文字の `text` 1 つです (タイトルが空なら無し)。
 テーブルのセル (`TableCell`) の `children` にも入ります。
 ただしセルの中では Cosense Web と同じく、既定ではリンクの記法 (`internalLink` / `externalLink` / `projectLink` / `hashtag`) だけを読み、ほかの記法は書いたままの `text` になります。
 行と同じく記法を読みたいときは、`parse` の `extensions` に [`tableCellNotation()`](/parser/extend/#テーブルのセルの中で記法を読む) を渡してください。

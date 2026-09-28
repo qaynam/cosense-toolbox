@@ -53,6 +53,8 @@ for (const block of page.children) {
 ```
 
 1 行目は無条件でタイトルとして扱います。
+タイトル行は Cosense Web と同じく記法を読まず、`[x]` も `#tag` も書いたままの文字になります。
+ページではない文字列の記法を読むときは、本文の 1 行なら [`parseLine`](#parseline)、文章の断片なら [`tokenizeInline`](#tokenizeinline) を使います。
 `code:` と `table:` は複数行にまたがるので、ページの文脈があって初めてブロックにまとまります。
 
 `options` には記法の拡張 (`extensions`) を渡せます。[記法の拡張](/parser/extend/)を参照してください。

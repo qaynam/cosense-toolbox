@@ -11,7 +11,7 @@ Tailwind を使っているなら、style.css を別に読み込まなくてよ�
 ## インストール
 
 ```sh
-npm install -D @cosense-toolbox/tailwind@beta
+npm install -D @cosense-toolbox/tailwind
 ```
 
 Tailwind v4 の CSS に `@plugin` で足す。

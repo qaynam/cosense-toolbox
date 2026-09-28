@@ -34,7 +34,9 @@ const toSourceLines = (source: string): readonly SourceLine[] => {
  * ページ全文をパースする。**失敗しない**: どんな入力でも Page を返す。
  * 記法として成立しない部分は素のテキストになるだけで、エラーにはならない。
  *
- * 1 行目はタイトルとして扱われる (Cosense のページは 1 行目がタイトル)。
+ * 1 行目はタイトルとして扱われる (Cosense のページは 1 行目がタイトル)。タイトル行は
+ * Cosense Web と同じく記法を読まず、書いたままの文字になる。本文の 1 行として読むなら
+ * `parseLine`、文章の断片なら `tokenizeInline` を使う。
  */
 export const parse = (source: string, options?: ParseOptions): Page => {
   const normalized = normalizeLineEndings(source)
