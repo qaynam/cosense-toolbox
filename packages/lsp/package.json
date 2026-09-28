@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/lsp",
-  "version": "0.1.0-beta.4",
+  "version": "0.1.0-beta.5",
   "type": "module",
   "description": "Language server for .csn and .csnx, and a check of a whole site's links: csn-lsp.",
   "license": "MIT",
