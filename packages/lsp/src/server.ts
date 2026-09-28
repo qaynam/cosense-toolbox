@@ -13,7 +13,7 @@ import { TextDocument } from "vscode-languageserver-textdocument"
 
 import { completionItems, definitionOf } from "./completion"
 import { unresolvedLinkDiagnostics } from "./diagnostics"
-import { defaultSettings, parseOptionsOf, settingsOf } from "./settings"
+import { defaultSettings, settingsOf } from "./settings"
 import { computeTokens, encodeTokens, LEGEND } from "./tokens"
 import { emptyIndex, type Index, readIndex, rootsOf } from "./workspace"
 
@@ -37,14 +37,10 @@ const settings = Ref.unsafeMake(defaultSettings)
 
 const currentSettings = () => Effect.runSync(Ref.get(settings))
 
-/** How to parse, so notation reads as the site's build reads it. */
-const currentParseOptions = () => parseOptionsOf(currentSettings())
-
 const semanticTokensOf = (document: TextDocument): SemanticTokens => ({
   data: encodeTokens(
     computeTokens(document.getText(), {
       components: readsComponents(document),
-      parseOptions: currentParseOptions(),
       frontmatter: currentSettings().frontmatter,
     }),
   ),
@@ -93,7 +89,6 @@ const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
               diagnostics: unresolvedLinkDiagnostics(pages, document.getText(), {
                 severity: set.unresolvedLinks,
                 components: readsComponents(document),
-                parseOptions: parseOptionsOf(set),
                 frontmatter: set.frontmatter,
               }),
             }),
@@ -159,8 +154,7 @@ documents.onDidClose(({ document }) => {
 connection.onCompletion(({ textDocument: { uri }, position }): CompletionItem[] =>
   withDocument(
     uri,
-    (document) =>
-      completionItems(currentIndex(), document.getText(), position, currentParseOptions()),
+    (document) => completionItems(currentIndex(), document.getText(), position),
     [],
   ),
 )
@@ -168,10 +162,7 @@ connection.onCompletion(({ textDocument: { uri }, position }): CompletionItem[] 
 connection.onDefinition(({ textDocument: { uri }, position }): Definition | null =>
   withDocument(
     uri,
-    (document) =>
-      Option.getOrNull(
-        definitionOf(currentIndex(), document.getText(), position, currentParseOptions()),
-      ),
+    (document) => Option.getOrNull(definitionOf(currentIndex(), document.getText(), position)),
     null,
   ),
 )

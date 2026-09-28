@@ -1,6 +1,6 @@
+import type { Extension } from "@cosense-toolbox/parser/extensions"
 import { describe, expect, it } from "vitest"
 
-import { defaultSettings, parseOptionsOf } from "./settings"
 import { computeTokens, encodeTokens, LEGEND, legendOf, type RawToken, TOKEN_TYPES } from "./tokens"
 
 const typesOn = (text: string, line: number, options = {}) =>
@@ -146,10 +146,13 @@ describe("encodeTokens", () => {
 })
 
 describe("parse options", () => {
-  it("do not colour a bracket as a link when its marker is a listed decoration", () => {
-    const parseOptions = parseOptionsOf({ ...defaultSettings, decorations: ["!"] })
-    expect(typesOn("T\n[! 注意]", 1, { parseOptions })).not.toContain("link")
-    expect(typesOn("T\n[! 注意]", 1)).toContain("link")
+  const atFormula: Extension = {
+    bracketRules: [(inner) => (inner.startsWith("@") ? { type: "formula", value: inner } : null)],
+  }
+
+  it("are what the page is parsed with, as a site's build parses it", () => {
+    const parseOptions = { extensions: [atFormula] }
+    expect(typesOn("T\n[@x]", 1, { parseOptions })).toEqual(["formula"])
   })
 })
 
@@ -173,8 +176,13 @@ describe("notations the caller defines", () => {
     )
   })
 
-  it("are not read at all when not given, as the parser reads them", () => {
-    expect(typesOn("T\n[! 注意]", 1)).toEqual(["link"])
+  it("send nothing for a marker with no look of its own when not given", () => {
+    expect(typesOn("T\n[! 注意]", 1)).toEqual([])
+  })
+
+  it("leave a bracket a link when their marker is not one Cosense decorates with", () => {
+    const tokens = computeTokens("T\n[@ 誰か]", { notations: [{ marker: "@", name: "mention" }] })
+    expect(tokens.filter((t) => t.line === 1).map((t) => t.type)).toEqual(["link"])
   })
 
   it("are added to the legend after the LSP's own types, once each", () => {

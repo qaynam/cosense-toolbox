@@ -12,12 +12,11 @@ description: Extension で記法を足し、declaration merging で独自のノ�
 必要なものは `@cosense-toolbox/parser/extensions` から import します。
 拡張を使わない場合はこのサブパスに触れないので、バンドルにも入りません。
 
-| export              | 役割                                     |
-| :------------------ | :--------------------------------------- |
-| `InlineConstruct`   | 行の任意の位置から始まる記法を足します   |
-| `BracketRule`       | `[...]` の中身の解釈を足します           |
-| `Extension`         | 上の 2 つをまとめて `parse` に渡す形です |
-| `customDecorations` | 装飾として読む記号を増やす既製の拡張です |
+| export            | 役割                                     |
+| :---------------- | :--------------------------------------- |
+| `InlineConstruct` | 行の任意の位置から始まる記法を足します   |
+| `BracketRule`     | `[...]` の中身の解釈を足します           |
+| `Extension`       | 上の 2 つをまとめて `parse` に渡す形です |
 
 ## 記法を足す
 
@@ -53,35 +52,16 @@ parse("メモ\n@qaynam に確認する", { extensions: [mentions] })
 上の例は既存の `internalLink` に寄せているので、描画側は何も変えずに済みます。
 新しい種類のノードにしたい場合は、次の手順が必要です。
 
-## 文字装飾記法の記号を増やす
-
-`[* x]` のように装飾として読む記号は、既定では `*` `/` `-` `_` の 4 つだけです。
-それ以外の記号を使いたい場合は `customDecorations` を渡します。
-
-```ts
-import { parse } from "@cosense-toolbox/parser"
-import { customDecorations } from "@cosense-toolbox/parser/extensions"
-
-const page = parse(source, {
-  extensions: [customDecorations(["=", "~", "|", "%", "&", "'"])],
-})
-```
-
-渡した記号は既定の記号と混ぜられます。
-`[*' x]` は太字になり、`markers` は `['*', "'"]` になります。
-
-[`toHtml`](/parser/html/) はこれを `class="decoration deco-* deco-'"` として書き出すので、記号ごとに CSS を当てられます。
-
 ## テーブルのセルの中で記法を読む
 
 テーブルのセルの中は、Cosense Web と同じくリンクの記法 (`[title]` / `[https://…]` / `[/project/page]` / 裸の URL / `#tag`) だけを読み、ほかの記法は書いたままの文字になります。
 行と同じく記法を読みたい場合は `tableCellNotation` を渡します。Cosense Web には無い振る舞いです。
 
 ```ts
-import { customDecorations, tableCellNotation } from "@cosense-toolbox/parser/extensions"
+import { tableCellNotation } from "@cosense-toolbox/parser/extensions"
 
 // すべての記法 (一緒に渡した拡張の記法も含む)
-parse(source, { extensions: [customDecorations(["!"]), tableCellNotation()] })
+parse(source, { extensions: [mentions, tableCellNotation()] })
 
 // リンクに加えて、装飾だけ
 parse(source, { extensions: [tableCellNotation(["decoration"])] })

@@ -43,7 +43,6 @@ code --install-extension vscode-cosense-0.1.0.vsix
 | 設定                      | 内容                                                                                   | 既定               |
 | :------------------------ | :------------------------------------------------------------------------------------- | :----------------- |
 | `cosense.sources`         | ページを読む場所。ワークスペースからの相対パス                                         | ワークスペース全体 |
-| `cosense.decorations`     | サイトの `customDecorations` と同じ記号。`[! 注意]` をリンクではなく装飾記法として読む | なし               |
 | `cosense.unresolvedLinks` | 存在しないページへのリンクの診断。`off` / `hint` / `information` / `warning` / `error` | `warning`          |
 | `cosense.frontmatter`     | 1 行目の `---` を frontmatter (YAML) として飛ばすか                                    | `true`             |
 | `cosense.server.path`     | 使う Language Server のパス。空なら同梱のものを使う                                    | 空                 |
@@ -54,7 +53,6 @@ code --install-extension vscode-cosense-0.1.0.vsix
 
 ```json
 {
-  "cosense.decorations": ["|", "!", "~", "#"],
   "cosense.unresolvedLinks": "error"
 }
 ```
