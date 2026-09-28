@@ -103,9 +103,14 @@ const packageProblems = ({ dir, manifest, hasLicense }: Workspace): ReadonlyArra
         ? Option.none()
         : Option.some(`${name}: ${dependency} は workspace:* にする`),
     ),
-    ...(manifest.publishConfig?.access === "public" && manifest.publishConfig.tag !== undefined
+    ...(manifest.publishConfig?.access === "public"
       ? []
-      : [`${name}: publishConfig に access: "public" と tag が無い`]),
+      : [`${name}: publishConfig に access: "public" が無い`]),
+    // dist-tag は版から決める (distTagFor)。ここに書くと、v1 を出すときに消し忘れて
+    // latest が動かなかったり、消した後のベータが安定版を latest から押しのけたりする。
+    ...(manifest.publishConfig?.tag === undefined
+      ? []
+      : [`${name}: publishConfig.tag は書かない (dist-tag は版から決める)`]),
     ...(Option.contains(directoryOf(manifest.repository), dir)
       ? []
       : [`${name}: repository.directory が ${dir} を指していない`]),
@@ -123,6 +128,32 @@ export const problemsOf = (workspaces: ReadonlyArray<Workspace>): ReadonlyArray<
   ...versionProblems(workspaces),
   ...Arr.flatMap(workspaces, packageProblems),
 ]
+
+/** pre-release の付かない版 (`1.0.0`)。build metadata (`+…`) は見ない。 */
+export const isStable = (version: string): boolean =>
+  isVersion(version) && !(version.split("+")[0] ?? "").includes("-")
+
+/**
+ * 公開する版に付ける dist-tag。
+ *
+ * - `override` があればそれ (`--tag` で渡したもの)
+ * - 安定版は latest
+ * - 安定版をまだ 1 つも出していないうちは、プレリリースも latest。守る安定版が無いので、
+ *   分けると latest だけが古い版を指し続け、タグ無しで入れた人に古い API が入る
+ * - 安定版を出した後のプレリリースは、識別子 (`1.1.0-beta.1` なら beta) を使う。
+ *   数字だけの識別子 (`1.1.0-0`) には名前が無いので next にする
+ */
+export const distTagFor = (
+  version: string,
+  published: ReadonlyArray<string>,
+  override: Option.Option<string>,
+): string =>
+  Option.getOrElse(override, () => {
+    if (isStable(version) || !Arr.some(published, isStable)) return "latest"
+    const identifier =
+      (version.split("+")[0] ?? "").split("-").slice(1).join("-").split(".")[0] ?? ""
+    return /^[A-Za-z][0-9A-Za-z-]*$/.test(identifier) ? identifier : "next"
+  })
 
 /** semver の版 (pre-release と build metadata も含む)。先頭の `v` は付けない。 */
 export const isVersion = (version: string): boolean =>
