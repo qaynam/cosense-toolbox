@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/textmate",
-  "version": "0.1.0-beta.0",
+  "version": "0.1.0-beta.2",
   "type": "module",
   "description": "TextMate grammars for Cosense notation (.csn / .csnx), ready for Shiki and VS Code.",
   "license": "MIT",
@@ -35,7 +35,8 @@
   "scripts": {
     "build": "tsdown && bun scripts/emit-grammars.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
     "effect": "^3.22.1"
