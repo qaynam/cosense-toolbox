@@ -279,7 +279,7 @@ describe("装飾のマーカー", () => {
   })
 
   it("見た目の付かない記号は、太字や斜体などのフラグを立てない", () => {
-    expect(firstInline("[!\"#%&'()+,.{|}<>~ x]")).toMatchObject({
+    expect(firstInline("[!\"#%&'()+,.{|}<>~= x]")).toMatchObject({
       type: "decoration",
       bold: false,
       italic: false,

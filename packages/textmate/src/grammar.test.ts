@@ -287,6 +287,10 @@ describe("文字の装飾", () => {
     expect(scopesOf("T\n[! [* x]です]", "[* x]")).toEqual([SCOPES.link])
   })
 
+  it("= も見た目の付かない装飾の記号で、[= x] はリンクにならない", () => {
+    expect(scopesOf("T\n[= x]", "[= x]")).toEqual([])
+  })
+
   it("Cosense の記号でない @ で始まる括弧は、リンクになる", () => {
     expect(scopesOf("T\n[@ x]", "[@ x]")).toEqual([SCOPES.link])
   })

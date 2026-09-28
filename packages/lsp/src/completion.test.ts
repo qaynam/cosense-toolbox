@@ -22,6 +22,14 @@ describe("isLinkBracket", () => {
     expect(isLinkBracket("Side Kanban")).toBe(true)
   })
 
+  it("leaves a decoration of = alone, which Cosense Web reads as one", () => {
+    expect(isLinkBracket("= 注意")).toBe(false)
+  })
+
+  it("answers in a bracket opened by a mark Cosense does not decorate with", () => {
+    expect(isLinkBracket("@ 誰か")).toBe(true)
+  })
+
   it("leaves every other notation alone", () => {
     // Accepting a candidate replaces the whole bracket, taking the notation with it.
     for (const inner of [

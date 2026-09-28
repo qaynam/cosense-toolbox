@@ -52,6 +52,6 @@ csn-lsp check src/content src/pages
 
 - `@cosense-toolbox/lsp/tokens`: `computeTokens` / `encodeTokens` / `legendOf` など
   - `notations` で装飾の記号に名前を付け、その名前のトークンとして送れる (`[! 注意]` の `!` に `warning` など)。
-    記号は Cosense の文字装飾の記号 (`!"#%&'()*+,-./{|}<>_~`) に限る。ほかの記号 (`@` など) の括弧はリンクのまま
+    記号は Cosense の文字装飾の記号 (`!"#%&'()*+,-./{|}<>_~=`) に限る。ほかの記号 (`@` など) の括弧はリンクのまま
   - `frontmatter: false` で、1 行目の `---` を YAML として飛ばさずに読める
 - `@cosense-toolbox/lsp/completion`: `detectCompletion` / `completionItems` / `definitionOf` など

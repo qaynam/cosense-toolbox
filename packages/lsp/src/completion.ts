@@ -33,7 +33,7 @@ export interface CompletionDetection {
  * but a menu that opens between `[* ` and its text is the flicker this rule exists to stop.
  * The markers are every character Cosense accepts in a decoration, from help-jp/文字装飾記法.
  */
-const STARTS_DECORATION = /^[!"#%&'()*+,\-./{|}<>_~]+(?:\s|$)/
+const STARTS_DECORATION = /^[!"#%&'()*+,\-./{|}<>_~=]+(?:\s|$)/
 
 /**
  * The notations a bracket can hold other than a page link: a formula, a project link, a

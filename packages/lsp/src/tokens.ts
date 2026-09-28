@@ -70,7 +70,7 @@ export type RawToken =
  * A name the caller gives to a decoration marker, as `warning` to the `!` of `[! 注意]`: the
  * token type that decoration is sent as.
  *
- * The marker has to be one Cosense decorates with (`` !"#%&'()*+,-./{|}<>_~ ``), since
+ * The marker has to be one Cosense decorates with (`` !"#%&'()*+,-./{|}<>_~= ``), since
  * those are the ones the parser reads as a decoration. Any other, such as `@`, leaves the
  * bracket a link, as it is in Cosense Web: how a notation looks does not change how it parses.
  */

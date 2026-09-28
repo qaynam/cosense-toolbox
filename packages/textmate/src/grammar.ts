@@ -83,9 +83,9 @@ const CLOSE_ON_LINE = re`\]|(?=$)`
  * A decoration marker: any of Cosense's, as the parser reads them. Only `* / - _` have a look
  * of their own; the rest (`[! 注意]`) still make the bracket a decoration and not a link.
  */
-const MARKERS = re`[!"#%&'()*+,\-./{|}<>_~]`
+const MARKERS = re`[!"#%&'()*+,\-./{|}<>_~=]`
 
-const NOT_STAR = re`[!"#%&'()+,\-./{|}<>_~]`
+const NOT_STAR = re`[!"#%&'()+,\-./{|}<>_~=]`
 
 /**
  * A line that opens with a component tag (`.csnx`), as the language server tells one:

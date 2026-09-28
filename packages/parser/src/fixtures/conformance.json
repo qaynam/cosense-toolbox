@@ -469,24 +469,57 @@
       ]
     },
     {
-      "description": "Cosense の記号でない = はリンクのまま",
+      "description": "= も装飾の記号になる (help-jp では将来の別用途のために使わないよう求めているが、Cosense Web は装飾として読む)",
       "input": "[= x]",
       "expected": [
         {
-          "type": "internalLink",
-          "label": "= x",
-          "target": "= x"
+          "type": "decoration",
+          "value": "x",
+          "bold": false,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "text",
+              "value": "x"
+            }
+          ],
+          "markers": ["="]
+        }
+      ]
+    },
+    {
+      "description": "= をほかの記号と混ぜても装飾になる",
+      "input": "[|= x]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "x",
+          "bold": false,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "text",
+              "value": "x"
+            }
+          ],
+          "markers": ["|", "="]
         }
       ]
     },
     {
       "description": "記号の並びに Cosense の記号でないものが混ざるとリンクのまま",
-      "input": "[|= x]",
+      "input": "[|@ x]",
       "expected": [
         {
           "type": "internalLink",
-          "label": "|= x",
-          "target": "|= x"
+          "label": "|@ x",
+          "target": "|@ x"
         }
       ]
     },
