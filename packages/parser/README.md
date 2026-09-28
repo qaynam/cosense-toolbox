@@ -14,6 +14,14 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 ### 次のリリースでの変更
 
+- Cosense の文字装飾の記号 `!"#%&'()*+,-./{|}<>_~` からなる並びを、**拡張なしで**すべて装飾として読むようにした。
+  Cosense Web と同じ読み方で、`[! 注意]` は内部リンクではなく `markers: ['!']` の装飾になる。
+  見た目 (bold などのフラグ) が付くのは今までどおり `* / - _` だけ。ほかの記号の見た目は CSS で付ける。
+- **`customDecorations` を削除した**。集合の中の記号は既定で読むので、この拡張で足せるのは
+  Cosense Web が装飾にしない記号だけになり、Web 版と違う AST を作るため。渡していた箇所は消すだけでよい。
+
+### 0.1.0-beta.2 の変更
+
 - 記法の拡張 (`InlineConstruct` / `BracketRule`) は、成立しなければ **`null` を返す**普通の関数になった。
   これまでは effect の `Option` を返す必要があり、拡張を書くのに effect が要った。
   `Option.none()` は `null` に、`Option.some(x)` は `x` に書き換える。
@@ -29,8 +37,6 @@ beta.0 から上げるときは次の 2 点に注意。
 - `decoration` ノードに **`markers`** を足した (必須)。書かれた装飾記号が
   出現順・重複なしで入る。`toHtml` はこれを `deco-*` のような class として出す。
   装飾ノードを自分で組み立てている拡張は追随が要る。
-
-記号を増やす [`customDecorations`](https://cosense-toolbox.qaynam.dev/parser/extend/) も足した。
 
 ## インストール
 
@@ -65,7 +71,7 @@ toHtml(page) // → '<div class="page"><h1 class="title">今日のメモ</h1>…
 | `@cosense-toolbox/parser/utils`      | ヘルパー。AST から取り出す                          | `visit` `find` `collect` `collectLinks` `firstImage` `rawTextOf`                        |
 | `@cosense-toolbox/parser/html`       | AST を HTML 系の出力 (hast と HTML の文字列) にする | `toHast` `toHtml` `codeLineNumbers` `tableCellLineBreaks`                               |
 | `@cosense-toolbox/parser/compile`    | AST を HTML 以外の形式にする                        | `toPlainText` `createCompiler`                                                          |
-| `@cosense-toolbox/parser/extensions` | 記法を足す                                          | `Extension` `InlineConstruct` `BracketRule` `customDecorations` `tableCellNotation`     |
+| `@cosense-toolbox/parser/extensions` | 記法を足す                                          | `Extension` `InlineConstruct` `BracketRule` `tableCellNotation`                         |
 | `@cosense-toolbox/parser/schema`     | 外から来た値を検証する                              | `decodePage`                                                                            |
 
 各 API の詳細はドキュメントにある。

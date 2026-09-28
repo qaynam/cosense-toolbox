@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest"
 
-import { customDecorations, tableCellNotation } from "./extensions"
+import { tableCellNotation } from "./extensions"
 import type { Extension } from "./inline/types"
 import { parse, parseLine } from "./parse"
 import { stripPositions } from "./test-helpers"
@@ -199,11 +199,15 @@ describe("table: ブロック", () => {
   })
 
   it("tableCellNotation と一緒に渡した拡張の記法も、セルの中で読む", () => {
-    const extensions = [customDecorations(["!"]), tableCellNotation()]
-    const page = parse("title\ntable:data\n [! 目印]", { extensions })
+    // `[@x]` を数式として読む拡張
+    const atFormula: Extension = {
+      bracketRules: [(inner) => (inner.startsWith("@") ? { type: "formula", value: inner } : null)],
+    }
+    const extensions = [atFormula, tableCellNotation()]
+    const page = parse("title\ntable:data\n [@x]", { extensions })
     const table = blockAt(page.children.slice(1), 0, "table")
     expect(stripPositions(table.rows[0]?.cells[0]?.children)).toEqual(
-      stripPositions(parseLine("[! 目印]", { extensions }).children),
+      stripPositions(parseLine("[@x]", { extensions }).children),
     )
   })
 
@@ -268,29 +272,21 @@ describe("装飾のマーカー", () => {
     expect(firstInline("[*** 見出し]")).toMatchObject({ markers: ["*"], sizeLevel: 2 })
   })
 
-  it("既定では公式の記号以外を装飾として扱わない", () => {
-    expect(firstInline("[*'(#%& x]")).toMatchObject({ type: "internalLink" })
-  })
-})
-
-describe("customDecorations", () => {
-  const ext = customDecorations(["'", "(", "#", "%", "&"])
-
-  it("渡した記号を装飾として解釈する", () => {
-    expect(firstInline("[| x]", ext)).toMatchObject({ type: "internalLink" })
-    expect(firstInline("[' x]", ext)).toMatchObject({ type: "decoration", markers: ["'"] })
-  })
-
-  it("公式の記号と混ぜて使える", () => {
-    expect(firstInline("[*'(#%& x]", ext)).toMatchObject({
+  it("見た目の付く記号とほかの Cosense の記号を混ぜた並びも、書いた順に markers に残る", () => {
+    expect(firstInline("[*'(#%& x]")).toMatchObject({
       type: "decoration",
-      bold: true,
       markers: ["*", "'", "(", "#", "%", "&"],
     })
   })
 
-  it("中身の記法は解釈する", () => {
-    const node = firstInline("[' [ページ]]", ext) as { children: readonly { type: string }[] }
-    expect(node.children.map((child) => child.type)).toEqual(["internalLink"])
+  it("見た目の付かない記号は、太字や斜体などのフラグを立てない", () => {
+    expect(firstInline("[!\"#%&'()+,.{|}<>~ x]")).toMatchObject({
+      type: "decoration",
+      bold: false,
+      italic: false,
+      strike: false,
+      underline: false,
+      sizeLevel: 0,
+    })
   })
 })

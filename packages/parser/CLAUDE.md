@@ -145,7 +145,7 @@ src/
     table-cell.ts       テーブルのセルの中の記法 (既定ではリンク以外を書いたままの文字に戻す)
     constructs/         1 construct = 1 ファイル + index.ts（配列の登録場所）
     bracket-rules/      1 rule = 1 ファイル + index.ts（配列の登録場所）
-    extensions/         既定では有効にしない Extension を作る factory（customDecorations 等）
+    extensions/         既定では有効にしない Extension を作る factory（tableCellNotation 等）
   block/
     classify.ts         行の役割判定（タグ付きユニオンを返す）
     build.ts            ブロックのグルーピング
