@@ -36,7 +36,7 @@ export { collectMetadata } from "./metadata"
 export type { CollectMetadataOptions, PageMetadata } from "./metadata"
 export { formatOf, readPage } from "./read"
 export type { Format, ReadOptions, ReadResult } from "./read"
-export { isRelativePath, normalizeTitle, resolveRelativePath, titleToSlug } from "./title"
+export { normalizeTitle, titleToSlug } from "./title"
 export { defaultResolveLink, toHast } from "./to-hast"
 export type {
   CosenseComponent,

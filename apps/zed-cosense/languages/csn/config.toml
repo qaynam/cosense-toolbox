@@ -1,0 +1,6 @@
+name = "Cosense"
+path_suffixes = ["csn"]
+# Cosense はインデントが構造そのもの。タブ幅を変えると深さの意味が変わる。
+tab_size = 1
+hard_tabs = false
+soft_wrap = "editor_width"

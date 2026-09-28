@@ -6,7 +6,8 @@
   "workspaces": [
     "apps/*",
     "packages/*",
-    "examples/*"
+    "examples/*",
+    "tools/*"
   ],
   "scripts": {
     "build": "turbo run build",
@@ -15,11 +16,12 @@
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint lint:root",
-    "lint:root": "eslint eslint.config.js prettier.config.mjs scripts",
+    "lint:root": "eslint eslint.config.js prettier.config.mjs",
     "format": "prettier --write .",
     "format:check": "turbo run format:check format:check:root",
-    "format:check:root": "prettier --check --ignore-unknown \"*\" scripts .github .vscode",
-    "npm:publish": "bun scripts/publish.ts"
+    "format:check:root": "prettier --check --ignore-unknown \"*\" .github .vscode apps/zed-cosense",
+    "release:version": "bun tools/release/src/version.ts",
+    "release:publish": "bun tools/release/src/publish.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/cosense-x",
-  "version": "0.1.0-beta.0",
+  "version": "0.1.0-beta.2",
   "description": "Compile Cosense (Scrapbox) pages into JSX modules, like MDX for Cosense notation.",
   "license": "MIT",
   "type": "module",

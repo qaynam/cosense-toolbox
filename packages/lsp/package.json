@@ -1,0 +1,65 @@
+{
+  "name": "@cosense-toolbox/lsp",
+  "version": "0.1.0-beta.2",
+  "type": "module",
+  "description": "Language server for .csn and .csnx, and a check of a whole site's links: csn-lsp.",
+  "license": "MIT",
+  "keywords": [
+    "cosense",
+    "scrapbox",
+    "lsp",
+    "language-server",
+    "lint"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qaynam/cosense-toolbox.git",
+    "directory": "packages/lsp"
+  },
+  "bin": {
+    "csn-lsp": "./dist/main.mjs"
+  },
+  "exports": {
+    "./check": {
+      "types": "./dist/check.d.mts",
+      "default": "./dist/check.mjs"
+    },
+    "./completion": {
+      "types": "./dist/completion.d.mts",
+      "default": "./dist/completion.mjs"
+    },
+    "./tokens": {
+      "types": "./dist/tokens.d.mts",
+      "default": "./dist/tokens.mjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format:check": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
+    "prepublishOnly": "bun run build"
+  },
+  "dependencies": {
+    "@cosense-toolbox/parser": "workspace:*",
+    "effect": "^3.22.1",
+    "vscode-languageserver": "^10.1.0",
+    "vscode-languageserver-textdocument": "^1.0.12"
+  },
+  "devDependencies": {
+    "tsdown": "^0.22.14",
+    "typescript": "^6.0.0",
+    "vitest": "^2.1.9"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "beta",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

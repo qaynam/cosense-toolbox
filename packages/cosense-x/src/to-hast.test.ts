@@ -90,7 +90,7 @@ describe("リンクの解決", () => {
   })
 
   it("resolveLink が返した label で表示テキストを差し替える", () => {
-    const html = render("タイトル\n[./b.csn]", {
+    const html = render("タイトル\n[b]", {
       resolveLink: () => ({ href: "/posts/b", label: "B のタイトル" }),
     })
     expect(html).toContain('<a class="link" href="/posts/b">B のタイトル</a>')

@@ -14,6 +14,8 @@ code:component.csnx
   </Callout>
   <Counter start={10} step={5} />
 
+`codeです`
+
 ↓のようにレンダリングされる
 
 <Callout type="warn" title="注意">

@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { idOf, isCosenseFile, scanSite } from "./site"
 
 const FILES: Record<string, string> = {
-  "src/content/posts/a.csn": "Page A\n[Page B] と [./notes/c.csnx]",
+  "src/content/posts/a.csn": "Page A\n[Page B] と [Page C]",
   "src/content/posts/b.csn": "Page B\n#タグ",
   "src/content/posts/notes/c.csnx": "Page C\n<Counter />\n[page_a]",
   "src/content/posts/draft.csn": "---\ndraft: true\n---\n下書き\n[Page A]",
@@ -41,18 +41,13 @@ describe("scanSite", () => {
     ])
   })
 
-  it("グラフの逆リンクは、相対パスのリンクと src/pages のページも含む", async () => {
+  it("グラフの逆リンクは、src/pages のページも含む", async () => {
     const { graph } = await scanSite(root, join(root, "src"))
     expect(graph.backlinks["src/content/posts/a.csn"]).toEqual([
       "src/content/posts/notes/c.csnx",
       "src/pages/about.csnx",
     ])
     expect(graph.backlinks["src/content/posts/notes/c.csnx"]).toEqual(["src/content/posts/a.csn"])
-  })
-
-  it("説明文の相対パスのリンクは、リンク先のタイトルになる", async () => {
-    const { graph } = await scanSite(root, join(root, "src"))
-    expect(graph.pages["src/content/posts/a.csn"]?.description).toBe("Page B と Page C")
   })
 
   it("ディレクトリが無ければ空のサイトになる", async () => {

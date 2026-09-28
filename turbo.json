@@ -30,11 +30,11 @@
       "outputs": []
     },
     "//#lint:root": {
-      "inputs": ["eslint.config.js", "prettier.config.mjs", "scripts/**"],
+      "inputs": ["eslint.config.js", "prettier.config.mjs"],
       "outputs": []
     },
     "//#format:check:root": {
-      "inputs": ["*", "scripts/**", ".github/**", ".vscode/**"],
+      "inputs": ["*", ".github/**", ".vscode/**", "apps/zed-cosense/**"],
       "outputs": []
     }
   }

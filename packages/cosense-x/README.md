@@ -5,7 +5,7 @@ MDX の Cosense 版にあたる。
 
 - 形式は 2 つある。`.csn` は素の Cosense 記法で、Markdown の `.md` にあたる。`.csnx` は `.csn` にコンポーネントの行を足したもので、`.mdx` にあたる
 - どちらの形式にも frontmatter を書ける。ファイル先頭の YAML と、Cosense の画面でも書ける `code:frontmatter.yml` ブロックの 2 か所に書ける
-- リンク (`[title]` / `[./foo.csn]` / `#tag`) は手元のファイルだけで解決する。Cosense に問い合わせないので、オフラインでもビルドできる
+- リンク (`[title]` / `#tag`) は手元のファイルだけで、タイトルで解決する。Cosense に問い合わせないので、オフラインでもビルドできる
 - 逆リンクと 2 hop リンクを計算できる (`./graph`)
 - 出力は `jsxImportSource` で切り替えられる。Astro・React・Preact・Vue のどれにも出せる
 - 要素の構造と class 名は `@cosense-toolbox/parser` の `toHtml` と同じなので、`@cosense-toolbox/style` がそのまま当たる
@@ -92,12 +92,11 @@ code:frontmatter.yml
 
 ## リンクの解決
 
-| 書き方                              | 解決のしかた                                                                       |
-| :---------------------------------- | :--------------------------------------------------------------------------------- |
-| `[ページ名]`                        | 索引 (`index`) からタイトルで引く。大文字小文字と、空白と `_` の違いは無視する     |
-| `[./foo.csn]` `[../notes/bar.csnx]` | 今のファイル (`filePath`) からの相対パスでファイルを指す。表示はリンク先のタイトル |
-| `#タグ`                             | `tagUrl` があればその URL、無ければ `[タグ]` と同じ                                |
-| `[/project/page]`                   | `projectUrl`。既定は `https://scrapbox.io/project/page`                            |
+| 書き方            | 解決のしかた                                                                   |
+| :---------------- | :----------------------------------------------------------------------------- |
+| `[ページ名]`      | 索引 (`index`) からタイトルで引く。大文字小文字と、空白と `_` の違いは無視する |
+| `#タグ`           | `tagUrl` があればその URL、無ければ `[タグ]` と同じ                            |
+| `[/project/page]` | `projectUrl`。既定は `https://scrapbox.io/project/page`                        |
 
 ```ts
 import { compile, createIndex } from "@cosense-toolbox/cosense-x"

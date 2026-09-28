@@ -22,22 +22,38 @@ export default defineConfig({
       components: "./src/components/cosense.ts",
       pageUrl: (page) => `/posts/${encodeURIComponent(page.slug)}/`,
       tagUrl: (tag) => `/tags/${encodeURIComponent(tag)}/`,
-      unresolved: "warn",
+      lint: { unresolvedLinks: "error" },
     }),
   ],
 })
 ```
 
-| オプション                         | 内容                                                                                                                                                                        |
-| :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `components`                       | すべてのページに渡すコンポーネントを default export するモジュールの、プロジェクトのルートからのパス                                                                        |
-| `pageUrl`                          | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス                                                                             |
-| `tagUrl` `projectUrl` `unresolved` | `compile` の同名のオプションと同じ                                                                                                                                          |
-| `parseOptions`                     | パースの設定。parser の `parse` のオプション (`extensions` など) がそのまま渡る                                                                                             |
-| `renderOptions`                    | 描画の設定。parser の `toHast` のオプション (`extensions` `handlers` `classNames` `showPads` `iconImageUrl`) と `title` がそのまま渡る。色付けは `syntaxHighlight` で決める |
-| `rehypePlugins`                    | `compile` の同名のオプションと同じ                                                                                                                                          |
-| `syntaxHighlight`                  | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け)                          |
-| `assets`                           | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効                                          |
+| オプション            | 内容                                                                                                                                                                        |
+| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `components`          | すべてのページに渡すコンポーネントを default export するモジュールの、プロジェクトのルートからのパス                                                                        |
+| `pageUrl`             | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス                                                                             |
+| `tagUrl` `projectUrl` | `compile` の同名のオプションと同じ                                                                                                                                          |
+| `unresolvedLinks`     | サイトに無いページへのリンクの出し方。`'text'` (既定) はテキスト、`'link'` はタイトルから作った URL へのリンクにする                                                        |
+| `lint`                | ビルドの前にリンク切れを調べる。`{ unresolvedLinks?, frontmatter? }`。省略すると調べない。[下を参照](#リンク切れを調べる)                                                   |
+| `parseOptions`        | パースの設定。parser の `parse` のオプション (`extensions` など) がそのまま渡る                                                                                             |
+| `renderOptions`       | 描画の設定。parser の `toHast` のオプション (`extensions` `handlers` `classNames` `showPads` `iconImageUrl`) と `title` がそのまま渡る。色付けは `syntaxHighlight` で決める |
+| `rehypePlugins`       | `compile` の同名のオプションと同じ                                                                                                                                          |
+| `syntaxHighlight`     | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け)                          |
+| `assets`              | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効                                          |
+
+## リンク切れを調べる
+
+`lint` を渡すと、ビルドの前と、開発サーバーの起動時・ページを変えたときに、`srcDir` の下の `.csn` / `.csnx` を読み、サイトに無いページへの `[リンク]` を調べる。開発中は `'error'` でも止めず、ログに出すだけにする。
+判定はエディタの診断 ([`@cosense-toolbox/lsp`](../lsp)) と `csn-lsp check` と同じ関数で、パースにはこの統合の
+`parseOptions` を使う。エディタで警告されるものと、ビルドで止まるものが一致する。
+
+| `lint` のオプション | 内容                                                                                                             | 既定        |
+| :------------------ | :--------------------------------------------------------------------------------------------------------------- | :---------- |
+| `unresolvedLinks`   | `'off'` / `'hint'` / `'information'` / `'warning'` / `'error'`。`'error'` ならビルドを止め、それ以外はログに出す | `'warning'` |
+| `frontmatter`       | 1 行目の `---` を frontmatter (YAML) として飛ばすか                                                              | `true`      |
+
+ページの題名はファイルの 1 行目で、大文字小文字と、空白と `_` の違いは無視して比べる。`#タグ` と
+`[/別プロジェクト/ページ]` は調べない。
 
 ## Cosense 上の画像とファイル
 

@@ -193,9 +193,9 @@ describe("リンクの解決", () => {
     expect(html).toContain('<a class="link" href="/blog/page-b">page_b</a>')
   })
 
-  it("相対パスで書いたリンクはファイルを指し、表示はリンク先のタイトルになる", async () => {
+  it("[./notes/b.csnx] のようなパスはファイルを指さず、そう書かれたタイトルとして引く", async () => {
     const html = await renderPage("タイトル\n[./notes/b.csnx]", base)
-    expect(html).toContain('<a class="link" href="/blog/page-b">Page B</a>')
+    expect(html).toContain('<div class="line">./notes/b.csnx</div>')
   })
 
   it("索引に無いページと draft のページへのリンクは、既定ではテキストになる", async () => {
@@ -237,9 +237,9 @@ describe("リンクの解決", () => {
     )
   })
 
-  it("説明文でも、相対パスのリンクはリンク先のタイトルになる", async () => {
-    const { metadata } = await compile("タイトル\n参照: [./notes/b.csnx] と [./none.csn]", base)
-    expect(metadata.description).toBe("参照: Page B と ./none.csn")
+  it("説明文のリンクは、書かれたままのテキストになる", async () => {
+    const { metadata } = await compile("タイトル\n参照: [./notes/b.csnx] と [Page B]", base)
+    expect(metadata.description).toBe("参照: ./notes/b.csnx と Page B")
   })
 
   it("索引を渡さなければ、タイトルのリンクはすべてページへのリンクになる", async () => {

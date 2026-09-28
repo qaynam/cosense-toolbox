@@ -1,0 +1,56 @@
+---
+description: cosenseのlocalファイルの書き方を紹介します
+date: 2026-09-25
+---
+csn / csnxの書き方
+
+code:example.csnx
+  // 1. ファイルの拡張子は `.csn` または `.csnx` にする
+  // 2. ファイルの先頭に `---` を書き、メタデータを記述する
+  // 3. メタデータの後に `---` を書き、本文を記述する
+  // 4. 本文では、Markdown記法やCosense記法を使用できる
+  // 5. Cosense記法では、リンクや画像、コードブロックなどを埋め込むことができる
+  ---
+  date: 2026-09-10
+  tags: [Svelte]
+  ---
+  好きなコンポーネントを埋め込むことができる
+  `.csnx`ファイルでは [mdx]の同じようにcosense記法を自分の[JSフレームワーク]と組み合わせて拡張することができる。
+  
+  例：
+  code:component.csnx
+  <Callout type="warn" title="注意">
+    <Callout> から </Callout> までの行が children になる。
+    箇条書きもそのまま書ける。
+    [Cosense で書く] へのリンクも使える。
+    </Callout>
+    <Counter start={10} step={5} />
+  
+  `codeです` 
+  
+  ↓のようにレンダリングされる
+    
+  <Callout type="warn" title="注意">
+  <Callout> から </Callout> までの行が children になる。
+  箇条書きもそのまま書ける。
+  [Cosense で書く] へのリンクも使える。
+  </Callout>
+  
+  もちろんreactiveなコンポーネントも埋め込むことができる。
+  <Counter start={1} step={1} />
+  
+  [|**** さらに]
+  自分でコンポーネントを作ることでリンク記法からあらゆるemebdを埋め込むことが可能
+  
+  [Youtube]のemebd
+  [https://youtu.be/dQw4w9WgXcQ]
+  
+  [vimeo]のembed
+  [https://vimeo.com/62677550]
+  
+  [x]のembed
+  [https://x.com/elonmusk/status/1401251430015582209]
+  
+  そして装飾記法を拡張することで、さらにカスタマイズも可能
+    [! 注意文言]を書きたい時
+    [~ 警告文]を書きたい時

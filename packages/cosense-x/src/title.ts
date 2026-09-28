@@ -30,29 +30,3 @@ export const uniqueTitles = (titles: readonly string[]): string[] => {
     return key !== "" && keys.indexOf(key) === i
   })
 }
-
-/** `[./foo.csn]` のように、ファイルを相対パスで指すリンクか。 */
-export const isRelativePath = (target: string): boolean =>
-  target.startsWith("./") || target.startsWith("../")
-
-/**
- * `from` のファイルから見た相対パス `relative` を、`from` と同じ基点のパスにする。
- *
- * `node:path` を使わないのは、ブラウザや Workers でもコンパイルできるようにするため。
- */
-export const resolveRelativePath = (from: string, relative: string): string => {
-  // 基点は `from` のファイルがあるディレクトリ。
-  const directory = from
-    .split("/")
-    .filter((segment) => segment !== "")
-    .slice(0, -1)
-  return (from.startsWith("/") ? "/" : "") + walk(directory, relative.split("/")).join("/")
-}
-
-/** `resolved` から `segments` を 1 段ずつ辿る。`..` で 1 段上がり、`.` と空の段は読み飛ばす。 */
-const walk = (resolved: readonly string[], segments: readonly string[]): readonly string[] => {
-  const [segment, ...rest] = segments
-  if (segment === undefined) return resolved
-  if (segment === "" || segment === ".") return walk(resolved, rest)
-  return walk(segment === ".." ? resolved.slice(0, -1) : [...resolved, segment], rest)
-}

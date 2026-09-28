@@ -6,10 +6,10 @@
  */
 import { Option } from "effect"
 
-import { createIndex, pageByPath, pageByTitle, type PageIndex } from "./links"
+import { createIndex, pageByTitle, type PageIndex } from "./links"
 import type { PageMetadata } from "./metadata"
 import { type ReadOptions, readPage } from "./read"
-import { isRelativePath, normalizeTitle, uniqueTitles } from "./title"
+import { normalizeTitle, uniqueTitles } from "./title"
 
 export { createIndex, findByTitle } from "./links"
 export type { IndexInput, IndexedPage, PageIndex } from "./links"
@@ -68,7 +68,6 @@ const groupBy = <A>(
  * ページの一覧からリンクグラフを作る。
  *
  * Cosense ではタグもリンクなので、2 hop はタグ経由でもつながる。
- * 相対パスのリンクは、リンク先のタイトルへのリンクと同じに扱う。
  */
 export const buildGraph = (inputs: readonly GraphInput[]): Graph => {
   const published = inputs.filter((input) => !input.metadata.draft)
@@ -81,15 +80,7 @@ export const buildGraph = (inputs: readonly GraphInput[]): Graph => {
   /** ページ id と、そのページのリンク先のタイトル (書かれた形のまま、重複なし・自分を除く) */
   const outgoing = published.map(({ id, metadata }) => {
     const self = normalizeTitle(metadata.title)
-    const linked = metadata.links.flatMap((link) =>
-      isRelativePath(link)
-        ? Option.match(pageByPath(index, id, link), {
-            onNone: () => [],
-            onSome: (page) => [page.title],
-          })
-        : [link],
-    )
-    const titles = uniqueTitles([...linked, ...metadata.tags]).filter(
+    const titles = uniqueTitles([...metadata.links, ...metadata.tags]).filter(
       (title) => normalizeTitle(title) !== self,
     )
     return { id, metadata, titles }
@@ -148,26 +139,14 @@ export interface ScanInput {
   readonly source: string
 }
 
-/**
- * ファイルの中身をまとめて読み、グラフを作る。形式は id の拡張子から決める。
- *
- * 2 回に分けて読む。説明文の中の相対パスのリンクをタイトルにするには全ページの索引が要り、
- * 索引に載せるタイトルは説明文に依存しないので、先にタイトルだけで索引を作れる。
- */
+/** ファイルの中身をまとめて読み、グラフを作る。形式は id の拡張子から決める。 */
 export const scanPages = (
   files: readonly ScanInput[],
-  options: Omit<ReadOptions, "filePath" | "format" | "index"> = {},
-): Graph => {
-  const index = createIndex(
-    files.map(({ id, source }) => {
-      const { metadata } = readPage(source, { ...options, filePath: id })
-      return { id, title: metadata.title, slug: metadata.slug, draft: metadata.draft }
-    }),
-  )
-  return buildGraph(
+  options: Omit<ReadOptions, "filePath" | "format"> = {},
+): Graph =>
+  buildGraph(
     files.map(({ id, source }) => ({
       id,
-      metadata: readPage(source, { ...options, filePath: id, index }).metadata,
+      metadata: readPage(source, { ...options, filePath: id }).metadata,
     })),
   )
-}
