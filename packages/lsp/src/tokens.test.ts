@@ -145,6 +145,29 @@ describe("encodeTokens", () => {
   })
 })
 
+describe("encodeTokens with a legend of the caller's own names", () => {
+  /** The legend entry each token of `text` is sent as. */
+  const sentAs = (legend: ReadonlyArray<string>, text: string, options = {}) =>
+    typesIn(encodeTokens(computeTokens(text, options), legend)).map((type) => legend[type])
+
+  it("sends a Cosense token type by its own name when the legend has it", () => {
+    expect(sentAs([...TOKEN_TYPES], "T\n[ページ]")).toEqual(["title", "link"])
+  })
+
+  it("sends a notation by its own name in the same legend", () => {
+    const notations = [{ marker: "!", name: "warning" }]
+    // `warning` first, so a token that falls back to place 0 does not pass for `title`.
+    expect(sentAs(["warning", ...TOKEN_TYPES], "T\n[! 注意]", { notations })).toEqual([
+      "title",
+      "warning",
+    ])
+  })
+
+  it("sends a type the legend lacks as the LSP's type it is drawn as", () => {
+    expect(sentAs(["title", ...LEGEND], "T\n[ページ]")).toEqual(["title", "function"])
+  })
+})
+
 describe("parse options", () => {
   const atFormula: Extension = {
     bracketRules: [(inner) => (inner.startsWith("@") ? { type: "formula", value: inner } : null)],

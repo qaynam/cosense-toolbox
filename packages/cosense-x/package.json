@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/cosense-x",
-  "version": "0.1.0-beta.3",
+  "version": "0.1.0-beta.5",
   "description": "Compile Cosense (Scrapbox) pages into JSX modules, like MDX for Cosense notation.",
   "license": "MIT",
   "type": "module",
@@ -36,7 +36,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build",
+    "lint": "eslint .",
+    "format:check": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore"
   },
   "dependencies": {
     "@cosense-toolbox/parser": "workspace:*",

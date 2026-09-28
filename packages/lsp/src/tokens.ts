@@ -137,6 +137,9 @@ const LSP_TYPE: Record<TokenType, (typeof LEGEND)[number]> = {
 /**
  * LEGEND with the names of `notations` after it, each once: the legend for a client that
  * accepts token types of the caller's own naming. The LSP's types keep their places.
+ *
+ * A client that colours by this package's own names instead passes those to `encodeTokens`
+ * (`[...TOKEN_TYPES, ...names]`): a token whose own name is in the legend is sent as that.
  */
 export const legendOf = (notations: ReadonlyArray<Notation>): ReadonlyArray<string> =>
   Arr.dedupe([...LEGEND, ...Arr.map(notations, (notation) => notation.name)])
@@ -493,26 +496,32 @@ export const computeTokens = (text: string, options: ComputeTokensOptions = {}):
   )
 }
 
+/** The name a token goes by: a notation's is the caller's, any other's its type. */
+const ownName = (token: RawToken): string =>
+  Match.value(token).pipe(
+    Match.when({ type: "notation" }, (notation) => notation.name),
+    Match.orElse((builtin) => builtin.type),
+  )
+
 /**
- * Each token's place in `legend`: a notation's own name when the legend has it, else the
- * LSP type its kind is drawn as.
+ * Each token's place in `legend`: its own name when the legend has it, else the LSP type
+ * its kind is drawn as. LEGEND holds none of the own names, so it always gets the LSP type.
  */
 const legendIndex = (legend: ReadonlyArray<string>) => {
   const placeOf = (type: string): Option.Option<number> =>
     Option.liftPredicate(legend.indexOf(type), (index) => index >= 0)
-  const drawnAs = (token: RawToken) => Option.getOrElse(placeOf(LSP_TYPE[token.type]), () => 0)
   return (token: RawToken): number =>
-    Match.value(token).pipe(
-      Match.when({ type: "notation" }, (notation) =>
-        Option.getOrElse(placeOf(notation.name), () => drawnAs(notation)),
-      ),
-      Match.orElse(drawnAs),
+    pipe(
+      placeOf(ownName(token)),
+      Option.orElse(() => placeOf(LSP_TYPE[token.type])),
+      Option.getOrElse(() => 0),
     )
 }
 
 /**
  * LSP relative encoding: [deltaLine, deltaStartChar, length, tokenType, tokenModifiers]*.
- * `legend` is the one sent at initialize: LEGEND, or `legendOf(notations)`.
+ * `legend` is the one sent at initialize: LEGEND, `legendOf(notations)`, or a legend of the
+ * client's own naming such as `[...TOKEN_TYPES, ...names]`.
  */
 export const encodeTokens = (
   tokens: ReadonlyArray<RawToken>,

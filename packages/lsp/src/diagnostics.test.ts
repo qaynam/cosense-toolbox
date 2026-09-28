@@ -31,6 +31,10 @@ describe("unresolvedLinkDiagnostics", () => {
     expect(flagged("T\n[! 注意] [無いページ]")).toEqual(["[無いページ]"])
   })
 
+  it("does not flag a bracket in the title line, which is not a link", () => {
+    expect(flagged("[無いページ] の話\n本文")).toEqual([])
+  })
+
   it("leaves tags and links to other projects alone", () => {
     expect(flagged("T\n#無いタグ [/help-jp/無いページ]")).toEqual([])
   })

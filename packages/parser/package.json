@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/parser",
-  "version": "0.1.0-beta.3",
+  "version": "0.1.0-beta.5",
   "description": "Cosense (Scrapbox) notation parser — every node carries its source position. Zero runtime deps except effect.",
   "license": "MIT",
   "type": "module",
@@ -85,7 +85,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build",
+    "lint": "eslint .",
+    "format:check": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore"
   },
   "dependencies": {
     "@types/hast": "^3.0.4",

@@ -8,7 +8,7 @@ CSS ファイル1枚だけで構成されているため、独自の見た目を
 **ドキュメント → <https://cosense-toolbox.qaynam.dev/style/>**
 
 ```sh
-npm i @cosense-toolbox/style@beta
+npm i @cosense-toolbox/style
 ```
 
 ```ts

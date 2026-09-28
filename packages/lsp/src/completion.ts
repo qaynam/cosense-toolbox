@@ -8,6 +8,7 @@ import {
   type Position,
 } from "vscode-languageserver/node"
 
+import { linkAt, type LinkTarget, type PageTarget } from "./link"
 import type { Index, Page } from "./workspace"
 
 /**
@@ -250,7 +251,14 @@ export const completionItems = (
     }),
   )
 
-/** The file of the page named at `position`, opened at its top. None for a missing page. */
+/** A page of the reader's own project: the only kind the workspace can hold a file for. */
+const isOwnPage = (target: LinkTarget): target is PageTarget =>
+  target.kind === "page" && target.project === undefined
+
+/**
+ * The file of the page linked at `position`, opened at its top. None for a missing page, and
+ * for a link that leads outside the workspace (another project, a URL).
+ */
 export const definitionOf = (
   index: Index,
   text: string,
@@ -258,8 +266,9 @@ export const definitionOf = (
   parseOptions: ParseOptions = {},
 ): Option.Option<Definition> =>
   pipe(
-    detectCompletionInDocument(text, position, parseOptions),
-    Option.map(({ query }) => normalizeForMatch(query)),
+    linkAt(text, position, parseOptions),
+    Option.filter(isOwnPage),
+    Option.map(({ title }) => normalizeForMatch(title)),
     Option.flatMap((key) =>
       Arr.findFirst(index.pages, (page) => normalizeForMatch(page.title) === key),
     ),

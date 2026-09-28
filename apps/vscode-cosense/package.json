@@ -97,6 +97,8 @@
     "build": "tsdown && bun scripts/copy-grammars.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "lint": "eslint .",
+    "format:check": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
     "package": "bun run build && vsce package --no-dependencies"
   },
   "dependencies": {

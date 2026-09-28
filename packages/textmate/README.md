@@ -8,7 +8,7 @@ Shiki の `LanguageRegistration` として使えるほか、`.tmLanguage.json` �
 **ドキュメント → <https://cosense-toolbox.qaynam.dev/textmate/>**
 
 ```sh
-npm i @cosense-toolbox/textmate@beta
+npm i @cosense-toolbox/textmate
 ```
 
 ## Shiki

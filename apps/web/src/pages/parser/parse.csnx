@@ -29,6 +29,7 @@ Cosense のテキストを AST に変換する関数を紹介します。どの�
 <DocHeading level={2} id="parse" title="parse" />
 
 `parse(source, options?)` はページ全体を受け取り、ブロックの並びを返します。1行目はタイトル、`code:` と `table:` は複数行のブロックとして扱います。
+タイトル行は Cosense Web と同じく記法を読まず、`[x]` も `#tag` も書いたままの文字になります。ページではない文字列の記法を読むときは、本文の 1 行なら `parseLine`、文章の断片なら `tokenizeInline` を使います。
 
 code:ts
  import { parse } from "@cosense-toolbox/parser"

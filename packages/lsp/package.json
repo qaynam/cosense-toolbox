@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/lsp",
-  "version": "0.1.0-beta.3",
+  "version": "0.1.0-beta.5",
   "type": "module",
   "description": "Language server for .csn and .csnx, and a check of a whole site's links: csn-lsp.",
   "license": "MIT",
@@ -28,6 +28,10 @@
       "types": "./dist/completion.d.mts",
       "default": "./dist/completion.mjs"
     },
+    "./link": {
+      "types": "./dist/link.d.mts",
+      "default": "./dist/link.mjs"
+    },
     "./tokens": {
       "types": "./dist/tokens.d.mts",
       "default": "./dist/tokens.mjs"
@@ -42,6 +46,8 @@
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "lint": "eslint .",
+    "format:check": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
     "prepublishOnly": "bun run build"
   },
   "dependencies": {

@@ -29,7 +29,7 @@ AST と位置情報
 
 code:text
  Page
- ├─ TitleBlock   1 行目。value とインラインの children
+ ├─ TitleBlock   1 行目。value と、書いたままの文字の children
  ├─ CodeBlock    code:filename と CodeLine[]
  ├─ TableBlock   TableRow[] → TableCell[]
  └─ LineBlock    indent / quote / monospace / InlineNode[]
@@ -37,6 +37,7 @@ code:text
 <DocHeading level={2} id="inline" title="インラインノード" />
 
 タイトル行、通常行、テーブルセルの中にはインラインノードが入ります。各ノードは `type` で判別します。
+ただしタイトル行は Cosense Web と同じく記法を読まないので、`TitleBlock` の `children` は書いたままの文字の `text` 1 つです (タイトルが空なら無し)。
 
 `text` は通常の文字列、`internalLink` / `externalLink` / `projectLink` は各種リンク、`hashtag` はタグです。`inlineCode`、`image`、`icon`、`formula`、`decoration` もそれぞれ別のノードになります。
 
