@@ -52,8 +52,6 @@
       "initialization_options": {
         // ページを読む場所。ワークスペースからの相対パス。省略するとワークスペース全体を読む
         "sources": ["examples/astro-blog/src"],
-        // サイトの customDecorations と同じ記号。省略すると [! 注意] をリンクとして読む
-        "decorations": ["|", "!", "~", "#"],
         // 存在しないページへのリンクの診断。"off" | "hint" | "information" | "warning" | "error"
         "unresolvedLinks": "warning",
         // 1 行目の --- を frontmatter (YAML) として飛ばすか。frontmatter の無いページなら false

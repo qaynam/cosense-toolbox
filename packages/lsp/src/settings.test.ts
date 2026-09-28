@@ -1,21 +1,17 @@
-import { parse } from "@cosense-toolbox/parser"
-import { collect } from "@cosense-toolbox/parser/utils"
 import { describe, expect, it } from "vitest"
 
-import { defaultSettings, parseOptionsOf, settingsOf } from "./settings"
+import { defaultSettings, settingsOf } from "./settings"
 
 describe("settingsOf", () => {
   it("reads every setting the editor sends", () => {
     expect(
       settingsOf({
         sources: ["examples/astro-blog/src"],
-        decorations: ["|", "!"],
         unresolvedLinks: "error",
         frontmatter: false,
       }),
     ).toEqual({
       sources: ["examples/astro-blog/src"],
-      decorations: ["|", "!"],
       unresolvedLinks: "error",
       frontmatter: false,
     })
@@ -25,31 +21,23 @@ describe("settingsOf", () => {
     expect(settingsOf(undefined)).toEqual(defaultSettings)
     expect(defaultSettings).toEqual({
       sources: [],
-      decorations: [],
       unresolvedLinks: "warning",
       frontmatter: true,
     })
   })
 
   it("keeps the strings of a list and drops what is not one", () => {
-    expect(settingsOf({ sources: "src", decorations: ["!", 1, ""], frontmatter: "no" })).toEqual({
+    expect(settingsOf({ sources: ["src", 1, ""] })).toEqual({
       ...defaultSettings,
-      decorations: ["!"],
+      sources: ["src"],
     })
   })
-})
 
-describe("parseOptionsOf", () => {
-  const linksIn = (text: string, decorations: ReadonlyArray<string>) =>
-    collect(parse(text, parseOptionsOf({ ...defaultSettings, decorations })), "internalLink").map(
-      (link) => link.target,
-    )
-
-  it("reads a bracket opened by a listed marker as a decoration, not a link", () => {
-    expect(linksIn("T\n[! 注意] [ページ]", ["!"])).toEqual(["ページ"])
+  it("falls back to the default of a setting whose value is not of its shape", () => {
+    expect(settingsOf({ sources: "src", frontmatter: "no" })).toEqual(defaultSettings)
   })
 
-  it("reads it as a link when the marker is not listed, as the parser does", () => {
-    expect(linksIn("T\n[! 注意]", [])).toEqual(["! 注意"])
+  it("has no setting for decoration markers, since which ones decorate is Cosense's syntax", () => {
+    expect(settingsOf({ decorations: ["!"] })).toEqual(defaultSettings)
   })
 })

@@ -370,6 +370,236 @@
       ]
     },
     {
+      "description": "* / - _ 以外の Cosense の記号も装飾になる (見た目は付かない)",
+      "input": "[! x]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "x",
+          "bold": false,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "text",
+              "value": "x"
+            }
+          ],
+          "markers": ["!"]
+        }
+      ]
+    },
+    {
+      "description": "' も装飾の記号になる",
+      "input": "[' x]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "x",
+          "bold": false,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "text",
+              "value": "x"
+            }
+          ],
+          "markers": ["'"]
+        }
+      ]
+    },
+    {
+      "description": "見た目の付く記号とほかの記号を混ぜても装飾になり、markers は出現順",
+      "input": "[*! x]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "x",
+          "bold": true,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "text",
+              "value": "x"
+            }
+          ],
+          "markers": ["*", "!"]
+        }
+      ]
+    },
+    {
+      "description": "ほかの記号どうしの組み合わせも装飾になる",
+      "input": "[!' x]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "x",
+          "bold": false,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "text",
+              "value": "x"
+            }
+          ],
+          "markers": ["!", "'"]
+        }
+      ]
+    },
+    {
+      "description": "Cosense の記号でない @ はリンクのまま",
+      "input": "[@ x]",
+      "expected": [
+        {
+          "type": "internalLink",
+          "label": "@ x",
+          "target": "@ x"
+        }
+      ]
+    },
+    {
+      "description": "= も装飾の記号になる (help-jp では将来の別用途のために使わないよう求めているが、Cosense Web は装飾として読む)",
+      "input": "[= x]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "x",
+          "bold": false,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "text",
+              "value": "x"
+            }
+          ],
+          "markers": ["="]
+        }
+      ]
+    },
+    {
+      "description": "= をほかの記号と混ぜても装飾になる",
+      "input": "[|= x]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "x",
+          "bold": false,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "text",
+              "value": "x"
+            }
+          ],
+          "markers": ["|", "="]
+        }
+      ]
+    },
+    {
+      "description": "記号の並びに Cosense の記号でないものが混ざるとリンクのまま",
+      "input": "[|@ x]",
+      "expected": [
+        {
+          "type": "internalLink",
+          "label": "|@ x",
+          "target": "|@ x"
+        }
+      ]
+    },
+    {
+      "description": "記号の直後に空白が無ければ装飾にならない",
+      "input": "[!x]",
+      "expected": [
+        {
+          "type": "internalLink",
+          "label": "!x",
+          "target": "!x"
+        }
+      ]
+    },
+    {
+      "description": "記号のあとに記号でない文字が続けば装飾にならない",
+      "input": "[-1 x]",
+      "expected": [
+        {
+          "type": "internalLink",
+          "label": "-1 x",
+          "target": "-1 x"
+        }
+      ]
+    },
+    {
+      "description": "ほかの記号の装飾でも、中のリンクは子ノードになる",
+      "input": "[! [リンク]です]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "[リンク]です",
+          "bold": false,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "internalLink",
+              "label": "リンク",
+              "target": "リンク"
+            },
+            {
+              "type": "text",
+              "value": "です"
+            }
+          ],
+          "markers": ["!"]
+        }
+      ]
+    },
+    {
+      "description": "ほかの記号の装飾でも、中の装飾は装飾にならずリンクになる",
+      "input": "[! [* 太字]です]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "[* 太字]です",
+          "bold": false,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "internalLink",
+              "label": "* 太字",
+              "target": "* 太字"
+            },
+            {
+              "type": "text",
+              "value": "です"
+            }
+          ],
+          "markers": ["!"]
+        }
+      ]
+    },
+    {
       "description": "空の角括弧は素の文字",
       "input": "[]",
       "expected": [

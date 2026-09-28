@@ -1,7 +1,7 @@
 // @ts-check
 import svelte from "@astrojs/svelte"
 import cosense from "@cosense-toolbox/astro"
-import { customDecorations, tableCellNotation } from "@cosense-toolbox/parser/extensions"
+import { tableCellNotation } from "@cosense-toolbox/parser/extensions"
 import { codeLineNumbers, tableCellLineBreaks } from "@cosense-toolbox/parser/html"
 import { cosense as cosenseGrammar, cosenseX as cosenseXGrammar } from "@cosense-toolbox/textmate"
 import tailwindcss from "@tailwindcss/vite"
@@ -28,7 +28,7 @@ export default defineConfig({
       pageUrl,
       tagUrl,
       parseOptions: {
-        extensions: [customDecorations(["|", "!", "~", "#"]), tableCellNotation()],
+        extensions: [tableCellNotation()],
       },
       renderOptions: { extensions: [codeLineNumbers(), tableCellLineBreaks("\\n")] },
       assets: { pat: process.env.COSENSE_PAT },

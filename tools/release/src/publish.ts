@@ -4,6 +4,7 @@
  *
  *   bun run release:publish               公開する
  *   bun run release:publish --dry-run     公開せず、中身だけ確かめる
+ *   bun run release:publish --tag next    dist-tag を版から決めず、これにする
  *   bun run release:publish --expect 0.1.0-beta.3
  *                                         揃った版がこれでなければ止める (タグからの公開用)
  *
@@ -22,6 +23,7 @@ import { $ } from "bun"
 import { Array as Arr, Effect, Option, pipe } from "effect"
 
 import {
+  distTagFor,
   type Manifest,
   mismatchedPins,
   problemsOf,
@@ -34,10 +36,14 @@ import { readWorkspaces } from "./workspaces"
 const root = fileURLToPath(new URL("../../..", import.meta.url))
 const args = Bun.argv.slice(2)
 const dryRun = args.includes("--dry-run")
-const expected = pipe(
-  Arr.findFirstIndex(args, (arg) => arg === "--expect"),
-  Option.flatMap((index) => Arr.get(args, index + 1)),
-)
+/** `--name value` の value。 */
+const valueOf = (name: string): Option.Option<string> =>
+  pipe(
+    Arr.findFirstIndex(args, (arg) => arg === name),
+    Option.flatMap((index) => Arr.get(args, index + 1)),
+  )
+const expected = valueOf("--expect")
+const tagOverride = valueOf("--tag")
 
 const REGISTRY = "https://registry.npmjs.org"
 
@@ -53,6 +59,31 @@ const isPublished = ({ manifest }: Workspace) =>
         .nothrow(),
     ),
     Effect.map((result) => result.exitCode === 0 && result.stdout.toString().trim() !== ""),
+  )
+
+/**
+ * npm に出ている版の一覧。まだ 1 つも無いパッケージは空。
+ * dist-tag を決めるのに、安定版をもう出したかを知るために使う。
+ */
+const publishedVersions = ({ manifest }: Workspace) =>
+  pipe(
+    run("npm view", () =>
+      $`npm view ${manifest.name} versions --json --registry ${REGISTRY}`.quiet().nothrow(),
+    ),
+    Effect.map((result): ReadonlyArray<string> => {
+      if (result.exitCode !== 0) return []
+      try {
+        // 版が 1 つだけのときは配列ではなく文字列で返ってくる。
+        const parsed: unknown = JSON.parse(result.stdout.toString())
+        return Array.isArray(parsed)
+          ? parsed.filter((v): v is string => typeof v === "string")
+          : typeof parsed === "string"
+            ? [parsed]
+            : []
+      } catch {
+        return []
+      }
+    }),
   )
 
 /** `bun pm pack` で固めた tarball のパス。`workspace:*` はここで実際の版になる。 */
@@ -100,45 +131,46 @@ const checkPins = (tarball: string, { name, version }: Manifest) =>
   )
 
 const publishOne = (workspace: Workspace) => {
-  const { name, version, publishConfig } = workspace.manifest
-  const tag = publishConfig?.tag ?? "latest"
+  const { name, version } = workspace.manifest
   return pipe(
-    isPublished(workspace),
-    Effect.flatMap((published) =>
-      published
-        ? Effect.sync(() => console.log(`${name}@${version} は公開済みなので飛ばす`))
-        : pipe(
-            pack(workspace),
-            Effect.tap((tarball) => checkPins(tarball, workspace.manifest)),
-            Effect.tap(() =>
-              Effect.sync(() => console.log(`${name}@${version} を dist-tag "${tag}" で公開する`)),
-            ),
-            Effect.flatMap((tarball) =>
-              run(`${name} を公開する`, async () => {
-                // npm は 2FA をブラウザか OTP で確かめるが、どちらも端末からの入力を待つ。
-                // Bun Shell は子に端末を繋がないので、そのままだと確かめる前に EOTP で諦める。
-                // 公開だけは stdio を引き継いで起動し、npm 自身に訊かせる。
-                const child = Bun.spawn(
-                  [
-                    "npm",
-                    "publish",
-                    tarball,
-                    "--tag",
-                    tag,
-                    "--access",
-                    "public",
-                    "--registry",
-                    REGISTRY,
-                    ...(dryRun ? ["--dry-run"] : []),
-                  ],
-                  { stdio: ["inherit", "inherit", "inherit"] },
-                )
-                const code = await child.exited
-                if (code !== 0) throw new Error(`npm publish が ${code} で終わった`)
-              }),
-            ),
-          ),
-    ),
+    Effect.all([isPublished(workspace), publishedVersions(workspace)]),
+    Effect.flatMap(([published, versions]) => {
+      if (published) {
+        return Effect.sync(() => console.log(`${name}@${version} は公開済みなので飛ばす`))
+      }
+      const tag = distTagFor(version, versions, tagOverride)
+      return pipe(
+        pack(workspace),
+        Effect.tap((tarball) => checkPins(tarball, workspace.manifest)),
+        Effect.tap(() =>
+          Effect.sync(() => console.log(`${name}@${version} を dist-tag "${tag}" で公開する`)),
+        ),
+        Effect.flatMap((tarball) =>
+          run(`${name} を公開する`, async () => {
+            // npm は 2FA をブラウザか OTP で確かめるが、どちらも端末からの入力を待つ。
+            // Bun Shell は子に端末を繋がないので、そのままだと確かめる前に EOTP で諦める。
+            // 公開だけは stdio を引き継いで起動し、npm 自身に訊かせる。
+            const child = Bun.spawn(
+              [
+                "npm",
+                "publish",
+                tarball,
+                "--tag",
+                tag,
+                "--access",
+                "public",
+                "--registry",
+                REGISTRY,
+                ...(dryRun ? ["--dry-run"] : []),
+              ],
+              { stdio: ["inherit", "inherit", "inherit"] },
+            )
+            const code = await child.exited
+            if (code !== 0) throw new Error(`npm publish が ${code} で終わった`)
+          }),
+        ),
+      )
+    }),
   )
 }
 

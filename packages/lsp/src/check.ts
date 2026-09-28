@@ -6,7 +6,6 @@ import { Array as Arr, Effect, Match, Option, pipe, Predicate } from "effect"
 import { type Diagnostic, DiagnosticSeverity } from "vscode-languageserver/node"
 
 import { severityOf, unresolvedLinkDiagnostics, type UnresolvedSeverity } from "./diagnostics"
-import { defaultSettings, parseOptionsOf } from "./settings"
 import { indexOf, type PageFile, readPageFiles } from "./workspace"
 
 /**
@@ -22,7 +21,6 @@ every [link] to a page none of them holds.
 
 Options:
   --unresolved-links <level>  off | hint | information | warning | error (default: error)
-  --decorations <markers>     the site's own decoration markers, as one string: '|!~#'
   --no-frontmatter            read a first line of --- as the title, not as YAML
 `
 
@@ -69,7 +67,6 @@ const argsOf = (args: ReadonlyArray<string>, cwd: string): Option.Option<CheckSi
       strict: true,
       options: {
         "unresolved-links": { type: "string" },
-        decorations: { type: "string" },
         "no-frontmatter": { type: "boolean" },
       },
     }),
@@ -82,11 +79,6 @@ const argsOf = (args: ReadonlyArray<string>, cwd: string): Option.Option<CheckSi
         Option.fromNullable(values["unresolved-links"]),
         Option.match({ onNone: () => DEFAULT_LEVEL, onSome: severityOf }),
       ),
-      // Each marker is one character, so a string of them is the list.
-      parseOptions: parseOptionsOf({
-        ...defaultSettings,
-        decorations: Array.from(values.decorations ?? ""),
-      }),
       frontmatter: values["no-frontmatter"] !== true,
     })),
   )
