@@ -1,0 +1,58 @@
+---
+layout: ../../layouts/Doc.astro
+title: パーサー
+description: Cosense の記法を位置情報つきの AST に変換する TypeScript パッケージ。
+toc:
+  - id: quickstart
+    text: クイックスタート
+    depth: 2
+  - id: features
+    text: 特徴
+    depth: 2
+  - id: choose
+    text: 使う API を選ぶ
+    depth: 2
+  - id: next
+    text: 次に読む
+    depth: 2
+---
+Cosense 記法パーサー
+
+`@cosense-toolbox/parser` は Cosense (旧 Scrapbox) の記法を位置情報つきの AST に変換します。
+ブラウザ、Node.js、Cloudflare Workers で利用でき、DOM や Node.js API には依存しません。
+
+正規表現で文字列を探すのではなく、リンク・装飾・画像などの記法をノードとして判別します。そのため、元のテキスト上の場所を保ったまま処理できます。
+
+code:ts
+ import { parse } from "@cosense-toolbox/parser"
+ import { collectLinks } from "@cosense-toolbox/parser/utils"
+ import { toHtml } from "@cosense-toolbox/parser/html"
+ 
+ const page = parse(`今日のメモ
+ [プロジェクトA] の進捗を確認する
+ #あとで読む`)
+ 
+ collectLinks(page)
+ // → ["プロジェクトA", "あとで読む"]
+ 
+ toHtml(page)
+
+<DocHeading level={2} id="quickstart" title="クイックスタート" />
+code:sh
+ npm install @cosense-toolbox/parser@beta
+必要な機能だけサブパスから読み込めます。HTML 表示の既定 CSS は別パッケージの <DocLink href="/style/" label="@cosense-toolbox/style" /> で提供しています。
+
+<DocHeading level={2} id="features" title="特徴" />
+ノードにはソース上の行・列・文字オフセットが含まれます。AST はメソッドを持たないオブジェクトなので、JSON にして保存したり別スレッドへ送ったりできます。
+AST の走査、リンク抽出、HTML 変換、独自形式への変換は別のサブパスに分かれています。使わない機能はバンドルに含めずに済みます。
+記法や独自ノードを追加でき、追加したノードの型は TypeScript の走査・描画にも反映されます。
+
+<DocHeading level={2} id="choose" title="使う API を選ぶ" />
+`@cosense-toolbox/parser` は、ページ全体や1行の記法を AST に変換します。具体的な関数の使い分けは <DocLink href="/parser/parse/" label="パース" /> をご覧ください。
+`@cosense-toolbox/parser/utils` は AST の検索・走査・リンク抽出、`@cosense-toolbox/parser/html` は HTML / hast への変換を担当します。
+`@cosense-toolbox/parser/compile` はプレーンテキストや独自形式への変換、`@cosense-toolbox/parser/extensions` はパーサーへの記法追加に使います。
+`@cosense-toolbox/parser/schema` の `decodePage` は、外部から受け取った値が AST の形かどうかを検証します。
+
+<DocHeading level={2} id="next" title="次に読む" />
+ノードの形と位置情報は <DocLink href="/parser/ast/" label="AST と位置情報" />、HTML 出力の設定は <DocLink href="/parser/html/" label="HTML への変換" /> をご覧ください。
+動く例は <DocLink href="/parser/demo/" label="パーサーの出力例" /> にあります。公開 API は beta のため、利用するバージョンを固定してください。

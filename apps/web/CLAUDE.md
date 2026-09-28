@@ -2,38 +2,39 @@
 
 ## このプロジェクトは何か
 
-`cosense-toolbox` は、**Cosense (旧Scrapbox) のための道具を配る**プロジェクト。配布形態は素の Astro のサイトで、いまは記法パーサーとテーマビルダーの 2 つを載せている。
+`cosense-toolbox` は、Cosense (旧 Scrapbox) の記法を扱うライブラリ、Astro 統合、エディター連携などを開発するモノレポ。`apps/web` はパッケージのドキュメントサイトとテーマビルダーを提供する Astro アプリ。
 
 もともとは userscript のギャラリーだったが、2026-09-06 に userscript 系を全部落とした（下の「方針」を参照）。
 
 ## 方針：トップは「道具の入り口」
 
-トップは**道具をカードで並べる入り口**にしてある（void0 / TanStack のような、ロゴを前に出した中央寄せ）。並び順とラベルの単一情報源は `src/lib/tools.ts`。道具を足したら、ページを作ってからここに登録する。道具どうしの移動はヘッダのナビが担う。
+トップはドキュメントとテーマビルダーへの入り口。カードの並び順と文言は `src/lib/tools.ts` で管理する。パッケージの説明とガイドは `/docs/` 以下に置き、各ページへの移動はドキュメントのカテゴリナビと検索欄で行う。
 
 **userscript 系は全部削除した（2026-09-06）。** ギャラリー、詳細ページ、使い方ページ、content collection（50本の md）、ソース全文（`src/sources/`）、A層ライブデモ、Gyazo 埋め込み、ツールボックス（カート）、そしてそれらを支えていた Base のモーダル機構まで含む。復活させるなら `5de8ca1` の前を見る。
 
-いま残っているのは **記法パーサー**（`/parser/`）と**テーマビルダー**（`/builder/`）の 2 つ。**Starlightは撤去済み**。
+Starlight は使わず、手書き CSS の Astro サイトとして構成する。ドキュメント本文は `@cosense-toolbox/astro` 統合で `.csnx` から生成する。テーマビルダーは `/builder/` にある。
 
 ## 技術スタック / コマンド
 
-- **素の Astro**（Starlightなし）、パッケージマネージャは **Bun**（`bun.lock`）
+- **Astro**（Starlight なし）。Cosense X の Astro 統合を追加し、`.csnx` をページとして扱う。パッケージマネージャは **Bun**（`bun.lock`）
 - `bun install` / `bun run dev`（→ localhost:4321）/ `bun run build`（→ `./dist/`）/ `bun run preview`
 - スタイルは**手書きCSS**（`src/styles/global.css`）。**Cosense(cosenseの#111ダークテーマ)寄りのパレット**で、ブランドアクセントはインデントドットの星グラデ `#F8E42E→#FF7D54`（`--grad`）
-- **未導入で追加候補**: `@astrojs/alpinejs`（B層デモ＝Alpine製スクリプトの実物マウント用）
 
 ## ページ / コンポーネント構成
 
-- `src/pages/index.astro` … **トップ**。`TOOLS` を `ToolCard` でグリッド表示するだけ
+- `src/pages/index.astro` … **トップ**。`TOOLS` を `ToolCard` で表示
+- `src/pages/**/*.csnx` … ドキュメント本文。見出しは `DocHeading`、リンクは `DocLink` を使い、frontmatter の `toc` と見出し ID を一致させる
 - `src/layouts/Base.astro` … 共通レイアウト。**ライトモード切替**と、`[data-copy]` のコピーを 1 つの delegated `<script>` で処理する
-- `src/layouts/Doc.astro` / `src/components/DocSidebar.astro` / `DocToc.astro` … パーサーのドキュメント用の 3 カラム
+- `src/layouts/Doc.astro` / `src/components/DocSidebar.astro` / `DocToc.astro` … ドキュメント用のナビゲーション、本文、ページ内目次
+- `src/lib/docs.ts` … サイドバー、検索対象、前後ページの順序を管理する
 - `src/lib/site.ts` … サイト定数（いまは GitHub URL だけ）
 - `src/lib/tools.ts` … トップに並べる道具の一覧
 
 ## 現状
 
-`bun run build` で **11ページ**生成OK。実装済み：
+実装済み：
 
-- トップの道具一覧／記法パーサーのドキュメント／テーマビルダー
+- ドキュメントトップ、各パッケージガイド、テーマビルダー
 - **ライトモード**：ヘッダのトグルで切替（`is:inline`で描画前にテーマ確定、localStorage永続）
 
 ## テーマビルダー（`/builder`）
@@ -48,6 +49,6 @@ Cosenseの色をポチポチ変えて、疑似Cosense画面で即プレビュー
 
 ## ディレクトリ構成
 
-- `src/pages/` … ルーティング（index / builder / parser/*）
+- `src/pages/` … ルーティング（`.astro` と `.csnx`）
 - `src/components/` `src/layouts/` `src/lib/` `src/styles/`
 - `public/` … favicon等の静的アセット

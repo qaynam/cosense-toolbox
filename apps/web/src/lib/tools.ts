@@ -17,11 +17,10 @@ export interface Tool {
  */
 export const TOOLS: Tool[] = [
   {
-    href: "/parser/",
-    title: "記法パーサー",
-    description:
-      "Cosense の記法を、位置情報つきの AST に変換する npm パッケージ。HTML やテキストにも変換できる。",
-    note: "@cosense-toolbox/parser",
+    href: "/docs/",
+    title: "ドキュメント",
+    description: "パッケージの選び方、使い方、エディター連携を目的別に探す。",
+    note: "全パッケージのガイド",
     icon: "{ }",
     accent: "blue",
   },

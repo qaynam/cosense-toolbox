@@ -1,3 +1,5 @@
+@import "@cosense-toolbox/style";
+
 :root {
   /* モノトーン・ダーク（Cosense #111 ベース） */
   --bg: #111111;
@@ -652,16 +654,16 @@ body.is-app {
 }
 
 /* ---------------------------------------------------------------------------
- * parser のドキュメント (/parser 配下)
+ * Cosense Toolbox ドキュメント
  * ------------------------------------------------------------------------- */
 
 /* 3 カラム。左がサイト内の目次、右がページ内の目次。
  * 1200px を切ると 1 カラムになり、両方ともハンバーガーのドロワーへ移る。 */
 .doc-shell {
   display: grid;
-  grid-template-columns: 15rem minmax(0, 1fr) 15rem;
+  grid-template-columns: 14rem minmax(0, 1fr) 13rem;
   grid-template-areas: "nav main toc";
-  gap: 0 56px;
+  gap: 0 40px;
   align-items: start;
 }
 /* 幅があるうちは、包んでいる div を無かったことにして中身を列に置く */
@@ -686,19 +688,52 @@ body.is-app {
 .doc-nav {
   position: sticky;
   top: 78px;
-  max-height: calc(100vh - 100px);
+  max-height: calc(100vh - 96px);
   overflow-y: auto;
   font-size: 13.5px;
+  scrollbar-width: thin;
 }
 .doc-nav-name {
   display: block;
   margin-bottom: 22px;
   padding-bottom: 14px;
   border-bottom: 1px solid var(--border);
-  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+.doc-search {
+  margin: 0 0 24px;
+}
+.doc-search-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.doc-search input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-soft);
+  color: var(--text);
+  font: inherit;
   font-size: 12.5px;
-  color: var(--text-dim);
-  word-break: break-all;
+}
+.doc-search input:focus-visible {
+  outline: 2px solid var(--text-faint);
+  outline-offset: 2px;
+}
+.doc-search-status {
+  margin: 7px 0 0;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.doc-search-status[hidden],
+.doc-nav [hidden] {
+  display: none;
 }
 .doc-nav section {
   margin-bottom: 20px;
@@ -729,8 +764,9 @@ body.is-app {
 }
 .doc-nav a[aria-current="page"] {
   color: var(--text);
-  background: var(--bg-soft);
-  font-weight: 500;
+  background: var(--bg-elev);
+  box-shadow: inset 2px 0 var(--text-dim);
+  font-weight: 600;
 }
 .doc-nav-repo {
   display: inline-block;
@@ -743,9 +779,10 @@ body.is-app {
 .doc-toc {
   position: sticky;
   top: 78px;
-  max-height: calc(100vh - 100px);
+  max-height: calc(100vh - 96px);
   overflow-y: auto;
   font-size: 13px;
+  scrollbar-width: thin;
 }
 .doc-toc-head {
   margin: 0 0 10px;
@@ -954,9 +991,30 @@ body.is-app {
 
 .doc {
   min-width: 0;
-  max-width: 52rem;
+  width: 100%;
+  max-width: 48rem;
   line-height: 1.85;
   margin-top: 24px;
+}
+.doc .page {
+  --cosense-text: var(--text);
+  --cosense-title: var(--text);
+  --cosense-bg: transparent;
+  --cosense-link: var(--text);
+  --cosense-link-hover: var(--text);
+  --cosense-code-text: var(--text);
+  --cosense-code-bg: var(--code-bg);
+  --cosense-quote-bg: var(--bg-soft);
+  --cosense-font: var(--font-sans);
+  --cosense-font-size: 16px;
+  --cosense-line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+.doc .page .title {
+  margin: 0 0 28px;
+  font-size: clamp(28px, 4vw, 38px);
+  line-height: 1.25;
+  letter-spacing: -0.025em;
 }
 .doc > :first-child {
   margin-top: 0;
@@ -1025,7 +1083,7 @@ body.is-app {
 
 .doc h2 {
   margin: 56px 0 16px;
-  padding-bottom: 8px;
+  padding-bottom: 10px;
   font-size: 22px;
   border-bottom: 1px solid var(--border);
   scroll-margin-top: 78px;
@@ -1033,7 +1091,7 @@ body.is-app {
 .doc h3 {
   margin: 40px 0 12px;
   font-size: 17px;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   scroll-margin-top: 78px;
 }
 .doc h4,
@@ -1062,6 +1120,33 @@ body.is-app {
 }
 .doc a:hover {
   text-decoration-color: currentColor;
+}
+.doc .page .line {
+  min-height: 1.85em;
+  margin: 0 0 0.75em;
+}
+.doc .page .line[data-indent] {
+  min-height: 1.85em;
+}
+.doc .page .code-block {
+  margin-bottom: 0.15em;
+}
+.doc .page .code-block-start {
+  margin-bottom: 0.35em;
+  color: var(--text-faint);
+  font-size: 0.8em;
+}
+.doc .page .code-body {
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  font-size: 0.9em;
+}
+.doc .page .table {
+  margin: 0 0 24px;
+}
+.doc .page .table td {
+  padding: 6px 10px;
 }
 .doc code {
   padding: 2px 5px;

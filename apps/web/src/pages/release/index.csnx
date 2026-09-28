@@ -1,0 +1,43 @@
+---
+layout: ../../layouts/Doc.astro
+title: リリース手順
+description: Cosense Toolbox の npm パッケージをまとめてバージョン更新・公開する方法。
+toc:
+  - id: version
+    text: バージョンを更新する
+    depth: 2
+  - id: publish
+    text: 公開する
+    depth: 2
+  - id: checks
+    text: 公開前に確認されること
+    depth: 2
+---
+リリース手順
+
+`tools/release` は、`packages/` の公開対象を同じバージョンで npm に公開するためのツールです。`apps/` と `tools/` は npm へ公開しません。
+
+<DocHeading level={2} id="version" title="バージョンを更新する" />
+
+すべての公開パッケージの `package.json` と `bun.lock` を更新します。
+
+code:sh
+ bun run release:version 0.1.0-beta.3
+
+公開前の変更はコミットし、`v<version>` 形式のタグを作成して push します。
+
+code:sh
+ git tag v0.1.0-beta.3
+ git push origin v0.1.0-beta.3
+
+<DocHeading level={2} id="publish" title="公開する" />
+
+タグを push すると GitHub Actions が公開処理を実行します。手元から実行する場合は `bun run release:publish` を使い、最初に `--dry-run` で公開せずに内容を確認してください。
+
+依存されるパッケージから順にビルドして npm へ公開します。同じバージョンがすでに公開済みのパッケージはスキップするため、途中で失敗した場合も再実行できます。
+
+<DocHeading level={2} id="checks" title="公開前に確認されること" />
+
+公開ツールは、パッケージ間のバージョン、`workspace:*` 依存、公開設定、ライセンス、ビルド設定を検査します。依存先を含めた tarball の内容も確認し、公開する版と依存バージョンが一致しなければ停止します。
+
+コマンドとチェック項目の詳細は <DocLink href="https://github.com/qaynam/cosense-toolbox/blob/main/tools/release/README.md" label="リリースツールの README" external /> をご覧ください。

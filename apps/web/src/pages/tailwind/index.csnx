@@ -1,0 +1,56 @@
+---
+layout: ../../layouts/Doc.astro
+title: Tailwind CSS
+description: Cosense の HTML に既定スタイルを適用し、記法ごとに utility を指定する方法。
+toc:
+  - id: install
+    text: インストール
+    depth: 2
+  - id: modifiers
+    text: 記法ごとに調整する
+    depth: 2
+  - id: customize
+    text: 適用範囲とカスタマイズ
+    depth: 2
+---
+Tailwind CSS
+
+`@cosense-toolbox/tailwind` は、Cosense の記法を描画した HTML に Tailwind CSS からスタイルを適用するプラグインです。
+`@cosense-toolbox/style` と同じ基本スタイルを使いつつ、記法別の utility を追加できます。
+
+<DocHeading level={2} id="install" title="インストール" />
+
+Tailwind CSS v4 の CSS にプラグインを登録します。
+
+code:sh
+ npm install -D @cosense-toolbox/tailwind@beta
+
+code:css
+ @import "tailwindcss";
+ @plugin "@cosense-toolbox/tailwind";
+
+描画したページは `cosense` クラスを付けた要素で包みます。
+
+code:astro
+ <article class="cosense" set:html={toHtml(page)} />
+
+<DocHeading level={2} id="modifiers" title="記法ごとに調整する" />
+
+`cosense-{記法}:{utility}` の modifier を使うと、ページ全体ではなく特定の記法だけを変更できます。
+
+code:html
+ <article class="cosense cosense-link:text-sky-700 cosense-code:bg-slate-100 cosense-title:text-4xl">
+   …
+ </article>
+
+`cosense-link:` はリンク、`cosense-title:` はタイトル、`cosense-code:` はインラインコードに適用されます。`hover:`、`dark:`、`md:` など Tailwind の variant とも組み合わせられます。
+
+装飾記号を対象にする場合は `cosense-deco-[記号]:` を使います。たとえば `cosense-deco-[|]:text-sky-700` は `[| テキスト]` の装飾に当たります。
+
+<DocHeading level={2} id="customize" title="適用範囲とカスタマイズ" />
+
+`not-cosense` クラスを付けた要素とその子孫には、既定スタイルも modifier も適用されません。ページ内に埋め込んだ別の UI を Cosense の見た目から切り離すときに使います。
+
+CSS 変数や `className` オプションなど、詳しい設定は <DocLink href="https://github.com/qaynam/cosense-toolbox/blob/main/packages/tailwind/README.md" label="Tailwind プラグインの README" external /> をご覧ください。
+
+基本の CSS 変数は <DocLink href="/style/" label="既定のスタイル" /> と共通です。

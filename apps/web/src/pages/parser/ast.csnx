@@ -1,0 +1,75 @@
+---
+layout: ../../layouts/Doc.astro
+title: AST と位置情報
+description: ブロックとインラインノードの構造、および position の意味。
+toc:
+  - id: blocks
+    text: ブロックの構造
+    depth: 2
+  - id: inline
+    text: インラインノード
+    depth: 2
+  - id: decoration
+    text: 装飾ノード
+    depth: 2
+  - id: position
+    text: position
+    depth: 2
+  - id: use
+    text: 位置情報の使い道
+    depth: 2
+---
+AST と位置情報
+
+`parse` が返す `Page` の構造と、各ノードが持つ `position` を説明します。
+
+<DocHeading level={2} id="blocks" title="ブロックの構造" />
+
+`Page` の直下には、タイトル、通常行、コードブロック、テーブルのいずれかが並びます。ブロック同士は入れ子にならず、インデントの深さは `LineBlock.indent` に数値で記録されます。
+
+code:text
+ Page
+ ├─ TitleBlock   1 行目。value とインラインの children
+ ├─ CodeBlock    code:filename と CodeLine[]
+ ├─ TableBlock   TableRow[] → TableCell[]
+ └─ LineBlock    indent / quote / monospace / InlineNode[]
+
+<DocHeading level={2} id="inline" title="インラインノード" />
+
+タイトル行、通常行、テーブルセルの中にはインラインノードが入ります。各ノードは `type` で判別します。
+
+`text` は通常の文字列、`internalLink` / `externalLink` / `projectLink` は各種リンク、`hashtag` はタグです。`inlineCode`、`image`、`icon`、`formula`、`decoration` もそれぞれ別のノードになります。
+
+テーブルセルは既定ではリンク記法だけを解析し、それ以外は文字として残します。セル内で装飾などを読みたい場合は `tableCellNotation()` を使います。
+
+<DocHeading level={2} id="decoration" title="装飾ノード" />
+
+Cosense の装飾は入れ子ではなく、1つのノードが複数の記号を `markers` に保持します。たとえば `[-/ 文字]` は打ち消しと斜体の記号を同じノードに持ちます。
+
+`markers` は記号の出現順で、重複しません。見た目のフラグとして解釈するのは `*`、`/`、`-`、`_` です。ほかの装飾記号は描画側で扱います。
+
+<DocHeading level={2} id="position" title="position" />
+
+すべてのノードは `position.start` と `position.end` を持ちます。`line`、`column`、`offset` はいずれも 0 始まりで、`end` は範囲に含みません。
+
+code:ts
+ interface Point {
+   line: number
+   column: number
+   offset: number
+ }
+
+ interface Position {
+   start: Point
+   end: Point
+ }
+
+`offset` はバイト数ではなく JavaScript の文字列オフセットです。`source.slice(start.offset, end.offset)` で、そのノードに対応する元テキストを切り出せます。
+
+CRLF と CR は解析前に LF へ正規化されます。したがって位置は正規化後の文字列を基準にします。
+
+<DocHeading level={2} id="use" title="位置情報の使い道" />
+
+位置情報は、エディターのシンタックスハイライト、カーソル下の記法判定、描画結果と元テキストの対応付け、範囲選択による編集などに使えます。
+
+走査用の関数は <DocLink href="/parser/utils/" label="AST のヘルパー" /> をご覧ください。

@@ -1,0 +1,87 @@
+---
+layout: ../../layouts/Doc.astro
+title: 記法の拡張
+description: Extension で記法を追加し、独自の AST ノードを型安全に扱う方法。
+toc:
+  - id: kinds
+    text: 拡張の種類
+    depth: 2
+  - id: add
+    text: 記法を追加する
+    depth: 2
+  - id: table
+    text: テーブルセルの記法
+    depth: 2
+  - id: node
+    text: 独自ノード型
+    depth: 2
+  - id: schema
+    text: AST を検証する
+    depth: 2
+---
+記法の拡張
+
+`@cosense-toolbox/parser/extensions` から拡張用の型と既製の拡張を読み込めます。拡張を使わない場合、このサブパスを import する必要はありません。
+
+<DocHeading level={2} id="kinds" title="拡張の種類" />
+
+`InlineConstruct` は行の任意の位置から始まる記法を追加します。`BracketRule` は `[...]` の中身の解釈を追加します。`Extension` はそれらをまとめ、`parse` に渡す単位です。
+
+<DocHeading level={2} id="add" title="記法を追加する" />
+
+拡張関数は記法が成立しない位置で `null` を返します。成立した場合はノードと消費した文字数を返します。位置情報はパーサーが付けます。
+
+code:ts
+ import { parse } from "@cosense-toolbox/parser"
+ import type { Extension, InlineConstruct } from "@cosense-toolbox/parser/extensions"
+
+ const mention: InlineConstruct = (source, index) => {
+   if (source[index] !== "@") return null
+   const match = source.slice(index + 1).match(/^[A-Za-z0-9_-]+/)
+   if (!match) return null
+   return {
+     node: { type: "internalLink", label: `@${match[0]}`, target: match[0] },
+     length: match[0].length + 1,
+   }
+ }
+
+ const mentions: Extension = { constructs: [mention] }
+ parse("メモ\n@qaynam に確認する", { extensions: [mentions] })
+
+拡張は既定のルールより先に試されます。既定の記法と同じ形を受け取る拡張を追加すると、その解釈を上書きできます。
+
+<DocHeading level={2} id="table" title="テーブルセルの記法" />
+
+テーブルセルでは既定でリンク記法だけを解析します。`tableCellNotation()` を `extensions` に加えると、装飾などを含めてセル内の記法を解析できます。
+
+特定のノードだけをセルに残すには、拡張の `keepInTableCell` で判定します。セル内の文字列を `<br>` に置き換える描画拡張 `tableCellLineBreaks()` は <DocLink href="/parser/html/" label="HTML 変換の拡張" /> を参照してください。
+
+<DocHeading level={2} id="node" title="独自ノード型" />
+
+既存のノード型に当てはまらない記法は、`InlineNodeMap` を declaration merging で拡張します。独自の `type` が走査や描画の型にも反映されます。
+
+code:ts
+ import type { Position } from "@cosense-toolbox/parser"
+
+ declare module "@cosense-toolbox/parser" {
+   interface InlineNodeMap {
+     mention: { type: "mention"; user: string; position: Position }
+   }
+ }
+
+描画時は `toHtml` の `handlers` にそのノード型を追加します。独自ノードを追加したのにハンドラーがない場合、子ノードがあればその内容が出力されます。
+
+<DocHeading level={2} id="schema" title="AST を検証する" />
+
+`@cosense-toolbox/parser/schema` の `decodePage` は、Worker や `postMessage` など外部から受け取った値が `Page` の形かを検証します。通常の `parse` は必ず AST を返すため、外部データを扱う場合に使います。
+
+code:ts
+ import { decodePage } from "@cosense-toolbox/parser/schema"
+ import { Either } from "effect"
+
+ const result = decodePage(JSON.parse(input))
+ if (Either.isRight(result)) {
+   const page = result.right
+ }
+
+不具合や記法の不足を見つけた場合は <DocLink href="https://github.com/qaynam/cosense-toolbox/issues" label="GitHub の Issue" external /> で報告できます。

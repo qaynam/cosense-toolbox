@@ -2,8 +2,10 @@
 
 > **beta.** スコープ名はまだ変わりえます。安定するまではバージョン固定での利用を推奨します。
 
-Cosense 記法の TextMate 文法。`.csn` 用の `cosense` と、コンポーネント行も読む `.csnx` 用の `cosenseX` がある。
-Shiki の `LanguageRegistration` としてそのまま渡せるほか、`.tmLanguage.json` としても同梱している。
+Cosense 記法に対応する TextMate 文法です。`.csn` 用の `cosense` と、コンポーネント行も認識する `.csnx` 用の `cosenseX` を提供します。
+Shiki の `LanguageRegistration` として使えるほか、`.tmLanguage.json` も同梱しています。
+
+**ドキュメント → <https://cosense-toolbox.qaynam.dev/textmate/>**
 
 ```sh
 npm i @cosense-toolbox/textmate@beta

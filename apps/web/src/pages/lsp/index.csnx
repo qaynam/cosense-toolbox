@@ -1,0 +1,61 @@
+---
+layout: ../../layouts/Doc.astro
+title: Language Server
+description: .csn / .csnx の補完、定義ジャンプ、リンク診断を提供する LSP。
+toc:
+  - id: features
+    text: 機能
+    depth: 2
+  - id: settings
+    text: エディターの設定
+    depth: 2
+  - id: check
+    text: リンク切れを検査する
+    depth: 2
+  - id: api
+    text: ライブラリとして使う
+    depth: 2
+---
+Language Server
+
+`@cosense-toolbox/lsp` は `.csn` / `.csnx` を解析し、Language Server Protocol を通じてエディターに機能を提供します。
+記法の判定には同じリポジトリのパーサーを使うため、エディターの診断とサイトビルドで解釈がそろいます。
+
+<DocHeading level={2} id="features" title="機能" />
+
+Language Server は、semantic tokens による色付け、ページ名の補完、定義ジャンプ、リンク切れの診断を提供します。
+
+単体で起動する場合は標準入出力モードを使います。
+
+code:sh
+ csn-lsp --stdio
+
+エディターがサーバーを起動する設定方法は <DocLink href="/vscode/" label="VS Code 拡張" /> と <DocLink href="/zed/" label="Zed 拡張" /> をご覧ください。
+
+<DocHeading level={2} id="settings" title="エディターの設定" />
+
+サーバーの設定は `initialization_options` で渡します。
+
+code:jsonc
+ {
+   "sources": ["src/content"],
+   "unresolvedLinks": "warning",
+   "frontmatter": true
+ }
+
+`sources` はページを探すディレクトリで、省略するとワークスペース全体を対象にします。`unresolvedLinks` は `off`、`hint`、`information`、`warning`、`error` のいずれかです。`frontmatter` を `true` にすると、先頭の YAML frontmatter をページタイトルとして読みません。
+
+<DocHeading level={2} id="check" title="リンク切れを検査する" />
+
+`csn-lsp check` は、エディターと同じ規則で指定ディレクトリ内のページを調べます。CI に組み込むと、存在しないページへのリンクを検出できます。
+
+code:sh
+ csn-lsp check src/content src/pages
+
+既定ではリンク切れが1件でもあると終了コード `1` になります。報告だけにしたい場合は `--unresolved-links warning` を指定します。コマンド固有の既定値は `error` です。
+
+<DocHeading level={2} id="api" title="ライブラリとして使う" />
+
+semantic tokens の計算・エンコード機能は `@cosense-toolbox/lsp/tokens`、補完と定義ジャンプの判定は `@cosense-toolbox/lsp/completion` から利用できます。
+
+設定項目、CLI オプション、API の全一覧は <DocLink href="https://github.com/qaynam/cosense-toolbox/blob/main/packages/lsp/README.md" label="LSP パッケージの README" external /> をご覧ください。

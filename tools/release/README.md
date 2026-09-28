@@ -1,23 +1,25 @@
 # @cosense-toolbox/release
 
-`packages/` のパッケージを、すべて同じバージョンで一緒に npm に公開するための道具。公開はしない。
+`packages/` の公開対象を同じバージョンで npm にリリースするためのツールです。このツール自体は npm に公開しません。
+
+**手順 → <https://cosense-toolbox.qaynam.dev/release/>**
 
 ## 公開のしかた
 
-1. バージョンを揃える。公開するすべてのパッケージの `package.json` と、`bun.lock` の版を書き換える。
+1. 公開対象のパッケージのバージョンをそろえる。各 `package.json` と `bun.lock` が更新される。
 
    ```sh
    bun run release:version 0.1.0-beta.3
    ```
 
-2. コミットして、`v<版>` のタグを push する。CI (`.github/workflows/publish.yml`) が全部を公開する。
+2. 変更をコミットし、`v<version>` 形式のタグを push する。CI (`.github/workflows/publish.yml`) が対象パッケージを公開する。
 
    ```sh
    git tag v0.1.0-beta.3
    git push origin v0.1.0-beta.3
    ```
 
-手元から公開するときは `bun run release:publish`。`--dry-run` を付けると、公開せずに中身だけ確かめる。
+手元から公開する場合は `bun run release:publish` を実行します。`--dry-run` を付けると、公開せずに処理内容を確認できます。
 
 ## release:publish がすること
 

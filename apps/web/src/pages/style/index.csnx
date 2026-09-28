@@ -1,0 +1,64 @@
+---
+layout: ../../layouts/Doc.astro
+title: 既定のスタイル
+description: パーサーが出力する HTML に適用する CSS と、テーマのカスタマイズ方法。
+toc:
+  - id: install
+    text: インストール
+    depth: 2
+  - id: scope
+    text: 適用範囲
+    depth: 2
+  - id: theme
+    text: 色と寸法を変える
+    depth: 2
+  - id: details
+    text: スタイルの注意点
+    depth: 2
+---
+既定のスタイル
+
+`@cosense-toolbox/style` は、`@cosense-toolbox/parser` が生成する HTML に Cosense に近い見た目を適用する CSS です。
+Cosense 本体の CSS ではなく、パーサーの出力構造に合わせて作られています。
+
+<DocHeading level={2} id="install" title="インストール" />
+
+code:sh
+ npm install @cosense-toolbox/style@beta
+
+code:ts
+ import "@cosense-toolbox/style"
+
+CSS を読み込むと、`.page` 以下のタイトル、インデント、コード、表、リンクなどにスタイルが適用されます。
+
+<DocHeading level={2} id="scope" title="適用範囲" />
+
+`toHtml(page)` の出力には `.page` のルート要素があるため、そのままスタイルが当たります。`parseLine` など1行だけを描画するときは、自分で `.page` の要素に包んでください。
+
+code:html
+ <div class="page">
+   <!-- toHtml(parseLine("[* 強調]")) の出力 -->
+ </div>
+
+Tailwind CSS を使うプロジェクトでは、CSS を直接読み込む代わりに <DocLink href="/tailwind/" label="Tailwind プラグイン" /> を使えます。
+
+<DocHeading level={2} id="theme" title="色と寸法を変える" />
+
+`--cosense-*` の CSS 変数を上書きすると、色や文字サイズを調整できます。
+
+code:css
+ :root {
+   --cosense-link: #f8e42e;
+   --cosense-code-bg: #1b1b1b;
+   --cosense-font-size: 16px;
+ }
+
+Cosense のテーマ変数 (`--page-bg` など) が使える環境では、それらを fallback として参照します。明示的に `--cosense-*` を指定すると、その値が優先されます。
+
+<DocHeading level={2} id="details" title="スタイルの注意点" />
+
+すべてのルールは `.page` 以下に限定されています。ただし、表示対象のページ自身が `.page` クラスを使う場合は名前が衝突するため、iframe や Shadow DOM で分離するか、パーサーの `classNames` オプションでクラス名を変えてください。
+
+コードブロックに行番号を付けるには、パーサーの `codeLineNumbers()` 描画拡張と組み合わせます。詳しくは <DocLink href="/parser/html/" label="HTML への変換" /> をご覧ください。
+
+CSS 変数の一覧は <DocLink href="https://github.com/qaynam/cosense-toolbox/blob/main/packages/style/README.md" label="style パッケージの README" external /> にあります。

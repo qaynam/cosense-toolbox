@@ -1,7 +1,9 @@
 # @cosense-toolbox/cosense-x
 
-Cosense (旧 Scrapbox) の記法で書いたページを、JSX のモジュールにするコンパイラ。
-MDX の Cosense 版にあたる。
+Cosense (旧 Scrapbox) の記法で書いたページを、JSX モジュールへ変換するコンパイラーです。
+`.csnx` は、Cosense 記法にコンポーネントを組み合わせる MDX 相当の形式です。
+
+**ドキュメント → <https://cosense-toolbox.qaynam.dev/cosense-x/>**
 
 - 形式は 2 つある。`.csn` は素の Cosense 記法で、Markdown の `.md` にあたる。`.csnx` は `.csn` にコンポーネントの行を足したもので、`.mdx` にあたる
 - どちらの形式にも frontmatter を書ける。ファイル先頭の YAML と、Cosense の画面でも書ける `code:frontmatter.yml` ブロックの 2 か所に書ける

@@ -1,0 +1,43 @@
+---
+---
+
+<div class="doc-search">
+  <label class="doc-search-label" for="doc-search-input">
+    ドキュメントを検索
+  </label>
+  <input
+    id="doc-search-input"
+    type="search"
+    placeholder="ページ名・機能名で検索"
+    autocomplete="off"
+  />
+  <p class="doc-search-status" aria-live="polite" hidden></p>
+</div>
+
+<script>
+  const input = document.querySelector<HTMLInputElement>("#doc-search-input")
+  const status = document.querySelector<HTMLElement>(".doc-search-status")
+  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>("[data-doc-search]"))
+  const groups = Array.from(document.querySelectorAll<HTMLElement>("[data-doc-group]"))
+
+  input?.addEventListener("input", () => {
+    const query = input.value.trim().toLocaleLowerCase("ja")
+    let visibleCount = 0
+
+    for (const link of links) {
+      const matches = query === "" || (link.dataset.docSearch ?? "").includes(query)
+      link.hidden = !matches
+      if (matches) visibleCount += 1
+    }
+
+    for (const group of groups) {
+      group.hidden = !group.querySelector("a:not([hidden])")
+    }
+
+    if (status !== null) {
+      status.hidden = query === ""
+      status.textContent =
+        visibleCount === 0 ? "該当するページはありません。" : `${visibleCount} 件のページ`
+    }
+  })
+</script>

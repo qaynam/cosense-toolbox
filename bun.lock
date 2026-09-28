@@ -41,6 +41,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@astrojs/check": "0.9.10",
+        "@cosense-toolbox/astro": "workspace:*",
         "@cosense-toolbox/parser": "workspace:*",
         "@cosense-toolbox/style": "workspace:*",
         "astro": "7.2.3",
