@@ -5,7 +5,6 @@
  */
 import { cosenseIconUrl, fetchPageText } from "@cosense-toolbox/cosense-x/fetch"
 import { parse } from "@cosense-toolbox/parser"
-import { customDecorations } from "@cosense-toolbox/parser/extensions"
 import { codeLineNumbers, toHtml } from "@cosense-toolbox/parser/html"
 import { localizeCosenseAssets } from "virtual:cosense-x/assets"
 
@@ -21,17 +20,12 @@ const highlight = await createCodeHighlight()
 let html: string | null = null
 try {
   const text = await fetchPageText(project, title, pat ? { pat } : {})
-  const rendered = toHtml(
-    parse(text, {
-      extensions: [customDecorations(["|", "!", "~"])],
-    }),
-    {
-      highlight,
-      extensions: [codeLineNumbers()],
-      pageUrl: (target) => `https://scrapbox.io/${project}/${encodeURIComponent(target)}`,
-      iconImageUrl: (icon) => cosenseIconUrl(project, icon.user),
-    },
-  )
+  const rendered = toHtml(parse(text), {
+    highlight,
+    extensions: [codeLineNumbers()],
+    pageUrl: (target) => `https://scrapbox.io/${project}/${encodeURIComponent(target)}`,
+    iconImageUrl: (icon) => cosenseIconUrl(project, icon.user),
+  })
   html = await localizeCosenseAssets(rendered)
 } catch (error) {
   console.warn(`[cosense] ${project}/${title} を取得できなかった:`, error)

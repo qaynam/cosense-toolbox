@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 
-import { customDecorations } from "@cosense-toolbox/parser/extensions"
+import type { Extension } from "@cosense-toolbox/parser/extensions"
 import { Effect } from "effect"
 import { describe, expect, it } from "vitest"
 
@@ -59,9 +59,9 @@ describe("csn-lsp check", () => {
     expect(await check(root, "src/content", "src/pages")).toEqual({ output: "", exitCode: 0 })
   })
 
-  it("reads the site's own decoration markers as decorations, not links", async () => {
-    const root = await site({ "a.csn": "投稿\n[! 注意]" })
-    expect(await check(root, "--decorations", "|!~")).toEqual({ output: "", exitCode: 0 })
+  it("reads every Cosense decoration marker as a decoration, not a link", async () => {
+    const root = await site({ "a.csn": "投稿\n[! 注意] [| 引用] [~ 補足]" })
+    expect(await check(root)).toEqual({ output: "", exitCode: 0 })
   })
 
   it("reads a first line of --- as the title with --no-frontmatter", async () => {
@@ -101,12 +101,16 @@ describe("checkSite", () => {
   })
 
   it("parses with the parse options it is given, as a site's build does", async () => {
-    const root = await site({ "a.csn": "投稿\n[! 注意]" })
+    // A site's own notation: `[@x]` is a formula, so there is no page to look for.
+    const atFormula: Extension = {
+      bracketRules: [(inner) => (inner.startsWith("@") ? { type: "formula", value: inner } : null)],
+    }
+    const root = await site({ "a.csn": "投稿\n[@x]" })
     const reports = await Effect.runPromise(
       checkSite({
         roots: [root],
         unresolvedLinks: "error",
-        parseOptions: { extensions: [customDecorations(["!"])] },
+        parseOptions: { extensions: [atFormula] },
       }),
     )
     expect(reports).toEqual([])

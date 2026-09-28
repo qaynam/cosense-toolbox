@@ -3,7 +3,7 @@ import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 
 import type { ParseOptions } from "@cosense-toolbox/parser"
-import { customDecorations } from "@cosense-toolbox/parser/extensions"
+import type { Extension } from "@cosense-toolbox/parser/extensions"
 import { Effect } from "effect"
 import { describe, expect, it } from "vitest"
 
@@ -50,8 +50,12 @@ describe("lintSite", () => {
   })
 
   it("reads notation with the site's own parse options", async () => {
-    const root = await project({ "src/a.csn": "投稿\n[! 注意]" })
-    const parseOptions = { extensions: [customDecorations(["!"])] }
+    // A site's own notation: `[@x]` is a formula, so there is no page to look for.
+    const atFormula: Extension = {
+      bracketRules: [(inner) => (inner.startsWith("@") ? { type: "formula", value: inner } : null)],
+    }
+    const root = await project({ "src/a.csn": "投稿\n[@x]" })
+    const parseOptions = { extensions: [atFormula] }
     expect(await lint(root, { unresolvedLinks: "error" }, parseOptions)).toEqual({
       errors: [],
       warnings: [],

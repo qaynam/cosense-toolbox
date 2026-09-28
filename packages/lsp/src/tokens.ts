@@ -7,7 +7,6 @@ import type {
   Position,
 } from "@cosense-toolbox/parser"
 import { normalizeLineEndings, parse } from "@cosense-toolbox/parser"
-import { customDecorations } from "@cosense-toolbox/parser/extensions"
 import { Array as Arr, Match, Option, Order, pipe } from "effect"
 
 import { branch, gather, leaf, type Picked } from "./tree"
@@ -68,9 +67,12 @@ export type RawToken =
   | (Span & { readonly type: "notation"; readonly name: string })
 
 /**
- * A notation the caller adds to Cosense's: a marker that opens a decoration, as `!` opens
- * `[! 注意]`, and the token type it is sent as. The marker is also taught to the parser, so
- * the bracket is not read as a link.
+ * A name the caller gives to a decoration marker, as `warning` to the `!` of `[! 注意]`: the
+ * token type that decoration is sent as.
+ *
+ * The marker has to be one Cosense decorates with (`` !"#%&'()*+,-./{|}<>_~ ``), since
+ * those are the ones the parser reads as a decoration. Any other, such as `@`, leaves the
+ * bracket a link, as it is in Cosense Web: how a notation looks does not change how it parses.
  */
 export interface Notation {
   readonly marker: string
@@ -138,22 +140,6 @@ const LSP_TYPE: Record<TokenType, (typeof LEGEND)[number]> = {
  */
 export const legendOf = (notations: ReadonlyArray<Notation>): ReadonlyArray<string> =>
   Arr.dedupe([...LEGEND, ...Arr.map(notations, (notation) => notation.name)])
-
-/** `parseOptions` that also read the markers of `notations` as decorations. */
-export const withNotations = (
-  parseOptions: ParseOptions,
-  notations: ReadonlyArray<Notation>,
-): ParseOptions =>
-  Arr.match(notations, {
-    onEmpty: () => parseOptions,
-    onNonEmpty: (added): ParseOptions => ({
-      ...parseOptions,
-      extensions: [
-        ...(parseOptions.extensions ?? []),
-        customDecorations(Arr.map(added, (notation) => notation.marker)),
-      ],
-    }),
-  })
 
 /** Leaf inline nodes that map 1:1. Each sits on one line, so no splitting is needed. */
 const INLINE_TOKEN_TYPE: Partial<Record<AnyNodeType, BuiltinTokenType>> = {
@@ -469,7 +455,7 @@ const nodeTokens =
 export interface ComputeTokensOptions {
   /** `.csnx` also reads a line that is one component tag. `.csn` never does. */
   readonly components?: boolean
-  /** How to parse: the site's notation extensions, so `[! 注意]` is not read as a link. */
+  /** How to parse: the site's own notation extensions, as its build parses with them. */
   readonly parseOptions?: ParseOptions
   /** Notations the caller adds, each sent as a token of its own name (see `Notation`). */
   readonly notations?: ReadonlyArray<Notation>
@@ -498,10 +484,7 @@ export const computeTokens = (text: string, options: ComputeTokensOptions = {}):
     onNone: () => [],
     onSome: (end) => lineSpans("frontmatter", lines, 0, end),
   })
-  const body = parse(
-    lines.slice(page.offset).join("\n"),
-    withNotations(options.parseOptions ?? {}, notations),
-  )
+  const body = parse(lines.slice(page.offset).join("\n"), options.parseOptions ?? {})
 
   return pipe(
     [...frontmatterTokens, ...gather(body, nodeTokens(page))],
