@@ -76,4 +76,4 @@ bunx eslint src *.ts
 bunx prettier --check .
 ```
 
-加えて §2 の effect 漏れ検証と、`examples/astro-blog` の `astro build` が通ること。
+加えて §2 の effect 漏れ検証と、`examples/astro-blog` の `astro build` が通ること。example は npm に公開された版を使うので、手元の変更は `bun link` でつないでからビルドする (`examples/astro-blog/README.md`)。
