@@ -36,6 +36,8 @@
     "build": "tsdown && bun scripts/emit-grammars.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "lint": "eslint .",
+    "format:check": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
     "prepublishOnly": "bun run build"
   },
   "dependencies": {

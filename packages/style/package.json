@@ -32,5 +32,8 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "format:check": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore"
   }
 }

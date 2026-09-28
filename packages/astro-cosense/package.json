@@ -30,7 +30,9 @@
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build",
+    "lint": "eslint .",
+    "format:check": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore"
   },
   "dependencies": {
     "@cosense-toolbox/cosense-x": "workspace:*",
