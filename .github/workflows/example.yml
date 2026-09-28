@@ -1,0 +1,41 @@
+name: example
+
+# examples/astro-blog はワークスペースに入っておらず、npm に公開された版を使う。
+# turbo の検査 (ci.yml) には入らないので、型とビルドはここで見る。lint と整形はルートのタスクが見る。
+# 公開された版に依存するので、パッケージの変更ではなく example の変更で走らせる。
+on:
+  pull_request:
+    paths:
+      - examples/astro-blog/**
+      - .github/workflows/example.yml
+  push:
+    branches: [main]
+    paths:
+      - examples/astro-blog/**
+      - .github/workflows/example.yml
+
+concurrency:
+  group: example-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: typecheck / build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: examples/astro-blog
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run build
