@@ -79,9 +79,13 @@ const CLOSES = re`(?=.*\])`
 /** A bracket closes on its own line or not at all. */
 const CLOSE_ON_LINE = re`\]|(?=$)`
 
-const MARKERS = re`[*/\-_]`
+/**
+ * A decoration marker: any of Cosense's, as the parser reads them. Only `* / - _` have a look
+ * of their own; the rest (`[! 注意]`) still make the bracket a decoration and not a link.
+ */
+const MARKERS = re`[!"#%&'()*+,\-./{|}<>_~]`
 
-const NOT_STAR = re`[/\-_]`
+const NOT_STAR = re`[!"#%&'()+,\-./{|}<>_~]`
 
 /**
  * A line that opens with a component tag (`.csnx`), as the language server tells one:
@@ -205,7 +209,10 @@ const WEIGHTS: ReadonlyArray<Weight> = [0, 1, 2, 3]
 
 const SWITCHES = [false, true] as const
 
-/** Every combination of markers, including none at all (which `emphasisRules` drops). */
+/**
+ * Every combination of markers. The one with none of `* / - _` is a run of the others alone
+ * (`[! x]`), which colours nothing but still keeps the bracket from reading as a link.
+ */
 const MARKER_SETS: ReadonlyArray<Emphasis> = pipe(
   WEIGHTS,
   Arr.flatMap((stars) => Arr.map(SWITCHES, (italic) => ({ stars, italic }))),
@@ -256,19 +263,13 @@ const markerConditions = (emphasis: Emphasis): Regex =>
  * `[<markers> body]`, one rule per combination. The body is read again for links and icons
  * but not for emphasis, which does not nest in Cosense (`[* [* x]]` is bold around a link).
  */
-const emphasisRules: ReadonlyArray<Pattern> = Arr.filterMap(MARKER_SETS, (emphasis) =>
-  pipe(
-    emphasisScopes(emphasis),
-    Option.liftPredicate((scopes) => scopes.length > 0),
-    Option.map((scopes) =>
-      region({
-        scopes,
-        begin: re`\[${markerConditions(emphasis)}(?=${MARKERS}+\s.*\])${MARKERS}+\s+`,
-        end: CLOSE_ON_LINE,
-        patterns: [include("inline-in-emphasis"), include("nested-bracket")],
-      }),
-    ),
-  ),
+const emphasisRules: ReadonlyArray<Pattern> = Arr.map(MARKER_SETS, (emphasis) =>
+  region({
+    scopes: emphasisScopes(emphasis),
+    begin: re`\[${markerConditions(emphasis)}(?=${MARKERS}+\s.*\])${MARKERS}+\s+`,
+    end: CLOSE_ON_LINE,
+    patterns: [include("inline-in-emphasis"), include("nested-bracket")],
+  }),
 )
 
 /** Anything up to, but not over, a `]]`. */
