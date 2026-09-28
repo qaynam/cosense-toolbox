@@ -165,6 +165,10 @@ export interface TitleBlock extends NodeBase {
   readonly type: "title"
   /** タイトル行の生テキスト。Cosense ではこれがページの識別子でもある */
   readonly value: string
+  /**
+   * 書いたままの文字の `text` 1 つ (タイトルが空なら無し)。Cosense Web はタイトル行の記法を読まないため、
+   * `[x]` も `#tag` もここでは記法にならない。
+   */
   readonly children: readonly InlineNode[]
 }
 

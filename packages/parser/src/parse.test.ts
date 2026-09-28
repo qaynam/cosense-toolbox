@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest"
 import { tableCellNotation } from "./extensions"
 import type { Extension } from "./inline/types"
 import { parse, parseLine } from "./parse"
-import { stripPositions } from "./test-helpers"
+import { at, stripPositions } from "./test-helpers"
 import type { CodeBlock, InlineNode, LineBlock, TableBlock, TopLevelBlock } from "./types"
 
 /** 1 行分の先頭のインラインノード。装飾のように行頭から始まる記法を書きやすくする。 */
@@ -40,6 +40,33 @@ describe("ページ", () => {
       children: [{ type: "text", value: "ページタイトル" }],
     })
     expect(page.children[1]?.type).toBe("line")
+  })
+
+  it("タイトル行の記法は読まず、書いたままの文字 1 つになる (Cosense Web と同じ)", () => {
+    const title = parse("[リンク] と #tag `code` [* 太字]\n本文").children[0]
+    expect(stripPositions(title)).toEqual({
+      type: "title",
+      value: "[リンク] と #tag `code` [* 太字]",
+      children: [{ type: "text", value: "[リンク] と #tag `code` [* 太字]" }],
+    })
+  })
+
+  it("拡張の記法もタイトル行では読まない", () => {
+    const atFormula: Extension = {
+      bracketRules: [(inner) => (inner.startsWith("@") ? { type: "formula", value: inner } : null)],
+    }
+    const title = parse("[@x]\n本文", { extensions: [atFormula] }).children[0]
+    expect(stripPositions(title?.type === "title" ? title.children : [])).toEqual([
+      { type: "text", value: "[@x]" },
+    ])
+  })
+
+  it("タイトルの文字はタイトル行全体の位置を持つ", () => {
+    const source = "[リンク] の話\n本文"
+    const title = parse(source).children[0]
+    expect(title?.type === "title" ? title.children[0]?.position : undefined).toEqual(
+      at(source, "[リンク] の話"),
+    )
   })
 
   it("タイトル行は code: や table: として解釈しない", () => {

@@ -100,6 +100,10 @@ describe("linkAt", () => {
     expect(targetAt("[! [設計メモ]です]", "!")).toBeUndefined()
   })
 
+  it("finds nothing in the title line, which Cosense does not read as notation", () => {
+    expect(Option.isNone(linkAt("[設計メモ] の話\n本文", { line: 0, character: 2 }))).toBe(true)
+  })
+
   it("finds nothing in inline code, where a bracket is not notation", () => {
     expect(targetAt("`[設計メモ]`", "設計")).toBeUndefined()
   })

@@ -12,6 +12,11 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 > **beta**：公開 API はまだ変わりうる。安定するまではバージョンを固定して使うほうが安全。
 
+### 次のリリースでの変更
+
+- タイトル行の記法を読まないようにした。Cosense Web と同じく、`[x]` も `#tag` も書いたままの文字になる。
+  `TitleBlock` の形は変わらず、`children` が書いたままの文字の `text` 1 つになる。
+
 ### 0.1.0-beta.3 の変更
 
 - Cosense の文字装飾の記号 `!"#%&'()*+,-./{|}<>_~=` からなる並びを、**拡張なしで**すべて装飾として読むようにした。
@@ -73,6 +78,9 @@ toHtml(page) // → '<div class="page"><h1 class="title">今日のメモ</h1>…
 | `@cosense-toolbox/parser/compile`    | AST を HTML 以外の形式にする                        | `toPlainText` `createCompiler`                                                          |
 | `@cosense-toolbox/parser/extensions` | 記法を足す                                          | `Extension` `InlineConstruct` `BracketRule` `tableCellNotation`                         |
 | `@cosense-toolbox/parser/schema`     | 外から来た値を検証する                              | `decodePage`                                                                            |
+
+`parse` はページ全体を読む。1 行目はタイトルで、Cosense Web と同じく記法を読まない。
+記法を読みたい文字列がページでないなら、本文の 1 行は `parseLine`、文章の断片は `tokenizeInline` で読む。
 
 各 API の詳細はドキュメントにある。
 

@@ -48,10 +48,14 @@ const wholeLine = (line: SourceLine) => spanAt(lineOrigin(line), 0, line.text.le
 const dedent = (text: string, amount: number): string =>
   text.slice(Math.min(amount, indentOf(text)))
 
-const titleBlock = (line: SourceLine, tokenize: TokenizeLine): TitleBlock => ({
+/**
+ * Cosense Web はタイトル行の記法を読まない (`[x]` も `#tag` も書いたままの文字になる)。
+ * `children` を無くさず書いたままの文字 1 つにするのは、ほかの行と同じ形で走査できるようにするため。
+ */
+const titleBlock = (line: SourceLine): TitleBlock => ({
   type: "title",
   value: line.text,
-  children: tokenize(line.text, lineOrigin(line)),
+  children: line.text === "" ? [] : [{ type: "text", value: line.text, position: wholeLine(line) }],
   position: wholeLine(line),
 })
 
@@ -152,7 +156,7 @@ export const buildBlocks = (
   const blocks: TopLevelBlock[] = []
   const head = lines[0]
   if (head === undefined) return blocks
-  blocks.push(titleBlock(head, tokenize))
+  blocks.push(titleBlock(head))
 
   let index = 1
   while (index < lines.length) {
