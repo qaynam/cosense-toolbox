@@ -5,6 +5,7 @@ export default defineConfig({
     main: "src/main.ts",
     tokens: "src/tokens.ts",
     completion: "src/completion.ts",
+    link: "src/link.ts",
     check: "src/check.ts",
   },
   format: ["esm"],

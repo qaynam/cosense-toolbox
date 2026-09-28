@@ -59,3 +59,8 @@ csn-lsp check src/content src/pages
     VS Code や Zed のように標準の型で色を付けるエディタにはそのまま渡せる。自前の名前で色を付けるクライアントは、
     `encodeTokens(tokens, [...TOKEN_TYPES, ...names])` のように自前の legend を渡す
 - `@cosense-toolbox/lsp/completion`: `detectCompletion` / `completionItems` / `definitionOf` など
+- `@cosense-toolbox/lsp/link`: `linkAt(text, position, parseOptions?)` で、カーソルの下のリンクと、その行き先を返す
+  - ページ (`[ページ]`、`#タグ`、`[/project/ページ]`、アイコンの `[taro.icon]` と `[[taro.icon]]`) は `kind: "page"`。
+    別のプロジェクトなら `project`、`[ページ#<行 ID>]` なら `lineId` が付く
+  - 外部リンクと画像は `kind: "url"`。リンク付きの画像は、画像ではなくリンクの URL
+  - `range` は記法全体の範囲 (UTF-16)。行き先をファイルや Web のページに解決するのは、呼び出し側の仕事

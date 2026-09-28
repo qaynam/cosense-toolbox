@@ -176,6 +176,30 @@ describe("definitionOf", () => {
     })
   })
 
+  it("opens the page of the user an icon shows", () => {
+    const withTaro: Index = {
+      pages: [{ title: "taro", uri: "file:///w/taro.csn", location: "taro.csn" }],
+    }
+    expect(
+      found(definitionOf(withTaro, "T\n[taro.icon]", { line: 1, character: 2 })),
+    ).toMatchObject({
+      uri: "file:///w/taro.csn",
+    })
+  })
+
+  it("opens the page a link to one of its lines names", () => {
+    const text = "T\n[設計メモ#0123456789abcdef01234567]"
+    expect(found(definitionOf(index, text, { line: 1, character: 2 }))).toMatchObject({
+      uri: "file:///w/design.csn",
+    })
+  })
+
+  it("does not look a page of another project up among this one's", () => {
+    expect(
+      Option.isNone(definitionOf(index, "T\n[/other/設計メモ]", { line: 1, character: 2 })),
+    ).toBe(true)
+  })
+
   it("has nowhere to go for a page that is only linked to", () => {
     expect(
       Option.isNone(definitionOf(index, "T\n[まだ無いページ]", { line: 1, character: 2 })),
