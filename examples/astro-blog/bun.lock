@@ -6,11 +6,11 @@
       "name": "@cosense-toolbox/example-astro-blog",
       "dependencies": {
         "@astrojs/svelte": "^9.0.1",
-        "@cosense-toolbox/astro": "^0.1.0-beta.2",
-        "@cosense-toolbox/cosense-x": "^0.1.0-beta.2",
-        "@cosense-toolbox/parser": "^0.1.0-beta.2",
-        "@cosense-toolbox/tailwind": "^0.1.0-beta.2",
-        "@cosense-toolbox/textmate": "^0.1.0-beta.2",
+        "@cosense-toolbox/astro": "^0.1.0-beta.3",
+        "@cosense-toolbox/cosense-x": "^0.1.0-beta.3",
+        "@cosense-toolbox/parser": "^0.1.0-beta.3",
+        "@cosense-toolbox/tailwind": "^0.1.0-beta.3",
+        "@cosense-toolbox/textmate": "^0.1.0-beta.3",
         "@tailwindcss/vite": "^4.3.3",
         "astro": "7.2.3",
         "shiki": "^4.4.3",
@@ -97,17 +97,17 @@
 
     "@clack/prompts": ["@clack/prompts@1.8.1", "https://npm.flatt.tech/@clack/prompts/-/prompts-1.8.1.tgz", { "dependencies": { "@clack/core": "1.5.1", "fast-string-width": "^3.0.2", "fast-wrap-ansi": "^0.2.0", "sisteransi": "^1.0.5" } }, "sha512-dlT1m5e/0yUL0kRNcQn7yGLVThkgbB0Ga/1AmfDDC/8ik6AIiSf2QLQO2zPYvefsHP0aFgxO93cVLCCfDp7kzQ=="],
 
-    "@cosense-toolbox/astro": ["@cosense-toolbox/astro@0.1.0-beta.2", "", { "dependencies": { "@cosense-toolbox/cosense-x": "0.1.0-beta.2", "@cosense-toolbox/lsp": "0.1.0-beta.2", "@cosense-toolbox/parser": "0.1.0-beta.2", "effect": "^3.22.1", "shiki": "^4.2.0" }, "peerDependencies": { "astro": "^7.0.0" } }, "sha512-NxKn6YGUuKTCm5BwGX51PE7vysRC6jWbZqWKN5MdQEz3FpPV+rLiBXOSxfFf//2Bs9oW1QQCPYAGu6+iwSt1wg=="],
+    "@cosense-toolbox/astro": ["@cosense-toolbox/astro@0.1.0-beta.3", "", { "dependencies": { "@cosense-toolbox/cosense-x": "0.1.0-beta.3", "@cosense-toolbox/lsp": "0.1.0-beta.3", "@cosense-toolbox/parser": "0.1.0-beta.3", "effect": "^3.22.1", "shiki": "^4.2.0" }, "peerDependencies": { "astro": "^7.0.0" } }, "sha512-IXP09J9pQcw80zQjbuxIdRo/BfCMgm8ci/n89bMqA55nXUgxmi9zd7pIi++zqK1GxZxugajd/WTxn2BLtDpXGQ=="],
 
-    "@cosense-toolbox/cosense-x": ["@cosense-toolbox/cosense-x@0.1.0-beta.2", "", { "dependencies": { "@cosense-toolbox/parser": "0.1.0-beta.2", "@types/estree": "^1.0.9", "@types/estree-jsx": "^1.0.5", "@types/hast": "^3.0.4", "effect": "^3.22.1", "estree-util-build-jsx": "^3.0.1", "estree-util-to-js": "^2.0.0", "estree-util-value-to-estree": "^3.5.0", "hast-util-to-estree": "^3.1.3", "unified": "^11.0.5", "yaml": "^2.9.1" } }, "sha512-I5EZHz+JjCWYSbMIiUVdcQq5eMZvru/vQuBTKPkEtfwUDHQi0ZgasSr+fDyKe3H393kWjF/aYs/tbjz0+malkg=="],
+    "@cosense-toolbox/cosense-x": ["@cosense-toolbox/cosense-x@0.1.0-beta.3", "", { "dependencies": { "@cosense-toolbox/parser": "0.1.0-beta.3", "@types/estree": "^1.0.9", "@types/estree-jsx": "^1.0.5", "@types/hast": "^3.0.4", "effect": "^3.22.1", "estree-util-build-jsx": "^3.0.1", "estree-util-to-js": "^2.0.0", "estree-util-value-to-estree": "^3.5.0", "hast-util-to-estree": "^3.1.3", "unified": "^11.0.5", "yaml": "^2.9.1" } }, "sha512-owfYmnTk89pgrsFGQU/YCrdkck0Kgr9cZUFLeFzlLIY6pbGM3z/cNzxG84k+k8DVWGXHPRvNKLcTSP2wZz67aw=="],
 
-    "@cosense-toolbox/lsp": ["@cosense-toolbox/lsp@0.1.0-beta.2", "", { "dependencies": { "@cosense-toolbox/parser": "0.1.0-beta.2", "effect": "^3.22.1", "vscode-languageserver": "^10.1.0", "vscode-languageserver-textdocument": "^1.0.12" }, "bin": { "csn-lsp": "dist/main.mjs" } }, "sha512-3HZbxDlzlLLWxCBkMCoGm7kEeU7lk7KVzjV/BYk8HxQ4uQpCKSTcvuKgaM/6xj40QZHZKnNoyuwT9/0ZxXee7A=="],
+    "@cosense-toolbox/lsp": ["@cosense-toolbox/lsp@0.1.0-beta.3", "", { "dependencies": { "@cosense-toolbox/parser": "0.1.0-beta.3", "effect": "^3.22.1", "vscode-languageserver": "^10.1.0", "vscode-languageserver-textdocument": "^1.0.12" }, "bin": { "csn-lsp": "dist/main.mjs" } }, "sha512-BwCICKL1KRy0PgUow8XXDuBaHYdhpX3QvG4x5+jAJkUTb17h/8+ItxxkcyPIZy9FYaUadw+BH9BvSPXeyCYkUg=="],
 
-    "@cosense-toolbox/parser": ["@cosense-toolbox/parser@0.1.0-beta.2", "", { "dependencies": { "@types/hast": "^3.0.4", "effect": "^3.22.1", "hast-util-to-html": "^9.0.5" } }, "sha512-sbqk1WsYF1W61P4p0SFKO51ump80ixbnXya9K8R6MydUf0WpSJUFNBhrClcE88uVynCl73Mh8NdEKkTMYeo5Rg=="],
+    "@cosense-toolbox/parser": ["@cosense-toolbox/parser@0.1.0-beta.3", "", { "dependencies": { "@types/hast": "^3.0.4", "effect": "^3.22.1", "hast-util-to-html": "^9.0.5" } }, "sha512-fLs1ufAz3ddKu9jyPgdWzy8mH4XPQvyejWKD0DIrB+xmzfEfhuY1nJ40kqoWgquID8x64tEX4LA/C+eoFHtFag=="],
 
-    "@cosense-toolbox/tailwind": ["@cosense-toolbox/tailwind@0.1.0-beta.2", "", { "peerDependencies": { "tailwindcss": ">=4.0.0" } }, "sha512-9ok0G0dLRFPvIkcdwckD0XiwR7qzZiPs2FjrqXlYcQphBNbZO74gS/i4SsosFI/JiXqdBO++Ca24I1o2O0/4lQ=="],
+    "@cosense-toolbox/tailwind": ["@cosense-toolbox/tailwind@0.1.0-beta.3", "", { "peerDependencies": { "tailwindcss": ">=4.0.0" } }, "sha512-qR1eiybumBp/VyzAe/V1SzJhvWXVyAkVoGVtwHUbvyJH5NvjaJGta16Oa0pLPuFyEO7UMo9fPk5GNh6xO2hj4Q=="],
 
-    "@cosense-toolbox/textmate": ["@cosense-toolbox/textmate@0.1.0-beta.2", "", { "dependencies": { "effect": "^3.22.1" } }, "sha512-4XZf9v0IUhZD/P5RqJxmtTVTaEC7DWk5IUk6fUsCEd9DtpBB2mf91NbH86pMKbq3refnctzUg3fYfzOvhGvjPA=="],
+    "@cosense-toolbox/textmate": ["@cosense-toolbox/textmate@0.1.0-beta.3", "", { "dependencies": { "effect": "^3.22.1" } }, "sha512-1uUwPCkDm8XoP/1fzOppDt3qi2I0tImAiLmwLFnKRXS8vaFXXa3r68eAhwOIWDv7X3PraFIKbb3kTO86SpDumg=="],
 
     "@emmetio/abbreviation": ["@emmetio/abbreviation@2.3.3", "https://npm.flatt.tech/@emmetio/abbreviation/-/abbreviation-2.3.3.tgz", { "dependencies": { "@emmetio/scanner": "^1.0.4" } }, "sha512-mgv58UrU3rh4YgbE/TzgLQwJ3pFsHHhCLqY20aJq+9comytTXUDNGG/SMtSeMJdkpxgXSXunBGLD8Boka3JyVA=="],
 
