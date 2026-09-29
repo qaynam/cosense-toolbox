@@ -743,6 +743,20 @@
       ]
     },
     {
+      "description": "括弧が閉じた後のインラインコードは、数式を妨げない",
+      "input": "[$ a]``",
+      "expected": [
+        {
+          "type": "formula",
+          "value": "a"
+        },
+        {
+          "type": "inlineCode",
+          "value": ""
+        }
+      ]
+    },
+    {
       "description": "空の角括弧は素の文字",
       "input": "[]",
       "expected": [
