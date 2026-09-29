@@ -1,0 +1,44 @@
+---
+layout: ../../layouts/Doc.astro
+title: Astro ブログの実例
+description: '@cosense-toolbox/astro を使ったブログの構成と起動方法。'
+toc:
+  - id: run
+    text: 起動する
+    depth: 2
+  - id: contents
+    text: サンプルの内容
+    depth: 2
+  - id: local
+    text: 手元のパッケージで試す
+    depth: 2
+---
+Astro ブログの実例
+
+`examples/astro-blog` は、`.csn` / `.csnx` で記事を書く Astro サンプルです。記事一覧、タグ、逆リンク、2 hop リンク、Cosense からのページ取得などを試せます。
+
+<DocHeading level={2} id="run" title="起動する" />
+この例はリポジトリのワークスペース外にあり、npm に公開されたパッケージを使います。ディレクトリへ移動して依存関係をインストールし、開発サーバーを起動します。
+
+code:sh
+ cd examples/astro-blog
+ bun install
+ bun run dev
+
+<DocHeading level={2} id="contents" title="サンプルの内容" />
+`src/content/posts/` に `.csn` の記事と、コンポーネントを使う `.csnx` の記事があります。`draft.csn` は下書きの例です。
+`src/pages/about.csnx` は Astro のページとして直接配信する例です。`src/pages/posts/[slug].astro` は記事ページとリンクグラフを、`src/pages/tags/[tag].astro` はタグ別一覧を作ります。
+Astro 統合の設定は `astro.config.mjs`、`.csnx` から使うコンポーネントは `src/components/cosense.ts` にあります。
+
+<DocHeading level={2} id="local" title="手元のパッケージで試す" />
+公開前の変更を試す場合は、対象パッケージをビルドして `bun link` で example から参照します。`package.json` や `bun.lock` は書き換わりません。
+
+code:sh
+ # 対象パッケージのディレクトリで実行
+ bun run build
+ bun link
+ 
+ # examples/astro-blog で実行
+ bun link @cosense-toolbox/astro
+
+npm に公開された版へ戻すときは `bun install --force` を実行します。ディレクトリ構成やリンク方法の詳細は [サンプルの README https://github.com/qaynam/cosense-toolbox/blob/main/examples/astro-blog/README.md] をご覧ください。

@@ -1,0 +1,57 @@
+---
+layout: ../../layouts/Doc.astro
+title: Cosense Toolbox のドキュメント
+description: Cosense Toolbox の各パッケージを、目的別に探せます。
+toc:
+  - id: choose
+    text: 目的から選ぶ
+    depth: 2
+  - id: packages
+    text: パッケージ一覧
+    depth: 2
+  - id: parse-and-compile
+    text: 記法の解析と変換
+    depth: 3
+  - id: display-and-editor
+    text: 表示とエディター
+    depth: 3
+  - id: examples
+    text: 実例と開発
+    depth: 3
+  - id: status
+    text: 公開状況とライセンス
+    depth: 2
+---
+Cosense Toolbox のドキュメント
+
+Cosense のページを解析・公開したり、エディターで快適に書いたりするためのツール群です。
+ヘッダの検索 (⌘K / Ctrl+K) では、パッケージ名や機能名、本文の言葉からガイドを探せます。
+
+<DocHeading level={2} id="choose" title="目的から選ぶ" />
+Cosense の記法を解析して、自分のアプリで使いたい場合は [Cosense 記法パーサー] から始めてください。
+`.csn` / `.csnx` でサイトやブログを書きたい場合は、コンパイラーの [Cosense X] と、Astro を使う場合の [Astro 統合] をご覧ください。
+変換したページの見た目を整えるには [既定のスタイル] または [Tailwind CSS] を使えます。
+`.csn` / `.csnx` をエディターで書く場合は、[VS Code 拡張]、[Zed 拡張]、または [Language Server] と [TextMate 文法] を組み合わせてください。
+
+<DocHeading level={2} id="packages" title="パッケージ一覧" />
+<DocHeading level={3} id="parse-and-compile" title="記法の解析と変換" />
+[Cosense 記法パーサー] (`@cosense-toolbox/parser`) は、位置情報つき AST の生成、走査、HTML や独自形式への変換を担当します。
+[Cosense X] (`@cosense-toolbox/cosense-x`) は、Cosense 記法のページを JSX モジュールへコンパイルします。
+[Astro 統合] (`@cosense-toolbox/astro`) は、`.csn` / `.csnx` を Astro のページと content collection で使えるようにします。
+
+<DocHeading level={3} id="display-and-editor" title="表示とエディター" />
+[既定のスタイル] (`@cosense-toolbox/style`) は、パーサーが出力する HTML の既定 CSS です。
+[Tailwind CSS] (`@cosense-toolbox/tailwind`) は、Tailwind CSS から同じスタイルを使うプラグインです。
+[TextMate 文法] (`@cosense-toolbox/textmate`) は、`.csn` / `.csnx` の TextMate 文法です。
+[Language Server] (`@cosense-toolbox/lsp`) は、補完・定義ジャンプ・リンク診断を提供します。
+[VS Code 拡張] と [Zed 拡張] は、エディターでこれらを使うためのアプリです。
+
+<DocHeading level={3} id="examples" title="実例と開発" />
+[Astro ブログの実例] では、記事・タグ・リンクグラフを組み合わせています。
+[リリース手順] では、パッケージのバージョン更新と npm 公開の流れを説明します。
+
+<DocHeading level={2} id="status" title="公開状況とライセンス" />
+
+npm に公開しているライブラリは beta です。利用前に各パッケージの README と変更履歴を確認し、必要に応じてバージョンを固定してください。
+
+Cosense (旧 Scrapbox) の非公式プロジェクトです。Helpfeel 社とは関係がなく、公認も受けていません。各パッケージは MIT ライセンスで公開しています。

@@ -1,11 +1,13 @@
 # Zed 拡張: Cosense
 
-`.csn` と `.csnx` に色を付ける。色は tree-sitter ではなく、
+**使い方 → <https://cosense-toolbox.qaynam.dev/zed/>**
+
+`.csn` / `.csnx` を色分けする拡張です。色は tree-sitter ではなく、
 [`@cosense-toolbox/lsp`](../../packages/lsp) が返す
 **LSP の semantic tokens** から来る。`@cosense-toolbox/parser` をそのまま使うので、
-記法の解釈が Cosense の描画とずれない。
+記法の解釈が Cosense の描画とそろいます。
 
-## 入れる
+## 開発版をインストールする
 
 1. サーバーをビルドする。
 
@@ -14,10 +16,10 @@
    bun run --filter '@cosense-toolbox/lsp' build
    ```
 
-2. Zed で `zed: install dev extension` を実行し、このディレクトリを選ぶ。
+2. Zed で `zed: install dev extension` を実行し、このディレクトリを選択する。
    Rust が要る（Zed が `cargo` と `rustup target add wasm32-wasip1` を呼ぶ）。
 
-3. **`settings.json` に次を足す。** どちらも拡張の側からは既定値を変えられない。
+3. **`settings.json` に次の設定を追加する。** これらの既定値は拡張側から変更できない。
 
    ```jsonc
    {

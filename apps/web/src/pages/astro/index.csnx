@@ -1,0 +1,79 @@
+---
+layout: ../../layouts/Doc.astro
+title: Astro 統合
+description: .csn / .csnx ファイルを Astro のページと content collection で使う方法。
+toc:
+  - id: install
+    text: インストールと設定
+    depth: 2
+  - id: pages
+    text: ページと記事
+    depth: 2
+  - id: links
+    text: リンク切れの検査
+    depth: 2
+  - id: assets
+    text: Cosense の画像とファイル
+    depth: 2
+  - id: more
+    text: さらに詳しく
+    depth: 2
+---
+Astro 統合
+
+`@cosense-toolbox/astro` を使うと、Cosense 記法の `.csn` / `.csnx` ファイルを Astro のページや content collection に組み込めます。
+
+<DocHeading level={2} id="install" title="インストールと設定" />
+
+Astro プロジェクトに統合を追加します。
+
+code:sh
+ bun add @cosense-toolbox/astro
+
+code:js
+ import cosense from "@cosense-toolbox/astro"
+ import { defineConfig } from "astro/config"
+ 
+ export default defineConfig({
+   integrations: [
+     cosense({
+       components: "./src/components/cosense.ts",
+       pageUrl: (page) => `/posts/${encodeURIComponent(page.slug)}/`,
+       tagUrl: (tag) => `/tags/${encodeURIComponent(tag)}/`,
+       lint: { unresolvedLinks: "error" },
+     }),
+   ],
+ })
+
+`components` には `.csnx` で使うコンポーネントを default export するファイルを指定します。ページ URL とタグ URL の規則は、サイトに合わせて設定してください。
+
+<DocHeading level={2} id="pages" title="ページと記事" />
+
+`src/pages` に `.csn` / `.csnx` を置くと、ファイルの場所がそのまま URL になります。レイアウトを使うページは、先頭の frontmatter で Astro の `.astro` ファイルを指定します。
+
+code:csnx
+ ---
+ layout: ../layouts/Page.astro
+ ---
+ このサイトについて
+ 本文を Cosense 記法で書きます。
+
+記事として管理する場合は、`astro:content` の glob loader で `.csn` / `.csnx` を読み込みます。記事の `title`、`slug`、`tags` などは、frontmatter と本文から得られます。
+
+リンクグラフは `virtual:cosense-x/graph` から参照できます。ブログの一覧、関連記事、タグページを組み立てる例は [Astro ブログの実例] にあります。
+
+<DocHeading level={2} id="links" title="リンク切れの検査" />
+
+`lint` を設定すると、ページ内の `[ページ名]` がサイトに存在するかビルド前に検査できます。`unresolvedLinks: "error"` ならリンク切れでビルドが失敗し、`warning` ならログに報告します。
+
+エディター上の診断と同じ判定を使います。CI でもビルドを実行すれば、ローカルと公開時の検査をそろえられます。
+
+<DocHeading level={2} id="assets" title="Cosense の画像とファイル" />
+
+統合は Cosense にアップロードした画像とアイコンをビルド時に取得し、サイト内のファイルに置き換えます。Cosense の画像 URL は別オリジンのページから直接読めず、リダイレクト URL も期限付きのためです。
+
+非公開プロジェクトのファイルを取得する場合は PAT を設定します。取得した画像は生成サイトに含まれるため、公開してよいファイルだけを対象にしてください。
+
+<DocHeading level={2} id="more" title="さらに詳しく" />
+
+シンタックスハイライト、コード行番号、表のセル内の記法、Svelte コンポーネント、content collection の設定は [Astro 統合の README https://github.com/qaynam/cosense-toolbox/blob/main/packages/astro-cosense/README.md] をご覧ください。

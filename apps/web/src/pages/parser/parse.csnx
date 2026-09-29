@@ -1,0 +1,69 @@
+---
+layout: ../../layouts/Doc.astro
+title: パース
+description: parse、parseLine、tokenizeInline、createParser の使い分け。
+toc:
+  - id: parse
+    text: parse
+    depth: 2
+  - id: parse-line
+    text: parseLine
+    depth: 2
+  - id: tokenize-inline
+    text: tokenizeInline
+    depth: 2
+  - id: create-parser
+    text: createParser
+    depth: 2
+  - id: image-src
+    text: asImageSrc
+    depth: 2
+  - id: line-endings
+    text: 改行コード
+    depth: 2
+---
+パース
+
+Cosense のテキストを AST に変換する関数を紹介します。どの関数も例外を投げず、記法として成立しない部分は通常のテキストとして返します。
+
+<DocHeading level={2} id="parse" title="parse" />
+
+`parse(source, options?)` はページ全体を受け取り、ブロックの並びを返します。1行目はタイトル、`code:` と `table:` は複数行のブロックとして扱います。
+タイトル行は Cosense Web と同じく記法を読まず、`[x]` も `#tag` も書いたままの文字になります。ページではない文字列の記法を読むときは、本文の 1 行なら `parseLine`、文章の断片なら `tokenizeInline` を使います。
+
+code:ts
+ import { parse } from "@cosense-toolbox/parser"
+ 
+ const page = parse("タイトル\nこれは [リンク] です")
+ 
+ for (const block of page.children) {
+   if (block.type === "line") {
+     console.log(block.children.map((node) => node.type))
+   }
+ }
+
+独自記法は `options.extensions` で追加できます。テーブルのセルでは既定でリンク記法だけを読みます。行と同じ記法を使うには、[記法の拡張] の `tableCellNotation` をご覧ください。
+
+<DocHeading level={2} id="parse-line" title="parseLine" />
+
+`parseLine(raw, options?)` は、エディターのように1行単位で扱うための関数です。常に通常行として解釈するため、`code:` や `table:` はブロックになりません。
+
+`options.line` と `options.offset` を指定すると、返る位置情報をページ全体の座標にそろえられます。
+
+<DocHeading level={2} id="tokenize-inline" title="tokenizeInline" />
+
+`tokenizeInline(source, options?)` は、行内の記法だけを解析してインラインノードの配列を返します。改行を含まない1行を渡してください。インデントや引用の判定は行いません。
+
+<DocHeading level={2} id="create-parser" title="createParser" />
+
+同じ拡張を何度も使う場合は `createParser(options?)` で設定済みのパーサーを作れます。以降は `parse` や `parseLine` を呼ぶたびに `extensions` を渡す必要がありません。
+
+<DocHeading level={2} id="image-src" title="asImageSrc" />
+
+`asImageSrc(url)` は、画像として表示できる URL に変換します。Gyazo のページ URL は画像 URL に直し、画像でない URL は `null` を返します。AST 内の URL 自体は変更しません。
+
+<DocHeading level={2} id="line-endings" title="改行コード" />
+
+`normalizeLineEndings(source)` は CRLF と CR を LF にそろえます。`parse` は解析前に正規化するため、位置情報をソースと照合するときは正規化後の文字列を基準にしてください。
+
+AST の構造については [AST と位置情報] をご覧ください。

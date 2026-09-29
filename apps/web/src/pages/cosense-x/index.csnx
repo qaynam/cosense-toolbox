@@ -1,0 +1,95 @@
+---
+layout: ../../layouts/Doc.astro
+title: Cosense X
+description: Cosense 記法の .csn / .csnx ファイルを JSX モジュールへ変換するコンパイラー。
+toc:
+  - id: overview
+    text: できること
+    depth: 2
+  - id: quickstart
+    text: コンパイルする
+    depth: 2
+  - id: components
+    text: .csnx のコンポーネント
+    depth: 2
+  - id: links
+    text: ページリンクの解決
+    depth: 2
+  - id: graph
+    text: リンクグラフ
+    depth: 2
+  - id: packages
+    text: 次に読む
+    depth: 2
+---
+Cosense X
+
+`@cosense-toolbox/cosense-x` は、Cosense 記法で書いた `.csn` / `.csnx` ファイルを JSX モジュールへ変換します。
+Astro ではなく React や別のビルド環境に組み込みたい場合に、コンパイラーを直接使えます。
+
+<DocHeading level={2} id="overview" title="できること" />
+
+`.csn` は Cosense 記法だけで書くページ形式です。`.csnx` はそこにコンポーネント呼び出しを加えた形式で、Cosense 記法の本文に UI 部品を埋め込めます。
+
+コンパイル結果には JSX のほか、YAML frontmatter から得たデータと、本文から解析したタイトル・タグなどのメタデータが含まれます。
+
+内部リンクをページ一覧と照合するため、未公開ページ名が URL に出るのを避けられます。逆リンクと 2 hop リンクも計算できます。
+
+<DocHeading level={2} id="quickstart" title="コンパイルする" />
+
+次の例では、`.csnx` 形式としてコンパイルし、React 用の JSX ランタイムを指定します。
+
+code:ts
+ import { compile } from "@cosense-toolbox/cosense-x"
+ 
+ const result = await compile(
+   `---
+ date: 2026-09-01
+ ---
+ はじめての投稿
+ [Cosense で書く] の使い方 #日記`,
+   { format: "csnx", jsxImportSource: "react" },
+ )
+
+`result.code` は JSX モジュール、`result.frontmatter` は YAML の値、`result.metadata` はタイトルやタグなどです。
+ソース内のコンポーネントは `compile` の `components` オプションで渡した実装に対応づけます。
+
+<DocHeading level={2} id="components" title=".csnx のコンポーネント" />
+
+コンポーネント呼び出しは、1 行全体をタグにします。たとえば `<Counter start={10} />` のように書けます。
+
+子要素を持たせる場合は、`<Callout type="warning" title="注意">` と `</Callout>` をそれぞれ独立した行に置きます。その間の行がコンポーネントの子要素になります。
+
+タグ名は大文字で始めます。属性値には文字列、JSON の値、または値なしの属性を書けます。任意の JavaScript は評価しません。
+
+Cosense の画面ではコンポーネント行も通常のテキストとして表示されます。コンパイラーに登録していない名前は、通常の要素として出力されます。
+
+<DocHeading level={2} id="links" title="ページリンクの解決" />
+
+`[ページ名]` は、`index` に登録したタイトルからページ URL を解決します。`#タグ` は `tagUrl`、`[/project/page]` は `projectUrl` で URL を作れます。
+
+索引にないページへのリンクは、既定ではリンクにせずテキストとして残します。`unresolved` を `warn` または `error` にすれば、リンク切れを警告したりコンパイルを失敗させたりできます。
+
+`index` を渡さない場合は、すべてのページ名を既知のページとして扱います。サイトを生成する場合は、公開対象のページだけで索引を作ってください。
+
+<DocHeading level={2} id="graph" title="リンクグラフ" />
+
+`@cosense-toolbox/cosense-x/graph` の `scanPages` で、ページ間の逆リンクと 2 hop リンクを作れます。タグもリンクとして扱います。draft ページはグラフから除かれます。
+
+code:ts
+ import { scanPages } from "@cosense-toolbox/cosense-x/graph"
+ 
+ const graph = scanPages([
+   { id: "posts/a.csn", source: "A\n[共通ページ]" },
+   { id: "posts/shared.csn", source: "共通ページ\n本文" },
+ ])
+ 
+ graph.backlinks["posts/shared.csn"]
+
+Cosense からページ本文や画像を取得する API は `@cosense-toolbox/cosense-x/fetch` にあります。非公開プロジェクトでは PAT が必要です。取得した非公開コンテンツを公開サイトへ含めないよう注意してください。
+
+<DocHeading level={2} id="packages" title="次に読む" />
+
+Astro で `.csn` / `.csnx` をページや記事として使うには [Astro 統合] をご覧ください。
+
+すべてのオプション・サブパス・fetch API の詳しい説明は [cosense-x の README https://github.com/qaynam/cosense-toolbox/blob/main/packages/cosense-x/README.md] にあります。

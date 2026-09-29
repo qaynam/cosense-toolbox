@@ -1,0 +1,61 @@
+---
+layout: ../../layouts/Doc.astro
+title: TextMate 文法
+description: Shiki や VS Code で Cosense 記法を色分けする TextMate 文法。
+toc:
+  - id: install
+    text: インストール
+    depth: 2
+  - id: shiki
+    text: Shiki で使う
+    depth: 2
+  - id: grammar
+    text: 文法ファイル
+    depth: 2
+  - id: caveats
+    text: 対応範囲と注意点
+    depth: 2
+---
+TextMate 文法
+
+`@cosense-toolbox/textmate` は、Cosense 記法を色分けする TextMate 文法を提供します。通常の `.csn` 向けと、コンポーネント行を認識する `.csnx` 向けの2種類があります。
+
+<DocHeading level={2} id="install" title="インストール" />
+
+code:sh
+ npm install @cosense-toolbox/textmate
+
+<DocHeading level={2} id="shiki" title="Shiki で使う" />
+
+`cosense` と `cosenseX` は、Shiki の言語登録としてそのまま渡せます。
+
+code:ts
+ import { createHighlighter } from "shiki"
+ import { cosense, cosenseX } from "@cosense-toolbox/textmate"
+ 
+ const highlighter = await createHighlighter({
+   themes: ["catppuccin-latte"],
+   langs: [cosense, cosenseX],
+ })
+ 
+ const html = highlighter.codeToHtml("タイトル\n[* 強調]", {
+   lang: "cosense",
+   theme: "catppuccin-latte",
+ })
+
+言語名は `cosense` / `cosense-x`、短縮名は `csn` / `csnx` です。Astro では `markdown.shikiConfig.langs` に登録できます。
+
+<DocHeading level={2} id="grammar" title="文法ファイル" />
+
+`.tmLanguage.json` も同梱しています。VS Code の `contributes.grammars` など、TextMate 文法ファイルを直接読むツールで使えます。
+
+code:ts
+ import grammar from "@cosense-toolbox/textmate/cosense.tmLanguage.json" with { type: "json" }
+
+Zed は TextMate 文法ではなく LSP の semantic tokens を利用します。Zed で色を付ける場合は [Language Server] のガイドを参照してください。
+
+<DocHeading level={2} id="caveats" title="対応範囲と注意点" />
+
+TextMate 文法は正規表現で記法を認識するため、パーサーと同じ挙動をすべて表現できるわけではありません。たとえば Shiki は空行を文法に渡さないため、コードブロックやタイトルの判定に差が出ることがあります。
+
+差分とスコープ名の一覧は [TextMate パッケージの README https://github.com/qaynam/cosense-toolbox/blob/main/packages/textmate/README.md] をご覧ください。

@@ -5,12 +5,12 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "astro build && pagefind --site dist",
     "preview": "astro preview",
     "astro": "astro",
-    "deploy": "astro build && wrangler deploy",
+    "deploy": "bun run build && wrangler deploy",
     "deploy:ci": "wrangler deploy",
-    "preview:worker": "astro build && wrangler dev",
+    "preview:worker": "bun run build && wrangler dev",
     "gen": "bun scripts/build-preview.mjs && bun scripts/build-icons.mjs && bun scripts/build-og.mjs",
     "lint": "eslint .",
     "format:check": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
@@ -18,13 +18,19 @@
   },
   "dependencies": {
     "@astrojs/check": "0.9.10",
+    "@cosense-toolbox/astro": "workspace:*",
     "@cosense-toolbox/parser": "workspace:*",
     "@cosense-toolbox/style": "workspace:*",
+    "@cosense-toolbox/textmate": "workspace:*",
     "astro": "7.2.3",
     "sharp": "^0.34.5",
     "typescript": "^6.0.3"
   },
   "devDependencies": {
+    "@iconify-json/material-icon-theme": "^1.2.70",
+    "@iconify/utils": "^3.1.7",
+    "@types/hast": "^3.0.4",
+    "pagefind": "^1.5.2",
     "wrangler": "^4.20.0"
   },
   "private": true

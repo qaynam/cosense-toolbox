@@ -1,7 +1,9 @@
 # @cosense-toolbox/astro
 
-Cosense (旧 Scrapbox) の記法で書いた `.csn` / `.csnx` を、Astro のページと content collection で使うための統合。
-中身は [`@cosense-toolbox/cosense-x`](../cosense-x) のコンパイラ。
+Cosense (旧 Scrapbox) の記法で書いた `.csn` / `.csnx` を、Astro のページや content collection で使うための統合です。
+コンパイルには [`@cosense-toolbox/cosense-x`](../cosense-x) を使います。
+
+**ドキュメント → <https://cosense-toolbox.qaynam.dev/astro/>**
 
 > **beta**：公開 API はまだ変わりうる。
 
