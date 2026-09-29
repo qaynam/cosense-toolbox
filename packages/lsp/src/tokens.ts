@@ -369,6 +369,16 @@ const quoteToken = (page: Page, node: NodeOfType<"line">, line: number): Option.
     Option.map((length) => token("quote", line, node.indent, node.indent + length)),
   )
 
+/**
+ * A command line (`$ ls`) is code as a whole: the parser keeps its text as written, with no
+ * notation in it, so its one text node is the span to colour.
+ */
+const commandTokens = (
+  line: NodeOfType<"line">,
+  shift: (position: Position) => Position,
+): ReadonlyArray<RawToken> =>
+  Arr.map(line.children, (child) => spanToken("code", shift(child.position)))
+
 /** A token for each of `notations` whose marker opens the decoration. */
 const notationTokens = (
   notations: ReadonlyArray<Notation>,
@@ -432,8 +442,7 @@ const nodeTokens =
               onSome: (text) => leaf(componentTokens(lineOf(line.position), text)),
               onNone: () =>
                 line.monospace
-                  ? // A command line (`$ ls`) is code as a whole: the parser reads nothing in it.
-                    leaf(line.children.map((child) => spanToken("code", shift(child.position))))
+                  ? leaf(commandTokens(line, shift))
                   : branch(Option.toArray(quoteToken(page, line, lineOf(line.position)))),
             }),
           ),

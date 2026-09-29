@@ -38,13 +38,13 @@ export const bracketConstruct: InternalConstruct = (source, index, ctx) => {
     Option.flatMap((end) => {
       const inner = source.slice(index + 1, end)
       if (inner.trim() === "") return Option.none()
+      // 中でインラインコードが始まる括弧は、数式も含めて記法にならない。Cosense Web はコードを先に読む
+      if (opensCodeSpan(source, index, end)) return Option.none()
 
       const innerCtx: BracketScanContext = {
         ...ctx,
         innerOrigin: shiftOrigin(ctx.origin, index + 1),
       }
-      // 中でインラインコードが始まる括弧は記法にならない (コードが先に読まれる)。数式も同じ
-      if (opensCodeSpan(source, index, end)) return Option.none()
       return pipe(
         parseInner(inner, innerCtx),
         Option.map((node) => ({ node, length: end + 1 - index })),

@@ -16,7 +16,7 @@ export const strongBracketConstruct: InternalConstruct = (source, index, ctx) =>
   if (source[index] !== "[" || source[index + 1] !== "[") return Option.none()
 
   const end = source.indexOf("]]", index + 2)
-  // 中でインラインコードが始まるなら記法にならない (bracketConstruct と同じ)
+  // 中でインラインコードが始まるなら記法にならない。Cosense Web はコードを先に読む
   if (end < 0 || opensCodeSpan(source, index + 1, end)) return Option.none()
 
   const inner = source.slice(index + 2, end)

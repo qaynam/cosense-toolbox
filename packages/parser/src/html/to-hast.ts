@@ -24,6 +24,7 @@ import type {
   LineBlock,
   NodeOfType,
   ProjectLink,
+  TextNode,
 } from "../types"
 
 // ---------------------------------------------------------------------------
@@ -404,7 +405,8 @@ const onlyChildOf = (children: readonly ElementContent[]): Option.Option<Element
 const commandParts = (node: LineBlock, cls: HtmlClassNames): Option.Option<ElementContent[]> =>
   pipe(
     Option.liftPredicate(node.children, (children) => children.length === 1),
-    Option.flatMap(([child]) => Option.fromNullable(child?.type === "text" ? child : undefined)),
+    Option.flatMapNullable(([child]) => child),
+    Option.filter((child): child is TextNode => child.type === "text"),
     Option.map(({ value }) => [
       element("span", withClass(cls.commandPrefix), [text(value.slice(0, 1))]),
       element("span", withClass(cls.commandSpace), [text(value.slice(1, 2))]),
