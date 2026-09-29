@@ -15,19 +15,21 @@ import { THEME_GROUPS } from "../lib/theme-tokens"
       </div>
 
       <div class="builder-side-scroll">
-        {THEME_GROUPS.map((g) => (
-          <section class="ctrl-group">
-            <h2>{g.title}</h2>
-            {g.tokens.map((t) => (
-              <label class="ctrl">
-                <span class="ctrl-label">{t.label}</span>
-                <span class="ctrl-swatch">
-                  <input type="color" data-var={t.var} value={t.default} />
-                </span>
-              </label>
-            ))}
-          </section>
-        ))}
+        {
+          THEME_GROUPS.map((g) => (
+            <section class="ctrl-group">
+              <h2>{g.title}</h2>
+              {g.tokens.map((t) => (
+                <label class="ctrl">
+                  <span class="ctrl-label">{t.label}</span>
+                  <span class="ctrl-swatch">
+                    <input type="color" data-var={t.var} value={t.default} />
+                  </span>
+                </label>
+              ))}
+            </section>
+          ))
+        }
       </div>
 
       <div class="builder-side-foot">
@@ -36,9 +38,7 @@ import { THEME_GROUPS } from "../lib/theme-tokens"
           <pre><code id="builder-css">/* 色を変えるとここに userCSS が出ます */</code></pre>
         </details>
         <div class="side-actions">
-          <button class="btn" data-builder-reset type="button">
-            リセット
-          </button>
+          <button class="btn" data-builder-reset type="button"> リセット </button>
           <button class="btn primary" id="builder-copy" data-copy="" type="button">
             <span class="label">📋 userCSSをコピー</span>
           </button>
@@ -49,20 +49,13 @@ import { THEME_GROUPS } from "../lib/theme-tokens"
     <div class="builder-canvas">
       <div class="builder-canvas-bar">
         <div class="seg">
-          <button data-view="article" class="seg-btn is-active" type="button">
-            記事
-          </button>
-          <button data-view="list" class="seg-btn" type="button">
-            ページ一覧
-          </button>
+          <button data-view="article" class="seg-btn is-active" type="button"> 記事 </button>
+          <button data-view="list" class="seg-btn" type="button"> ページ一覧 </button>
         </div>
         <span class="canvas-hint">プレビュー（疑似Cosense・既定テーマ）</span>
       </div>
       <div class="builder-stage">
-        <iframe
-          id="builder-preview"
-          src="/builder/preview-article.html"
-          title="Cosenseプレビュー"
+        <iframe id="builder-preview" src="/builder/preview-article.html" title="Cosenseプレビュー"
         ></iframe>
       </div>
     </div>
