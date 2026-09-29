@@ -46,26 +46,24 @@ const { prev, next } = adjacentDocs(Astro.url.pathname)
 
     <article class="doc" data-pagefind-body>
       <slot />
-      {
-        (prev !== undefined || next !== undefined) && (
-          <nav class="doc-pager" aria-label="前後のページ" data-pagefind-ignore>
-            {prev !== undefined ? (
-              <a href={prev.href} rel="prev">
-                <span>前へ</span>
-                {prev.label}
-              </a>
-            ) : (
-              <span />
-            )}
-            {next !== undefined && (
-              <a class="is-next" href={next.href} rel="next">
-                <span>次へ</span>
-                {next.label}
-              </a>
-            )}
-          </nav>
-        )
-      }
+      {(prev !== undefined || next !== undefined) && (
+        <nav class="doc-pager" aria-label="前後のページ" data-pagefind-ignore>
+          {prev !== undefined ? (
+            <a href={prev.href} rel="prev">
+              <span>前へ</span>
+              {prev.label}
+            </a>
+          ) : (
+            <span />
+          )}
+          {next !== undefined && (
+            <a class="is-next" href={next.href} rel="next">
+              <span>次へ</span>
+              {next.label}
+            </a>
+          )}
+        </nav>
+      )}
     </article>
   </div>
 </Base>

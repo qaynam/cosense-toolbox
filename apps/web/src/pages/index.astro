@@ -11,21 +11,23 @@ import { TOOL_GROUPS } from "../lib/tools"
     <h1>Cosense Toolbox</h1>
     <p>Cosense をもっと面白く、もっと強力に使うための道具を置いています。</p>
     <div class="home-actions">
-      <a class="btn primary" href="/docs/"> ドキュメントを読む </a>
-      <a class="btn" href={SITE.github} target="_blank" rel="noopener"> GitHub ↗ </a>
+      <a class="btn primary" href="/docs/">
+        ドキュメントを読む
+      </a>
+      <a class="btn" href={SITE.github} target="_blank" rel="noopener">
+        GitHub ↗
+      </a>
     </div>
   </section>
 
-  {
-    TOOL_GROUPS.map((group) => (
-      <section class="tool-group" aria-labelledby={`group-${group.id}`}>
-        <h2 id={`group-${group.id}`}>{group.label}</h2>
-        <div class="tool-grid">
-          {group.tools.map((tool) => (
-            <ToolCard tool={tool} />
-          ))}
-        </div>
-      </section>
-    ))
-  }
+  {TOOL_GROUPS.map((group) => (
+    <section class="tool-group" aria-labelledby={`group-${group.id}`}>
+      <h2 id={`group-${group.id}`}>{group.label}</h2>
+      <div class="tool-grid">
+        {group.tools.map((tool) => (
+          <ToolCard tool={tool} />
+        ))}
+      </div>
+    </section>
+  ))}
 </Base>

@@ -85,7 +85,9 @@ const ogImageURL = new URL(image ?? "/og.png", siteUrl)
           <nav>
             <a href="/docs/">ドキュメント</a>
             <a href="/builder/">テーマ作成</a>
-            <a href={SITE.github} target="_blank" rel="noopener"> GitHub ↗ </a>
+            <a href={SITE.github} target="_blank" rel="noopener">
+              GitHub ↗
+            </a>
           </nav>
           <SiteSearch />
           <button class="icon-btn" data-theme-toggle aria-label="テーマ切替" type="button">
@@ -99,17 +101,15 @@ const ogImageURL = new URL(image ?? "/og.png", siteUrl)
       <slot />
     </main>
 
-    {
-      !app && (
-        <footer class="site-footer">
-          <div class="wrap">
-            <a href={SITE.github} target="_blank" rel="noopener">
-              GitHub ↗
-            </a>
-          </div>
-        </footer>
-      )
-    }
+    {!app && (
+      <footer class="site-footer">
+        <div class="wrap">
+          <a href={SITE.github} target="_blank" rel="noopener">
+            GitHub ↗
+          </a>
+        </div>
+      </footer>
+    )}
 
     <script>
       const THEME_KEY = "cosense-toolbox-theme"
