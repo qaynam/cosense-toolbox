@@ -37,8 +37,8 @@ code:sh
  # 対象パッケージのディレクトリで実行
  bun run build
  bun link
-
+ 
  # examples/astro-blog で実行
  bun link @cosense-toolbox/astro
 
-npm に公開された版へ戻すときは `bun install --force` を実行します。ディレクトリ構成やリンク方法の詳細は <DocLink href="https://github.com/qaynam/cosense-toolbox/blob/main/examples/astro-blog/README.md" label="サンプルの README" external /> をご覧ください。
+npm に公開された版へ戻すときは `bun install --force` を実行します。ディレクトリ構成やリンク方法の詳細は [サンプルの README https://github.com/qaynam/cosense-toolbox/blob/main/examples/astro-blog/README.md] をご覧ください。

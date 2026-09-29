@@ -54,4 +54,4 @@ code:jsonc
 
 <DocHeading level={2} id="limitations" title="対応状況" />
 
-補完と定義ジャンプは未対応です。サーバー設定や色の変更方法は <DocLink href="https://github.com/qaynam/cosense-toolbox/blob/main/apps/zed-cosense/README.md" label="Zed 拡張の README" external /> をご覧ください。
+補完と定義ジャンプは未対応です。サーバー設定や色の変更方法は [Zed 拡張の README https://github.com/qaynam/cosense-toolbox/blob/main/apps/zed-cosense/README.md] をご覧ください。

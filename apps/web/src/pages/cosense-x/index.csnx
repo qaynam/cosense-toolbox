@@ -41,7 +41,7 @@ Astro ではなく React や別のビルド環境に組み込みたい場合に�
 
 code:ts
  import { compile } from "@cosense-toolbox/cosense-x"
-
+ 
  const result = await compile(
    `---
  date: 2026-09-01
@@ -78,18 +78,18 @@ Cosense の画面ではコンポーネント行も通常のテキストとして
 
 code:ts
  import { scanPages } from "@cosense-toolbox/cosense-x/graph"
-
+ 
  const graph = scanPages([
    { id: "posts/a.csn", source: "A\n[共通ページ]" },
    { id: "posts/shared.csn", source: "共通ページ\n本文" },
  ])
-
+ 
  graph.backlinks["posts/shared.csn"]
 
 Cosense からページ本文や画像を取得する API は `@cosense-toolbox/cosense-x/fetch` にあります。非公開プロジェクトでは PAT が必要です。取得した非公開コンテンツを公開サイトへ含めないよう注意してください。
 
 <DocHeading level={2} id="packages" title="次に読む" />
 
-Astro で `.csn` / `.csnx` をページや記事として使うには <DocLink href="/astro/" label="Astro 統合" /> をご覧ください。
+Astro で `.csn` / `.csnx` をページや記事として使うには [Astro 統合] をご覧ください。
 
-すべてのオプション・サブパス・fetch API の詳しい説明は <DocLink href="https://github.com/qaynam/cosense-toolbox/blob/main/packages/cosense-x/README.md" label="cosense-x の README" external /> にあります。
+すべてのオプション・サブパス・fetch API の詳しい説明は [cosense-x の README https://github.com/qaynam/cosense-toolbox/blob/main/packages/cosense-x/README.md] にあります。

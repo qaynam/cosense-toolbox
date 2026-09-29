@@ -53,4 +53,4 @@ code:sh
 
 `cosense.sources` はページを探す場所、`cosense.unresolvedLinks` はリンク切れ診断の重大度、`cosense.frontmatter` は先頭の YAML の扱いを指定します。独自の Language Server を使う場合は `cosense.server.path` に実行ファイルを設定します。
 
-Marketplace への公開はまだ準備中です。ローカルの開発版は <DocLink href="https://github.com/qaynam/cosense-toolbox/tree/main/apps/vscode-cosense" label="VS Code 拡張のソース" external /> から試せます。
+Marketplace への公開はまだ準備中です。ローカルの開発版は [VS Code 拡張のソース https://github.com/qaynam/cosense-toolbox/tree/main/apps/vscode-cosense] から試せます。

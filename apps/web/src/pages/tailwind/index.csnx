@@ -23,7 +23,7 @@ Tailwind CSS
 Tailwind CSS v4 の CSS にプラグインを登録します。
 
 code:sh
- npm install -D @cosense-toolbox/tailwind@beta
+ npm install -D @cosense-toolbox/tailwind
 
 code:css
  @import "tailwindcss";
@@ -51,6 +51,6 @@ code:html
 
 `not-cosense` クラスを付けた要素とその子孫には、既定スタイルも modifier も適用されません。ページ内に埋め込んだ別の UI を Cosense の見た目から切り離すときに使います。
 
-CSS 変数や `className` オプションなど、詳しい設定は <DocLink href="https://github.com/qaynam/cosense-toolbox/blob/main/packages/tailwind/README.md" label="Tailwind プラグインの README" external /> をご覧ください。
+CSS 変数や `className` オプションなど、詳しい設定は [Tailwind プラグインの README https://github.com/qaynam/cosense-toolbox/blob/main/packages/tailwind/README.md] をご覧ください。
 
-基本の CSS 変数は <DocLink href="/style/" label="既定のスタイル" /> と共通です。
+基本の CSS 変数は [既定のスタイル] と共通です。

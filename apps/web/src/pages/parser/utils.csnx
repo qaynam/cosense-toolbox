@@ -26,7 +26,7 @@ AST のヘルパー
 
 code:ts
  import { parse } from "@cosense-toolbox/parser"
-
+ 
  const page = parse(`関連ページ
  [JavaScript] と [TypeScript] を比べる
  #メモ`)
@@ -37,7 +37,7 @@ code:ts
 
 code:ts
  import { visit } from "@cosense-toolbox/parser/utils"
-
+ 
  visit(page, "internalLink", (node) => {
    console.log(node.target)
  })

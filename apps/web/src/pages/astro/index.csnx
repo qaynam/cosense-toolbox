@@ -28,12 +28,12 @@ Astro 統合
 Astro プロジェクトに統合を追加します。
 
 code:sh
- bun add @cosense-toolbox/astro@beta
+ bun add @cosense-toolbox/astro
 
 code:js
  import cosense from "@cosense-toolbox/astro"
  import { defineConfig } from "astro/config"
-
+ 
  export default defineConfig({
    integrations: [
      cosense({
@@ -60,7 +60,7 @@ code:csnx
 
 記事として管理する場合は、`astro:content` の glob loader で `.csn` / `.csnx` を読み込みます。記事の `title`、`slug`、`tags` などは、frontmatter と本文から得られます。
 
-リンクグラフは `virtual:cosense-x/graph` から参照できます。ブログの一覧、関連記事、タグページを組み立てる例は <DocLink href="/astro-blog/" label="Astro ブログの実例" /> にあります。
+リンクグラフは `virtual:cosense-x/graph` から参照できます。ブログの一覧、関連記事、タグページを組み立てる例は [Astro ブログの実例] にあります。
 
 <DocHeading level={2} id="links" title="リンク切れの検査" />
 
@@ -76,4 +76,4 @@ code:csnx
 
 <DocHeading level={2} id="more" title="さらに詳しく" />
 
-シンタックスハイライト、コード行番号、表のセル内の記法、Svelte コンポーネント、content collection の設定は <DocLink href="https://github.com/qaynam/cosense-toolbox/blob/main/packages/astro-cosense/README.md" label="Astro 統合の README" external /> をご覧ください。
+シンタックスハイライト、コード行番号、表のセル内の記法、Svelte コンポーネント、content collection の設定は [Astro 統合の README https://github.com/qaynam/cosense-toolbox/blob/main/packages/astro-cosense/README.md] をご覧ください。

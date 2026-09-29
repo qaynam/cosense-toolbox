@@ -41,14 +41,14 @@ HTML への変換
 code:ts
  import { parse } from "@cosense-toolbox/parser"
  import { toHtml, toHast } from "@cosense-toolbox/parser/html"
-
+ 
  const page = parse("タイトル\nこれは [リンク] です")
  const html = toHtml(page)
  const hast = toHast(page)
 
 `toHtml` は `toHast` の結果を HTML 文字列にしたものです。rehype のプラグインへ渡したり JSX に組み立てたりする場合は `toHast` を使います。
 
-既定の CSS は別パッケージの <DocLink href="/style/" label="@cosense-toolbox/style" /> にあります。
+既定の CSS は別パッケージの `@cosense-toolbox/style` にあります。詳しくは [既定のスタイル] をご覧ください。
 
 <DocHeading level={2} id="overview" title="基本" />
 
@@ -112,7 +112,7 @@ code:ts
 
 code:ts
  import css from "@cosense-toolbox/style/style.css?raw"
-
+ 
  const html = toHtml(page, { style: css })
 
 <DocHeading level={2} id="output" title="出力の構造" />

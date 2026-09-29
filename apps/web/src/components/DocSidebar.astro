@@ -1,35 +1,27 @@
 ---
-import DocSearch from "./DocSearch.astro"
 import { DOC_GROUPS } from "../lib/docs"
 
 const current = Astro.url.pathname
 ---
 
 <nav class="doc-nav" aria-label="ドキュメント">
-  <a class="doc-nav-name" href="/docs/">
-    Cosense Toolbox Docs
-  </a>
-  <DocSearch />
-  {DOC_GROUPS.map((group) => (
-    <section data-doc-group>
-      <h2>{group.label}</h2>
-      <ul>
-        {group.pages.map((page) => (
-          <li>
-            <a
-              href={page.href}
-              aria-current={current === page.href ? "page" : undefined}
-              data-doc-search={`${page.label} ${page.description} ${page.keywords} ${group.label}`.toLocaleLowerCase(
-                "ja",
-              )}
-            >
-              {page.label}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  ))}
+  <a class="doc-nav-name" href="/docs/"> Cosense Toolbox Docs </a>
+  {
+    DOC_GROUPS.map((group) => (
+      <section>
+        <h2>{group.label}</h2>
+        <ul>
+          {group.pages.map((page) => (
+            <li>
+              <a href={page.href} aria-current={current === page.href ? "page" : undefined}>
+                {page.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
   <a
     class="doc-nav-repo"
     href="https://github.com/qaynam/cosense-toolbox"

@@ -40,4 +40,4 @@ code:sh
 
 公開ツールは、パッケージ間のバージョン、`workspace:*` 依存、公開設定、ライセンス、ビルド設定を検査します。依存先を含めた tarball の内容も確認し、公開する版と依存バージョンが一致しなければ停止します。
 
-コマンドとチェック項目の詳細は <DocLink href="https://github.com/qaynam/cosense-toolbox/blob/main/tools/release/README.md" label="リリースツールの README" external /> をご覧ください。
+コマンドとチェック項目の詳細は [リリースツールの README https://github.com/qaynam/cosense-toolbox/blob/main/tools/release/README.md] をご覧ください。

@@ -34,7 +34,7 @@ toc:
 code:ts
  import { parse } from "@cosense-toolbox/parser"
  import type { Extension, InlineConstruct } from "@cosense-toolbox/parser/extensions"
-
+ 
  const mention: InlineConstruct = (source, index) => {
    if (source[index] !== "@") return null
    const match = source.slice(index + 1).match(/^[A-Za-z0-9_-]+/)
@@ -44,7 +44,7 @@ code:ts
      length: match[0].length + 1,
    }
  }
-
+ 
  const mentions: Extension = { constructs: [mention] }
  parse("メモ\n@qaynam に確認する", { extensions: [mentions] })
 
@@ -54,7 +54,7 @@ code:ts
 
 テーブルセルでは既定でリンク記法だけを解析します。`tableCellNotation()` を `extensions` に加えると、装飾などを含めてセル内の記法を解析できます。
 
-特定のノードだけをセルに残すには、拡張の `keepInTableCell` で判定します。セル内の文字列を `<br>` に置き換える描画拡張 `tableCellLineBreaks()` は <DocLink href="/parser/html/" label="HTML 変換の拡張" /> を参照してください。
+特定のノードだけをセルに残すには、拡張の `keepInTableCell` で判定します。セル内の文字列を `<br>` に置き換える描画拡張 `tableCellLineBreaks()` は [HTML への変換] を参照してください。
 
 <DocHeading level={2} id="node" title="独自ノード型" />
 
@@ -62,7 +62,7 @@ code:ts
 
 code:ts
  import type { Position } from "@cosense-toolbox/parser"
-
+ 
  declare module "@cosense-toolbox/parser" {
    interface InlineNodeMap {
      mention: { type: "mention"; user: string; position: Position }
@@ -78,10 +78,10 @@ code:ts
 code:ts
  import { decodePage } from "@cosense-toolbox/parser/schema"
  import { Either } from "effect"
-
+ 
  const result = decodePage(JSON.parse(input))
  if (Either.isRight(result)) {
    const page = result.right
  }
 
-不具合や記法の不足を見つけた場合は <DocLink href="https://github.com/qaynam/cosense-toolbox/issues" label="GitHub の Issue" external /> で報告できます。
+不具合や記法の不足を見つけた場合は [GitHub の Issue https://github.com/qaynam/cosense-toolbox/issues] で報告できます。

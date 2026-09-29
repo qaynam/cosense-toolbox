@@ -33,16 +33,16 @@ Cosense のテキストを AST に変換する関数を紹介します。どの�
 
 code:ts
  import { parse } from "@cosense-toolbox/parser"
-
+ 
  const page = parse("タイトル\nこれは [リンク] です")
-
+ 
  for (const block of page.children) {
    if (block.type === "line") {
      console.log(block.children.map((node) => node.type))
    }
  }
 
-独自記法は `options.extensions` で追加できます。テーブルのセルでは既定でリンク記法だけを読みます。行と同じ記法を使うには <DocLink href="/parser/extend/" label="tableCellNotation の説明" /> をご覧ください。
+独自記法は `options.extensions` で追加できます。テーブルのセルでは既定でリンク記法だけを読みます。行と同じ記法を使うには、[記法の拡張] の `tableCellNotation` をご覧ください。
 
 <DocHeading level={2} id="parse-line" title="parseLine" />
 
@@ -66,4 +66,4 @@ code:ts
 
 `normalizeLineEndings(source)` は CRLF と CR を LF にそろえます。`parse` は解析前に正規化するため、位置情報をソースと照合するときは正規化後の文字列を基準にしてください。
 
-AST の構造については <DocLink href="/parser/ast/" label="AST と位置情報" /> をご覧ください。
+AST の構造については [AST と位置情報] をご覧ください。

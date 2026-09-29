@@ -30,7 +30,7 @@ Language Server は、semantic tokens による色付け、ページ名の補完
 code:sh
  csn-lsp --stdio
 
-エディターがサーバーを起動する設定方法は <DocLink href="/vscode/" label="VS Code 拡張" /> と <DocLink href="/zed/" label="Zed 拡張" /> をご覧ください。
+エディターがサーバーを起動する設定方法は [VS Code 拡張] と [Zed 拡張] をご覧ください。
 
 <DocHeading level={2} id="settings" title="エディターの設定" />
 
@@ -58,4 +58,4 @@ code:sh
 
 semantic tokens の計算・エンコード機能は `@cosense-toolbox/lsp/tokens`、補完と定義ジャンプの判定は `@cosense-toolbox/lsp/completion` から利用できます。
 
-設定項目、CLI オプション、API の全一覧は <DocLink href="https://github.com/qaynam/cosense-toolbox/blob/main/packages/lsp/README.md" label="LSP パッケージの README" external /> をご覧ください。
+設定項目、CLI オプション、API の全一覧は [LSP パッケージの README https://github.com/qaynam/cosense-toolbox/blob/main/packages/lsp/README.md] をご覧ください。

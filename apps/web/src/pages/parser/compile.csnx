@@ -12,7 +12,7 @@ toc:
 ---
 独自形式への変換
 
-`@cosense-toolbox/parser/compile` は、AST をプレーンテキストや独自形式に変換します。HTML や hast を出力する場合は <DocLink href="/parser/html/" label="HTML への変換" /> を使ってください。
+`@cosense-toolbox/parser/compile` は、AST をプレーンテキストや独自形式に変換します。HTML や hast を出力する場合は [HTML への変換] を使ってください。
 
 <DocHeading level={2} id="plain-text" title="toPlainText" />
 
@@ -20,7 +20,7 @@ toc:
 
 code:ts
  import { toPlainText } from "@cosense-toolbox/parser/compile"
-
+ 
  toPlainText(parse("タイトル\n[* 太字] と [リンク]"))
  // → "タイトル\n太字 と リンク"
 
@@ -32,7 +32,7 @@ code:ts
 
 code:ts
  import { createCompiler } from "@cosense-toolbox/parser/compile"
-
+ 
  const toSimpleText = createCompiler<string>({
    handlers: {
      internalLink: (node) => node.target,

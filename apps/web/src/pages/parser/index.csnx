@@ -1,6 +1,6 @@
 ---
 layout: ../../layouts/Doc.astro
-title: パーサー
+title: Cosense 記法パーサー
 description: Cosense の記法を位置情報つきの AST に変換する TypeScript パッケージ。
 toc:
   - id: quickstart
@@ -39,8 +39,8 @@ code:ts
 
 <DocHeading level={2} id="quickstart" title="クイックスタート" />
 code:sh
- npm install @cosense-toolbox/parser@beta
-必要な機能だけサブパスから読み込めます。HTML 表示の既定 CSS は別パッケージの <DocLink href="/style/" label="@cosense-toolbox/style" /> で提供しています。
+ npm install @cosense-toolbox/parser
+必要な機能だけサブパスから読み込めます。HTML 表示の既定 CSS は別パッケージの `@cosense-toolbox/style` で提供しています ([既定のスタイル])。
 
 <DocHeading level={2} id="features" title="特徴" />
 ノードにはソース上の行・列・文字オフセットが含まれます。AST はメソッドを持たないオブジェクトなので、JSON にして保存したり別スレッドへ送ったりできます。
@@ -48,11 +48,11 @@ AST の走査、リンク抽出、HTML 変換、独自形式への変換は別�
 記法や独自ノードを追加でき、追加したノードの型は TypeScript の走査・描画にも反映されます。
 
 <DocHeading level={2} id="choose" title="使う API を選ぶ" />
-`@cosense-toolbox/parser` は、ページ全体や1行の記法を AST に変換します。具体的な関数の使い分けは <DocLink href="/parser/parse/" label="パース" /> をご覧ください。
+`@cosense-toolbox/parser` は、ページ全体や1行の記法を AST に変換します。具体的な関数の使い分けは [パース] をご覧ください。
 `@cosense-toolbox/parser/utils` は AST の検索・走査・リンク抽出、`@cosense-toolbox/parser/html` は HTML / hast への変換を担当します。
 `@cosense-toolbox/parser/compile` はプレーンテキストや独自形式への変換、`@cosense-toolbox/parser/extensions` はパーサーへの記法追加に使います。
 `@cosense-toolbox/parser/schema` の `decodePage` は、外部から受け取った値が AST の形かどうかを検証します。
 
 <DocHeading level={2} id="next" title="次に読む" />
-ノードの形と位置情報は <DocLink href="/parser/ast/" label="AST と位置情報" />、HTML 出力の設定は <DocLink href="/parser/html/" label="HTML への変換" /> をご覧ください。
+ノードの形と位置情報は [AST と位置情報]、HTML 出力の設定は [HTML への変換] をご覧ください。
 動く例は <DocLink href="/parser/demo/" label="パーサーの出力例" /> にあります。公開 API は beta のため、利用するバージョンを固定してください。

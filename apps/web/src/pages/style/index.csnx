@@ -24,7 +24,7 @@ Cosense 本体の CSS ではなく、パーサーの出力構造に合わせて�
 <DocHeading level={2} id="install" title="インストール" />
 
 code:sh
- npm install @cosense-toolbox/style@beta
+ npm install @cosense-toolbox/style
 
 code:ts
  import "@cosense-toolbox/style"
@@ -40,7 +40,7 @@ code:html
    <!-- toHtml(parseLine("[* 強調]")) の出力 -->
  </div>
 
-Tailwind CSS を使うプロジェクトでは、CSS を直接読み込む代わりに <DocLink href="/tailwind/" label="Tailwind プラグイン" /> を使えます。
+Tailwind CSS を使うプロジェクトでは、CSS を直接読み込む代わりに [Tailwind CSS] のプラグインを使えます。
 
 <DocHeading level={2} id="theme" title="色と寸法を変える" />
 
@@ -59,6 +59,6 @@ Cosense のテーマ変数 (`--page-bg` など) が使える環境では、そ�
 
 すべてのルールは `.page` 以下に限定されています。ただし、表示対象のページ自身が `.page` クラスを使う場合は名前が衝突するため、iframe や Shadow DOM で分離するか、パーサーの `classNames` オプションでクラス名を変えてください。
 
-コードブロックに行番号を付けるには、パーサーの `codeLineNumbers()` 描画拡張と組み合わせます。詳しくは <DocLink href="/parser/html/" label="HTML への変換" /> をご覧ください。
+コードブロックに行番号を付けるには、パーサーの `codeLineNumbers()` 描画拡張と組み合わせます。詳しくは [HTML への変換] をご覧ください。
 
-CSS 変数の一覧は <DocLink href="https://github.com/qaynam/cosense-toolbox/blob/main/packages/style/README.md" label="style パッケージの README" external /> にあります。
+CSS 変数の一覧は [style パッケージの README https://github.com/qaynam/cosense-toolbox/blob/main/packages/style/README.md] にあります。

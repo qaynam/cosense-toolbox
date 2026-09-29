@@ -8,7 +8,7 @@
 
 ## 方針：トップは「道具の入り口」
 
-トップはドキュメントとテーマビルダーへの入り口。カードの並び順と文言は `src/lib/tools.ts` で管理する。パッケージの説明とガイドは `/docs/` 以下に置き、各ページへの移動はドキュメントのカテゴリナビと検索欄で行う。
+トップはパッケージとテーマビルダーへの入り口。種類ごと (ライブラリ・エディター連携・道具) にカードを並べ、並び順と文言は `src/lib/tools.ts` の `TOOL_GROUPS` で管理する。パッケージの説明とガイドは `/docs/` 以下に置き、各ページへの移動はドキュメントのカテゴリナビとヘッダの検索 (⌘K / Ctrl+K) で行う。
 
 **userscript 系は全部削除した（2026-09-06）。** ギャラリー、詳細ページ、使い方ページ、content collection（50本の md）、ソース全文（`src/sources/`）、A層ライブデモ、Gyazo 埋め込み、ツールボックス（カート）、そしてそれらを支えていた Base のモーダル機構まで含む。復活させるなら `5de8ca1` の前を見る。
 
@@ -17,13 +17,21 @@ Starlight は使わず、手書き CSS の Astro サイトとして構成する�
 ## 技術スタック / コマンド
 
 - **Astro**（Starlight なし）。Cosense X の Astro 統合を追加し、`.csnx` をページとして扱う。パッケージマネージャは **Bun**（`bun.lock`）
-- `bun install` / `bun run dev`（→ localhost:4321）/ `bun run build`（→ `./dist/`）/ `bun run preview`
-- スタイルは**手書きCSS**（`src/styles/global.css`）。**Cosense(cosenseの#111ダークテーマ)寄りのパレット**で、ブランドアクセントはインデントドットの星グラデ `#F8E42E→#FF7D54`（`--grad`）
+- 検索は **Pagefind**。`bun run build` が `astro build` の後に `pagefind --site dist` で索引を作る。索引が無い開発中は、`src/lib/docs.ts` のページ一覧から探す
+- `bun install` / `bun run dev`（→ localhost:4321）/ `bun run build`（→ `./dist/` と検索の索引）/ `bun run preview`
+- スタイルは**手書きCSS**（`src/styles/global.css`）。**Cosense(cosenseの#111ダークテーマ)寄りのパレット**で、ブランドアクセントはインデントドットの星グラデ `#F8E42E→#FF7D54`
+- コードの色は shiki の 2 つのテーマ (`github-light-default` / `github-dark-default`) を CSS 変数で出し、サイトのテーマに合わせて選ぶ (`astro.config.mjs`)。`.csn` / `.csnx` の例は `@cosense-toolbox/textmate` の文法で色付けする
+- 文字と背景のコントラストは、ライト・ダークとも WCAG AA (4.5:1) を保つ
 
 ## ページ / コンポーネント構成
 
-- `src/pages/index.astro` … **トップ**。`TOOLS` を `ToolCard` で表示
-- `src/pages/**/*.csnx` … ドキュメント本文。見出しは `DocHeading`、リンクは `DocLink` を使い、frontmatter の `toc` と見出し ID を一致させる
+- `src/pages/index.astro` … **トップ**。`TOOL_GROUPS` を種類ごとに `ToolCard` で表示
+- `src/pages/**/*.csnx` … ドキュメント本文。見出しは `DocHeading` を使い、frontmatter の `toc` と見出し ID を一致させる
+  - ページへのリンクは Cosense の `[ページのタイトル]` で書く。タイトルは各ページの 1 行目で、frontmatter の `title` も同じにする。書き間違えたリンクは `lint` でビルドが止まる
+  - 外部のリンクは `[ラベル https://…]`。`.csnx` でないページ (`/parser/demo/`) やページ内の見出しへのリンクだけ `DocLink` を使う
+  - `code:` のブロックの中の空行も、ブロックの字下げ (空白) を付ける。字下げの無い空行でブロックが終わるため
+- `src/lib/code-language.ts` … コードブロックの見出しに言語のアイコン (Material Icon Theme) と名前を出す描画の拡張。Cosense 記法のブロックは `public/icons/cosense.svg`
+- `src/components/SiteSearch.astro` … ヘッダの検索ボタンと、⌘K / Ctrl+K で開く検索のダイアログ
 - `src/layouts/Base.astro` … 共通レイアウト。**ライトモード切替**と、`[data-copy]` のコピーを 1 つの delegated `<script>` で処理する
 - `src/layouts/Doc.astro` / `src/components/DocSidebar.astro` / `DocToc.astro` … ドキュメント用のナビゲーション、本文、ページ内目次
 - `src/lib/docs.ts` … サイドバー、検索対象、前後ページの順序を管理する

@@ -10,9 +10,10 @@
   --border-soft: #232323;
   --text: #e8e8e8;
   --text-dim: #9a9a9a;
-  --text-faint: #7c7c7c;
+  --text-faint: #8a8a8a;
   --accent: #cfcfcf;
   --code-bg: #1b1b1b;
+  --code-block-bg: var(--code-bg);
   --warn: #e3b341;
   --warn-bg: rgba(227, 179, 65, 0.1);
   --font-sans: Roboto, "Noto Sans JP", sans-serif;
@@ -34,9 +35,11 @@
   --warn: #8a6100;
   --warn-bg: rgba(138, 97, 0, 0.1);
   --text-dim: #5c5c5c;
-  --text-faint: #767676;
+  --text-faint: #6e6e6e;
   --accent: #333333;
   --code-bg: #f3f3f1;
+  /* コードの色 (github-light-default) は白地でコントラストが足りるように作られている */
+  --code-block-bg: #ffffff;
 }
 
 * {
@@ -146,6 +149,113 @@ a {
   border-color: var(--text-faint);
 }
 
+/* ---------- 検索 (Cmd+K) ---------- */
+.search-btn {
+  width: auto;
+  gap: 8px;
+  padding: 0 10px;
+  grid-auto-flow: column;
+}
+.search-kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+@media (max-width: 640px) {
+  .search-btn {
+    width: 34px;
+    padding: 0;
+  }
+  .search-btn .search-kbd {
+    display: none;
+  }
+}
+.search-dialog {
+  width: min(40rem, calc(100vw - 32px));
+  max-height: min(34rem, calc(100vh - 96px));
+  margin: 72px auto auto;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+.search-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.search-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text-dim);
+}
+.search-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  outline: none;
+}
+.search-results {
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  overflow-y: auto;
+}
+.search-results:empty {
+  display: none;
+}
+.search-results a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text);
+}
+.search-results a[aria-selected="true"],
+.search-results a:hover {
+  background: var(--bg-elev);
+}
+.search-result-title {
+  display: block;
+  font-weight: 600;
+}
+.search-result-excerpt {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+.search-result-excerpt mark {
+  background: none;
+  color: var(--text);
+  font-weight: 700;
+}
+.search-status {
+  margin: 0;
+  padding: 8px 16px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.search-status:empty {
+  display: none;
+}
+
 /* ---------- footer ---------- */
 .site-footer {
   border-top: 1px solid var(--border-soft);
@@ -200,6 +310,10 @@ body:not(.is-app) {
 }
 body:not(.is-app) > main {
   flex: 1 0 auto;
+  /* 既定の min-width: auto だと、中のグリッドの最小幅 (列が 2 つ並ぶ幅) で横にはみ出す */
+  min-width: 0;
+  /* .wrap の左右の auto マージンがあると、縦並びの flex では幅が中身に縮むので、幅を明示する */
+  width: 100%;
 }
 
 /* 背景より前に出す。header は sticky + z-index を持っているので触らない
@@ -253,12 +367,36 @@ body.is-home > .site-footer {
   }
 }
 
+.home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 28px;
+}
+.home-actions .btn {
+  padding: 9px 18px;
+  font-size: 14px;
+}
+/* パッケージは種類ごとにまとめ、どれがどこに効くかを見出しで分ける */
+.tool-group {
+  max-width: 64rem;
+  margin: 56px auto 0;
+}
+.tool-group:last-of-type {
+  margin-bottom: 96px;
+}
+.tool-group h2 {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
 .tool-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: 16px;
-  max-width: 52rem;
-  margin: 44px auto 96px;
+  grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
+  gap: 14px;
 }
 .tool-card {
   display: block;
@@ -304,7 +442,19 @@ body.is-home > .site-footer {
 :root[data-theme="light"] [data-accent="orange"] {
   --tool-accent: #b04a17;
 }
-.tool-card h2 {
+[data-accent="green"] {
+  --tool-accent: #6fcf97;
+}
+[data-accent="purple"] {
+  --tool-accent: #c39bff;
+}
+:root[data-theme="light"] [data-accent="green"] {
+  --tool-accent: #1f7a4a;
+}
+:root[data-theme="light"] [data-accent="purple"] {
+  --tool-accent: #7040c4;
+}
+.tool-card h3 {
   margin: 0 0 8px;
   font-size: 17px;
   letter-spacing: -0.01em;
@@ -399,7 +549,7 @@ body.is-app {
 .builder-side-head p {
   margin: 5px 0 0;
   font-size: 12px;
-  color: var(--text-faint);
+  color: var(--text-dim);
   line-height: 1.6;
 }
 .builder-side-head code {
@@ -426,6 +576,10 @@ body.is-app {
 .side-actions .btn {
   flex: 1;
   justify-content: center;
+  white-space: nowrap;
+}
+.side-actions .btn:not(.primary) {
+  flex: 0 0 auto;
 }
 
 .ctrl-group {
@@ -595,7 +749,25 @@ body.is-app {
     gap: 10px;
   }
   .site-header nav {
+    gap: 12px;
+    font-size: 13px;
+  }
+}
+/* GitHub はフッタにもあるので、ヘッダに収まらない幅では外す */
+@media (max-width: 420px) {
+  .site-header nav a[target="_blank"] {
     display: none;
+  }
+}
+/* リンクを残すため、狭い幅ではサイト名を読み上げだけに残してロゴにする */
+@media (max-width: 520px) {
+  .brand-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 @keyframes scrimIn {
@@ -703,38 +875,6 @@ body.is-app {
   color: var(--text);
   text-decoration: none;
 }
-.doc-search {
-  margin: 0 0 24px;
-}
-.doc-search-label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 12px;
-  color: var(--text-faint);
-}
-.doc-search input {
-  width: 100%;
-  padding: 9px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg-soft);
-  color: var(--text);
-  font: inherit;
-  font-size: 12.5px;
-}
-.doc-search input:focus-visible {
-  outline: 2px solid var(--text-faint);
-  outline-offset: 2px;
-}
-.doc-search-status {
-  margin: 7px 0 0;
-  font-size: 12px;
-  color: var(--text-faint);
-}
-.doc-search-status[hidden],
-.doc-nav [hidden] {
-  display: none;
-}
 .doc-nav section {
   margin-bottom: 20px;
 }
@@ -830,20 +970,22 @@ body.is-app {
     grid-template-areas: "menu" "main";
   }
 
+  /* ヘッダの下に貼り付く帯にする。ボタンだけを貼り付けると、スクロールした本文がその横に透けて重なる */
   .doc-menu-btn {
     grid-area: menu;
-    justify-self: start;
+    justify-self: stretch;
     display: flex;
     align-items: center;
     gap: 10px;
     position: sticky;
-    top: 70px;
+    top: 59px;
     z-index: 30;
-    margin-bottom: 24px;
-    padding: 9px 16px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--bg-elev);
+    margin: 0 -24px 8px;
+    padding: 12px 24px;
+    border: 0;
+    border-bottom: 1px solid var(--border-soft);
+    border-radius: 0;
+    background: var(--bg);
     color: var(--text-dim);
     font-family: inherit;
     font-size: 13.5px;
@@ -1121,9 +1263,107 @@ body.is-app {
 .doc a:hover {
   text-decoration-color: currentColor;
 }
+/* Cosense のリンクは style の .link が下線を消すので、本文の中で見分けられるように戻す */
+.doc .page a.link {
+  text-decoration: underline;
+  text-decoration-color: var(--text-faint);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 3px;
+}
+.doc .page a.link:hover {
+  text-decoration-color: currentColor;
+}
+/* サイトの外へ出るリンク */
+.doc .page a.link-external::after {
+  content: "↗";
+  margin-left: 0.15em;
+  color: var(--text-faint);
+  font-size: 0.85em;
+}
 .doc .page .line {
   min-height: 1.85em;
   margin: 0 0 0.75em;
+}
+/* 空行は段落の区切りなので、行 1 つぶんではなく少しだけ空ける。
+   見出しとタイトルは自分の余白を持つので、その前後の空行は消す */
+.doc .page > .line:not(.code-block):has(> br:only-child) {
+  min-height: 0;
+  height: 0.5em;
+  margin: 0;
+}
+.doc .page > :is(.title, h2, h3) + .line:has(> br:only-child),
+.doc .page > .line:has(> br:only-child):has(+ :is(h2, h3)) {
+  display: none;
+}
+.doc .page > h2:first-of-type {
+  margin-top: 40px;
+}
+
+/* コードブロックは行ごとに分かれた要素なので、行の間を空けず 1 枚の面にする。
+   :has() は入れ子にできないので、ヘッダの行 (.code-start) と本体の行 (.code-body) を中身で見分ける */
+.doc .page .line.code-block {
+  margin: 0;
+}
+.doc .page .line:has(> .code-body) {
+  min-height: 1.6em;
+  padding: 0 14px;
+  border: 1px solid var(--border-soft);
+  border-block: 0;
+  background: var(--code-block-bg);
+  line-height: 1.6;
+}
+.doc .page .line:has(> .code-start) + .line:has(> .code-body) {
+  padding-top: 10px;
+  border-top: 1px solid var(--border-soft);
+}
+.doc .page .line:has(> .code-body):not(:has(+ .line > .code-body)) {
+  margin-bottom: 1.25em;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-soft);
+  border-bottom-left-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+}
+.doc .page .code-block code {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+}
+/* ファイル名は Cosense Web のバッジではなく、エディタのタブのようにブロックの上に付ける。
+   言語のアイコンと名前は、描画の拡張が入れる (src/lib/code-language.ts) */
+.doc .page {
+  --cosense-badge-bg: transparent;
+  --cosense-badge-text: var(--text-dim);
+  --cosense-code-font: var(--font-mono);
+}
+.doc .page .line:has(> .code-start) {
+  min-height: 0;
+  padding: 7px 14px;
+  border: 1px solid var(--border-soft);
+  border-bottom: 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--bg-soft);
+  line-height: 1.4;
+}
+.doc .page .line:has(> .code-body) code {
+  font-family: var(--font-mono);
+}
+.doc .page .code-block-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+}
+.doc .page .code-lang-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+/* 色付けした字は、サイトのテーマに合わせて shiki の 2 つの色のどちらかを使う (astro.config.mjs) */
+:root:not([data-theme="light"]) .doc [style*="--shiki-dark"] {
+  color: var(--shiki-dark) !important;
+}
+:root[data-theme="light"] .doc [style*="--shiki-light"] {
+  color: var(--shiki-light) !important;
 }
 .doc .page .line[data-indent] {
   min-height: 1.85em;
@@ -1132,9 +1372,9 @@ body.is-app {
   margin-bottom: 0.15em;
 }
 .doc .page .code-block-start {
-  margin-bottom: 0.35em;
-  color: var(--text-faint);
-  font-size: 0.8em;
+  padding: 0;
+  color: var(--text-dim);
+  font-size: 12px;
 }
 .doc .page .code-body {
   padding: 2px 0;

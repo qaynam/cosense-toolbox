@@ -59,7 +59,7 @@ code:ts
    column: number
    offset: number
  }
-
+ 
  interface Position {
    start: Point
    end: Point
@@ -73,4 +73,4 @@ CRLF と CR は解析前に LF へ正規化されます。したがって位置�
 
 位置情報は、エディターのシンタックスハイライト、カーソル下の記法判定、描画結果と元テキストの対応付け、範囲選択による編集などに使えます。
 
-走査用の関数は <DocLink href="/parser/utils/" label="AST のヘルパー" /> をご覧ください。
+走査用の関数は [AST のヘルパー] をご覧ください。

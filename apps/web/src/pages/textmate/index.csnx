@@ -23,7 +23,7 @@ TextMate 文法
 <DocHeading level={2} id="install" title="インストール" />
 
 code:sh
- npm install @cosense-toolbox/textmate@beta
+ npm install @cosense-toolbox/textmate
 
 <DocHeading level={2} id="shiki" title="Shiki で使う" />
 
@@ -32,12 +32,12 @@ code:sh
 code:ts
  import { createHighlighter } from "shiki"
  import { cosense, cosenseX } from "@cosense-toolbox/textmate"
-
+ 
  const highlighter = await createHighlighter({
    themes: ["catppuccin-latte"],
    langs: [cosense, cosenseX],
  })
-
+ 
  const html = highlighter.codeToHtml("タイトル\n[* 強調]", {
    lang: "cosense",
    theme: "catppuccin-latte",
@@ -52,10 +52,10 @@ code:ts
 code:ts
  import grammar from "@cosense-toolbox/textmate/cosense.tmLanguage.json" with { type: "json" }
 
-Zed は TextMate 文法ではなく LSP の semantic tokens を利用します。Zed で色を付ける場合は <DocLink href="/lsp/" label="Language Server" /> のガイドを参照してください。
+Zed は TextMate 文法ではなく LSP の semantic tokens を利用します。Zed で色を付ける場合は [Language Server] のガイドを参照してください。
 
 <DocHeading level={2} id="caveats" title="対応範囲と注意点" />
 
 TextMate 文法は正規表現で記法を認識するため、パーサーと同じ挙動をすべて表現できるわけではありません。たとえば Shiki は空行を文法に渡さないため、コードブロックやタイトルの判定に差が出ることがあります。
 
-差分とスコープ名の一覧は <DocLink href="https://github.com/qaynam/cosense-toolbox/blob/main/packages/textmate/README.md" label="TextMate パッケージの README" external /> をご覧ください。
+差分とスコープ名の一覧は [TextMate パッケージの README https://github.com/qaynam/cosense-toolbox/blob/main/packages/textmate/README.md] をご覧ください。
