@@ -76,6 +76,18 @@ const URL = re`(?i:https?)://[^\s\[\]]+`
 /** What a bracket must end with somewhere, or it is plain text and not worth a rule. */
 const CLOSES = re`(?=.*\])`
 
+/**
+ * No inline code starts inside the bracket that opens here. Cosense reads code before
+ * brackets, so a bracket with a code span starting inside it is no notation (`[a `b` c]`).
+ * A span starts at a backtick with another one anywhere after it. One level of brackets is
+ * stepped over, as emphasis holds them (`[* a [b] `c`]`). The backtick is written `\x60`,
+ * which both regex engines read the same.
+ */
+const NO_CODE_INSIDE = re`(?!(?:\[[^\[\]]*\]|[^\]\x60])*\x60.*\x60)`
+
+/** The same for `[[x]]`, which closes on the first `]]`. */
+const NO_CODE_INSIDE_DOUBLE = re`(?!(?:(?!\]\])[^\x60])*\x60.*\x60)`
+
 /** A bracket closes on its own line or not at all. */
 const CLOSE_ON_LINE = re`\]|(?=$)`
 
@@ -104,6 +116,7 @@ type RepositoryKey =
   | "component-tag"
   | "expression"
   | "quote"
+  | "command"
   | "inline"
   | "inline-in-emphasis"
   | "nested-bracket"
@@ -266,7 +279,7 @@ const markerConditions = (emphasis: Emphasis): Regex =>
 const emphasisRules: ReadonlyArray<Pattern> = Arr.map(MARKER_SETS, (emphasis) =>
   region({
     scopes: emphasisScopes(emphasis),
-    begin: re`\[${markerConditions(emphasis)}(?=${MARKERS}+\s.*\])${MARKERS}+\s+`,
+    begin: re`\[${NO_CODE_INSIDE}${markerConditions(emphasis)}(?=${MARKERS}+\s.*\])${MARKERS}+\s+`,
     end: CLOSE_ON_LINE,
     patterns: [include("inline-in-emphasis"), include("nested-bracket")],
   }),
@@ -278,19 +291,22 @@ const UNTIL_DOUBLE_CLOSE = re`(?:(?!\]\]).)`
 /** `[[x]]`: an image when x is one, bold otherwise. Closes on the first `]]`, depth or not. */
 const strongRules: ReadonlyArray<Pattern> = [
   single(
-    re`\[\[(?:${IMAGE_URL}|${UNTIL_DOUBLE_CLOSE}*?${IMAGE_EXT}(?:[?#]${UNTIL_DOUBLE_CLOSE}*)?)\]\]`,
+    re`\[\[${NO_CODE_INSIDE_DOUBLE}(?:${IMAGE_URL}|${UNTIL_DOUBLE_CLOSE}*?${IMAGE_EXT}(?:[?#]${UNTIL_DOUBLE_CLOSE}*)?)\]\]`,
     { scopes: [SCOPES.image] },
   ),
-  single(re`\[\[(${UNTIL_DOUBLE_CLOSE}+)\]\]`, {
+  single(re`\[\[${NO_CODE_INSIDE_DOUBLE}(${UNTIL_DOUBLE_CLOSE}+)\]\]`, {
     scopes: [SCOPES.bold],
     captures: { 1: readAs(include("inline-in-emphasis")) },
   }),
 ]
 
-/** `[$ x^2]`. Its body is TeX, not notation, and may hold brackets of its own. */
+/**
+ * `[$ x^2]`. Its body is TeX, not notation, and may hold brackets of its own. Like any
+ * bracket, it is no formula when inline code starts inside it (`[$ a``]`).
+ */
 const formulaRule: Pattern = region({
   scopes: [SCOPES.formula],
-  begin: re`\[(?=\$)${CLOSES}`,
+  begin: re`\[${NO_CODE_INSIDE}(?=\$)${CLOSES}`,
   end: CLOSE_ON_LINE,
   patterns: [include("bare-bracket")],
 })
@@ -301,19 +317,31 @@ const formulaRule: Pattern = region({
  */
 const simpleTargetRules = (allowImagePath: boolean): ReadonlyArray<Pattern> =>
   Arr.getSomes([
-    Option.some(single(re`\[[^\[\]]+\.icon(?:\*\d+)?\]`, { scopes: [SCOPES.icon] })),
+    Option.some(
+      single(re`\[${NO_CODE_INSIDE}[^\[\]]+\.icon(?:\*\d+)?\]`, { scopes: [SCOPES.icon] }),
+    ),
     // Only URLs, and one of them an image: the image, linking to another URL if there is one.
     Option.some(
-      single(re`\[\s*(?:${URL}\s+)*(?:${IMAGE_URL})(?=[\s\]])(?:\s+${URL})*\s*\]`, {
-        scopes: [SCOPES.image],
-      }),
+      single(
+        re`\[${NO_CODE_INSIDE}\s*(?:${URL}\s+)*(?:${IMAGE_URL})(?=[\s\]])(?:\s+${URL})*\s*\]`,
+        {
+          scopes: [SCOPES.image],
+        },
+      ),
     ),
     // Any other URL makes a link, labelled or not.
-    Option.some(single(re`\[[^\[\]]*${URL}[^\[\]]*\]`, { scopes: [SCOPES.externalLink] })),
+    Option.some(
+      single(re`\[${NO_CODE_INSIDE}[^\[\]]*${URL}[^\[\]]*\]`, { scopes: [SCOPES.externalLink] }),
+    ),
     // `[a.png]`, but not inside emphasis: there Cosense links to a page of that name.
-    onlyIf(allowImagePath, single(re`\[[^\[\]]*${IMAGE_EXT}\]`, { scopes: [SCOPES.image] })),
-    Option.some(single(re`\[/[^\[\]]*\]`, { scopes: [SCOPES.projectLink] })),
-    Option.some(single(re`\[(?=[^\[\]]*[^\s\[\]])[^\[\]]+\]`, { scopes: [SCOPES.link] })),
+    onlyIf(
+      allowImagePath,
+      single(re`\[${NO_CODE_INSIDE}[^\[\]]*${IMAGE_EXT}\]`, { scopes: [SCOPES.image] }),
+    ),
+    Option.some(single(re`\[${NO_CODE_INSIDE}/[^\[\]]*\]`, { scopes: [SCOPES.projectLink] })),
+    Option.some(
+      single(re`\[${NO_CODE_INSIDE}(?=[^\[\]]*[^\s\[\]])[^\[\]]+\]`, { scopes: [SCOPES.link] }),
+    ),
   ])
 
 /** What follows the bracketed notation in both contexts, in the parser's order. */
@@ -413,6 +441,8 @@ const REPOSITORY: { readonly [K in Exclude<RepositoryKey, "head">]: Pattern } = 
       single(re`\b(?:true|false|null|undefined)\b`, { scopes: ["constant.language.cosense"] }),
     ],
   }),
+  // `$ ls` or `% ls` after the indent: a command, code as a whole. Nothing in it is notation.
+  command: single(re`^${INDENT}([$%] .+)$`, { captures: { 1: scoped(SCOPES.code) } }),
   quote: region({
     scopes: ["markup.quote.cosense"],
     begin: re`^${INDENT}(>[> ]*)`,
@@ -521,6 +551,7 @@ const linePatterns = (dialect: DialectInfo): ReadonlyArray<Pattern> =>
     Option.some(include("code-block")),
     Option.some(include("table-block")),
     onlyIf(dialect.components, include("component")),
+    Option.some(include("command")),
     Option.some(include("quote")),
     Option.some(include("inline")),
   ])

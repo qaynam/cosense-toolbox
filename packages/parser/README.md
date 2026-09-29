@@ -12,6 +12,18 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 > **beta**：公開 API はまだ変わりうる。安定するまではバージョンを固定して使うほうが安全。
 
+### 次のリリースでの変更
+
+- インラインコードが始まる括弧を、記法として読まないようにした。Cosense Web はコードを括弧より先に読むので、
+  ``[* 太字の `code` です]`` は装飾にならず、括弧はそのままの文字、`` `code` `` はインラインコードになる。
+  数式 (`[$ …]`) も同じで、` [$ a`] `` は数式にならない。閉じないバッククォートは括弧を妨げない。
+- コマンドの行を Cosense Web に合わせた。字下げの後が `$` か `%` と空白で、その後に何かある行だけがコマンドになる
+  (`monospace: true`)。コマンドの行は記法を読まず、`children` は書いたままの文字の `text` 1 つになる。
+  `$aa` のように空白が無い行と、引用の行 (`> $ x`) はコマンドにならない。
+  `toHtml` / `toHast` は、Cosense Web と同じくコマンドの行を記号・空白・コマンドの要素に分けて出す
+  (`<span class="prefix">$</span><span class="space"> </span><span class="command">ls</span>`)。
+  class 名は `classNames` の `commandPrefix` / `commandSpace` / `command` で変えられる。
+
 ### 0.1.0-beta.5 の変更
 
 - タイトル行の記法を読まないようにした。Cosense Web と同じく、`[x]` も `#tag` も書いたままの文字になる。

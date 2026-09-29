@@ -12,7 +12,11 @@ const CODE_HEADER_RE = /^code:(.+)$/
 const TABLE_HEADER_RE = /^table:(.+)$/
 /** 引用記号と、その直後の空白 1 つ (あれば本文から除く)。 */
 const QUOTE_RE = /^>\s?/
-const MONOSPACE_RE = /^[$%]/
+/**
+ * コマンドの行。字下げの後が `$` か `%` と空白で、その後に何かあるときだけ (Cosense Web と同じ)。
+ * 引用の行 (`> $ x`) はコマンドにならない。
+ */
+const COMMAND_RE = /^[$%] ./
 
 export interface CodeHeaderLine {
   readonly _tag: "codeHeader"
@@ -53,12 +57,11 @@ const tableHeader = (rest: string, indent: number): Option.Option<LineRole> => {
 
 const content = (rest: string, indent: number): LineRole => {
   const quoteMark = rest.match(QUOTE_RE)?.[0] ?? ""
-  const body = rest.slice(quoteMark.length)
   return {
     _tag: "content",
     indent,
     quote: quoteMark !== "",
-    monospace: MONOSPACE_RE.test(body),
+    monospace: quoteMark === "" && COMMAND_RE.test(rest),
     contentOffset: indent + quoteMark.length,
   }
 }

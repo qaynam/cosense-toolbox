@@ -320,6 +320,50 @@ describe("文字の装飾", () => {
   })
 })
 
+describe("インラインコードと括弧", () => {
+  it("インラインコードが始まる括弧はリンクにならない (Cosense Web はコードを先に読む)", () => {
+    expect(scopesOf("T\n[リンク `x` です]", "[リンク ")).toEqual([])
+  })
+
+  it("その括弧の中のインラインコードは、コードになる", () => {
+    expect(scopesOf("T\n[リンク `x` です]", "`x`")).toEqual([SCOPES.code])
+  })
+
+  it("インラインコードが始まる括弧は装飾にならない", () => {
+    expect(scopesOf("T\n[* 太字 `x` です]", "[* 太字 ")).toEqual([])
+  })
+
+  it("入れ子の括弧の後でインラインコードが始まっても、装飾にならない", () => {
+    expect(scopesOf("T\n[* a [b] `c` d]", "[* a ")).toEqual([])
+  })
+
+  it("インラインコードが始まる [[ ]] は太字にならない", () => {
+    expect(scopesOf("T\n[[a `b` c]]", "[[a ")).toEqual([])
+  })
+
+  it("インラインコードが始まる [$ ] は数式にならない", () => {
+    expect(scopesOf("T\n[$ a``]", "[$ a")).toEqual([])
+  })
+
+  it("閉じないバッククォートは括弧を妨げない", () => {
+    expect(scopesOf("T\n[a ` b]", "[a ` b]")).toEqual([SCOPES.link])
+  })
+})
+
+describe("コマンドの行", () => {
+  it("字下げの後が $ と空白の行は、全体がコードになり、中の記法は読まない", () => {
+    expect(scopesOf("T\n  $ npm install [x] #tag", "$ npm install [x] #tag")).toEqual([SCOPES.code])
+  })
+
+  it("% と空白で始まる行もコマンドになる", () => {
+    expect(scopesOf("T\n% ls", "% ls")).toEqual([SCOPES.code])
+  })
+
+  it("$ の後に空白が無ければコマンドにならない", () => {
+    expect(scopesOf("T\n$[x]", "[x]")).toEqual([SCOPES.link])
+  })
+})
+
 describe("[[ ]]", () => {
   it("[[x]] は太字になる", () => {
     expect(scopesOf("T\n[[強調]]", "[[強調]]")).toEqual([SCOPES.bold])

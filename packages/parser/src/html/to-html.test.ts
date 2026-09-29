@@ -99,6 +99,26 @@ describe("ブロック", () => {
     expect(line("> 引用")).toBe('<blockquote class="quote">引用</blockquote>')
   })
 
+  it("コマンドの行は、記号と空白とコマンドに分けて code に入れる (Cosense Web と同じ)", () => {
+    expect(line("$ ls -la")).toBe(
+      '<code class="monospace"><span class="prefix">$</span><span class="space"> </span><span class="command">ls -la</span></code>',
+    )
+  })
+
+  it("コマンドの中の記法は読まず、文字としてエスケープして出す", () => {
+    expect(line("% echo [x] <b>")).toBe(
+      '<code class="monospace"><span class="prefix">%</span><span class="space"> </span><span class="command">echo [x] &lt;b></span></code>',
+    )
+  })
+
+  it("コマンドの部品の class 名は classNames で変えられる", () => {
+    expect(
+      line("$ ls", { classNames: { commandPrefix: "p", commandSpace: "", command: "c" } }),
+    ).toBe(
+      '<code class="monospace"><span class="p">$</span><span> </span><span class="c">ls</span></code>',
+    )
+  })
+
   it("コードブロックは 1 行ずつの要素になる", () => {
     expect(toHtml(parse("t\ncode:a.ts\n <b>\n x"))).toContain(
       '<div class="line code-block">' +

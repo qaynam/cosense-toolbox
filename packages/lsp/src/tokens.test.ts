@@ -33,6 +33,12 @@ describe("computeTokens", () => {
     expect(typesOn("T\n[**** 四]", 1)).toContain("bold3")
   })
 
+  it("marks a command line as code, and reads no notation in it", () => {
+    expect(computeTokens("T\n  $ npm install [x] #tag", {}).filter((t) => t.line === 1)).toEqual([
+      { line: 1, char: 2, length: 22, type: "code" },
+    ])
+  })
+
   it("marks a code block whole, line by line", () => {
     const text = "T\ncode:foo.js\n const a = 1\n const b = 2"
     expect(typesOn(text, 2)).toEqual(["codeBlock"])
