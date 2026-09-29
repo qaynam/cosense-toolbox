@@ -300,10 +300,13 @@ const strongRules: ReadonlyArray<Pattern> = [
   }),
 ]
 
-/** `[$ x^2]`. Its body is TeX, not notation, and may hold brackets of its own. */
+/**
+ * `[$ x^2]`. Its body is TeX, not notation, and may hold brackets of its own. Like any
+ * bracket, it is no formula when inline code starts inside it (`[$ a``]`).
+ */
 const formulaRule: Pattern = region({
   scopes: [SCOPES.formula],
-  begin: re`\[(?=\$)${CLOSES}`,
+  begin: re`\[${NO_CODE_INSIDE}(?=\$)${CLOSES}`,
   end: CLOSE_ON_LINE,
   patterns: [include("bare-bracket")],
 })

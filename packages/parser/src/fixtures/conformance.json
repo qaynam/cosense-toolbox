@@ -697,12 +697,48 @@
       ]
     },
     {
-      "description": "数式の中身は TeX として読み、バッククォートがあっても数式のまま",
+      "description": "数式でも、中でインラインコードが始まれば記法にならない",
       "input": "[$ `x`]",
       "expected": [
         {
+          "type": "text",
+          "value": "[$ "
+        },
+        {
+          "type": "inlineCode",
+          "value": "x"
+        },
+        {
+          "type": "text",
+          "value": "]"
+        }
+      ]
+    },
+    {
+      "description": "中身の無いインラインコード (``) も括弧を記法にしない",
+      "input": "[$ a``]",
+      "expected": [
+        {
+          "type": "text",
+          "value": "[$ a"
+        },
+        {
+          "type": "inlineCode",
+          "value": ""
+        },
+        {
+          "type": "text",
+          "value": "]"
+        }
+      ]
+    },
+    {
+      "description": "数式の中の閉じないバッククォートは、数式の一部",
+      "input": "[$ a`]",
+      "expected": [
+        {
           "type": "formula",
-          "value": "`x`"
+          "value": "a`"
         }
       ]
     },

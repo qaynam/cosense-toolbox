@@ -341,6 +341,10 @@ describe("インラインコードと括弧", () => {
     expect(scopesOf("T\n[[a `b` c]]", "[[a ")).toEqual([])
   })
 
+  it("インラインコードが始まる [$ ] は数式にならない", () => {
+    expect(scopesOf("T\n[$ a``]", "[$ a")).toEqual([])
+  })
+
   it("閉じないバッククォートは括弧を妨げない", () => {
     expect(scopesOf("T\n[a ` b]", "[a ` b]")).toEqual([SCOPES.link])
   })

@@ -122,6 +122,11 @@ describe("行", () => {
     expect(blockAt(body("$aa"), 0, "line").monospace).toBe(false)
   })
 
+  it("$ や % だけの行は、コマンドにならない", () => {
+    expect(blockAt(body("$"), 0, "line").monospace).toBe(false)
+    expect(blockAt(body("%"), 0, "line").monospace).toBe(false)
+  })
+
   it("$ と空白の後に何も無ければ、コマンドにならない", () => {
     expect(blockAt(body("$ "), 0, "line").monospace).toBe(false)
   })
