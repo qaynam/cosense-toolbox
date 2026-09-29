@@ -21,6 +21,7 @@ import type {
   Hashtag,
   IconNode,
   InternalLink,
+  LineBlock,
   NodeOfType,
   ProjectLink,
 } from "../types"
@@ -74,8 +75,14 @@ export interface HtmlClassNames {
   readonly line?: string
   /** 引用行の `<blockquote>` */
   readonly quote?: string
-  /** 等幅行の `<code>` */
+  /** コマンドの行 (`$ ls`) の `<code>` */
   readonly monospace?: string
+  /** コマンドの行の先頭の `$` / `%` */
+  readonly commandPrefix?: string
+  /** コマンドの行の、記号の後の空白 */
+  readonly commandSpace?: string
+  /** コマンドの行の、空白の後のコマンド */
+  readonly command?: string
   /** コードブロックに属する行 (ヘッダ行と本体行の両方) */
   readonly codeBlock?: string
   /** ヘッダ行の `<code>` */
@@ -111,6 +118,9 @@ export const defaultClassNames: HtmlClassNames = {
   line: "line",
   quote: "quote",
   monospace: "monospace",
+  commandPrefix: "prefix",
+  commandSpace: "space",
+  command: "command",
   codeBlock: "code-block",
   codeStart: "code-start",
   codeFilename: "code-block-start",
@@ -386,6 +396,22 @@ const onlyChildOf = (children: readonly ElementContent[]): Option.Option<Element
     Option.flatMapNullable((meaningful) => meaningful[0]),
   )
 
+/**
+ * コマンドの行 (`$ ls`) を、Cosense Web と同じく記号・空白・コマンドの 3 つの要素に分ける。
+ * 記号とコマンドを別に選べるので、記号を薄くしたり、コマンドだけをコピーさせたりできる。
+ * パーサーはコマンドの行を書いたままの文字 1 つにするので、そうでなければ (拡張が置き換えたなど) 分けない。
+ */
+const commandParts = (node: LineBlock, cls: HtmlClassNames): Option.Option<ElementContent[]> =>
+  pipe(
+    Option.liftPredicate(node.children, (children) => children.length === 1),
+    Option.flatMap(([child]) => Option.fromNullable(child?.type === "text" ? child : undefined)),
+    Option.map(({ value }) => [
+      element("span", withClass(cls.commandPrefix), [text(value.slice(0, 1))]),
+      element("span", withClass(cls.commandSpace), [text(value.slice(1, 2))]),
+      element("span", withClass(cls.command), [text(value.slice(2))]),
+    ]),
+  )
+
 const elementNamed =
   (tagName: string) =>
   (node: ElementContent): Option.Option<Element> =>
@@ -550,8 +576,15 @@ export const defaultHastHandlers = {
 
   line: (node, ctx) => {
     const cls = ctx.options.classNames
-    const body = ctx.children(node)
-    const styled = node.monospace ? [element("code", withClass(cls.monospace), body)] : body
+    const styled = node.monospace
+      ? [
+          element(
+            "code",
+            withClass(cls.monospace),
+            Option.getOrElse(commandParts(node, cls), () => ctx.children(node)),
+          ),
+        ]
+      : ctx.children(node)
     const quoted = node.quote ? [element("blockquote", withClass(cls.quote), styled)] : styled
     // 空行も 1 行分の高さを保つ。Cosense では空行が段落の区切りとして意味を持つ。
     const inner = quoted.length === 0 ? [element("br", {})] : quoted

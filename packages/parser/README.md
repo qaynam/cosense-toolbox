@@ -20,6 +20,9 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 - コマンドの行を Cosense Web に合わせた。字下げの後が `$` か `%` と空白で、その後に何かある行だけがコマンドになる
   (`monospace: true`)。コマンドの行は記法を読まず、`children` は書いたままの文字の `text` 1 つになる。
   `$aa` のように空白が無い行と、引用の行 (`> $ x`) はコマンドにならない。
+  `toHtml` / `toHast` は、Cosense Web と同じくコマンドの行を記号・空白・コマンドの要素に分けて出す
+  (`<span class="prefix">$</span><span class="space"> </span><span class="command">ls</span>`)。
+  class 名は `classNames` の `commandPrefix` / `commandSpace` / `command` で変えられる。
 
 ### 0.1.0-beta.5 の変更
 
