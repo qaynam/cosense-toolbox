@@ -4,6 +4,7 @@ import { isImageUrl } from "../../core/image-url"
 import { shiftOrigin } from "../../core/position"
 import type { InlineNodeInit } from "../../types"
 import type { InternalConstruct } from "../internal-types"
+import { opensCodeSpan } from "./inline-code"
 
 /**
  * `[[...]]` — Cosense Web の strong。`]]` で閉じるときだけ成立する
@@ -15,7 +16,8 @@ export const strongBracketConstruct: InternalConstruct = (source, index, ctx) =>
   if (source[index] !== "[" || source[index + 1] !== "[") return Option.none()
 
   const end = source.indexOf("]]", index + 2)
-  if (end < 0) return Option.none()
+  // 中でインラインコードが始まるなら記法にならない (bracketConstruct と同じ)
+  if (end < 0 || opensCodeSpan(source, index + 1, end)) return Option.none()
 
   const inner = source.slice(index + 2, end)
   const length = end + 2 - index

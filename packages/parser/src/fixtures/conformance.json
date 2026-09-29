@@ -600,6 +600,113 @@
       ]
     },
     {
+      "description": "インラインコードが始まる括弧は記法にならない (Cosense Web はコードを先に読む)",
+      "input": "[* 太字の中の `code` です]",
+      "expected": [
+        {
+          "type": "text",
+          "value": "[* 太字の中の "
+        },
+        {
+          "type": "inlineCode",
+          "value": "code"
+        },
+        {
+          "type": "text",
+          "value": " です]"
+        }
+      ]
+    },
+    {
+      "description": "インラインコードが始まる括弧はリンクにもならない",
+      "input": "[リンク `x` です]",
+      "expected": [
+        {
+          "type": "text",
+          "value": "[リンク "
+        },
+        {
+          "type": "inlineCode",
+          "value": "x"
+        },
+        {
+          "type": "text",
+          "value": " です]"
+        }
+      ]
+    },
+    {
+      "description": "括弧の中身がインラインコードだけでも記法にならない",
+      "input": "[`code`]",
+      "expected": [
+        {
+          "type": "text",
+          "value": "["
+        },
+        {
+          "type": "inlineCode",
+          "value": "code"
+        },
+        {
+          "type": "text",
+          "value": "]"
+        }
+      ]
+    },
+    {
+      "description": "括弧の中から始まるインラインコードは、括弧の外まで続く",
+      "input": "[x `y] z`",
+      "expected": [
+        {
+          "type": "text",
+          "value": "[x "
+        },
+        {
+          "type": "inlineCode",
+          "value": "y] z"
+        }
+      ]
+    },
+    {
+      "description": "インラインコードが始まる [[ ]] も記法にならない",
+      "input": "[[a `b` c]]",
+      "expected": [
+        {
+          "type": "text",
+          "value": "[[a "
+        },
+        {
+          "type": "inlineCode",
+          "value": "b"
+        },
+        {
+          "type": "text",
+          "value": " c]]"
+        }
+      ]
+    },
+    {
+      "description": "閉じないバッククォートは括弧の記法を妨げない",
+      "input": "[a ` b]",
+      "expected": [
+        {
+          "type": "internalLink",
+          "label": "a ` b",
+          "target": "a ` b"
+        }
+      ]
+    },
+    {
+      "description": "数式の中身は TeX として読み、バッククォートがあっても数式のまま",
+      "input": "[$ `x`]",
+      "expected": [
+        {
+          "type": "formula",
+          "value": "`x`"
+        }
+      ]
+    },
+    {
       "description": "空の角括弧は素の文字",
       "input": "[]",
       "expected": [

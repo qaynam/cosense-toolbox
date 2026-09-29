@@ -430,7 +430,11 @@ const nodeTokens =
             componentLine(page, lineOf(line.position)),
             Option.match({
               onSome: (text) => leaf(componentTokens(lineOf(line.position), text)),
-              onNone: () => branch(Option.toArray(quoteToken(page, line, lineOf(line.position)))),
+              onNone: () =>
+                line.monospace
+                  ? // A command line (`$ ls`) is code as a whole: the parser reads nothing in it.
+                    leaf(line.children.map((child) => spanToken("code", shift(child.position))))
+                  : branch(Option.toArray(quoteToken(page, line, lineOf(line.position)))),
             }),
           ),
         // Descend: a decoration can wrap a link or an image (`[* [page]]`), and that child

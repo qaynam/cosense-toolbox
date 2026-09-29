@@ -2,8 +2,9 @@ import { Option, pipe } from "effect"
 
 import { shiftOrigin } from "../../core/position"
 import { findClosingBracket } from "../../core/scan"
-import { bracketRules, simpleTargetRules } from "../bracket-rules"
+import { bracketRules, formulaRule, simpleTargetRules } from "../bracket-rules"
 import type { BracketScanContext, InternalBracketRule, InternalConstruct } from "../internal-types"
+import { opensCodeSpan } from "./inline-code"
 
 /** ルールを順に試す。ジェネレータにしているのは最初に成立した時点で残りを評価しないため。 */
 function* attempts(rules: readonly InternalBracketRule[], inner: string, ctx: BracketScanContext) {
@@ -41,6 +42,11 @@ export const bracketConstruct: InternalConstruct = (source, index, ctx) => {
       const innerCtx: BracketScanContext = {
         ...ctx,
         innerOrigin: shiftOrigin(ctx.origin, index + 1),
+      }
+      // 中でインラインコードが始まる括弧は記法にならない (コードが先に読まれる)。
+      // 数式だけは中身を TeX の生の文字列として持つので、そのまま読む。
+      if (opensCodeSpan(source, index, end) && Option.isNone(formulaRule(inner, innerCtx))) {
+        return Option.none()
       }
       return pipe(
         parseInner(inner, innerCtx),

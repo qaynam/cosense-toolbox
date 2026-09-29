@@ -59,18 +59,28 @@ const titleBlock = (line: SourceLine): TitleBlock => ({
   position: wholeLine(line),
 })
 
-const lineBlock = (line: SourceLine, role: ContentLine, tokenize: TokenizeLine): LineBlock => ({
-  type: "line",
-  indent: role.indent,
-  quote: role.quote,
-  monospace: role.monospace,
-  children: tokenize(line.text.slice(role.contentOffset), {
+/**
+ * コマンドの行 (`$ ls`) は、Cosense Web と同じく記法を読まず、書いたままの文字 1 つにする。
+ * コピーして端末に貼るための行なので、`[x]` も `#tag` もそのまま残す。
+ */
+const lineBlock = (line: SourceLine, role: ContentLine, tokenize: TokenizeLine): LineBlock => {
+  const content = line.text.slice(role.contentOffset)
+  const origin = {
     line: line.index,
     column: role.contentOffset,
     offset: line.offset + role.contentOffset,
-  }),
-  position: wholeLine(line),
-})
+  }
+  return {
+    type: "line",
+    indent: role.indent,
+    quote: role.quote,
+    monospace: role.monospace,
+    children: role.monospace
+      ? [{ type: "text", value: content, position: spanAt(origin, 0, content.length) }]
+      : tokenize(content, origin),
+    position: wholeLine(line),
+  }
+}
 
 const codeLine = (line: SourceLine, headerIndent: number): CodeLine => ({
   type: "codeLine",

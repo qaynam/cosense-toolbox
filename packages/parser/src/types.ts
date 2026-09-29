@@ -226,7 +226,10 @@ export interface LineBlock extends NodeBase {
   readonly indent: number
   /** `>` で始まる引用行 */
   readonly quote: boolean
-  /** 行頭が `$` / `%` の等幅表示行 */
+  /**
+   * 字下げの後が `$` / `%` と空白のコマンドの行。等幅で表示し、中の記法は読まない
+   * (`children` は書いたままの文字の `text` 1 つ)
+   */
   readonly monospace: boolean
   /** 空行では空配列 */
   readonly children: readonly InlineNode[]
