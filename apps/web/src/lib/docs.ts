@@ -142,12 +142,6 @@ export const DOC_GROUPS: DocGroup[] = [
         description: "Astro 統合、記事、タグ、リンクグラフのサンプル。",
         keywords: "example blog Astro tutorial demo",
       },
-      {
-        href: "/release/",
-        label: "リリース手順",
-        description: "パッケージのバージョン更新と npm 公開。",
-        keywords: "release npm publish version CI tag",
-      },
     ],
   },
 ]
