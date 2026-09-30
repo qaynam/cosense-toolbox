@@ -19,6 +19,7 @@ const locationOf = (
   latitude: signed(ns, "S", lat),
   longitude: signed(ew, "W", lng),
   ...(zoom === undefined ? {} : { zoom: Number(zoom) }),
+  // Cosense Web はラベルの前後の空白を残すが、音声のラベルとそろえて除く。
   ...(label === undefined ? {} : { label: label.trim() }),
 })
 
