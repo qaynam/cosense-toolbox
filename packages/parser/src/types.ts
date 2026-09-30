@@ -100,6 +100,48 @@ export interface ImageNode extends NodeBase {
   readonly link?: string
 }
 
+/**
+ * `[url.mp4]` / `[[url.mp4]]` (large) / `[linkUrl videoUrl]` (link 付き)。
+ * 拡張子は mp4 / webm / mov。単独ではクエリの付いた URL は動画にならない (Cosense Web と同じ)。
+ */
+export interface VideoNode extends NodeBase {
+  readonly type: "video"
+  readonly src: string
+  /** `[[...]]` で囲まれた大きい表示 */
+  readonly large?: boolean
+  /** 動画をクリックしたときの遷移先 */
+  readonly link?: string
+}
+
+/** `[url.mp3]` / `[url.mp3 ラベル]` / `[ラベル url.mp3]`。拡張子は wav / mp3 / weba / ogg / aac。 */
+export interface AudioNode extends NodeBase {
+  readonly type: "audio"
+  readonly src: string
+  /** 再生ボタンに添える文字。URL の前後に書いた文字で、URL だけなら無い */
+  readonly label?: string
+}
+
+/**
+ * `[https://www.youtube.com/watch?v=…]` のような、外のサービスのプレーヤーを埋め込む URL。
+ *
+ * Cosense Web が埋め込むのは YouTube / Vimeo / Spotify / anchor.fm (Spotify for Podcasters) で、
+ * `provider` はそれぞれ `"youtube"` / `"vimeo"` / `"spotify"` / `"anchor"`。
+ * 拡張の `bracketRules` が独自の `provider` の埋め込みを返してもよい。
+ */
+export interface EmbedNode extends NodeBase {
+  readonly type: "embed"
+  readonly provider: string
+  /** 書かれた URL そのまま。プレーヤーの URL は `asEmbedSrc` で作る */
+  readonly url: string
+  /** サービスの中での ID。YouTube の動画 / 再生リスト、Vimeo の動画番号、Spotify の ID、エピソード */
+  readonly id: string
+  /**
+   * `id` が何の ID か。種類を持つサービスでだけ入る。
+   * YouTube は `"video"` / `"short"` / `"live"` / `"playlist"`、Spotify は `"track"` / `"album"` など URL に書かれた種類
+   */
+  readonly kind?: string
+}
+
 /** `[user.icon]` / `[user.icon*N]`。 */
 export interface IconNode extends NodeBase {
   readonly type: "icon"
@@ -148,6 +190,9 @@ export interface InlineNodeMap {
   hashtag: Hashtag
   inlineCode: InlineCode
   image: ImageNode
+  video: VideoNode
+  audio: AudioNode
+  embed: EmbedNode
   icon: IconNode
   formula: FormulaNode
   decoration: Decoration

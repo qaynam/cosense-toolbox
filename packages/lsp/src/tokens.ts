@@ -35,6 +35,8 @@ export const TOKEN_TYPES = [
   "strike",
   "underline",
   "image",
+  // A video, a sound, or a player of another service embedded in the page.
+  "media",
   "table",
   "bold2",
   "bold3",
@@ -113,6 +115,7 @@ const LSP_TYPE: Record<TokenType, (typeof LEGEND)[number]> = {
   externalLink: "string",
   icon: "function",
   image: "string",
+  media: "string",
   hashtag: "decorator",
   code: "string",
   codeBlock: "string",
@@ -152,6 +155,9 @@ const INLINE_TOKEN_TYPE: Partial<Record<AnyNodeType, BuiltinTokenType>> = {
   hashtag: "hashtag",
   inlineCode: "code",
   image: "image",
+  video: "media",
+  audio: "media",
+  embed: "media",
   icon: "icon",
   formula: "formula",
 }

@@ -36,6 +36,9 @@ const handlers: NodeHandlers<string> = {
   formula: (node) => node.value,
   icon: (node) => node.user,
   image: (node) => node.src,
+  video: (node) => node.src,
+  audio: (node) => node.label ?? node.src,
+  embed: (node) => node.url,
   decoration: (node, ctx) => ctx.children(node).join(""),
 }
 

@@ -41,6 +41,9 @@ export const childrenOf = (node: AnyNode): readonly AnyNode[] => {
     case "hashtag":
     case "inlineCode":
     case "image":
+    case "video":
+    case "audio":
+    case "embed":
     case "icon":
     case "formula":
       return []

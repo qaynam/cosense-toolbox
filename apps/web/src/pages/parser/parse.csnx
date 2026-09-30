@@ -18,6 +18,9 @@ toc:
   - id: image-src
     text: asImageSrc
     depth: 2
+  - id: embed-src
+    text: asEmbedSrc
+    depth: 2
   - id: line-endings
     text: 改行コード
     depth: 2
@@ -61,6 +64,16 @@ code:ts
 <DocHeading level={2} id="image-src" title="asImageSrc" />
 
 `asImageSrc(url)` は、画像として表示できる URL に変換します。Gyazo のページ URL は画像 URL に直し、画像でない URL は `null` を返します。AST 内の URL 自体は変更しません。
+
+<DocHeading level={2} id="embed-src" title="asEmbedSrc" />
+
+`asEmbedSrc(node)` は、`embed` ノードを `<iframe>` に入れるプレーヤーの URL にします。YouTube の開始位置 (`t`) と再生リスト (`list`) は引き継ぎます。Cosense Web が埋め込まないサービスの `provider` なら `null` を返します。
+
+code:ts
+ import { asEmbedSrc, parseLine } from "@cosense-toolbox/parser"
+ 
+ const [node] = parseLine("[https://youtu.be/abc?t=1m30s]").children
+ if (node?.type === "embed") asEmbedSrc(node) // → "https://www.youtube.com/embed/abc?start=90"
 
 <DocHeading level={2} id="line-endings" title="改行コード" />
 

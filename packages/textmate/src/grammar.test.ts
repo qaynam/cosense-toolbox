@@ -152,6 +152,49 @@ describe("URL と画像", () => {
   })
 })
 
+describe("動画・音声・埋め込み", () => {
+  const VIDEO = "https://example.invalid/a.mp4"
+  const SOUND = "https://example.invalid/a.mp3"
+  const YOUTUBE = "https://www.youtube.com/watch?v=abc"
+
+  it("[動画 URL] はメディアになる", () => {
+    expect(scopesOf(`T\n[${VIDEO}]`, `[${VIDEO}]`)).toEqual([SCOPES.media])
+  })
+
+  it("[[動画 URL]] もメディアになる", () => {
+    expect(scopesOf(`T\n[[${VIDEO}]]`, `[[${VIDEO}]]`)).toEqual([SCOPES.media])
+  })
+
+  it("クエリの付いた動画 URL は、単独ではメディアにならない", () => {
+    expect(scopesOf(`T\n[${VIDEO}?t=1]`, `[${VIDEO}?t=1]`)).toEqual([SCOPES.externalLink])
+  })
+
+  it("[URL 動画 URL] はリンク付きの動画としてメディアになる", () => {
+    expect(scopesOf(`T\n[${PAGE} ${VIDEO}]`, `[${PAGE} ${VIDEO}]`)).toEqual([SCOPES.media])
+  })
+
+  it("ラベルの付いた動画 URL は外部リンクになる", () => {
+    expect(scopesOf(`T\n[動画 ${VIDEO}]`, `[動画 ${VIDEO}]`)).toEqual([SCOPES.externalLink])
+  })
+
+  it("ラベルの付いた音声 URL はメディアになる", () => {
+    expect(scopesOf(`T\n[BGM ${SOUND}]`, `[BGM ${SOUND}]`)).toEqual([SCOPES.media])
+    expect(scopesOf(`T\n[${SOUND} BGM]`, `[${SOUND} BGM]`)).toEqual([SCOPES.media])
+  })
+
+  it("音声 URL と画像 URL が並ぶと画像になる", () => {
+    expect(scopesOf(`T\n[${SOUND} ${IMAGE}]`, `[${SOUND} ${IMAGE}]`)).toEqual([SCOPES.image])
+  })
+
+  it("[YouTube の URL] はメディアになる", () => {
+    expect(scopesOf(`T\n[${YOUTUBE}]`, `[${YOUTUBE}]`)).toEqual([SCOPES.media])
+  })
+
+  it("[[YouTube の URL]] はメディアにならず、太字の中の外部リンクになる", () => {
+    expect(scopesOf(`T\n[[${YOUTUBE}]]`, YOUTUBE)).toEqual([SCOPES.bold, SCOPES.externalLink])
+  })
+})
+
 describe("アイコン", () => {
   it("[user.icon] はアイコンになる", () => {
     expect(scopesOf("T\n[user.icon]", "[user.icon]")).toEqual([SCOPES.icon])

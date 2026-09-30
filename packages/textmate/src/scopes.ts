@@ -30,6 +30,7 @@ export const SCOPES = {
   strike: "markup.strikethrough.cosense",
   underline: "markup.underline.cosense",
   image: "markup.underline.link.image.cosense",
+  media: "markup.underline.link.media.cosense",
   table: "markup.other.table.cosense",
   // `[** x]` and louder: still bold to a theme, but a level apart for anyone who wants it.
   bold2: "markup.bold.level2.cosense",

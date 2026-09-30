@@ -18,6 +18,8 @@ const targetAt = (line: string, needle: string, parseOptions = {}) =>
 
 const IMAGE = "https://example.invalid/a.png"
 const PAGE = "https://example.invalid/about"
+const VIDEO = "https://example.invalid/a.mp4"
+const SOUND = "https://example.invalid/a.mp3"
 
 describe("linkAt", () => {
   it("finds the page a link names", () => {
@@ -86,6 +88,25 @@ describe("linkAt", () => {
 
   it("finds the image itself when it leads nowhere", () => {
     expect(targetAt(`[${IMAGE}]`, IMAGE)).toEqual({ kind: "url", url: IMAGE })
+  })
+
+  it("finds where a video with a link leads, not the video", () => {
+    expect(targetAt(`[${PAGE} ${VIDEO}]`, PAGE)).toEqual({ kind: "url", url: PAGE })
+  })
+
+  it("finds the video itself when it leads nowhere", () => {
+    expect(targetAt(`[${VIDEO}]`, VIDEO)).toEqual({ kind: "url", url: VIDEO })
+  })
+
+  it("finds the file of a sound, from its label too", () => {
+    expect(targetAt(`[BGM ${SOUND}]`, "BGM")).toEqual({ kind: "url", url: SOUND })
+  })
+
+  it("finds the URL an embedded player was written with", () => {
+    expect(targetAt("[https://vimeo.com/123]", "https")).toEqual({
+      kind: "url",
+      url: "https://vimeo.com/123",
+    })
   })
 
   it("finds a link inside a decoration", () => {

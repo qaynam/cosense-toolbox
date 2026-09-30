@@ -75,6 +75,9 @@ Tailwind v4 の CSS に `@plugin` で足す。
 | `cosense-table:{utility}`         | `.table`                       | `table:名前` の表                                           |
 | `cosense-td:{utility}`            | `.table td`                    | 表のセル                                                    |
 | `cosense-image:{utility}`         | `.image`                       | 画像                                                        |
+| `cosense-video:{utility}`         | `.video`                       | 動画                                                        |
+| `cosense-audio:{utility}`         | `.audio`                       | 音声                                                        |
+| `cosense-embed:{utility}`         | `.embed`                       | YouTube などの埋め込み                                      |
 | `cosense-icon:{utility}`          | `.icon`                        | `[ユーザー名.icon]`                                         |
 | `cosense-formula:{utility}`       | `.formula`                     | `[$ 数式]`                                                  |
 

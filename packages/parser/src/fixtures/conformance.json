@@ -869,6 +869,457 @@
       ]
     },
     {
+      "description": "角括弧つきの動画 URL は動画",
+      "input": "[https://x.com/a.mp4]",
+      "expected": [
+        {
+          "type": "video",
+          "src": "https://x.com/a.mp4"
+        }
+      ]
+    },
+    {
+      "description": "動画の拡張子は mp4 / webm / mov で、大文字でもよい",
+      "input": "[https://x.com/a.webm] [https://x.com/a.MOV]",
+      "expected": [
+        {
+          "type": "video",
+          "src": "https://x.com/a.webm"
+        },
+        {
+          "type": "text",
+          "value": " "
+        },
+        {
+          "type": "video",
+          "src": "https://x.com/a.MOV"
+        }
+      ]
+    },
+    {
+      "description": "クエリの付いた動画 URL は、単独では動画にならない",
+      "input": "[https://x.com/a.mp4?t=1]",
+      "expected": [
+        {
+          "type": "externalLink",
+          "label": "https://x.com/a.mp4?t=1",
+          "target": "https://x.com/a.mp4?t=1"
+        }
+      ]
+    },
+    {
+      "description": "裸の動画 URL は動画にならない",
+      "input": "https://x.com/a.mp4",
+      "expected": [
+        {
+          "type": "externalLink",
+          "label": "https://x.com/a.mp4",
+          "target": "https://x.com/a.mp4"
+        }
+      ]
+    },
+    {
+      "description": "[[動画 URL]] は大きい動画",
+      "input": "[[https://x.com/a.mp4]]",
+      "expected": [
+        {
+          "type": "video",
+          "src": "https://x.com/a.mp4",
+          "large": true
+        }
+      ]
+    },
+    {
+      "description": "リンク URL と動画 URL が並ぶとリンク付き動画",
+      "input": "[https://google.com https://x.com/a.mp4]",
+      "expected": [
+        {
+          "type": "video",
+          "src": "https://x.com/a.mp4",
+          "link": "https://google.com"
+        }
+      ]
+    },
+    {
+      "description": "動画 URL が先でもリンク付き動画",
+      "input": "[https://x.com/a.mp4 https://google.com]",
+      "expected": [
+        {
+          "type": "video",
+          "src": "https://x.com/a.mp4",
+          "link": "https://google.com"
+        }
+      ]
+    },
+    {
+      "description": "リンク付き動画の動画 URL にはクエリが付いてもよい",
+      "input": "[https://google.com https://x.com/a.mp4?t=1]",
+      "expected": [
+        {
+          "type": "video",
+          "src": "https://x.com/a.mp4?t=1",
+          "link": "https://google.com"
+        }
+      ]
+    },
+    {
+      "description": "画像 URL と動画 URL が並ぶと、画像をリンク先にした動画",
+      "input": "[https://x.com/a.png https://x.com/b.mp4]",
+      "expected": [
+        {
+          "type": "video",
+          "src": "https://x.com/b.mp4",
+          "link": "https://x.com/a.png"
+        }
+      ]
+    },
+    {
+      "description": "動画 URL が 2 つ並ぶと、後ろが動画で前がリンク先",
+      "input": "[https://x.com/a.mp4 https://x.com/b.mp4]",
+      "expected": [
+        {
+          "type": "video",
+          "src": "https://x.com/b.mp4",
+          "link": "https://x.com/a.mp4"
+        }
+      ]
+    },
+    {
+      "description": "文字のラベルと動画 URL はラベル付きの外部リンク",
+      "input": "[動画 https://x.com/a.mp4]",
+      "expected": [
+        {
+          "type": "externalLink",
+          "label": "動画",
+          "target": "https://x.com/a.mp4"
+        }
+      ]
+    },
+    {
+      "description": "角括弧つきの音声 URL は音声",
+      "input": "[https://x.com/a.mp3]",
+      "expected": [
+        {
+          "type": "audio",
+          "src": "https://x.com/a.mp3"
+        }
+      ]
+    },
+    {
+      "description": "音声の拡張子は wav / mp3 / weba / ogg / aac",
+      "input": "[https://x.com/a.WAV] [https://x.com/a.aac]",
+      "expected": [
+        {
+          "type": "audio",
+          "src": "https://x.com/a.WAV"
+        },
+        {
+          "type": "text",
+          "value": " "
+        },
+        {
+          "type": "audio",
+          "src": "https://x.com/a.aac"
+        }
+      ]
+    },
+    {
+      "description": "クエリの付いた音声 URL は音声にならない",
+      "input": "[https://x.com/a.mp3?x=1]",
+      "expected": [
+        {
+          "type": "externalLink",
+          "label": "https://x.com/a.mp3?x=1",
+          "target": "https://x.com/a.mp3?x=1"
+        }
+      ]
+    },
+    {
+      "description": "音声 URL の後ろの文字はラベルになる",
+      "input": "[https://x.com/a.mp3 今日の BGM]",
+      "expected": [
+        {
+          "type": "audio",
+          "src": "https://x.com/a.mp3",
+          "label": "今日の BGM"
+        }
+      ]
+    },
+    {
+      "description": "音声 URL の前の文字もラベルになる",
+      "input": "[今日の BGM https://x.com/a.mp3]",
+      "expected": [
+        {
+          "type": "audio",
+          "src": "https://x.com/a.mp3",
+          "label": "今日の BGM"
+        }
+      ]
+    },
+    {
+      "description": "音声 URL の後ろが空白だけならラベルは無い",
+      "input": "[https://x.com/a.mp3 ]",
+      "expected": [
+        {
+          "type": "audio",
+          "src": "https://x.com/a.mp3"
+        }
+      ]
+    },
+    {
+      "description": "音声 URL と画像 URL が並ぶと、音声をリンク先にした画像",
+      "input": "[https://x.com/a.mp3 https://x.com/b.png]",
+      "expected": [
+        {
+          "type": "image",
+          "src": "https://x.com/b.png",
+          "link": "https://x.com/a.mp3"
+        }
+      ]
+    },
+    {
+      "description": "画像 URL が先でも、音声をリンク先にした画像",
+      "input": "[https://x.com/b.png https://x.com/a.mp3]",
+      "expected": [
+        {
+          "type": "image",
+          "src": "https://x.com/b.png",
+          "link": "https://x.com/a.mp3"
+        }
+      ]
+    },
+    {
+      "description": "[[音声 URL]] は大きくならず、中のリンクが太字になる",
+      "input": "[[https://x.com/a.mp3]]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "https://x.com/a.mp3",
+          "markers": ["*"],
+          "bold": true,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "externalLink",
+              "label": "https://x.com/a.mp3",
+              "target": "https://x.com/a.mp3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "YouTube の動画は埋め込み",
+      "input": "[https://www.youtube.com/watch?v=dQw4w9WgXcQ]",
+      "expected": [
+        {
+          "type": "embed",
+          "provider": "youtube",
+          "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "id": "dQw4w9WgXcQ",
+          "kind": "video"
+        }
+      ]
+    },
+    {
+      "description": "YouTube の短縮 URL も埋め込み",
+      "input": "[https://youtu.be/dQw4w9WgXcQ?t=30]",
+      "expected": [
+        {
+          "type": "embed",
+          "provider": "youtube",
+          "url": "https://youtu.be/dQw4w9WgXcQ?t=30",
+          "id": "dQw4w9WgXcQ",
+          "kind": "video"
+        }
+      ]
+    },
+    {
+      "description": "YouTube Music の URL も埋め込み",
+      "input": "[https://music.youtube.com/watch?list=RD&v=dQw4w9WgXcQ]",
+      "expected": [
+        {
+          "type": "embed",
+          "provider": "youtube",
+          "url": "https://music.youtube.com/watch?list=RD&v=dQw4w9WgXcQ",
+          "id": "dQw4w9WgXcQ",
+          "kind": "video"
+        }
+      ]
+    },
+    {
+      "description": "YouTube のショートは埋め込み",
+      "input": "[https://www.youtube.com/shorts/abc_-1]",
+      "expected": [
+        {
+          "type": "embed",
+          "provider": "youtube",
+          "url": "https://www.youtube.com/shorts/abc_-1",
+          "id": "abc_-1",
+          "kind": "short"
+        }
+      ]
+    },
+    {
+      "description": "YouTube のライブは埋め込み",
+      "input": "[https://youtube.com/live/abc]",
+      "expected": [
+        {
+          "type": "embed",
+          "provider": "youtube",
+          "url": "https://youtube.com/live/abc",
+          "id": "abc",
+          "kind": "live"
+        }
+      ]
+    },
+    {
+      "description": "YouTube の再生リストは埋め込み",
+      "input": "[https://www.youtube.com/playlist?list=PLabc]",
+      "expected": [
+        {
+          "type": "embed",
+          "provider": "youtube",
+          "url": "https://www.youtube.com/playlist?list=PLabc",
+          "id": "PLabc",
+          "kind": "playlist"
+        }
+      ]
+    },
+    {
+      "description": "YouTube のドメインは大文字だと埋め込みにならない",
+      "input": "[https://www.YouTube.com/watch?v=abc]",
+      "expected": [
+        {
+          "type": "externalLink",
+          "label": "https://www.YouTube.com/watch?v=abc",
+          "target": "https://www.YouTube.com/watch?v=abc"
+        }
+      ]
+    },
+    {
+      "description": "Vimeo の動画は埋め込み",
+      "input": "[https://vimeo.com/123456]",
+      "expected": [
+        {
+          "type": "embed",
+          "provider": "vimeo",
+          "url": "https://vimeo.com/123456",
+          "id": "123456"
+        }
+      ]
+    },
+    {
+      "description": "限定公開の Vimeo の動画も埋め込み",
+      "input": "[https://vimeo.com/123456/abcdef]",
+      "expected": [
+        {
+          "type": "embed",
+          "provider": "vimeo",
+          "url": "https://vimeo.com/123456/abcdef",
+          "id": "123456"
+        }
+      ]
+    },
+    {
+      "description": "Spotify の曲は埋め込み",
+      "input": "[https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC]",
+      "expected": [
+        {
+          "type": "embed",
+          "provider": "spotify",
+          "url": "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC",
+          "id": "4uLU6hMCjMI75M1A2tKUQC",
+          "kind": "track"
+        }
+      ]
+    },
+    {
+      "description": "言語の付いた Spotify の URL も埋め込み",
+      "input": "[https://open.spotify.com/intl-ja/album/abc?si=x]",
+      "expected": [
+        {
+          "type": "embed",
+          "provider": "spotify",
+          "url": "https://open.spotify.com/intl-ja/album/abc?si=x",
+          "id": "abc",
+          "kind": "album"
+        }
+      ]
+    },
+    {
+      "description": "anchor.fm のエピソードは埋め込み",
+      "input": "[https://anchor.fm/show/episodes/ep-abc]",
+      "expected": [
+        {
+          "type": "embed",
+          "provider": "anchor",
+          "url": "https://anchor.fm/show/episodes/ep-abc",
+          "id": "ep-abc"
+        }
+      ]
+    },
+    {
+      "description": "Spotify for Podcasters のエピソードも anchor.fm と同じ埋め込み",
+      "input": "[https://podcasters.spotify.com/pod/show/show/episodes/ep-abc]",
+      "expected": [
+        {
+          "type": "embed",
+          "provider": "anchor",
+          "url": "https://podcasters.spotify.com/pod/show/show/episodes/ep-abc",
+          "id": "ep-abc"
+        }
+      ]
+    },
+    {
+      "description": "文字のラベルと YouTube の URL はラベル付きの外部リンク",
+      "input": "[動画 https://www.youtube.com/watch?v=dQw4w9WgXcQ]",
+      "expected": [
+        {
+          "type": "externalLink",
+          "label": "動画",
+          "target": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        }
+      ]
+    },
+    {
+      "description": "[[YouTube の URL]] は埋め込みにならず、中のリンクが太字になる",
+      "input": "[[https://www.youtube.com/watch?v=dQw4w9WgXcQ]]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "markers": ["*"],
+          "bold": true,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "externalLink",
+              "label": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+              "target": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "裸の YouTube の URL は埋め込みにならない",
+      "input": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "expected": [
+        {
+          "type": "externalLink",
+          "label": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "target": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        }
+      ]
+    },
+    {
       "description": "記法が連続しても間のテキストが失われない",
       "input": "[a]b`c`d#e",
       "expected": [
@@ -1076,6 +1527,16 @@
         {
           "type": "text",
           "value": "`code` [$ x] [a.icon] [https://a.test/b.png]"
+        }
+      ]
+    },
+    {
+      "description": "セルの中の動画・音声・埋め込みは書いたままの文字",
+      "input": "[https://x.com/a.mp4] [https://x.com/a.mp3] [https://www.youtube.com/watch?v=dQw4w9WgXcQ]",
+      "expected": [
+        {
+          "type": "text",
+          "value": "[https://x.com/a.mp4] [https://x.com/a.mp3] [https://www.youtube.com/watch?v=dQw4w9WgXcQ]"
         }
       ]
     }

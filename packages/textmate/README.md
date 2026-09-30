@@ -37,27 +37,28 @@ VS Code 拡張の `contributes.grammars` などには、このファイルを指
 どのテーマでも色が付くように、スコープはテーマが既に塗っている名前から始めている
 (`markup.bold`、`string.other.link`、`markup.raw` など)。一覧は `SCOPES` で取れる。
 
-| 記法                             | スコープ                                                                              |
-| -------------------------------- | ------------------------------------------------------------------------------------- |
-| タイトル (1 行目)                | `markup.heading.cosense`                                                              |
-| `[ページ]`                       | `string.other.link.internal.cosense`                                                  |
-| `[/project/ページ]`              | `string.other.link.project.cosense`                                                   |
-| URL、`[ラベル URL]`              | `markup.underline.link.external.cosense`                                              |
-| 画像                             | `markup.underline.link.image.cosense`                                                 |
-| `[user.icon]`                    | `string.other.link.icon.cosense`                                                      |
-| `#tag`                           | `entity.name.tag.hashtag.cosense`                                                     |
-| `` `code` ``                     | `markup.inline.raw.cosense`                                                           |
-| `code:` ブロック                 | `markup.raw.block.cosense`                                                            |
-| `table:` ブロック                | `markup.other.table.cosense`                                                          |
-| `[$ 数式]`                       | `constant.other.formula.cosense`                                                      |
-| `>` 引用                         | 行全体に `markup.quote.cosense`、記号に `punctuation.definition.quote.begin.cosense`  |
-| `[* ]` / `[** ]` / `[*** ]` 以上 | `markup.bold.cosense` / `markup.bold.level2.cosense` / `markup.bold.level3.cosense`   |
-| `[/ ]` `[- ]` `[_ ]`             | `markup.italic.cosense` / `markup.strikethrough.cosense` / `markup.underline.cosense` |
-| 先頭の `---` で囲んだ YAML       | `comment.block.frontmatter.cosense`                                                   |
-| コンポーネントのタグ名 (`.csnx`) | `support.class.component.cosense`                                                     |
-| 属性名                           | `entity.other.attribute-name.cosense`                                                 |
-| 引用符で囲んだ属性値             | `string.quoted.attribute-value.cosense`                                               |
-| `{ }` で囲んだ属性値             | `meta.embedded.expression.cosense` (中の数値は `constant.numeric.cosense`)            |
+| 記法                               | スコープ                                                                              |
+| ---------------------------------- | ------------------------------------------------------------------------------------- |
+| タイトル (1 行目)                  | `markup.heading.cosense`                                                              |
+| `[ページ]`                         | `string.other.link.internal.cosense`                                                  |
+| `[/project/ページ]`                | `string.other.link.project.cosense`                                                   |
+| URL、`[ラベル URL]`                | `markup.underline.link.external.cosense`                                              |
+| 画像                               | `markup.underline.link.image.cosense`                                                 |
+| 動画・音声・YouTube などの埋め込み | `markup.underline.link.media.cosense`                                                 |
+| `[user.icon]`                      | `string.other.link.icon.cosense`                                                      |
+| `#tag`                             | `entity.name.tag.hashtag.cosense`                                                     |
+| `` `code` ``                       | `markup.inline.raw.cosense`                                                           |
+| `code:` ブロック                   | `markup.raw.block.cosense`                                                            |
+| `table:` ブロック                  | `markup.other.table.cosense`                                                          |
+| `[$ 数式]`                         | `constant.other.formula.cosense`                                                      |
+| `>` 引用                           | 行全体に `markup.quote.cosense`、記号に `punctuation.definition.quote.begin.cosense`  |
+| `[* ]` / `[** ]` / `[*** ]` 以上   | `markup.bold.cosense` / `markup.bold.level2.cosense` / `markup.bold.level3.cosense`   |
+| `[/ ]` `[- ]` `[_ ]`               | `markup.italic.cosense` / `markup.strikethrough.cosense` / `markup.underline.cosense` |
+| 先頭の `---` で囲んだ YAML         | `comment.block.frontmatter.cosense`                                                   |
+| コンポーネントのタグ名 (`.csnx`)   | `support.class.component.cosense`                                                     |
+| 属性名                             | `entity.other.attribute-name.cosense`                                                 |
+| 引用符で囲んだ属性値               | `string.quoted.attribute-value.cosense`                                               |
+| `{ }` で囲んだ属性値               | `meta.embedded.expression.cosense` (中の数値は `constant.numeric.cosense`)            |
 
 `[-* x]` のように記号を重ねると、それぞれのスコープが全部付く。
 

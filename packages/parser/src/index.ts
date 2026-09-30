@@ -6,6 +6,7 @@
  * それらが入らないようにするため。
  */
 export { asImageSrc, isImageUrl } from "./core/image-url"
+export { asEmbedSrc } from "./core/media-url"
 export { tokenizeInline } from "./inline/tokenize"
 export type { TokenizeInlineOptions } from "./inline/tokenize"
 export type { Extension } from "./inline/types"
@@ -16,12 +17,14 @@ export type {
   AnyNode,
   AnyNodeMap,
   AnyNodeType,
+  AudioNode,
   BlockNode,
   BlockNodeMap,
   BlockNodeType,
   CodeBlock,
   CodeLine,
   Decoration,
+  EmbedNode,
   ExternalLink,
   FormulaNode,
   Hashtag,
@@ -47,5 +50,6 @@ export type {
   TextNode,
   TitleBlock,
   TopLevelBlock,
+  VideoNode,
   WithoutPosition,
 } from "./types"

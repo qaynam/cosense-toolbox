@@ -106,8 +106,11 @@ const targetsOf =
           leaf([pageOf(rangeOf(position), Option.some(project), title)]),
         icon: ({ user, position }) => leaf([iconPageOf(rangeOf(position), user)]),
         externalLink: ({ target, position }) => leaf([urlOf(rangeOf(position), target)]),
-        // Where the image leads, when it leads anywhere, is what following it opens.
+        // Where an image or a video leads, when it leads anywhere, is what following it opens.
         image: ({ src, link, position }) => leaf([urlOf(rangeOf(position), link ?? src)]),
+        video: ({ src, link, position }) => leaf([urlOf(rangeOf(position), link ?? src)]),
+        audio: ({ src, position }) => leaf([urlOf(rangeOf(position), src)]),
+        embed: ({ url, position }) => leaf([urlOf(rangeOf(position), url)]),
         // A decoration can wrap links (`[! [page]です]`), so it is read into.
         decoration: ({ value, position }) =>
           pipe(
