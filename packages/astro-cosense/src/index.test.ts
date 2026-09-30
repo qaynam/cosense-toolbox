@@ -22,9 +22,9 @@ const project = async (files: Record<string, string>): Promise<URL> => {
 const fakeLogger = () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() })
 
 /**
- * 開発サーバーを起こしたときの lint を走らせ、終わるまで待つ。
- * 開発中の lint はサーバーを待たせないよう裏で走るので、同じサイトをビルドの lint で
- * 調べ終えるのを待ってから、開発中のほうのログを見る。
+ * 開発サーバーを起こしたときの lint を走らせる。
+ * 開発中の lint はサーバーを待たせないよう裏で走り、終わりを待つ手段が無い。そのため、
+ * 同じサイトをビルドの lint で調べ終えたことを、開発中のほうも終えた目安にする。
  */
 const lintOnDevServer = async (root: URL, logger: ReturnType<typeof fakeLogger>) => {
   const integration = cosense({ lint: { unresolvedLinks: "error" } })

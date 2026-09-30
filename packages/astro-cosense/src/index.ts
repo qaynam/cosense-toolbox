@@ -292,7 +292,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
       "astro:server:setup": ({ server, logger }) => {
         if (lint === undefined || astroConfig === undefined) return
         const config = astroConfig
-        // 止めずに知らせるだけにする。リンク切れが無ければ何も出さない。
+        // ビルドと違って止めず、見つけたものを知らせるだけにする。
         const check = () => Effect.runFork(reportLint(config, lint, compileOptions, logger))
         const onChange = (file: string) => {
           if (isCosenseFile(file)) check()
