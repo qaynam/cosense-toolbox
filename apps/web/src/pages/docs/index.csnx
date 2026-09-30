@@ -48,7 +48,6 @@ Cosense の記法を解析して、自分のアプリで使いたい場合は [C
 
 <DocHeading level={3} id="examples" title="実例と開発" />
 [Astro ブログの実例] では、記事・タグ・リンクグラフを組み合わせています。
-[リリース手順] では、パッケージのバージョン更新と npm 公開の流れを説明します。
 
 <DocHeading level={2} id="status" title="公開状況とライセンス" />
 
