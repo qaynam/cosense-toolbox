@@ -6,6 +6,7 @@
  * それらが入らないようにするため。
  */
 export { asImageSrc, isImageUrl } from "./core/image-url"
+export { asMapUrl } from "./core/map-url"
 export { asEmbedSrc } from "./core/media-url"
 export { tokenizeInline } from "./inline/tokenize"
 export type { TokenizeInlineOptions } from "./inline/tokenize"
@@ -37,6 +38,7 @@ export type {
   InlineNodeType,
   InternalLink,
   LineBlock,
+  LocationNode,
   NodeBase,
   NodeOfType,
   Page,

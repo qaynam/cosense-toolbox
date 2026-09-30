@@ -83,6 +83,9 @@ const LINKED_VIDEO_URL = re`(?i:https?)://[^\s\[\]]*${VIDEO_EXT}(?:\?[^\s\[\]]+)
 
 const AUDIO_URL = re`(?i:https?)://[^\s\[\]]*\.(?i:wav|mp3|weba|ogg|aac)`
 
+/** A map's coordinates (`N35.68,E139.76,Z14`): capital letters only, and no spaces. */
+const COORDINATES = re`[NS]\d+(?:\.\d+)?,[EW]\d+(?:\.\d+)?(?:,Z\d+)?`
+
 /**
  * A URL Cosense embeds a player for, as the parser reads them: YouTube (case-sensitive, as
  * in Cosense Web), Vimeo, Spotify, and anchor.fm or its successor.
@@ -348,7 +351,15 @@ const simpleTargetRules = (allowImagePath: boolean): ReadonlyArray<Pattern> =>
     Option.some(
       single(re`\[${NO_CODE_INSIDE}[^\[\]]+\.icon(?:\*\d+)?\]`, { scopes: [SCOPES.icon] }),
     ),
-    // A player, a video or a sound, alone or linked: tried before images, as the parser does.
+    // A player, a map, a video or a sound, alone or linked: tried before images, as the parser does.
+    Option.some(
+      single(
+        re`\[${NO_CODE_INSIDE}(?:${COORDINATES}(?:\s+[^\[\]]+)?|[^\[\]]+?\s+${COORDINATES})\]`,
+        {
+          scopes: [SCOPES.media],
+        },
+      ),
+    ),
     Option.some(
       single(re`\[${NO_CODE_INSIDE}(?:${EMBED_URL}|${VIDEO_URL}|${AUDIO_URL})\]`, {
         scopes: [SCOPES.media],

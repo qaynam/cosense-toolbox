@@ -256,6 +256,20 @@ describe("動画・音声・埋め込み", () => {
   })
 })
 
+describe("地図", () => {
+  it("地図は Google マップへのリンクになり、ラベルが無ければ座標を出す", () => {
+    expect(line("[N35.6812,E139.7671]")).toBe(
+      '<a class="link link-location" href="https://www.google.com/maps/place/35.6812,139.7671">35.6812,139.7671</a>',
+    )
+  })
+
+  it("ラベルのある地図はラベルを出す", () => {
+    expect(line("[東京駅 N35.6812,E139.7671]")).toBe(
+      '<a class="link link-location" href="https://www.google.com/maps/search/%E6%9D%B1%E4%BA%AC%E9%A7%85/@35.6812,139.7671,15z">東京駅</a>',
+    )
+  })
+})
+
 describe("エスケープと URL の安全性", () => {
   it("テキストの HTML はエスケープされる", () => {
     // `>` だけではタグにならないので、`<` と `&` をエスケープすれば足りる。

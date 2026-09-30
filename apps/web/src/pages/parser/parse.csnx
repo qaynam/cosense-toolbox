@@ -21,6 +21,9 @@ toc:
   - id: embed-src
     text: asEmbedSrc
     depth: 2
+  - id: map-url
+    text: asMapUrl
+    depth: 2
   - id: line-endings
     text: 改行コード
     depth: 2
@@ -74,6 +77,10 @@ code:ts
  
  const [node] = parseLine("[https://youtu.be/abc?t=1m30s]").children
  if (node?.type === "embed") asEmbedSrc(node) // → "https://www.youtube.com/embed/abc?start=90"
+
+<DocHeading level={2} id="map-url" title="asMapUrl" />
+
+`asMapUrl(node)` は、`location` ノードを Google マップの URL にします。Cosense Web の地図のリンク先と同じ形で、ラベルがあればその名前で検索し、無ければ座標の場所を開きます。
 
 <DocHeading level={2} id="line-endings" title="改行コード" />
 

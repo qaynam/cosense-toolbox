@@ -11,6 +11,7 @@ import { formulaRule } from "./formula"
 import { iconRule } from "./icon"
 import { imageExtensionRule } from "./image-extension"
 import { internalLinkRule } from "./internal-link"
+import { locationRule } from "./location"
 import { projectLinkRule } from "./project-link"
 import { urlRule } from "./url"
 import { videoRule } from "./video"
@@ -21,12 +22,13 @@ export const bracketRules: readonly InternalBracketRule[] = [formulaRule, decora
 /**
  * 「単純ターゲット」のルール。中身に `[` / `]` を含むときは試さない (Cosense Web に合わせている)。
  * これにより `[[そうね] ですね]` の外側は記法にならず、先頭の `[` が素の文字になる。
- * 埋め込み・動画・音声は、URL を含む中身を必ず受け取る urlRule より先に試す。
+ * 埋め込み・地図・動画・音声は、URL を含む中身を必ず受け取る urlRule より先に試す。
  * 末尾の internalLinkRule は常に成立する catch-all。
  */
 export const simpleTargetRules: readonly InternalBracketRule[] = [
   iconRule,
   embedRule,
+  locationRule,
   videoRule,
   audioRule,
   urlRule,
@@ -36,4 +38,4 @@ export const simpleTargetRules: readonly InternalBracketRule[] = [
 ]
 
 export { audioRule, decorationRule, embedRule, formulaRule, iconRule, imageExtensionRule }
-export { internalLinkRule, projectLinkRule, urlRule, videoRule }
+export { internalLinkRule, locationRule, projectLinkRule, urlRule, videoRule }

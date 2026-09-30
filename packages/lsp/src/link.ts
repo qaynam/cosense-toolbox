@@ -1,5 +1,5 @@
 import type { AnyNode, ParseOptions, Position as NodePosition } from "@cosense-toolbox/parser"
-import { normalizeLineEndings, parse } from "@cosense-toolbox/parser"
+import { asMapUrl, normalizeLineEndings, parse } from "@cosense-toolbox/parser"
 import { Array as Arr, Match, Option, pipe } from "effect"
 import type { Position, Range } from "vscode-languageserver/node"
 
@@ -111,6 +111,7 @@ const targetsOf =
         video: ({ src, link, position }) => leaf([urlOf(rangeOf(position), link ?? src)]),
         audio: ({ src, position }) => leaf([urlOf(rangeOf(position), src)]),
         embed: ({ url, position }) => leaf([urlOf(rangeOf(position), url)]),
+        location: (node) => leaf([urlOf(rangeOf(node.position), asMapUrl(node))]),
         // A decoration can wrap links (`[! [page]です]`), so it is read into.
         decoration: ({ value, position }) =>
           pipe(

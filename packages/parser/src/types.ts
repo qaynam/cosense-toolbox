@@ -142,6 +142,22 @@ export interface EmbedNode extends NodeBase {
   readonly kind?: string
 }
 
+/**
+ * `[N35.68,E139.76]` / `[N35.68,E139.76,Z14]` と、その前後に文字を添えた `[東京駅 N35.68,E139.76]`。
+ * Cosense Web はここに地図を出す。
+ */
+export interface LocationNode extends NodeBase {
+  readonly type: "location"
+  /** 北緯が正、南緯 (`S`) が負 */
+  readonly latitude: number
+  /** 東経が正、西経 (`W`) が負 */
+  readonly longitude: number
+  /** `,Z14` のズーム。書かれていなければ無い */
+  readonly zoom?: number
+  /** 座標の前後に書いた文字 */
+  readonly label?: string
+}
+
 /** `[user.icon]` / `[user.icon*N]`。 */
 export interface IconNode extends NodeBase {
   readonly type: "icon"
@@ -193,6 +209,7 @@ export interface InlineNodeMap {
   video: VideoNode
   audio: AudioNode
   embed: EmbedNode
+  location: LocationNode
   icon: IconNode
   formula: FormulaNode
   decoration: Decoration

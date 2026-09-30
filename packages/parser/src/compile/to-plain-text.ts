@@ -39,6 +39,7 @@ const handlers: NodeHandlers<string> = {
   video: (node) => node.src,
   audio: (node) => node.label ?? node.src,
   embed: (node) => node.url,
+  location: (node) => node.label ?? `${node.latitude},${node.longitude}`,
   decoration: (node, ctx) => ctx.children(node).join(""),
 }
 

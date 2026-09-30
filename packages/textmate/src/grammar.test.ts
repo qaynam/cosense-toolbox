@@ -195,6 +195,25 @@ describe("動画・音声・埋め込み", () => {
   })
 })
 
+describe("地図", () => {
+  it("[座標] はメディアになる", () => {
+    expect(scopesOf("T\n[N35.68,E139.76,Z14]", "[N35.68,E139.76,Z14]")).toEqual([SCOPES.media])
+  })
+
+  it("前後にラベルを付けた座標もメディアになる", () => {
+    expect(scopesOf("T\n[東京駅 N35.68,E139.76]", "[東京駅 N35.68,E139.76]")).toEqual([
+      SCOPES.media,
+    ])
+    expect(scopesOf("T\n[N35.68,E139.76 東京駅]", "[N35.68,E139.76 東京駅]")).toEqual([
+      SCOPES.media,
+    ])
+  })
+
+  it("小文字の座標は地図にならず、ページへのリンクになる", () => {
+    expect(scopesOf("T\n[n35,e139]", "[n35,e139]")).toEqual([SCOPES.link])
+  })
+})
+
 describe("アイコン", () => {
   it("[user.icon] はアイコンになる", () => {
     expect(scopesOf("T\n[user.icon]", "[user.icon]")).toEqual([SCOPES.icon])

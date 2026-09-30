@@ -10,7 +10,7 @@ toc:
     text: インラインノード
     depth: 2
   - id: media
-    text: 動画・音声・埋め込み
+    text: 動画・音声・埋め込み・地図
     depth: 2
   - id: decoration
     text: 装飾ノード
@@ -42,11 +42,11 @@ code:text
 タイトル行、通常行、テーブルセルの中にはインラインノードが入ります。各ノードは `type` で判別します。
 ただしタイトル行は Cosense Web と同じく記法を読まないので、`TitleBlock` の `children` は書いたままの文字の `text` 1 つです (タイトルが空なら無し)。
 
-`text` は通常の文字列、`internalLink` / `externalLink` / `projectLink` は各種リンク、`hashtag` はタグです。`inlineCode`、`image`、`video`、`audio`、`embed`、`icon`、`formula`、`decoration` もそれぞれ別のノードになります。
+`text` は通常の文字列、`internalLink` / `externalLink` / `projectLink` は各種リンク、`hashtag` はタグです。`inlineCode`、`image`、`video`、`audio`、`embed`、`location`、`icon`、`formula`、`decoration` もそれぞれ別のノードになります。
 
 テーブルセルは既定ではリンク記法だけを解析し、それ以外は文字として残します。セル内で装飾などを読みたい場合は `tableCellNotation()` を使います。
 
-<DocHeading level={2} id="media" title="動画・音声・埋め込み" />
+<DocHeading level={2} id="media" title="動画・音声・埋め込み・地図" />
 
 Cosense Web がプレーヤーとして表示する URL は、外部リンクではなく専用のノードになります。どれも角括弧で囲んだときだけで、裸の URL は外部リンクのままです。
 
@@ -54,7 +54,9 @@ Cosense Web がプレーヤーとして表示する URL は、外部リンクで
  `audio` は `[https://…/a.mp3]` です。拡張子は wav、mp3、weba、ogg、aac で、URL の前後に書いた文字が `label` になります。
  `embed` は YouTube、Vimeo、Spotify、anchor.fm の URL です。`provider` と、サービスの中での `id` を持ちます。YouTube と Spotify は `id` が何を指すかを `kind` に持ちます。
 
-どのノードも URL は書かれたままです。埋め込みを `<iframe>` に入れる URL は <DocLink href="/parser/parse/#embed-src" label="asEmbedSrc" /> で作ります。
+ `location` は `[N35.68,E139.76]` の地図です。`,Z14` でズームを付けられ、座標の前後に書いた文字が `label` になります。緯度と経度は数値で、南緯と西経は負の数です。
+
+どのノードも URL は書かれたままです。埋め込みを `<iframe>` に入れる URL は <DocLink href="/parser/parse/#embed-src" label="asEmbedSrc" /> で、地図の Google マップの URL は <DocLink href="/parser/parse/#map-url" label="asMapUrl" /> で作ります。
 
 <DocHeading level={2} id="decoration" title="装飾ノード" />
 

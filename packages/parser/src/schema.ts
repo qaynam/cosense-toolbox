@@ -27,6 +27,7 @@ import type {
   InlineNode,
   InternalLink,
   LineBlock,
+  LocationNode,
   Page,
   Point,
   Position,
@@ -128,6 +129,15 @@ export const EmbedNodeSchema: Schema.Schema<EmbedNode> = Schema.Struct({
   ...withPosition,
 })
 
+export const LocationNodeSchema: Schema.Schema<LocationNode> = Schema.Struct({
+  type: Schema.Literal("location"),
+  latitude: Schema.Number,
+  longitude: Schema.Number,
+  zoom: Schema.optionalWith(Schema.Number, { exact: true }),
+  label: Schema.optionalWith(Schema.String, { exact: true }),
+  ...withPosition,
+})
+
 export const IconNodeSchema: Schema.Schema<IconNode> = Schema.Struct({
   type: Schema.Literal("icon"),
   user: Schema.String,
@@ -166,6 +176,7 @@ export const InlineNodeSchema: Schema.Schema<InlineNode> = Schema.Union(
   VideoNodeSchema,
   AudioNodeSchema,
   EmbedNodeSchema,
+  LocationNodeSchema,
   IconNodeSchema,
   FormulaNodeSchema,
   DecorationSchema,

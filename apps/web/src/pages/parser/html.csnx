@@ -96,7 +96,7 @@ code:ts
 
 `classNames` は描画要素の既定 class 名を差し替えます。指定したキーだけが置き換わり、既定名に追加したい場合は `"line my-class"` のように両方を書きます。空文字にすると class 属性を出しません。
 
-動画は `<video>`、音声は `<audio>`、埋め込みはサービスのプレーヤーの `<iframe>` になり、class 名は `video`、`audio`、`embed` です。プレーヤーの URL が分からない埋め込み (拡張が足したサービス) は、URL への外部リンクとして出します。
+動画は `<video>`、音声は `<audio>`、埋め込みはサービスのプレーヤーの `<iframe>` になり、class 名は `video`、`audio`、`embed` です。プレーヤーの URL が分からない埋め込み (拡張が足したサービス) は、URL への外部リンクとして出します。地図は Google マップへのリンク (class 名は `link link-location`) です。地図そのものを描くには地図のサービスの鍵が要るため、既定ではリンクにしています。
 
 `showPads: true` は、インデントの余白と中点を `.indent-mark` / `.pad` / `.dot` 要素として出力します。既定では `data-indent` 属性だけを付け、スタイル側が中点を描きます。
 

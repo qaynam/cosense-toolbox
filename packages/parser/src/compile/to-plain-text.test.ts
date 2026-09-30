@@ -28,6 +28,12 @@ describe("toPlainText", () => {
     )
   })
 
+  it("地図はラベルがあればラベル、無ければ座標にする", () => {
+    expect(toPlainText(parseLine("[東京駅 N35.68,E139.76] [S33.86,W151.2]"))).toBe(
+      "東京駅 -33.86,-151.2",
+    )
+  })
+
   it("引用とインデントを保つ", () => {
     expect(toPlainText(parseLine("  > 引用文"))).toBe("    > 引用文")
   })

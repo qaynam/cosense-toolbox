@@ -140,6 +140,7 @@ src/
     scan.ts             括弧の対応探索・タグ境界判定・行頭空白
     image-url.ts        isImageUrl（構造の判定）/ asImageSrc（表示用の変換）
     media-url.ts        動画・音声・埋め込みの判定 / asEmbedSrc（埋め込みのプレーヤーの URL）
+    map-url.ts          asMapUrl（地図のノードの Google マップの URL）
   inline/
     types.ts            InlineConstruct / BracketRule / InlineContext / Extension（公開の型のみ。effect を import しない）
     internal-types.ts   パッケージの中のルールの型（Option で返す）。公開しない

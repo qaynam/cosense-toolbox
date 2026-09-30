@@ -1320,6 +1320,99 @@
       ]
     },
     {
+      "description": "緯度と経度の角括弧は地図",
+      "input": "[N35.6812,E139.7671]",
+      "expected": [
+        {
+          "type": "location",
+          "latitude": 35.6812,
+          "longitude": 139.7671
+        }
+      ]
+    },
+    {
+      "description": "南緯と西経は負の数になる",
+      "input": "[S33.86,W151.2]",
+      "expected": [
+        {
+          "type": "location",
+          "latitude": -33.86,
+          "longitude": -151.2
+        }
+      ]
+    },
+    {
+      "description": "地図にはズームを付けられる",
+      "input": "[N35,E139,Z14]",
+      "expected": [
+        {
+          "type": "location",
+          "latitude": 35,
+          "longitude": 139,
+          "zoom": 14
+        }
+      ]
+    },
+    {
+      "description": "座標の後ろの文字は地図のラベルになる",
+      "input": "[N35.6812,E139.7671,Z15 東京駅]",
+      "expected": [
+        {
+          "type": "location",
+          "latitude": 35.6812,
+          "longitude": 139.7671,
+          "zoom": 15,
+          "label": "東京駅"
+        }
+      ]
+    },
+    {
+      "description": "座標の前の文字も地図のラベルになる",
+      "input": "[東京駅 N35.6812,E139.7671]",
+      "expected": [
+        {
+          "type": "location",
+          "latitude": 35.6812,
+          "longitude": 139.7671,
+          "label": "東京駅"
+        }
+      ]
+    },
+    {
+      "description": "地図のラベルの前後の空白は除く",
+      "input": "[N35,E139   東京駅]",
+      "expected": [
+        {
+          "type": "location",
+          "latitude": 35,
+          "longitude": 139,
+          "label": "東京駅"
+        }
+      ]
+    },
+    {
+      "description": "小文字の座標は地図にならない",
+      "input": "[n35,e139]",
+      "expected": [
+        {
+          "type": "internalLink",
+          "label": "n35,e139",
+          "target": "n35,e139"
+        }
+      ]
+    },
+    {
+      "description": "座標の間に空白があると地図にならない",
+      "input": "[N35, E139]",
+      "expected": [
+        {
+          "type": "internalLink",
+          "label": "N35, E139",
+          "target": "N35, E139"
+        }
+      ]
+    },
+    {
       "description": "記法が連続しても間のテキストが失われない",
       "input": "[a]b`c`d#e",
       "expected": [
@@ -1537,6 +1630,16 @@
         {
           "type": "text",
           "value": "[https://x.com/a.mp4] [https://x.com/a.mp3] [https://www.youtube.com/watch?v=dQw4w9WgXcQ]"
+        }
+      ]
+    },
+    {
+      "description": "セルの中の地図は書いたままの文字",
+      "input": "[N35,E139]",
+      "expected": [
+        {
+          "type": "text",
+          "value": "[N35,E139]"
         }
       ]
     }

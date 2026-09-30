@@ -109,6 +109,13 @@ describe("linkAt", () => {
     })
   })
 
+  it("finds the map a location opens", () => {
+    expect(targetAt("[N35.68,E139.76,Z14]", "N")).toEqual({
+      kind: "url",
+      url: "https://www.google.com/maps/place/35.68,139.76/@35.68,139.76,14z",
+    })
+  })
+
   it("finds a link inside a decoration", () => {
     expect(targetAt("[! [設計メモ]です]", "設計")).toEqual({ kind: "page", title: "設計メモ" })
   })

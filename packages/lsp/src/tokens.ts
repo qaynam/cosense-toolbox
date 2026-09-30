@@ -35,7 +35,7 @@ export const TOKEN_TYPES = [
   "strike",
   "underline",
   "image",
-  // A video, a sound, or a player of another service embedded in the page.
+  // A video, a sound, a map, or a player of another service embedded in the page.
   "media",
   "table",
   "bold2",
@@ -158,6 +158,7 @@ const INLINE_TOKEN_TYPE: Partial<Record<AnyNodeType, BuiltinTokenType>> = {
   video: "media",
   audio: "media",
   embed: "media",
+  location: "media",
   icon: "icon",
   formula: "formula",
 }

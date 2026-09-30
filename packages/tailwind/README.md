@@ -78,6 +78,7 @@ Tailwind v4 の CSS に `@plugin` で足す。
 | `cosense-video:{utility}`         | `.video`                       | 動画                                                        |
 | `cosense-audio:{utility}`         | `.audio`                       | 音声                                                        |
 | `cosense-embed:{utility}`         | `.embed`                       | YouTube などの埋め込み                                      |
+| `cosense-location:{utility}`      | `.link-location`               | 地図 `[N35,E139]`                                           |
 | `cosense-icon:{utility}`          | `.icon`                        | `[ユーザー名.icon]`                                         |
 | `cosense-formula:{utility}`       | `.formula`                     | `[$ 数式]`                                                  |
 
