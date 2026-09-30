@@ -56,6 +56,8 @@
         "sources": ["examples/astro-blog/src"],
         // 存在しないページへのリンクの診断。"off" | "hint" | "information" | "warning" | "error"
         "unresolvedLinks": "warning",
+        // 地図の記法にできる Google マップの URL の診断。値は unresolvedLinks と同じ
+        "mapLinks": "information",
         // 1 行目の --- を frontmatter (YAML) として飛ばすか。frontmatter の無いページなら false
         "frontmatter": true,
       },
