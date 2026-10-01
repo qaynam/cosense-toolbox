@@ -38,6 +38,10 @@ Cosense Web がパースの段階で読み分けているものは、最初か�
  `embed`: YouTube / Vimeo / Spotify / anchor.fm。サービスのプレーヤーの `<iframe>` になります
  `location`: `[N35.68,E139.76,Z15]`。既定では Google マップへのリンクになります
 
+たとえば YouTube の URL は、拡張も設定も無しで、このようにプレーヤーになります。
+
+[https://youtu.be/a5uQMwRMHcs]
+
 ノードの形は [AST と位置情報] にあります。
 
 <DocHeading level={2} id="ways" title="足し方は 3 通り" />
@@ -53,6 +57,8 @@ Cosense Web がパースの段階で読み分けているものは、最初か�
 <DocHeading level={2} id="apple-music" title="Apple Music" />
 
 Apple Music は `music.apple.com` を `embed.music.apple.com` に替えた URL を `<iframe>` に入れれば再生できます。読むときは独自の `provider` の `embed` にします。
+
+[https://music.apple.com/jp/song/%E3%82%A4%E3%83%B3-%E3%83%9E%E3%82%A4-%E3%83%A9%E3%82%A4%E3%83%95-2009-remaster/1441164829]
 
 code:ts
  import type { Extension } from "@cosense-toolbox/parser"
