@@ -1,0 +1,192 @@
+---
+layout: ../../layouts/Doc.astro
+title: メディアと埋め込み
+description: 動画・音声・埋め込み・地図のノードと、Cosense Web に無いサービスを足す方法。
+toc:
+  - id: builtin
+    text: 最初から読むもの
+    depth: 2
+  - id: ways
+    text: 足し方は 3 通り
+    depth: 2
+  - id: apple-music
+    text: Apple Music
+    depth: 2
+  - id: instagram
+    text: Instagram
+    depth: 2
+  - id: map
+    text: 地図を OpenStreetMap にする
+    depth: 2
+  - id: register
+    text: Astro に登録する
+    depth: 2
+  - id: notes
+    text: 注意すること
+    depth: 2
+---
+メディアと埋め込み
+
+動画・音声・埋め込み・地図は、外部リンクではなく専用のノードになります。Cosense Web に無いサービスも、拡張と描画のハンドラを足せば同じように埋め込めます。このページの例は、このサイト自身の設定 (`apps/web/src/lib/embed.ts`) です。
+
+<DocHeading level={2} id="builtin" title="最初から読むもの" />
+
+Cosense Web がパースの段階で読み分けているものは、最初から専用のノードになります。
+
+ `video`: `[https://…/a.mp4]` (mp4 / webm / mov)。`<video>` になります
+ `audio`: `[https://…/a.mp3]` (wav / mp3 / weba / ogg / aac)。`<audio>` になります
+ `embed`: YouTube / Vimeo / Spotify / anchor.fm。サービスのプレーヤーの `<iframe>` になります
+ `location`: `[N35.68,E139.76,Z15]`。既定では Google マップへのリンクになります
+
+ノードの形は [AST と位置情報] にあります。
+
+<DocHeading level={2} id="ways" title="足し方は 3 通り" />
+
+何として扱いたいかで、返すノードを選びます。
+
+ 中身が動画・音声のファイル (拡張子の無い自前の配信 URL など) → `video` / `audio` を返すだけ。描画は既定のままでよい
+ サービスのプレーヤー → 独自の `provider` の `embed` を返し、`handlers.embed` で描く
+ どれでもないもの (3D モデルなど) → ノードの型から足す ([記法の拡張] の独自ノード型)
+
+どれも、`[...]` の中身を読む `BracketRule` で URL を見分けます。拡張のルールは既定のルールより先に試されるので、YouTube などを横取りしないよう、URL の形は狭く書きます。
+
+<DocHeading level={2} id="apple-music" title="Apple Music" />
+
+Apple Music は `music.apple.com` を `embed.music.apple.com` に替えた URL を `<iframe>` に入れれば再生できます。読むときは独自の `provider` の `embed` にします。
+
+code:ts
+ import type { Extension } from "@cosense-toolbox/parser"
+ 
+ const APPLE_MUSIC =
+   /^https:\/\/music\.apple\.com\/[a-z]{2}\/(?:album|playlist|song)\/\S+\/(\w+)(?:\?\S*)?$/
+ 
+ export const extraEmbeds = (): Extension => ({
+   bracketRules: [
+     (inner) => {
+       const id = APPLE_MUSIC.exec(inner)?.[1]
+       return id === undefined ? null : { type: "embed", provider: "appleMusic", url: inner, id }
+     },
+   ],
+ })
+
+描くときは、足した `provider` だけを引き受け、ほかは `defaultHastHandlers.embed` に任せます。YouTube などの既定の描画をそのまま使えます。
+
+code:ts
+ import { defaultHastHandlers, type HastHandlers } from "@cosense-toolbox/parser/html"
+ 
+ export const embed: HastHandlers["embed"] = (node, ctx) => {
+   if (node.provider !== "appleMusic") return defaultHastHandlers.embed(node, ctx)
+   return {
+     type: "element",
+     tagName: "iframe",
+     properties: {
+       className: ["embed-apple-music"],
+       src: node.url.replace("://music.apple.com/", "://embed.music.apple.com/"),
+       title: "Apple Music",
+       loading: "lazy",
+     },
+     children: [],
+   }
+ }
+
+ハンドラの外で要素を組み立てる関数には、戻り値の型 `HastContent` を書きます。書かないと `type: "element"` が文字列と推論され、型が合いません。
+
+<DocHeading level={2} id="instagram" title="Instagram" />
+
+Instagram は `<iframe>` に入れる URL を公開していません。公式の埋め込みと同じく `blockquote` を置き、Instagram の `embed.js` に `<iframe>` へ置き換えてもらいます。
+
+[https://www.instagram.com/p/DdmXGLIm7Kh/]
+
+code:ts
+ import type { EmbedNode } from "@cosense-toolbox/parser"
+ import type { HastContent } from "@cosense-toolbox/parser/html"
+ 
+ const instagram = (node: EmbedNode): HastContent[] => [
+   {
+     type: "element",
+     tagName: "blockquote",
+     properties: {
+       className: ["instagram-media"],
+       dataInstgrmPermalink: `https://www.instagram.com/p/${node.id}/`,
+       dataInstgrmVersion: "14",
+     },
+     // script が動かなくても、投稿へのリンクとしては読める
+     children: [
+       {
+         type: "element",
+         tagName: "a",
+         properties: { href: node.url },
+         children: [{ type: "text", value: node.url }],
+       },
+     ],
+   },
+   {
+     type: "element",
+     tagName: "script",
+     properties: { async: true, src: "https://www.instagram.com/embed.js" },
+     children: [],
+   },
+ ]
+
+`embed.js` を投稿の隣に置くと、投稿のあるページでだけ読み込まれます。レイアウトに置くと、全ページで Meta の script が動きます。
+非公開や削除された投稿は、どの方法でも表示されません。
+
+<DocHeading level={2} id="map" title="地図を OpenStreetMap にする" />
+
+地図 (`location`) は、`handlers.location` で描き方を替えられます。OpenStreetMap の埋め込みはズームではなく表示する範囲を取るので、ズームから範囲を計算します。
+
+[N35.6812,E139.7671,Z16 東京駅]
+
+code:ts
+ import type { HastHandlers } from "@cosense-toolbox/parser/html"
+ 
+ export const location: HastHandlers["location"] = (node) => {
+   const { latitude, longitude, zoom = 15 } = node
+   const span = 360 / 2 ** zoom
+   const bbox = [longitude - span, latitude - span / 2, longitude + span, latitude + span / 2]
+   const params = new URLSearchParams({
+     bbox: bbox.join(","),
+     layer: "mapnik",
+     marker: `${latitude},${longitude}`,
+   })
+   return {
+     type: "element",
+     tagName: "iframe",
+     properties: {
+       className: ["embed-map"],
+       src: `https://www.openstreetmap.org/export/embed.html?${params}`,
+       title: node.label ?? "地図",
+       loading: "lazy",
+     },
+     children: [],
+   }
+ }
+
+リンク先だけを替えたいなら、地図の Google マップの URL を作る `asMapUrl` の代わりに、自分で作った URL へのリンクを返します。
+
+<DocHeading level={2} id="register" title="Astro に登録する" />
+
+読み方は `parseOptions` に、描き方は `renderOptions` の `handlers` に渡します。見た目は `className` に CSS を当てます。
+
+code:astro.config.mjs
+ import cosense from "@cosense-toolbox/astro"
+ import { defineConfig } from "astro/config"
+ 
+ import { embed, extraEmbeds, location } from "./src/lib/embed.ts"
+ 
+ export default defineConfig({
+   integrations: [
+     cosense({
+       parseOptions: { extensions: [extraEmbeds()] },
+       renderOptions: { handlers: { embed, location } },
+     }),
+   ],
+ })
+
+`toHtml` を直接使う場合も同じで、`parse` に拡張を、`toHtml` に `handlers` を渡します。
+
+<DocHeading level={2} id="notes" title="注意すること" />
+
+ 表のセルの中では、Cosense Web と同じく書いたままの文字に戻ります。セルでも出したいなら、拡張に `keepInTableCell` を足します
+ エディタの Language Server は、サイトの拡張を読みません。エディタでは外部リンクの色のままですが、表示とビルドには影響しません
+ 外部のプレーヤーや script を読み込むので、サイトに CSP を設定しているなら、そのドメインを許可します

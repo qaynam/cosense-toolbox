@@ -61,21 +61,7 @@ code:ts
 
 <DocHeading level={2} id="embed" title="独自の埋め込み" />
 
-Cosense Web が埋め込まないサービスも、`BracketRule` から独自の `provider` の `embed` ノードを返せば埋め込みとして扱えます。Cosense Web ではただのリンクになる URL に意味を足すだけなので、既定の記法の読み方は変わりません。
-
-code:ts
- import type { BracketRule } from "@cosense-toolbox/parser/extensions"
- 
- const FIGMA = /^https:\/\/www\.figma\.com\/(?:file|design)\/([\w-]+)/
- 
- const figma: BracketRule = (inner) => {
-   const id = FIGMA.exec(inner)?.[1]
-   return id === undefined ? null : { type: "embed", provider: "figma", url: inner, id }
- }
- 
- const page = parse(text, { extensions: [{ bracketRules: [figma] }] })
-
-既定の `toHtml` はプレーヤーの URL を知らないので、この埋め込みを外部リンクとして出します。`<iframe>` にするには `handlers` の `embed` で描画を決めます。
+Cosense Web が埋め込まないサービスも、`BracketRule` から独自の `provider` の `embed` ノードを返せば埋め込みとして扱えます。Apple Music、Instagram、地図を OpenStreetMap にする例は [メディアと埋め込み] にあります。
 
 <DocHeading level={2} id="node" title="独自ノード型" />
 

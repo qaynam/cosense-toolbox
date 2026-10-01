@@ -74,6 +74,13 @@ export const DOC_GROUPS: DocGroup[] = [
         keywords: "Extension InlineConstruct BracketRule 拡張 schema",
       },
       {
+        href: "/parser/media/",
+        label: "メディアと埋め込み",
+        description: "動画・音声・埋め込み・地図と、サービスの足し方。",
+        keywords:
+          "video audio embed location YouTube Instagram Apple Music OpenStreetMap 地図 埋め込み",
+      },
+      {
         href: "/cosense-x/",
         label: "Cosense X",
         description: ".csn / .csnx を JSX モジュールへ変換します。",
