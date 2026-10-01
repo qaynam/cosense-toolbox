@@ -206,6 +206,70 @@ describe("画像", () => {
   })
 })
 
+describe("動画・音声・埋め込み", () => {
+  it("動画は操作できてループする video になる", () => {
+    expect(line("[https://x.test/a.mp4]")).toBe(
+      '<video class="video" src="https://x.test/a.mp4" controls loop preload="metadata"></video>',
+    )
+  })
+
+  it("大きい動画には data-large が付く", () => {
+    expect(line("[[https://x.test/a.mp4]]")).toBe(
+      '<video class="video" src="https://x.test/a.mp4" controls loop preload="metadata" data-large="true"></video>',
+    )
+  })
+
+  it("リンク付き動画は a で包む", () => {
+    expect(line("[https://example.test https://x.test/a.mp4]")).toBe(
+      '<a href="https://example.test"><video class="video" src="https://x.test/a.mp4" controls loop preload="metadata"></video></a>',
+    )
+  })
+
+  it("音声は操作できる audio になる", () => {
+    expect(line("[https://x.test/a.mp3]")).toBe(
+      '<span class="audio"><audio src="https://x.test/a.mp3" controls preload="metadata"></audio></span>',
+    )
+  })
+
+  it("音声のラベルは audio の後ろに出す", () => {
+    expect(line("[https://x.test/a.mp3 BGM]")).toBe(
+      '<span class="audio"><audio src="https://x.test/a.mp3" controls preload="metadata"></audio>BGM</span>',
+    )
+  })
+
+  it("埋め込みはサービスのプレーヤーの iframe になる", () => {
+    expect(line("[https://youtu.be/abc?t=30]")).toBe(
+      '<iframe class="embed" src="https://www.youtube.com/embed/abc?start=30" title="youtube" loading="lazy" allow="encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" data-provider="youtube" data-kind="video"></iframe>',
+    )
+  })
+
+  it("プレーヤーの URL を作れない埋め込みは、URL への外部リンクにする", () => {
+    const figma = (inner: string) =>
+      inner.startsWith("https://figma.test/")
+        ? { type: "embed" as const, provider: "figma", url: inner, id: "1" }
+        : null
+    expect(
+      toHtml(parseLine("[https://figma.test/1]", { extensions: [{ bracketRules: [figma] }] })),
+    ).toBe(
+      '<div class="line"><a class="link link-external" href="https://figma.test/1">https://figma.test/1</a></div>',
+    )
+  })
+})
+
+describe("地図", () => {
+  it("地図は Google マップへのリンクになり、ラベルが無ければ座標を出す", () => {
+    expect(line("[N35.6812,E139.7671]")).toBe(
+      '<a class="link link-location" href="https://www.google.com/maps/place/35.6812,139.7671">35.6812,139.7671</a>',
+    )
+  })
+
+  it("ラベルのある地図はラベルを出す", () => {
+    expect(line("[東京駅 N35.6812,E139.7671]")).toBe(
+      '<a class="link link-location" href="https://www.google.com/maps/search/%E6%9D%B1%E4%BA%AC%E9%A7%85/@35.6812,139.7671,15z">東京駅</a>',
+    )
+  })
+})
+
 describe("エスケープと URL の安全性", () => {
   it("テキストの HTML はエスケープされる", () => {
     // `>` だけではタグにならないので、`<` と `&` をエスケープすれば足りる。

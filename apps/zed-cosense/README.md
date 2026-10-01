@@ -91,6 +91,7 @@
     { "token_type": "hashtag", "style": ["attribute"] },
     { "token_type": "icon", "style": ["link_text"] },
     { "token_type": "image", "style": ["link_text"] },
+    { "token_type": "media", "style": ["link_text"] },
     { "token_type": "code", "style": ["text.literal"] },
     { "token_type": "codeBlock", "style": ["text.literal"] },
     { "token_type": "formula", "style": ["text.literal"] },

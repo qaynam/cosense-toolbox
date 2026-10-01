@@ -217,6 +217,45 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
+        "body": ".video",
+        "pseudo": ""
+      },
+      "declarations": {
+        "display": "inline-block",
+        "max-width": "100%",
+        "max-height": "300px",
+        "vertical-align": "bottom"
+      }
+    },
+    {
+      "selector": {
+        "body": ".audio",
+        "pseudo": ""
+      },
+      "declarations": {
+        "display": "inline-flex",
+        "align-items": "center",
+        "gap": "0.5em",
+        "max-width": "100%",
+        "vertical-align": "middle"
+      }
+    },
+    {
+      "selector": {
+        "body": ".embed",
+        "pseudo": ""
+      },
+      "declarations": {
+        "display": "block",
+        "width": "100%",
+        "max-width": "560px",
+        "aspect-ratio": "16 / 9",
+        "margin": "3px 0",
+        "border": "0"
+      }
+    },
+    {
+      "selector": {
         "body": ".formula",
         "pseudo": ""
       },
@@ -247,6 +286,16 @@ export const styles: CosenseStyles = {
       "declarations": {
         "padding": "0 2px 0 8px",
         "white-space": "nowrap"
+      }
+    },
+    {
+      "selector": {
+        "body": ".audio audio",
+        "pseudo": ""
+      },
+      "declarations": {
+        "max-width": "100%",
+        "height": "2.5em"
       }
     },
     {
@@ -389,6 +438,37 @@ export const styles: CosenseStyles = {
         "margin": "3px 0",
         "max-width": "95%",
         "max-height": "none"
+      }
+    },
+    {
+      "selector": {
+        "body": ".video[data-large]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "margin": "3px 0",
+        "max-width": "95%",
+        "max-height": "none"
+      }
+    },
+    {
+      "selector": {
+        "body": ".embed[data-provider=\"spotify\"]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "aspect-ratio": "auto",
+        "height": "152px"
+      }
+    },
+    {
+      "selector": {
+        "body": ".embed[data-provider=\"anchor\"]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "aspect-ratio": "auto",
+        "height": "152px"
       }
     },
     {

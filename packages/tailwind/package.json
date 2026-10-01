@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/tailwind",
-  "version": "0.1.0-beta.6",
+  "version": "0.1.0-beta.7",
   "description": "Tailwind CSS plugin: add class=\"cosense\" and the Cosense notation HTML inside it gets the default look.",
   "license": "MIT",
   "type": "module",

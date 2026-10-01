@@ -23,6 +23,15 @@ describe("computeTokens", () => {
     )
   })
 
+  it("marks a video, a sound and an embedded player alike, as media", () => {
+    const text = "T\n[https://x.invalid/a.mp4] [https://x.invalid/a.mp3] [https://youtu.be/abc]"
+    expect(typesOn(text, 1)).toEqual(["media", "media", "media"])
+  })
+
+  it("marks a map as media too", () => {
+    expect(typesOn("T\n[東京駅 N35.68,E139.76]", 1)).toEqual(["media"])
+  })
+
   it("applies every marker in one run, as Cosense does", () => {
     expect(typesOn("T\n[-* 太字で打ち消し]", 1)).toEqual(expect.arrayContaining(["strike", "bold"]))
   })

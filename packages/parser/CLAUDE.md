@@ -13,7 +13,8 @@
 1. **パースは総関数**。`parse()` 系は例外を投げない・失敗しない。どんな入力でも必ず `Page` を返す。
    不正な記法は「記法として解釈しない（素のテキストになる）」であって、エラーではない。
 2. **I/O 禁止**。`fetch` / `fs` / タイマー / グローバル状態を一切使わない。純関数のみ。
-   URL の意味解決（YouTube 判定、oEmbed）は**このパッケージのスコープ外**。
+   通信の要る URL の解決（oEmbed、ページのタイトル取得）は**このパッケージのスコープ外**。
+   YouTube や動画の URL の判定は、Cosense Web がパースの段階で行っているので記法の一部としてここで持つ。
 3. **AST はソースに書かれた文字列を保つ**。パースの過程で値を「使いやすい形」に書き換えない。
    例: `[https://gyazo.com/{hash}]` の `src` はそのページ URL のままにする。
    `<img>` に入る形（`https://i.gyazo.com/{hash}.png`）への変換は表示のための書き換えなので、
@@ -138,6 +139,8 @@ src/
     position.ts         Origin と Point/Position の生成
     scan.ts             括弧の対応探索・タグ境界判定・行頭空白
     image-url.ts        isImageUrl（構造の判定）/ asImageSrc（表示用の変換）
+    media-url.ts        動画・音声・埋め込みの判定 / asEmbedSrc（埋め込みのプレーヤーの URL）
+    map-url.ts          asMapUrl（地図のノードの Google マップの URL）
   inline/
     types.ts            InlineConstruct / BracketRule / InlineContext / Extension（公開の型のみ。effect を import しない）
     internal-types.ts   パッケージの中のルールの型（Option で返す）。公開しない

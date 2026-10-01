@@ -152,6 +152,68 @@ describe("URL と画像", () => {
   })
 })
 
+describe("動画・音声・埋め込み", () => {
+  const VIDEO = "https://example.invalid/a.mp4"
+  const SOUND = "https://example.invalid/a.mp3"
+  const YOUTUBE = "https://www.youtube.com/watch?v=abc"
+
+  it("[動画 URL] はメディアになる", () => {
+    expect(scopesOf(`T\n[${VIDEO}]`, `[${VIDEO}]`)).toEqual([SCOPES.media])
+  })
+
+  it("[[動画 URL]] もメディアになる", () => {
+    expect(scopesOf(`T\n[[${VIDEO}]]`, `[[${VIDEO}]]`)).toEqual([SCOPES.media])
+  })
+
+  it("クエリの付いた動画 URL は、単独ではメディアにならない", () => {
+    expect(scopesOf(`T\n[${VIDEO}?t=1]`, `[${VIDEO}?t=1]`)).toEqual([SCOPES.externalLink])
+  })
+
+  it("[URL 動画 URL] はリンク付きの動画としてメディアになる", () => {
+    expect(scopesOf(`T\n[${PAGE} ${VIDEO}]`, `[${PAGE} ${VIDEO}]`)).toEqual([SCOPES.media])
+  })
+
+  it("ラベルの付いた動画 URL は外部リンクになる", () => {
+    expect(scopesOf(`T\n[動画 ${VIDEO}]`, `[動画 ${VIDEO}]`)).toEqual([SCOPES.externalLink])
+  })
+
+  it("ラベルの付いた音声 URL はメディアになる", () => {
+    expect(scopesOf(`T\n[BGM ${SOUND}]`, `[BGM ${SOUND}]`)).toEqual([SCOPES.media])
+    expect(scopesOf(`T\n[${SOUND} BGM]`, `[${SOUND} BGM]`)).toEqual([SCOPES.media])
+  })
+
+  it("音声 URL と画像 URL が並ぶと画像になる", () => {
+    expect(scopesOf(`T\n[${SOUND} ${IMAGE}]`, `[${SOUND} ${IMAGE}]`)).toEqual([SCOPES.image])
+  })
+
+  it("[YouTube の URL] はメディアになる", () => {
+    expect(scopesOf(`T\n[${YOUTUBE}]`, `[${YOUTUBE}]`)).toEqual([SCOPES.media])
+  })
+
+  it("[[YouTube の URL]] はメディアにならず、太字の中の外部リンクになる", () => {
+    expect(scopesOf(`T\n[[${YOUTUBE}]]`, YOUTUBE)).toEqual([SCOPES.bold, SCOPES.externalLink])
+  })
+})
+
+describe("地図", () => {
+  it("[座標] はメディアになる", () => {
+    expect(scopesOf("T\n[N35.68,E139.76,Z14]", "[N35.68,E139.76,Z14]")).toEqual([SCOPES.media])
+  })
+
+  it("前後にラベルを付けた座標もメディアになる", () => {
+    expect(scopesOf("T\n[東京駅 N35.68,E139.76]", "[東京駅 N35.68,E139.76]")).toEqual([
+      SCOPES.media,
+    ])
+    expect(scopesOf("T\n[N35.68,E139.76 東京駅]", "[N35.68,E139.76 東京駅]")).toEqual([
+      SCOPES.media,
+    ])
+  })
+
+  it("小文字の座標は地図にならず、ページへのリンクになる", () => {
+    expect(scopesOf("T\n[n35,e139]", "[n35,e139]")).toEqual([SCOPES.link])
+  })
+})
+
 describe("アイコン", () => {
   it("[user.icon] はアイコンになる", () => {
     expect(scopesOf("T\n[user.icon]", "[user.icon]")).toEqual([SCOPES.icon])

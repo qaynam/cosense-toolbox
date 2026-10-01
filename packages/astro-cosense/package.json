@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/astro",
-  "version": "0.1.0-beta.6",
+  "version": "0.1.0-beta.7",
   "description": "Astro integration for cosense-x: use .csn / .csnx (Cosense notation) as pages and content collections.",
   "license": "MIT",
   "type": "module",

@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/style",
-  "version": "0.1.0-beta.6",
+  "version": "0.1.0-beta.7",
   "description": "Default stylesheet for the HTML that @cosense-toolbox/parser renders.",
   "license": "MIT",
   "type": "module",
