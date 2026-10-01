@@ -1450,3 +1450,23 @@ body.is-app {
   border: 0;
   border-top: 1px solid var(--border);
 }
+
+/* 地図と Apple Music は、このサイトが足した埋め込み (src/lib/embed.ts)。 */
+.doc .embed-map,
+.doc .embed-apple-music {
+  display: block;
+  width: 100%;
+  margin: 0 0 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+}
+
+.doc .embed-map {
+  aspect-ratio: 16 / 9;
+}
+
+.doc .embed-apple-music {
+  max-width: 660px;
+  height: 175px;
+}
