@@ -1,8 +1,12 @@
 # Cosense Toolbox
 
-Cosense (旧 Scrapbox) の記法を、解析・表示・編集するためのオープンソースツール群です。TypeScript パッケージ、Astro 統合、エディター連携、テーマ作成ツールを開発しています。
+Cosense (旧 Scrapbox) のもっと楽しく便利に使うためのツールキットです。
 
 使い方やパッケージの選び方は [ドキュメントサイト](https://cosense-toolbox.qaynam.dev/docs/) をご覧ください。
+
+> [!WARNING]
+> Cosense (旧 Scrapbox) の非公式プロジェクトです。
+> そしてまだ開発中です。仕様が変わる可能性があります。
 
 ## パッケージとアプリ
 
@@ -21,9 +25,7 @@ Cosense (旧 Scrapbox) の記法を、解析・表示・編集するためのオ
 | [`examples/astro-blog`](./examples/astro-blog)                                                                                          | Astro 統合を使ったブログのサンプルです。                                       |
 | [`tools/release`](./tools/release)                                                                                                      | npm パッケージのバージョン更新と公開を補助します。                             |
 
-npm に公開しているライブラリは beta です。安定するまでは、利用するバージョンを固定してください。
-
-## 開発を始める
+## 開発ガイド
 
 Bun 1.3 以降と Node.js 20 以降が必要です。
 
@@ -42,4 +44,4 @@ bun run build
 
 ## ライセンスと位置づけ
 
-各パッケージは MIT ライセンスです。Cosense (旧 Scrapbox) の非公式プロジェクトであり、開発元の Helpfeel 社とは関係がなく、公認も受けていません。
+各パッケージは MIT ライセンスです、フォークして自由に使えます、あるいはIssue
