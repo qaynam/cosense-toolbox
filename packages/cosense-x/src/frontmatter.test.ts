@@ -1,7 +1,6 @@
-import { parse } from "@cosense-toolbox/parser"
 import { describe, expect, it } from "vitest"
 
-import { readFrontmatter, splitFrontmatter } from "./frontmatter"
+import { splitFrontmatter } from "./frontmatter"
 
 describe("splitFrontmatter", () => {
   it("ファイル先頭の YAML を本文から切り離す", () => {
@@ -44,32 +43,5 @@ describe("splitFrontmatter", () => {
 
   it("オブジェクトでない YAML はエラーになる", () => {
     expect(() => splitFrontmatter("---\n- a\n---\nタイトル")).toThrow(/frontmatter/)
-  })
-})
-
-describe("readFrontmatter", () => {
-  it("code:frontmatter.yml ブロックを読み、ページから取り除く", () => {
-    const page = parse("タイトル\ncode:frontmatter.yml\n draft: true\n tags: [a, b]\n本文")
-    const result = readFrontmatter(page, {})
-    expect(result.data).toEqual({ draft: true, tags: ["a", "b"] })
-    expect(result.page.children.map((block) => block.type)).toEqual(["title", "line"])
-  })
-
-  it(".yaml の拡張子も受け付ける", () => {
-    const page = parse("タイトル\ncode:frontmatter.yaml\n slug: x")
-    expect(readFrontmatter(page, {}).data).toEqual({ slug: "x" })
-  })
-
-  it("インデントされた code:frontmatter.yml は frontmatter として扱わない", () => {
-    const page = parse("タイトル\n code:frontmatter.yml\n  slug: x")
-    const result = readFrontmatter(page, {})
-    expect(result.data).toEqual({})
-    expect(result.page).toBe(page)
-  })
-
-  it("ファイル先頭の YAML と両方にあるキーは、ファイル先頭のほうを使う", () => {
-    const page = parse("タイトル\ncode:frontmatter.yml\n slug: from-block\n draft: true")
-    const result = readFrontmatter(page, { slug: "from-head" })
-    expect(result.data).toEqual({ slug: "from-head", draft: true })
   })
 })

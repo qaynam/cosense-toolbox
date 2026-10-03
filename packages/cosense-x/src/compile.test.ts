@@ -46,7 +46,7 @@ describe("compile", () => {
   })
 
   it("frontmatter と metadata を export する", async () => {
-    const source = "---\nslug: hello\n---\nタイトル\ncode:frontmatter.yml\n draft: true\n本文 #タグ"
+    const source = "---\nslug: hello\ndraft: true\n---\nタイトル\n本文 #タグ"
     const { code, frontmatter, metadata } = await compile(source)
     const module = await load(code)
     expect(frontmatter).toEqual({ slug: "hello", draft: true })
@@ -61,9 +61,10 @@ describe("compile", () => {
     })
   })
 
-  it("code:frontmatter.yml ブロックは描画しない", async () => {
-    const html = await renderPage("タイトル\ncode:frontmatter.yml\n draft: true\n本文")
-    expect(html).not.toContain("frontmatter")
+  it("code:frontmatter.yml は frontmatter として読まず、ほかのコードブロックと同じく描画する", async () => {
+    const source = "タイトル\ncode:frontmatter.yml\n draft: true\n本文"
+    expect((await compile(source)).frontmatter).toEqual({})
+    expect(await renderPage(source)).toContain("frontmatter.yml")
   })
 
   it("jsxImportSource に合わせて import 元と属性名の書き方が変わる", async () => {
