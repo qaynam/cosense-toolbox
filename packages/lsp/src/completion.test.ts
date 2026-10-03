@@ -1,5 +1,6 @@
 import { Option } from "effect"
 import { describe, expect, it } from "vitest"
+import { CompletionItemKind } from "vscode-languageserver/node"
 
 import {
   completionItems,
@@ -185,12 +186,51 @@ describe("completionItems", () => {
     expect(items.map((item) => item.documentation)).toEqual(["notes/design.csn", "kanban.csn"])
   })
 
-  it("filters by the notation it writes, since a client compares that with what was typed", () => {
-    // The edit starts at the `[`, so a client filters by `[設` and must find it in the text.
+  it("filters by what was typed, so a client keeps the order and the near matches it gets", () => {
+    // A client filters by the text from the edit's start to the cursor. Given back as it is,
+    // that matches every item, so the client neither reorders nor drops a near match.
     const [link] = completionItems(index, "T\n[設]", { line: 1, character: 2 })
-    expect(link?.filterText).toBe("[設計メモ]")
+    expect(link?.filterText).toBe("[設")
     const [tag] = completionItems(index, "T\n#設", { line: 1, character: 2 })
-    expect(tag?.filterText).toBe("#設計メモ")
+    expect(tag?.filterText).toBe("#設")
+  })
+
+  it("keeps the order it ranked in, for a client that sorts by sortText", () => {
+    const items = completionItems(index, "T\n[]", { line: 1, character: 1 })
+    expect(items.map((item) => item.sortText)).toEqual(["0000", "0001"])
+  })
+})
+
+describe("completionItems, ranked as Cosense Web does", () => {
+  const page = (title: string, fields: Partial<Index["pages"][number]> = {}) => ({
+    title,
+    uri: `file:///w/${title}.csn`,
+    location: `${title}.csn`,
+    ...fields,
+  })
+  const labels = (pages: Index["pages"], text: string, character: number) =>
+    completionItems({ pages }, text, { line: 1, character }).map((item) => item.label)
+
+  it("puts a short title before a recently changed long one", () => {
+    const pages = [page("Side Kanban:メモ", { updated: 900 }), page("sidebar", { updated: 10 })]
+    expect(labels(pages, "T\n[side]", 3)).toEqual(["sidebar", "Side Kanban:メモ"])
+  })
+
+  it("finds a title a typo away once three characters are typed", () => {
+    expect(labels([page("Side Kanban")], "T\n[kanbna]", 3)).toEqual(["Side Kanban"])
+  })
+
+  it("does not offer the page being edited", () => {
+    expect(labels([page("設計メモ"), page("設計")], "設計メモ\n[設計]", 2)).toEqual([])
+  })
+
+  it("offers a page only linked to, marked as having none yet", () => {
+    const items = completionItems({ pages: [page("設計", { links: ["設計メモ"] })] }, "T\n[設計]", {
+      line: 1,
+      character: 2,
+    })
+    expect(items.map((item) => [item.label, item.detail])).toEqual([["設計メモ", "まだ無いページ"]])
+    expect(items[0]?.kind).toBe(CompletionItemKind.Text)
   })
 })
 

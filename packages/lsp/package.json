@@ -28,6 +28,10 @@
       "types": "./dist/completion.d.mts",
       "default": "./dist/completion.mjs"
     },
+    "./suggest": {
+      "types": "./dist/suggest.d.mts",
+      "default": "./dist/suggest.mjs"
+    },
     "./link": {
       "types": "./dist/link.d.mts",
       "default": "./dist/link.mjs"

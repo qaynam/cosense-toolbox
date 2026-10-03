@@ -1,6 +1,6 @@
 import { Array as Arr, Effect, Option, pipe, Ref } from "effect"
 import {
-  type CompletionItem,
+  type CompletionList,
   createConnection,
   type Definition,
   type InitializeResult,
@@ -151,8 +151,11 @@ documents.onDidClose(({ document }) => {
   )
 })
 
-connection.onCompletion(({ textDocument: { uri }, position }): CompletionItem[] =>
-  withDocument(
+// Incomplete: the ranking (near matches, the order) is the server's, so the client asks again
+// on every keystroke rather than filtering this list by itself.
+connection.onCompletion(({ textDocument: { uri }, position }): CompletionList => ({
+  isIncomplete: true,
+  items: withDocument(
     uri,
     (document) =>
       completionItems(
@@ -160,13 +163,11 @@ connection.onCompletion(({ textDocument: { uri }, position }): CompletionItem[] 
         document.getText(),
         position,
         {},
-        {
-          frontmatter: currentSettings().frontmatter,
-        },
+        { frontmatter: currentSettings().frontmatter },
       ),
     [],
   ),
-)
+}))
 
 connection.onDefinition(({ textDocument: { uri }, position }): Definition | null =>
   withDocument(
