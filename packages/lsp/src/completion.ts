@@ -9,6 +9,7 @@ import {
 } from "vscode-languageserver/node"
 
 import { linkAt, type LinkTarget, type PageTarget } from "./link"
+import { fenceOf } from "./tokens"
 import type { Index, Page } from "./workspace"
 
 /**
@@ -133,10 +134,11 @@ export const detectCompletion = (
 // --- In a document ------------------------------------------------------------------------
 
 /**
- * Inside code, a bracket is not notation. The cursor must be strictly between the
+ * Whether the cursor is where Cosense reads no notation, so a bracket or a `#` is only text:
+ * inside code, or on a command line (`$ ls`). The cursor must be strictly between the
  * backticks (not touching them) to count as inside an inline span.
  */
-const isInCode = (
+const readsNoNotation = (
   text: string,
   { line, character }: Position,
   parseOptions: ParseOptions,
@@ -153,24 +155,44 @@ const isInCode = (
         line === position.start.line &&
         character > position.start.column &&
         character < position.end.column,
+    ) ||
+    Arr.some(
+      collect(page, "line"),
+      ({ monospace, position }) => monospace && position.start.line === line,
     )
   )
 }
 
+export interface CompletionOptions {
+  /** Whether a `---` fence on the first line opens YAML to skip (default: true). */
+  readonly frontmatter?: boolean
+}
+
+/** The line Cosense takes as the title: the first, or the first after the frontmatter. */
+const titleLineOf = (lines: ReadonlyArray<string>, frontmatter: boolean): number =>
+  Option.match(fenceOf(lines, frontmatter), { onNone: () => 0, onSome: (end) => end + 1 })
+
 /**
- * `detectCompletion` for one line of a document, suppressed inside code. `parseOptions` are
- * the site's notation extensions, parsed with as the site's build parses.
+ * `detectCompletion` for one line of a document. Nothing on the title line, which Cosense
+ * does not read as notation, nor where it reads none (code, a command line). `parseOptions`
+ * are the site's notation extensions, parsed with as the site's build parses.
  */
 export const detectCompletionInDocument = (
   text: string,
   position: Position,
   parseOptions: ParseOptions = {},
-): Option.Option<CompletionDetection> =>
-  pipe(
-    Option.liftPredicate(text, (document) => !isInCode(document, position, parseOptions)),
-    Option.map((document) => normalizeLineEndings(document).split("\n")[position.line] ?? ""),
-    Option.flatMap((line) => detectCompletion(line, position.character)),
+  { frontmatter = true }: CompletionOptions = {},
+): Option.Option<CompletionDetection> => {
+  const lines = normalizeLineEndings(text).split("\n")
+  return pipe(
+    Option.liftPredicate(
+      position,
+      (at) =>
+        at.line !== titleLineOf(lines, frontmatter) && !readsNoNotation(text, at, parseOptions),
+    ),
+    Option.flatMap((at) => detectCompletion(lines[at.line] ?? "", at.character)),
   )
+}
 
 // --- Matching titles ----------------------------------------------------------------------
 
@@ -242,9 +264,10 @@ export const completionItems = (
   text: string,
   position: Position,
   parseOptions: ParseOptions = {},
+  options: CompletionOptions = {},
 ): CompletionItem[] =>
   pipe(
-    detectCompletionInDocument(text, position, parseOptions),
+    detectCompletionInDocument(text, position, parseOptions, options),
     Option.match({
       onNone: () => [],
       onSome: (detection) => Arr.filterMap(index.pages, candidate(detection, position.line)),

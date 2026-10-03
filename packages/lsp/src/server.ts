@@ -154,7 +154,16 @@ documents.onDidClose(({ document }) => {
 connection.onCompletion(({ textDocument: { uri }, position }): CompletionItem[] =>
   withDocument(
     uri,
-    (document) => completionItems(currentIndex(), document.getText(), position),
+    (document) =>
+      completionItems(
+        currentIndex(),
+        document.getText(),
+        position,
+        {},
+        {
+          frontmatter: currentSettings().frontmatter,
+        },
+      ),
     [],
   ),
 )
