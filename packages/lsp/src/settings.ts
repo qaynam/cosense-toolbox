@@ -1,12 +1,12 @@
 import { Array as Arr, Option, pipe, Record as Rec, Schema } from "effect"
 
-import { severityOf, type UnresolvedSeverity } from "./diagnostics"
+import { type Severity, severityOf } from "./diagnostics"
 
 /**
  * What the reader can set, through the editor's initialization options:
  *
  * ```json
- * { "sources": ["src"], "unresolvedLinks": "warning", "frontmatter": true }
+ * { "sources": ["src"], "unresolvedLinks": "warning", "mapLinks": "information", "frontmatter": true }
  * ```
  *
  * Which markers open a decoration is not among them: that is Cosense's syntax, and the parser
@@ -19,7 +19,12 @@ export interface Settings {
    */
   readonly sources: ReadonlyArray<string>
   /** How loudly a link to a missing page is reported. */
-  readonly unresolvedLinks: UnresolvedSeverity
+  readonly unresolvedLinks: Severity
+  /**
+   * How loudly a Google Maps URL that Cosense would write as a map is pointed out. Quieter
+   * than a missing page by default: a URL may be kept as it is on purpose.
+   */
+  readonly mapLinks: Severity
   /**
    * Whether a `---` fence on a page's first line opens YAML to skip. Off for Cosense pages,
    * which have no frontmatter: a page titled `---` would otherwise lose its first lines.
@@ -30,6 +35,7 @@ export interface Settings {
 export const defaultSettings: Settings = {
   sources: [],
   unresolvedLinks: "warning",
+  mapLinks: "information",
   frontmatter: true,
 }
 
@@ -63,6 +69,7 @@ export const settingsOf = (options: unknown): Settings => {
   return {
     sources: stringsOf(field("sources")),
     unresolvedLinks: severityOf(field("unresolvedLinks")),
+    mapLinks: severityOf(field("mapLinks"), defaultSettings.mapLinks),
     frontmatter: decodeOr(Schema.Boolean, defaultSettings.frontmatter)(field("frontmatter")),
   }
 }

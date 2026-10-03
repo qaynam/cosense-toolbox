@@ -1,5 +1,7 @@
 import { Array as Arr, Effect, Option, pipe, Ref } from "effect"
 import {
+  type CodeAction,
+  CodeActionKind,
   type CompletionItem,
   createConnection,
   type Definition,
@@ -13,6 +15,7 @@ import { TextDocument } from "vscode-languageserver-textdocument"
 
 import { completionItems, definitionOf } from "./completion"
 import { unresolvedLinkDiagnostics } from "./diagnostics"
+import { mapLinkActions, mapLinkDiagnostics } from "./map-link"
 import { defaultSettings, settingsOf } from "./settings"
 import { computeTokens, encodeTokens, LEGEND } from "./tokens"
 import { emptyIndex, type Index, readIndex, rootsOf } from "./workspace"
@@ -73,8 +76,9 @@ const currentIndex = (): Index => Option.getOrElse(Effect.runSync(Ref.get(index)
 // --- Diagnostics --------------------------------------------------------------------------
 
 /**
- * Sends `document`'s links to missing pages. Nothing until the index has been read once:
- * against an empty index every link would be flagged, only to be cleared a moment later.
+ * Sends `document`'s links to missing pages, and its Google Maps URLs Cosense would write as
+ * maps. Nothing until the index has been read once: against an empty index every link would
+ * be flagged, only to be cleared a moment later.
  */
 const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
   pipe(
@@ -86,11 +90,18 @@ const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
           Effect.promise(() =>
             connection.sendDiagnostics({
               uri: document.uri,
-              diagnostics: unresolvedLinkDiagnostics(pages, document.getText(), {
-                severity: set.unresolvedLinks,
-                components: readsComponents(document),
-                frontmatter: set.frontmatter,
-              }),
+              diagnostics: [
+                ...unresolvedLinkDiagnostics(pages, document.getText(), {
+                  severity: set.unresolvedLinks,
+                  components: readsComponents(document),
+                  frontmatter: set.frontmatter,
+                }),
+                ...mapLinkDiagnostics(document.getText(), {
+                  severity: set.mapLinks,
+                  components: readsComponents(document),
+                  frontmatter: set.frontmatter,
+                }),
+              ],
             }),
           ),
       }),
@@ -131,6 +142,7 @@ connection.onInitialize(({ workspaceFolders, initializationOptions }): Initializ
       // one, so nothing else has to be declared for typing to keep the menu up to date.
       completionProvider: { triggerCharacters: ["[", "#"] },
       definitionProvider: true,
+      codeActionProvider: { codeActionKinds: [CodeActionKind.QuickFix] },
     },
   }
 })
@@ -164,6 +176,18 @@ connection.onDefinition(({ textDocument: { uri }, position }): Definition | null
     uri,
     (document) => Option.getOrNull(definitionOf(currentIndex(), document.getText(), position)),
     null,
+  ),
+)
+
+connection.onCodeAction(({ textDocument: { uri }, range }): CodeAction[] =>
+  withDocument(
+    uri,
+    (document) =>
+      mapLinkActions(uri, document.getText(), range, {
+        components: readsComponents(document),
+        frontmatter: currentSettings().frontmatter,
+      }),
+    [],
   ),
 )
 

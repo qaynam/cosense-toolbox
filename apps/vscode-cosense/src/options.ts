@@ -6,7 +6,7 @@ import { join, resolve } from "node:path"
 import { Array as Arr, Option, pipe, Predicate, Record as Rec } from "effect"
 
 /** The `cosense.*` settings the server takes, under the names it takes them by. */
-const SERVER_SETTINGS = ["sources", "unresolvedLinks", "frontmatter"] as const
+const SERVER_SETTINGS = ["sources", "unresolvedLinks", "mapLinks", "frontmatter"] as const
 
 /**
  * The server's initialization options: each setting the user made, as it is. The server
