@@ -10,6 +10,9 @@ import { Array as Arr, Match } from "effect"
  * anywhere in a title. ASCII letters match either case.
  *
  * The pattern is held in one 32-bit word, so only its first 31 characters count.
+ *
+ * Ported from node-asearch (https://github.com/shokai/node-asearch), the JavaScript version of
+ * Toshiyuki Masui's algorithm.
  */
 export type AsearchMatch = (text: string, ambig?: number) => boolean
 

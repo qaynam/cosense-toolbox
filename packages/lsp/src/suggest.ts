@@ -1,6 +1,6 @@
 import { parse } from "@cosense-toolbox/parser"
 import { collect } from "@cosense-toolbox/parser/utils"
-import { Array as Arr, Option, Order, pipe } from "effect"
+import { Array as Arr, Match, Option, Order, pipe } from "effect"
 
 import { Asearch } from "./asearch"
 
@@ -173,12 +173,28 @@ export interface RankOptions {
   readonly icons?: ReadonlySet<string>
 }
 
-/** Whether the web offers `c` at all, whatever the query matched. */
+type Exclusion = (c: Candidate, query: string, options: RankOptions) => boolean
+
+/** A title with no page, linked only from the page being edited: that page's own idea. */
+const isOwnUnsavedLink: Exclusion = (c, _, { pageTitle }) =>
+  !c.exists && c.soleLinker !== undefined && c.soleLinker === pageTitle
+
+/** The tag already typed out in full. */
+const isTypedTag: Exclusion = (c, query, { tagsOnly }) =>
+  tagsOnly === true && asTagName(c.title) === query
+
+/**
+ * The page being edited, or the title already typed. A page with an image stays, so that
+ * `[name` can still become `[name.icon]`.
+ */
+const isAlreadyThere: Exclusion = (c, query, { pageTitle }) =>
+  !c.image && (c.title === pageTitle || c.title === query)
+
+/** What the web never offers, whatever the query matched. */
+const EXCLUSIONS: ReadonlyArray<Exclusion> = [isOwnUnsavedLink, isTypedTag, isAlreadyThere]
+
 const isOffered = (c: Candidate, query: string, options: RankOptions): boolean =>
-  !(!c.exists && c.soleLinker !== undefined && c.soleLinker === options.pageTitle) &&
-  !(options.tagsOnly === true && asTagName(c.title) === query) &&
-  // A page with an image stays, so that `[name` can still become `[name.icon]`.
-  (c.image || (c.title !== options.pageTitle && c.title !== query))
+  !Arr.some(EXCLUSIONS, (excludes) => excludes(c, query, options))
 
 /** The titles one typo away from `query`, among those not already found. */
 const nearlyMatching = (
@@ -210,15 +226,22 @@ interface Ranked {
   readonly rest: ReadonlyArray<Candidate>
 }
 
-/** Pages drawn with an icon the page already uses go first, if found near enough the top. */
+const isFull = ({ lead, rest }: Ranked): boolean => lead.length + rest.length >= MAX_SUGGESTIONS
+
+/** Drawn with an icon the page already uses, and found near enough the top to move up. */
+const leadsWithIcon =
+  (c: Candidate, icons: ReadonlySet<string> | undefined) =>
+  ({ lead, rest }: Ranked): boolean =>
+    c.image && icons?.has(c.key) === true && rest.length < ICON_REACH && lead.length < MAX_ICON_LEAD
+
 const leadWithIcons =
   (icons: ReadonlySet<string> | undefined) =>
-  ({ lead, rest }: Ranked, c: Candidate): Ranked =>
-    lead.length + rest.length >= MAX_SUGGESTIONS
-      ? { lead, rest }
-      : rest.length < ICON_REACH && lead.length < MAX_ICON_LEAD && c.image && icons?.has(c.key)
-        ? { lead: [...lead, c], rest }
-        : { lead, rest: [...rest, c] }
+  (ranked: Ranked, c: Candidate): Ranked =>
+    Match.value(ranked).pipe(
+      Match.when(isFull, (full) => full),
+      Match.when(leadsWithIcon(c, icons), ({ lead, rest }) => ({ lead: [...lead, c], rest })),
+      Match.orElse(({ lead, rest }) => ({ lead, rest: [...rest, c] })),
+    )
 
 /**
  * The suggestions for `query`, best first, as Cosense Web orders them: titles holding every
