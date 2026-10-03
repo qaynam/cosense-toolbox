@@ -121,6 +121,8 @@ const linkersOf = (
         (link) => ({ link, from: entry.title }),
       ),
     ),
+    // Grown in place, once per link. A Map and not a record: a record would put number-like
+    // titles (`7`, `2024`) first, and the order titles were first linked in breaks ties.
     new Map<string, { readonly title: string; readonly from: ReadonlySet<string> }>(),
     (found, { link, from }) => {
       const key = titleKey(link)
@@ -178,6 +180,18 @@ const isOffered = (c: Candidate, query: string, options: RankOptions): boolean =
   // A page with an image stays, so that `[name` can still become `[name.icon]`.
   (c.image || (c.title !== options.pageTitle && c.title !== query))
 
+/** The titles one typo away from `query`, among those not already found. */
+const nearlyMatching = (
+  pool: ReadonlyArray<Candidate>,
+  query: string,
+  found: ReadonlyArray<Candidate>,
+): ReadonlyArray<Candidate> => {
+  // Spaces around the pattern match anything: one typo anywhere in the title.
+  const nearly = Asearch(` ${query} `)
+  const seen = new Set(Arr.map(found, (c) => c.key))
+  return Arr.filter(pool, (c) => !seen.has(c.key) && nearly(c.title, 1))
+}
+
 /** Every word in a title, in any order; when that finds little, a title a typo away too. */
 const matchesOf = (
   pool: ReadonlyArray<Candidate>,
@@ -186,11 +200,9 @@ const matchesOf = (
 ): ReadonlyArray<Candidate> => {
   const words = query.toLowerCase().split(tagsOnly ? /_+/ : /\s+/)
   const literal = Arr.filter(pool, (c) => Arr.every(words, (word) => c.searchKey.includes(word)))
-  if (query.length < FUZZY_MIN_QUERY || literal.length > FUZZY_FALLBACK_THRESHOLD) return literal
-  // Spaces around the pattern match anything: one typo anywhere in the title.
-  const nearly = Asearch(` ${query} `)
-  const seen = new Set(Arr.map(literal, (c) => c.key))
-  return [...literal, ...Arr.filter(pool, (c) => !seen.has(c.key) && nearly(c.title, 1))]
+  return query.length >= FUZZY_MIN_QUERY && literal.length <= FUZZY_FALLBACK_THRESHOLD
+    ? [...literal, ...nearlyMatching(pool, query, literal)]
+    : literal
 }
 
 interface Ranked {
@@ -243,6 +255,46 @@ interface VectorHit {
 }
 
 /**
+ * A result as a suggestion, or None for one the web leaves out: not close enough, a title
+ * that is neither a page nor linked to, or one the ranking would not offer either.
+ */
+const hitOf =
+  (index: CandidateIndex, query: string, options: RankOptions) =>
+  (page: VectorPageLike): Option.Option<VectorHit> =>
+    pipe(
+      Option.liftPredicate(
+        page,
+        ({ title, score = 0 }) => title !== "" && score >= VECTOR_MIN_SCORE,
+      ),
+      Option.map(({ title, exists, image, score = 0 }) => ({
+        candidate:
+          index.byKey.get(titleKey(title)) ??
+          candidateOf(title, { exists: exists !== false, image: Boolean(image) }),
+        score,
+      })),
+      Option.filter(
+        ({ candidate: c }) =>
+          (c.exists || index.byKey.has(c.key)) &&
+          (options.tagsOnly !== true || isTaggable(c.title)) &&
+          isOffered(c, query, options),
+      ),
+    )
+
+/** At most one very close hit in the head, the rest of the head filled with close ones. */
+const mergeHits = (
+  ranked: ReadonlyArray<Candidate>,
+  hits: ReadonlyArray<VectorHit>,
+): Candidate[] => {
+  const lead = Arr.filter(hits, (hit) => hit.score >= VECTOR_LEAD_SCORE).slice(0, 1)
+  const others = Arr.filter(hits, (hit) => hit.score < VECTOR_LEAD_SCORE)
+  const head = ranked.slice(0, Math.max(MENU_HEAD - 1, MENU_HEAD - lead.length))
+  const fill = others.slice(0, Math.max(0, MENU_HEAD - head.length - lead.length))
+  const merged = [...head, ...Arr.map([...lead, ...fill], (hit) => hit.candidate)]
+  const taken = new Set(Arr.map(merged, (c) => c.key))
+  return [...merged, ...Arr.filter(ranked, (c) => !taken.has(c.key))].slice(0, MAX_SUGGESTIONS)
+}
+
+/**
  * Vector search results folded into a ranking the way the web folds them: only close ones,
  * after the head of `ranked`, and never more than one ahead of the sixth place. The rest of
  * `ranked` follows, so nothing it found is lost.
@@ -256,29 +308,15 @@ export const mergeVectorPages = (
 ): Candidate[] => {
   const q = query.normalize("NFC").trim()
   const shown = new Set(Arr.map(ranked.slice(0, MENU_HEAD), (c) => c.key))
-  const hits = Arr.reduce(pages, [] as ReadonlyArray<VectorHit>, (found, page) => {
-    const score = page.score ?? 0
-    if (page.title === "" || score < VECTOR_MIN_SCORE) return found
-    const c =
-      index.byKey.get(titleKey(page.title)) ??
-      candidateOf(page.title, { exists: page.exists !== false, image: Boolean(page.image) })
-    const usable =
-      !shown.has(c.key) &&
-      !Arr.some(found, (hit) => hit.candidate.key === c.key) &&
-      (c.exists || index.byKey.has(c.key)) &&
-      (options.tagsOnly !== true || isTaggable(c.title)) &&
-      isOffered(c, q, options)
-    return usable ? [...found, { candidate: c, score }] : found
-  })
-  if (hits.length === 0) return [...ranked]
-
-  const lead = Arr.filter(hits, (hit) => hit.score >= VECTOR_LEAD_SCORE).slice(0, 1)
-  const others = Arr.filter(hits, (hit) => hit.score < VECTOR_LEAD_SCORE)
-  const head = ranked.slice(0, Math.max(MENU_HEAD - 1, MENU_HEAD - lead.length))
-  const fill = others.slice(0, Math.max(0, MENU_HEAD - head.length - lead.length))
-  const merged = [...head, ...Arr.map([...lead, ...fill], (hit) => hit.candidate)]
-  const taken = new Set(Arr.map(merged, (c) => c.key))
-  return [...merged, ...Arr.filter(ranked, (c) => !taken.has(c.key))].slice(0, MAX_SUGGESTIONS)
+  return Arr.match(
+    pipe(
+      pages,
+      Arr.filterMap(hitOf(index, q, options)),
+      Arr.filter((hit) => !shown.has(hit.candidate.key)),
+      Arr.dedupeWith((a, b) => a.candidate.key === b.candidate.key),
+    ),
+    { onEmpty: () => [...ranked], onNonEmpty: (hits) => mergeHits(ranked, hits) },
+  )
 }
 
 /** Keys of the icons `text` uses (`[name.icon]`), which `rankCandidates` puts first. */

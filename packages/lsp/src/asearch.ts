@@ -1,4 +1,4 @@
-import { Array as Arr } from "effect"
+import { Array as Arr, Match } from "effect"
 
 /**
  * Approximate string matching (Asearch, a bit-parallel Shift-And), the algorithm Cosense's
@@ -23,13 +23,16 @@ const MAX_AMBIG = INITIAL.length - 1
 const codesOf = (text: string): ReadonlyArray<number> =>
   Arr.map(text.split(""), (char) => char.charCodeAt(0))
 
+const isUpper = (code: number): boolean => code >= 0x41 && code <= 0x5a
+const isLower = (code: number): boolean => code >= 0x61 && code <= 0x7a
+
 /** The code itself and, for an ASCII letter, its other case. */
 const casesOf = (code: number): ReadonlyArray<number> =>
-  code >= 0x41 && code <= 0x5a
-    ? [code, code + 0x20]
-    : code >= 0x61 && code <= 0x7a
-      ? [code, code - 0x20]
-      : [code]
+  Match.value(code).pipe(
+    Match.when(isUpper, (upper) => [upper, upper + 0x20]),
+    Match.when(isLower, (lower) => [lower, lower - 0x20]),
+    Match.orElse((other) => [other]),
+  )
 
 interface Pattern {
   /** For each character, the bits of the pattern positions it stands at. */
