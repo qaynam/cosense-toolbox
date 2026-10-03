@@ -95,6 +95,36 @@ describe("detectCompletionInDocument", () => {
     const text = "タイトル\n本文 [ページ] の続き"
     expect(found(detectCompletionInDocument(text, { line: 1, character: 5 }))?.kind).toBe("link")
   })
+  it("says nothing on the title line, which Cosense does not read as notation", () => {
+    const text = "[WIP] タイトル #draft\n本文"
+    expect(Option.isNone(detectCompletionInDocument(text, { line: 0, character: 2 }))).toBe(true)
+    expect(Option.isNone(detectCompletionInDocument(text, { line: 0, character: 16 }))).toBe(true)
+  })
+
+  it("takes the line after the frontmatter as the title", () => {
+    const text = "---\ntitle: 下書き\n---\n[WIP] タイトル\n本文 [ページ]"
+    expect(Option.isNone(detectCompletionInDocument(text, { line: 3, character: 2 }))).toBe(true)
+    expect(found(detectCompletionInDocument(text, { line: 4, character: 5 }))?.kind).toBe("link")
+  })
+
+  it("takes a first line of --- as the title when the page has no frontmatter", () => {
+    const text = "---\nメモ\n---\n[ページ]"
+    const position = { line: 3, character: 2 }
+    expect(
+      found(detectCompletionInDocument(text, position, {}, { frontmatter: false }))?.kind,
+    ).toBe("link")
+  })
+
+  it("says nothing on a command line, which Cosense shows as it is written", () => {
+    const text = "タイトル\n$ git log [main]\n  % ls #tag"
+    expect(Option.isNone(detectCompletionInDocument(text, { line: 1, character: 12 }))).toBe(true)
+    expect(Option.isNone(detectCompletionInDocument(text, { line: 2, character: 11 }))).toBe(true)
+  })
+
+  it("answers on a line that only starts like a command", () => {
+    const text = "タイトル\n$記号 [ページ]"
+    expect(found(detectCompletionInDocument(text, { line: 1, character: 6 }))?.kind).toBe("link")
+  })
 })
 
 describe("completionItems", () => {
