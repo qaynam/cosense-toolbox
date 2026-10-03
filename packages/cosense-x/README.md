@@ -6,13 +6,19 @@ Cosense (旧 Scrapbox) の記法で書いたページを、JSX モジュール�
 **ドキュメント → <https://cosense-toolbox.qaynam.dev/cosense-x/>**
 
 - 形式は 2 つある。`.csn` は素の Cosense 記法で、Markdown の `.md` にあたる。`.csnx` は `.csn` にコンポーネントの行を足したもので、`.mdx` にあたる
-- どちらの形式にも frontmatter を書ける。ファイル先頭の YAML と、Cosense の画面でも書ける `code:frontmatter.yml` ブロックの 2 か所に書ける
+- どちらの形式にも、ファイル先頭の YAML で frontmatter を書ける
 - リンク (`[title]` / `#tag`) は手元のファイルだけで、タイトルで解決する。Cosense に問い合わせないので、オフラインでもビルドできる
 - 逆リンクと 2 hop リンクを計算できる (`./graph`)
 - 出力は `jsxImportSource` で切り替えられる。Astro・React・Preact・Vue のどれにも出せる
 - 要素の構造と class 名は `@cosense-toolbox/parser` の `toHtml` と同じなので、`@cosense-toolbox/style` がそのまま当たる
 
 > **beta**：公開 API はまだ変わりうる。
+
+### 次のリリースでの変更
+
+- `code:frontmatter.yml` のブロックを frontmatter として読むのをやめた。frontmatter はファイル先頭の YAML だけに書く。
+  ブロックは、ほかのコードブロックと同じく本文に出る。
+- それに合わせて `readFrontmatter` と `ReadFrontmatterResult` を削除した。ファイル先頭の YAML は今までどおり `splitFrontmatter` / `readPage` で読める。
 
 Astro で使うなら [`@cosense-toolbox/astro`](../astro-cosense) を入れる。
 このパッケージを直接使うのは、ほかのフレームワークに組み込むときや、ビルドの仕組みを自分で書くとき。
@@ -80,16 +86,15 @@ export default function CosenseContent(props = {}) {
 ---
 slug: hello
 date: 2026-09-01
+draft: true
+tags: [Cosense]
 ---
 タイトル
-code:frontmatter.yml
- draft: true
- tags: [Cosense]
 本文
 ```
 
-- ファイル先頭の YAML と `code:frontmatter.yml` (`.yaml` も可) の両方にあるキーは、ファイル先頭のほうを使う
-- `code:frontmatter.yml` はインデントせずに書いたものだけを読み、本文には出さない
+- ファイル先頭の `---` で囲んだ YAML を読み、本文からは取り除く
+- `code:frontmatter.yml` のブロックは frontmatter として読まず、ほかのコードブロックと同じく本文に出す
 - `metadata` の `title` / `slug` / `description` / `image` / `draft` は frontmatter の値で上書きできる。`tags` は frontmatter の `tags` と本文の `#tag` を合わせたものになる
 
 ## リンクの解決
@@ -179,11 +184,11 @@ const { data, contentType } = await fetchAsset("https://scrapbox.io/files/xxx.pn
 
 ## API
 
-| モジュール                         | API                                                                                                                                                                                                                 |
-| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@cosense-toolbox/cosense-x`       | `compile` `toHast` `readPage` `createIndex` `createLinkResolver` `parseComponentTag` `parseClosingTag` `findInlineComponents` `splitFrontmatter` `readFrontmatter` `collectMetadata` `normalizeTitle` `titleToSlug` |
-| `@cosense-toolbox/cosense-x/graph` | `scanPages` `buildGraph` `readPage` `createIndex` `normalizeTitle` `titleToSlug`                                                                                                                                    |
-| `@cosense-toolbox/cosense-x/fetch` | `fetchPage` `fetchPageText` `fetchAsset` `isCosenseAssetUrl` `cosenseIconUrl`                                                                                                                                       |
+| モジュール                         | API                                                                                                                                                                                               |
+| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@cosense-toolbox/cosense-x`       | `compile` `toHast` `readPage` `createIndex` `createLinkResolver` `parseComponentTag` `parseClosingTag` `findInlineComponents` `splitFrontmatter` `collectMetadata` `normalizeTitle` `titleToSlug` |
+| `@cosense-toolbox/cosense-x/graph` | `scanPages` `buildGraph` `readPage` `createIndex` `normalizeTitle` `titleToSlug`                                                                                                                  |
+| `@cosense-toolbox/cosense-x/fetch` | `fetchPage` `fetchPageText` `fetchAsset` `isCosenseAssetUrl` `cosenseIconUrl`                                                                                                                     |
 
 `compile` の主なオプション:
 
