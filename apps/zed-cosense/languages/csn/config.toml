@@ -4,3 +4,5 @@ path_suffixes = ["csn"]
 tab_size = 1
 hard_tabs = false
 soft_wrap = "editor_width"
+# Cosense Web は `[` を打つとすぐ閉じる。補完も閉じた括弧の中で出すので、同じにする。
+brackets = [{ start = "[", end = "]", close = true, newline = false }]

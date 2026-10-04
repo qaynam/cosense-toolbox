@@ -173,9 +173,10 @@ connection.onInitialize(({ workspaceFolders, initializationOptions }): Initializ
         legend: { tokenTypes: [...LEGEND], tokenModifiers: [] },
         full: true,
       },
-      // `[` and `#` open a link and a tag. The editor asks again on every character after
-      // one, so nothing else has to be declared for typing to keep the menu up to date.
-      completionProvider: { triggerCharacters: ["[", "#"] },
+      // `[` and `#` open a link and a tag, and the editor asks again on every character
+      // after one while its menu is open. `/` is for `[:/` (a site's file): by then the menu
+      // has closed when no page title starts with `:`, and nothing else would reopen it.
+      completionProvider: { triggerCharacters: ["[", "#", "/"] },
       definitionProvider: true,
       codeActionProvider: { codeActionKinds: [CodeActionKind.QuickFix] },
     },
