@@ -1,0 +1,116 @@
+[
+  {
+    "token_type": "title",
+    "style": ["title"],
+    "font_weight": "bold"
+  },
+  {
+    "token_type": "bold",
+    "style": ["emphasis.strong"],
+    "font_weight": "bold"
+  },
+  {
+    "token_type": "bold2",
+    "style": ["title", "emphasis.strong"],
+    "font_weight": "bold"
+  },
+  {
+    "token_type": "bold3",
+    "style": ["title", "emphasis.strong"],
+    "font_weight": "bold"
+  },
+  {
+    "token_type": "italic",
+    "style": ["emphasis"],
+    "font_style": "italic"
+  },
+  {
+    "token_type": "strike",
+    "style": ["comment"],
+    "font_style": "normal",
+    "strikethrough": true
+  },
+  {
+    "token_type": "underline",
+    "style": ["string.special", "emphasis"],
+    "underline": true
+  },
+  {
+    "token_type": "link",
+    "style": ["link_text"],
+    "font_style": "normal"
+  },
+  {
+    "token_type": "projectLink",
+    "style": ["link_text"],
+    "font_style": "normal"
+  },
+  {
+    "token_type": "icon",
+    "style": ["link_text"],
+    "font_style": "normal"
+  },
+  {
+    "token_type": "externalLink",
+    "style": ["link_uri", "link_text"],
+    "font_style": "normal"
+  },
+  {
+    "token_type": "image",
+    "style": ["link_uri", "link_text"],
+    "font_style": "normal"
+  },
+  {
+    "token_type": "media",
+    "style": ["link_uri", "link_text"],
+    "font_style": "normal"
+  },
+  {
+    "token_type": "hashtag",
+    "style": ["attribute", "tag"]
+  },
+  {
+    "token_type": "code",
+    "style": ["text.literal", "string"]
+  },
+  {
+    "token_type": "codeBlock",
+    "style": ["text.literal", "string"]
+  },
+  {
+    "token_type": "formula",
+    "style": ["text.literal", "number"]
+  },
+  {
+    "token_type": "table",
+    "style": ["text.literal", "property"]
+  },
+  {
+    "token_type": "quote",
+    "style": ["comment"]
+  },
+  {
+    "token_type": "frontmatter",
+    "style": ["comment"]
+  },
+  {
+    "token_type": "component",
+    "style": ["tag", "type"]
+  },
+  {
+    "token_type": "attribute",
+    "style": ["attribute", "property"]
+  },
+  {
+    "token_type": "attributeValue",
+    "style": ["string"]
+  },
+  {
+    "token_type": "expression",
+    "style": ["variable"]
+  },
+  {
+    "token_type": "notation",
+    "style": ["punctuation.special", "attribute"]
+  }
+]

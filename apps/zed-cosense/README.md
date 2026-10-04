@@ -57,6 +57,8 @@
         "mediaRoot": "public",
         // 1 行目の --- を frontmatter (YAML) として飛ばすか。frontmatter の無いページなら false
         "frontmatter": true,
+        // トークンを送る名前。拡張の既定は "cosense"。"lsp" にすると LSP 標準の名前で送り、拡張の見た目は当たらない
+        "tokenNames": "cosense",
       },
     },
   },
@@ -86,41 +88,29 @@ monorepo で `apps/web/public` のようにサイトが下にあっても、そ�
 
 ## 色を変える
 
-トークンの名前は Cosense のものにしてある（`link`、`quote`、`bold` など）。
-`semantic_token_rules` で好きな色に寄せられる。
+拡張は、Cosense の記法ごとの見た目を既定で持っている (`languages/*/semantic_token_rules.json`)。
+`[* ]` は太字、`[/ ]` は斜体、`[- ]` は打ち消し線、`[_ ]` は下線で出し、色はテーマの `emphasis.strong` などから取る。
+色そのものはテーマごとに違う。
+
+サーバーは、トークンを Cosense の名前 (`bold`、`strike`、`link` など) で送る。拡張がサーバーに
+`"tokenNames": "cosense"` を渡しているため。名前の一覧は `TOKEN_TYPES` (`@cosense-toolbox/lsp/tokens`) にある。
+
+見た目を変えたいときは、`global_lsp_settings.semantic_token_rules` に足す。自分のルールが拡張のものより優先される。
 
 ```jsonc
 {
-  "semantic_token_rules": [
-    { "token_type": "title", "style": ["title"] },
-    { "token_type": "link", "style": ["link_text"] },
-    { "token_type": "externalLink", "style": ["link_text"] },
-    { "token_type": "projectLink", "style": ["link_text"] },
-    { "token_type": "hashtag", "style": ["attribute"] },
-    { "token_type": "icon", "style": ["link_text"] },
-    { "token_type": "image", "style": ["link_text"] },
-    { "token_type": "media", "style": ["link_text"] },
-    { "token_type": "code", "style": ["text.literal"] },
-    { "token_type": "codeBlock", "style": ["text.literal"] },
-    { "token_type": "formula", "style": ["text.literal"] },
-    { "token_type": "quote", "style": ["comment"] },
-    { "token_type": "table", "style": ["text.literal"] },
-    { "token_type": "frontmatter", "style": ["comment"] },
-    { "token_type": "component", "style": ["tag"] },
-    { "token_type": "attribute", "style": ["attribute"] },
-    { "token_type": "attributeValue", "style": ["string"] },
-    { "token_type": "expression", "style": ["variable"] },
-    { "token_type": "bold", "font_weight": "bold" },
-    { "token_type": "bold2", "font_weight": "bold" },
-    { "token_type": "bold3", "font_weight": "bold" },
-    { "token_type": "italic", "font_style": "italic" },
-    { "token_type": "strike", "style": ["comment"] },
-    { "token_type": "underline", "style": ["emphasis"] },
-  ],
+  "global_lsp_settings": {
+    "semantic_token_rules": [
+      // 打ち消し線の色を変える
+      { "token_type": "strike", "foreground_color": "#888888", "strikethrough": true },
+      // 見出し ([** ] 以上) を大きく見せる代わりに色を変える
+      { "token_type": "bold2", "style": ["keyword"], "font_weight": "bold" },
+    ],
+  },
 }
 ```
 
-既定のルールは `zed: show default semantic token rules` で見られる。
+どのトークンが付いているかは `dev: open highlights tree view` で見られる。
 
 ## サーバーの場所
 

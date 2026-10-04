@@ -21,7 +21,7 @@ import { unresolvedLinkDiagnostics } from "./diagnostics"
 import { mapLinkActions, mapLinkDiagnostics } from "./map-link"
 import { mediaCompletionItems, mediaFilesIn, missingMediaDiagnostics } from "./media"
 import { defaultSettings, settingsOf } from "./settings"
-import { computeTokens, encodeTokens, LEGEND } from "./tokens"
+import { computeTokens, encodeTokens, legendFor } from "./tokens"
 import {
   emptyIndex,
   findMediaRoots,
@@ -94,6 +94,7 @@ const semanticTokensOf = (document: TextDocument): SemanticTokens => ({
       frontmatter: currentSettings().frontmatter,
       parseOptions: parseOptionsOf(document),
     }),
+    legendFor(currentSettings().tokenNames),
   ),
 })
 
@@ -206,7 +207,7 @@ connection.onInitialize(({ workspaceFolders, initializationOptions }): Initializ
       // every keystroke is what makes a large page feel slow.
       textDocumentSync: TextDocumentSyncKind.Incremental,
       semanticTokensProvider: {
-        legend: { tokenTypes: [...LEGEND], tokenModifiers: [] },
+        legend: { tokenTypes: [...legendFor(read.tokenNames)], tokenModifiers: [] },
         full: true,
       },
       // `[` and `#` open a link and a tag, and the editor asks again on every character

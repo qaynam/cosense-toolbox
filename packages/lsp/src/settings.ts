@@ -1,12 +1,13 @@
 import { Array as Arr, Option, pipe, Record as Rec, Schema } from "effect"
 
 import { type Severity, severityOf } from "./diagnostics"
+import { TokenNames } from "./tokens"
 
 /**
  * What the reader can set, through the editor's initialization options:
  *
  * ```json
- * { "sources": ["src"], "unresolvedLinks": "warning", "mapLinks": "information", "frontmatter": true, "mediaRoot": "public" }
+ * { "sources": ["src"], "unresolvedLinks": "warning", "mapLinks": "information", "frontmatter": true, "mediaRoot": "public", "tokenNames": "lsp" }
  * ```
  *
  * Which markers open a decoration is not among them: that is Cosense's syntax, and the parser
@@ -37,6 +38,8 @@ export interface Settings {
    * A repository may hold several sites; each page belongs to the nearest.
    */
   readonly mediaRoot: string
+  /** The names semantic tokens are sent by (see `legendFor`). */
+  readonly tokenNames: TokenNames
 }
 
 export const defaultSettings: Settings = {
@@ -45,6 +48,7 @@ export const defaultSettings: Settings = {
   mapLinks: "information",
   frontmatter: true,
   mediaRoot: "public",
+  tokenNames: "lsp",
 }
 
 /** `schema`'s reading of `value`, or `fallback` when `value` is not of that shape. */
@@ -80,5 +84,6 @@ export const settingsOf = (options: unknown): Settings => {
     mapLinks: severityOf(field("mapLinks"), defaultSettings.mapLinks),
     frontmatter: decodeOr(Schema.Boolean, defaultSettings.frontmatter)(field("frontmatter")),
     mediaRoot: decodeOr(Schema.NonEmptyString, defaultSettings.mediaRoot)(field("mediaRoot")),
+    tokenNames: decodeOr(TokenNames, defaultSettings.tokenNames)(field("tokenNames")),
   }
 }

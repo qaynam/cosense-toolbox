@@ -28,6 +28,7 @@ csn-lsp --stdio
 | `unresolvedLinks` | 存在しないページへのリンクの診断。`off` / `hint` / `information` / `warning` / `error`                                                                                                           | `warning`          |
 | `mediaRoot`       | サイトがファイルを配るディレクトリ。ページから上にたどって最初にこれを持つディレクトリをそのページのサイトとし、`[:/images/a.png]` をそこに置いた画像として読む。monorepo の複数のサイトにも効く | `public`           |
 | `mapLinks`        | 地図の記法にできる Google マップの URL の診断。`off` / `hint` / `information` / `warning` / `error`                                                                                              | `information`      |
+| `tokenNames`      | トークンを送る名前。`lsp` は LSP 標準の名前 (どのエディタでも色が付く)、`cosense` は `bold` や `strike` など Cosense の名前 (エディタの側でルールを書くとき)                                     | `lsp`              |
 | `frontmatter`     | 1 行目の `---` を frontmatter (YAML) として飛ばすか                                                                                                                                              | `true`             |
 
 ## Google マップの URL

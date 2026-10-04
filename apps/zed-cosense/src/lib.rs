@@ -137,7 +137,7 @@ impl zed::Extension for CosenseExtension {
         Ok(stdio(zed::node_binary_path()?, vec![path], worktree))
     }
 
-    /// The reader's `initialization_options`, passed through as they are. This is where the
+    /// The reader's `initialization_options`, over this extension's defaults. This is where the
     /// server's settings live, such as `unresolvedLinks` (how loudly a link to a missing page
     /// is reported).
     fn language_server_initialization_options(
@@ -145,12 +145,55 @@ impl zed::Extension for CosenseExtension {
         language_server_id: &LanguageServerId,
         worktree: &Worktree,
     ) -> Result<Option<zed::serde_json::Value>> {
-        Ok(
+        Ok(Some(with_defaults(
             LspSettings::for_worktree(language_server_id.as_ref(), worktree)
                 .ok()
                 .and_then(|settings| settings.initialization_options),
-        )
+        )))
     }
 }
 
+/// The server's settings this extension needs, under whatever the reader set: a key the reader
+/// set keeps their value.
+///
+/// `tokenNames: "cosense"` has the server send its own token names (`bold`, `strike`, ...)
+/// rather than the LSP's, which have none for bold or strikethrough. The rules in
+/// `languages/*/semantic_token_rules.json` style those names.
+fn with_defaults(options: Option<zed::serde_json::Value>) -> zed::serde_json::Value {
+    let mut merged = zed::serde_json::json!({ "tokenNames": "cosense" });
+    if let (Some(defaults), Some(zed::serde_json::Value::Object(set))) =
+        (merged.as_object_mut(), options)
+    {
+        defaults.extend(set);
+    }
+    merged
+}
+
 zed::register_extension!(CosenseExtension);
+
+#[cfg(test)]
+mod tests {
+    use super::with_defaults;
+    use zed_extension_api::serde_json::json;
+
+    #[test]
+    fn asks_for_the_servers_own_token_names_when_nothing_is_set() {
+        assert_eq!(with_defaults(None), json!({ "tokenNames": "cosense" }));
+    }
+
+    #[test]
+    fn keeps_the_readers_settings_alongside() {
+        assert_eq!(
+            with_defaults(Some(json!({ "unresolvedLinks": "error" }))),
+            json!({ "tokenNames": "cosense", "unresolvedLinks": "error" })
+        );
+    }
+
+    #[test]
+    fn lets_the_reader_choose_the_lsps_names_instead() {
+        assert_eq!(
+            with_defaults(Some(json!({ "tokenNames": "lsp" }))),
+            json!({ "tokenNames": "lsp" })
+        );
+    }
+}
