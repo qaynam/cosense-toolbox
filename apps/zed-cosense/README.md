@@ -51,6 +51,10 @@
         "sources": ["examples/astro-blog/src"],
         // 存在しないページへのリンクの診断。"off" | "hint" | "information" | "warning" | "error"
         "unresolvedLinks": "warning",
+        // 地図の記法にできる Google マップの URL の診断。値は unresolvedLinks と同じ
+        "mapLinks": "information",
+        // サイトがファイルを配るディレクトリ。これがあれば [:/images/a.png] を画像として読む
+        "mediaRoot": "public",
         // 1 行目の --- を frontmatter (YAML) として飛ばすか。frontmatter の無いページなら false
         "frontmatter": true,
         // トークンを送る名前。拡張の既定は "cosense"。"lsp" にすると LSP 標準の名前で送り、拡張の見た目は当たらない
@@ -68,6 +72,12 @@
 候補の選び方と並べ方は Cosense Web と同じで、短い題名が先に並び、3 文字以上なら 1 文字違いの題名も出る。
 まだ無いページへのリンクも、「まだ無いページ」として候補に出す。
 タイトル行と、コードやコマンドの行 (`$ ls`) の中では出さない。Cosense がそこを記法として読まないため。
+
+### サイトのファイル
+
+ページから上にたどって最初に `mediaRoot` (既定 `public`) を持つディレクトリを、そのページのサイトとみなし、`[:/images/a.png]` をそこに置いた画像として読む。
+monorepo で `apps/web/public` のようにサイトが下にあっても、そのサイトのページで効く。
+`[:/` の中では、そのディレクトリの下の画像・動画・音声を候補に出し、無いファイルを指していれば診断を出す。
 
 ### 存在しないページへのリンク
 

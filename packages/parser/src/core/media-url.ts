@@ -8,6 +8,7 @@
 import { Match, Option, pipe } from "effect"
 
 import type { EmbedNode } from "../types"
+import { IMAGE_EXT_RE } from "./image-url"
 
 const VIDEO_RE = /^https?:\/\/[^\s\]]+\.(?:mp4|webm|mov)$/i
 
@@ -15,6 +16,19 @@ const VIDEO_RE = /^https?:\/\/[^\s\]]+\.(?:mp4|webm|mov)$/i
 const LINKED_VIDEO_RE = /^https?:\/\/[^\s\]]*\.(?:mp4|webm|mov)(?:\?[^\s\]]+)?$/i
 
 const AUDIO_RE = /^https?:\/\/[^\s\]]*\.(?:wav|mp3|weba|ogg|aac)$/i
+
+/** URL を問わず、ファイルの拡張子から分かるメディアの種類。 */
+export type MediaKind = "image" | "video" | "audio"
+
+const KIND_BY_EXTENSION: readonly (readonly [RegExp, MediaKind])[] = [
+  [IMAGE_EXT_RE, "image"],
+  [/\.(?:mp4|webm|mov)$/i, "video"],
+  [/\.(?:wav|mp3|weba|ogg|aac)$/i, "audio"],
+]
+
+/** パスの末尾の拡張子から分かるメディアの種類。どれでもなければ None。 */
+export const mediaKindOf = (path: string): Option.Option<MediaKind> =>
+  Option.fromNullable(KIND_BY_EXTENSION.find(([pattern]) => pattern.test(path))?.[1])
 
 /** 単独で (`[url]` / `[[url]]`) 動画になる URL か。 */
 export const isVideoUrl = (url: string): boolean => VIDEO_RE.test(url)

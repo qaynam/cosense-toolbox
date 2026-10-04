@@ -15,13 +15,17 @@ describe("initializationOptionsOf", () => {
         settings({
           sources: ["src"],
           unresolvedLinks: "error",
+          mapLinks: "hint",
           frontmatter: false,
+          mediaRoot: "static",
         }),
       ),
     ).toEqual({
       sources: ["src"],
       unresolvedLinks: "error",
+      mapLinks: "hint",
       frontmatter: false,
+      mediaRoot: "static",
     })
   })
 

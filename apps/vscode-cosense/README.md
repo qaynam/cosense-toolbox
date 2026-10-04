@@ -42,12 +42,14 @@ code --install-extension vscode-cosense-0.1.0.vsix
 
 ## 設定
 
-| 設定                      | 内容                                                                                   | 既定               |
-| :------------------------ | :------------------------------------------------------------------------------------- | :----------------- |
-| `cosense.sources`         | ページを読む場所。ワークスペースからの相対パス                                         | ワークスペース全体 |
-| `cosense.unresolvedLinks` | 存在しないページへのリンクの診断。`off` / `hint` / `information` / `warning` / `error` | `warning`          |
-| `cosense.frontmatter`     | 1 行目の `---` を frontmatter (YAML) として飛ばすか                                    | `true`             |
-| `cosense.server.path`     | 使う Language Server のパス。空なら同梱のものを使う                                    | 空                 |
+| 設定                      | 内容                                                                                                    | 既定               |
+| :------------------------ | :------------------------------------------------------------------------------------------------------ | :----------------- |
+| `cosense.sources`         | ページを読む場所。ワークスペースからの相対パス                                                          | ワークスペース全体 |
+| `cosense.unresolvedLinks` | 存在しないページへのリンクの診断。`off` / `hint` / `information` / `warning` / `error`                  | `warning`          |
+| `cosense.mediaRoot`       | サイトがファイルを配るディレクトリ。ページの上にこれがあれば、`[:/images/a.png]` をそこの画像として読む | `public`           |
+| `cosense.mapLinks`        | 地図の記法にできる Google マップの URL の診断。`off` / `hint` / `information` / `warning` / `error`     | `information`      |
+| `cosense.frontmatter`     | 1 行目の `---` を frontmatter (YAML) として飛ばすか                                                     | `true`             |
+| `cosense.server.path`     | 使う Language Server のパス。空なら同梱のものを使う                                                     | 空                 |
 
 設定を変更した場合は、Language Server を再起動すると反映されます。
 

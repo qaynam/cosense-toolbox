@@ -80,6 +80,23 @@
           "default": "warning",
           "markdownDescription": "存在しないページへのリンクの診断の強さ。"
         },
+        "cosense.mapLinks": {
+          "type": "string",
+          "enum": [
+            "off",
+            "hint",
+            "information",
+            "warning",
+            "error"
+          ],
+          "default": "information",
+          "markdownDescription": "地図の記法にできる Google マップの URL の診断の強さ。`off` にしても、クイックフィックスは使える。"
+        },
+        "cosense.mediaRoot": {
+          "type": "string",
+          "default": "public",
+          "markdownDescription": "サイトがファイルを配るディレクトリ。ページから上にたどって最初にこれを持つディレクトリをそのページのサイトとし、`[:/images/a.png]` をそこの画像として読む。"
+        },
         "cosense.frontmatter": {
           "type": "boolean",
           "default": true,

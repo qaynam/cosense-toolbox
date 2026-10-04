@@ -8,13 +8,10 @@
  */
 import { Option, pipe } from "effect"
 
-const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i
+export const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i
 
 /** Gyazo のページ URL / 画像 URL から hash を取り出す。 */
 const GYAZO_RE = /^https?:\/\/(?:i\.)?gyazo\.com\/([0-9a-f]{20,})/i
-
-/** 末尾が画像の拡張子か。URL でなくてもよい (`a.png` のような相対パスも真になる)。 */
-export const hasImageExtension = (s: string): boolean => IMAGE_EXT_RE.test(s)
 
 /**
  * Gyazo のページ URL は拡張子を持たないが画像として表示される。

@@ -180,8 +180,7 @@ describe("装飾", () => {
     ])
   })
 
-  it("装飾の中では拡張子だけの画像はリンクになる", () => {
-    // 装飾内の相対パス画像はインライン画像にせずリンク扱い。
+  it("装飾の中でも、URL でない画像の名前はページへのリンクになる", () => {
     expect(stripPositions(decorationAt("[* [a.png]]").children)).toEqual([
       { type: "internalLink", label: "a.png", target: "a.png" },
     ])

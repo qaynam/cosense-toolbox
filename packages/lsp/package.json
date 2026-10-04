@@ -32,6 +32,10 @@
       "types": "./dist/suggest.d.mts",
       "default": "./dist/suggest.mjs"
     },
+    "./media": {
+      "types": "./dist/media.d.mts",
+      "default": "./dist/media.mjs"
+    },
     "./link": {
       "types": "./dist/link.d.mts",
       "default": "./dist/link.mjs"

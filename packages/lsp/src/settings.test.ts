@@ -8,13 +8,17 @@ describe("settingsOf", () => {
       settingsOf({
         sources: ["examples/astro-blog/src"],
         unresolvedLinks: "error",
+        mapLinks: "off",
         frontmatter: false,
+        mediaRoot: "static",
         tokenNames: "cosense",
       }),
     ).toEqual({
       sources: ["examples/astro-blog/src"],
       unresolvedLinks: "error",
+      mapLinks: "off",
       frontmatter: false,
+      mediaRoot: "static",
       tokenNames: "cosense",
     })
   })
@@ -24,7 +28,9 @@ describe("settingsOf", () => {
     expect(defaultSettings).toEqual({
       sources: [],
       unresolvedLinks: "warning",
+      mapLinks: "information",
       frontmatter: true,
+      mediaRoot: "public",
       tokenNames: "lsp",
     })
   })
@@ -37,9 +43,9 @@ describe("settingsOf", () => {
   })
 
   it("falls back to the default of a setting whose value is not of its shape", () => {
-    expect(settingsOf({ sources: "src", frontmatter: "no", tokenNames: "zed" })).toEqual(
-      defaultSettings,
-    )
+    expect(
+      settingsOf({ sources: "src", mapLinks: "loud", frontmatter: "no", tokenNames: "zed" }),
+    ).toEqual(defaultSettings)
   })
 
   it("has no setting for decoration markers, since which ones decorate is Cosense's syntax", () => {
