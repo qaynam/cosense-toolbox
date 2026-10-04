@@ -7,19 +7,14 @@
 **LSP の semantic tokens** から来る。`@cosense-toolbox/parser` をそのまま使うので、
 記法の解釈が Cosense の描画とそろいます。
 
-## 開発版をインストールする
+## インストールする
 
-1. サーバーをビルドする。
+1. Zed の拡張の一覧 (`zed: extensions`) で「Cosense」を探して入れる。
 
-   ```sh
-   bun install
-   bun run --filter '@cosense-toolbox/lsp' build
-   ```
+   Language Server (`@cosense-toolbox/lsp`) は、拡張が npm から自動で入れ、Zed に同梱の Node.js で動かす。
+   新しい版が出ていれば、Zed を起動したときに入れ直す。自分で用意したサーバーを使うときは、下の「サーバーの場所」を見る。
 
-2. Zed で `zed: install dev extension` を実行し、このディレクトリを選択する。
-   Rust が要る（Zed が `cargo` と `rustup target add wasm32-wasip1` を呼ぶ）。
-
-3. **`settings.json` に次の設定を追加する。** これらの既定値は拡張側から変更できない。
+2. **`settings.json` に次の設定を追加する。** これらの既定値は拡張側から変更できない。
 
    ```jsonc
    {
@@ -119,10 +114,33 @@
 
 既定のルールは `zed: show default semantic token rules` で見られる。
 
-## 分かっていないこと
+## サーバーの場所
 
-- **grammar を持たない言語を Zed が受け付けるか、まだ実機で確かめていない。**
-  拒まれたら `extension.toml` に最小の grammar を足す。色は semantic tokens から来る
-  ので、grammar は形だけでよい
-- 補完と定義ジャンプは出していない。chatora のサーバーはそれらを `cosense://` の URI
-  前提で解決しており、手元のファイルには別の解決が要る
+拡張は、次の順にサーバーを探す。
+
+1. `settings.json` の `lsp.csn-lsp.binary.path` (と `arguments`)
+2. `PATH` にある `csn-lsp` (`npm install -g @cosense-toolbox/lsp` で入れたものなど)
+3. このリポジトリを開いているときは、リポジトリの `packages/lsp/dist/main.mjs`
+4. どれも無ければ、npm から入れた `@cosense-toolbox/lsp`
+
+```jsonc
+{
+  "lsp": {
+    "csn-lsp": {
+      "binary": { "path": "/path/to/csn-lsp", "arguments": ["--stdio"] },
+    },
+  },
+}
+```
+
+## 開発
+
+このリポジトリで拡張を直すときは、Zed の `zed: install dev extension` でこのディレクトリを選ぶ。
+Rust が要る (Zed が `cargo` と `rustup target add wasm32-wasip2` を呼ぶ)。
+
+リポジトリを開いている間は、npm の版ではなくリポジトリのサーバーを使う (上の 3)。サーバーを直したら、ビルドしてから Zed でサーバーを再起動する。
+
+```sh
+bun install
+bun run --filter '@cosense-toolbox/lsp' build
+```
