@@ -1,9 +1,9 @@
-import type { Dirent } from "node:fs"
+import { type Dirent, statSync } from "node:fs"
 import { readdir, readFile, stat } from "node:fs/promises"
 import { basename, extname, join, relative, resolve, sep } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
-import { parse } from "@cosense-toolbox/parser"
+import { parse, type ParseOptions } from "@cosense-toolbox/parser"
 import { collectLinks } from "@cosense-toolbox/parser/utils"
 import { Array as Arr, Effect, Match, Option, pipe } from "effect"
 
@@ -144,7 +144,8 @@ export interface ReadIndexOptions {
    * Whether a `---` fence on the first line opens YAML to skip (default: true). Off for
    * Cosense pages, which have no frontmatter: a page titled `---` keeps its title.
    */
-  readonly frontmatter?: boolean
+  readonly frontmatter?: boolean /** How to parse: the site's notation extensions, so a site's own notation is not a link. */
+  readonly parseOptions?: ParseOptions
 }
 
 /** A page file as read: the page it makes, where it is on disk, and its text. */
@@ -158,7 +159,7 @@ export interface PageFile {
 const readPageFile = (
   root: string,
   path: string,
-  { frontmatter = true }: ReadIndexOptions,
+  { frontmatter = true, parseOptions = {} }: ReadIndexOptions,
 ): Effect.Effect<Option.Option<PageFile>> =>
   pipe(
     Effect.all([
@@ -173,7 +174,7 @@ const readPageFile = (
           uri: pathToFileURL(path).href,
           location: locationOf(root, path),
           updated: mtimeMs,
-          links: collectLinks(parse(body)),
+          links: collectLinks(parse(body, parseOptions)),
         },
         path,
         text,
@@ -233,3 +234,15 @@ export const rootsOf = (
       }),
     ),
   )
+
+const isDirectory = (path: string): boolean =>
+  Option.getOrElse(
+    Option.map(Option.liftThrowable(statSync)(path), (stats) => stats?.isDirectory() === true),
+    () => false,
+  )
+
+/** Whether any workspace folder holds `mediaRoot`, the directory a site serves its files from. */
+export const hasMediaRoot = (
+  folders: ReadonlyArray<{ readonly uri: string }> | null | undefined,
+  mediaRoot: string,
+): boolean => Arr.some(rootsOf(folders, []), (folder) => isDirectory(resolve(folder, mediaRoot)))

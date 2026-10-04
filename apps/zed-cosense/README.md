@@ -53,6 +53,8 @@
         "unresolvedLinks": "warning",
         // 地図の記法にできる Google マップの URL の診断。値は unresolvedLinks と同じ
         "mapLinks": "information",
+        // サイトがファイルを配るディレクトリ。これがあれば [:/images/a.png] を画像として読む
+        "mediaRoot": "public",
         // 1 行目の --- を frontmatter (YAML) として飛ばすか。frontmatter の無いページなら false
         "frontmatter": true,
       },

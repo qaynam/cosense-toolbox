@@ -12,6 +12,7 @@
 import { fileURLToPath } from "node:url"
 
 import { readPage } from "@cosense-toolbox/cosense-x/graph"
+import { publicMedia } from "@cosense-toolbox/parser/extensions"
 import type {
   AstroConfig,
   AstroIntegration,
@@ -95,6 +96,14 @@ export interface CosenseIntegrationOptions extends AstroCompileOptions {
    * @example `{ unresolvedLinks: 'error' }`
    */
   readonly lint?: CosenseLintOptions
+  /**
+   * サイトに置いたファイル (`public/` の下) を、`[:/images/a.png]` のようにサイトの根元からのパスで
+   * 画像・動画・音声として読む (`publicMedia` の拡張)。パスの前にはサイトの `base` が付く。
+   * `false` なら、Cosense Web と同じくページへのリンクとして読む。
+   *
+   * @defaultValue `true`
+   */
+  readonly publicMedia?: boolean
 }
 
 /** サイトのリンク切れを調べ、見つかったものをログに出す。 */
@@ -182,8 +191,26 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
     assets: assetsOptions = {},
     syntaxHighlight = "astro",
     lint,
-    ...compileOptions
+    publicMedia: readsPublicMedia = true,
+    ...siteCompileOptions
   } = options
+  /**
+   * ページの読み方。サイトの拡張の後ろに `[:/…]` の拡張を足す。`base` は Astro の設定が
+   * 決まってから分かるので、設定を受け取るフックの中で作る。
+   */
+  const compileOptionsFor = (base: string): AstroCompileOptions =>
+    readsPublicMedia
+      ? {
+          ...siteCompileOptions,
+          parseOptions: {
+            ...siteCompileOptions.parseOptions,
+            extensions: [
+              ...(siteCompileOptions.parseOptions?.extensions ?? []),
+              publicMedia({ base }),
+            ],
+          },
+        }
+      : siteCompileOptions
   // config:setup で作る。ビルドの始まりと終わりのフックからも使う。
   let assets: AssetStore | undefined
   let astroConfig: AstroConfig | undefined
@@ -194,6 +221,8 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
         const { addPageExtension, addContentEntryType } = params as unknown as HiddenSetupHooks
         const { config, addRenderer, updateConfig, logger } = params
         const root = fileURLToPath(config.root)
+        const compileOptions = compileOptionsFor(config.base)
+        const { parseOptions } = compileOptions
         assets =
           assetsOptions === false
             ? undefined
@@ -218,7 +247,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
         const site = createSiteCache(
           root,
           fileURLToPath(config.srcDir),
-          options.parseOptions === undefined ? {} : { parseOptions: options.parseOptions },
+          parseOptions === undefined ? {} : { parseOptions },
         )
 
         addRenderer({
@@ -232,7 +261,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
           async getEntryInfo({ fileUrl, contents }) {
             const { frontmatter, metadata, body } = readPage(contents, {
               filePath: idOf(root, fileURLToPath(fileUrl)),
-              ...(options.parseOptions === undefined ? {} : { parseOptions: options.parseOptions }),
+              ...(parseOptions === undefined ? {} : { parseOptions }),
             })
             // Cosense では 1 行目がタイトルなので、frontmatter に無くても title などを data に入れる。
             const { links: _links, ...fields } = metadata
@@ -284,7 +313,10 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
       "astro:build:start": async ({ logger }) => {
         if (lint === undefined || astroConfig === undefined) return
         await Effect.runPromise(
-          Effect.flatMap(reportLint(astroConfig, lint, compileOptions, logger), stopOnErrors),
+          Effect.flatMap(
+            reportLint(astroConfig, lint, compileOptionsFor(astroConfig.base), logger),
+            stopOnErrors,
+          ),
         )
       },
 
@@ -293,6 +325,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
         if (lint === undefined || astroConfig === undefined) return
         const config = astroConfig
         // ビルドと違って止めず、見つけたものを知らせるだけにする。
+        const compileOptions = compileOptionsFor(config.base)
         const check = () => Effect.runFork(reportLint(config, lint, compileOptions, logger))
         const onChange = (file: string) => {
           if (isCosenseFile(file)) check()

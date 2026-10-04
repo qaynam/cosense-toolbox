@@ -21,12 +21,13 @@ csn-lsp --stdio
 
 設定はエディターの `initialization_options` で渡します。いずれも省略できます。
 
-| 設定              | 内容                                                                                                | 既定               |
-| :---------------- | :-------------------------------------------------------------------------------------------------- | :----------------- |
-| `sources`         | ページを読む場所。ワークスペースからの相対パス                                                      | ワークスペース全体 |
-| `unresolvedLinks` | 存在しないページへのリンクの診断。`off` / `hint` / `information` / `warning` / `error`              | `warning`          |
-| `mapLinks`        | 地図の記法にできる Google マップの URL の診断。`off` / `hint` / `information` / `warning` / `error` | `information`      |
-| `frontmatter`     | 1 行目の `---` を frontmatter (YAML) として飛ばすか                                                 | `true`             |
+| 設定              | 内容                                                                                                                                                                       | 既定               |
+| :---------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------- |
+| `sources`         | ページを読む場所。ワークスペースからの相対パス                                                                                                                             | ワークスペース全体 |
+| `unresolvedLinks` | 存在しないページへのリンクの診断。`off` / `hint` / `information` / `warning` / `error`                                                                                     | `warning`          |
+| `mediaRoot`       | サイトがファイルを配るディレクトリ (ワークスペースからの相対パス)。これがあるワークスペースでは、`[:/images/a.png]` をページへのリンクではなく、そこに置いた画像として読む | `public`           |
+| `mapLinks`        | 地図の記法にできる Google マップの URL の診断。`off` / `hint` / `information` / `warning` / `error`                                                                        | `information`      |
+| `frontmatter`     | 1 行目の `---` を frontmatter (YAML) として飛ばすか                                                                                                                        | `true`             |
 
 ## Google マップの URL
 

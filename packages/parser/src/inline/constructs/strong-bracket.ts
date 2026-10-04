@@ -24,7 +24,8 @@ export const strongBracketConstruct: InternalConstruct = (source, index, ctx) =>
   const inner = source.slice(index + 2, end)
   const length = end + 2 - index
 
-  if (isImageUrl(inner)) {
+  // Cosense Web が大きい画像にするのは URL だけ。`[[a.png]]` は `a.png` の太字の文字。
+  if (/^https?:\/\//i.test(inner) && isImageUrl(inner)) {
     const node: InlineNodeInit = { type: "image", src: inner, large: true }
     return Option.some({ node, length })
   }

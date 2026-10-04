@@ -1,3 +1,5 @@
+import type { ParseOptions } from "@cosense-toolbox/parser"
+import { publicMedia } from "@cosense-toolbox/parser/extensions"
 import { Array as Arr, Effect, Option, pipe, Ref } from "effect"
 import {
   type CodeAction,
@@ -18,7 +20,7 @@ import { unresolvedLinkDiagnostics } from "./diagnostics"
 import { mapLinkActions, mapLinkDiagnostics } from "./map-link"
 import { defaultSettings, settingsOf } from "./settings"
 import { computeTokens, encodeTokens, LEGEND } from "./tokens"
-import { emptyIndex, type Index, readIndex, rootsOf } from "./workspace"
+import { emptyIndex, hasMediaRoot, type Index, readIndex, rootsOf } from "./workspace"
 
 const connection = createConnection(ProposedFeatures.all)
 const documents = new TextDocuments(TextDocument)
@@ -40,11 +42,20 @@ const settings = Ref.unsafeMake(defaultSettings)
 
 const currentSettings = () => Effect.runSync(Ref.get(settings))
 
+/**
+ * How pages are parsed: as Cosense Web does, plus `[:/…]` as a site's media when a workspace
+ * folder holds the directory it is served from (see `mediaRoot` in settings.ts).
+ */
+const parseOptions = Ref.unsafeMake<ParseOptions>({})
+
+const currentParseOptions = () => Effect.runSync(Ref.get(parseOptions))
+
 const semanticTokensOf = (document: TextDocument): SemanticTokens => ({
   data: encodeTokens(
     computeTokens(document.getText(), {
       components: readsComponents(document),
       frontmatter: currentSettings().frontmatter,
+      parseOptions: currentParseOptions(),
     }),
   ),
 })
@@ -95,11 +106,13 @@ const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
                   severity: set.unresolvedLinks,
                   components: readsComponents(document),
                   frontmatter: set.frontmatter,
+                  parseOptions: currentParseOptions(),
                 }),
                 ...mapLinkDiagnostics(document.getText(), {
                   severity: set.mapLinks,
                   components: readsComponents(document),
                   frontmatter: set.frontmatter,
+                  parseOptions: currentParseOptions(),
                 }),
               ],
             }),
@@ -115,7 +128,9 @@ const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
 const refreshIndex = (): void => {
   pipe(
     Effect.all([Ref.get(roots), Ref.get(settings)]),
-    Effect.flatMap(([at, set]) => readIndex(at, { frontmatter: set.frontmatter })),
+    Effect.flatMap(([at, set]) =>
+      readIndex(at, { frontmatter: set.frontmatter, parseOptions: currentParseOptions() }),
+    ),
     Effect.flatMap((next) => Ref.set(index, Option.some(next))),
     Effect.flatMap(() => Effect.forEach(documents.all(), publishDiagnostics, { discard: true })),
     Effect.runFork,
@@ -128,6 +143,12 @@ connection.onInitialize(({ workspaceFolders, initializationOptions }): Initializ
   const read = settingsOf(initializationOptions)
   Effect.runSync(Ref.set(settings, read))
   Effect.runSync(Ref.set(roots, rootsOf(workspaceFolders, read.sources)))
+  Effect.runSync(
+    Ref.set(
+      parseOptions,
+      hasMediaRoot(workspaceFolders, read.mediaRoot) ? { extensions: [publicMedia()] } : {},
+    ),
+  )
   refreshIndex()
   return {
     capabilities: {
@@ -170,13 +191,9 @@ connection.onCompletion(({ textDocument: { uri }, position }): CompletionList =>
   items: withDocument(
     uri,
     (document) =>
-      completionItems(
-        currentIndex(),
-        document.getText(),
-        position,
-        {},
-        { frontmatter: currentSettings().frontmatter },
-      ),
+      completionItems(currentIndex(), document.getText(), position, currentParseOptions(), {
+        frontmatter: currentSettings().frontmatter,
+      }),
     [],
   ),
 }))
@@ -184,7 +201,10 @@ connection.onCompletion(({ textDocument: { uri }, position }): CompletionList =>
 connection.onDefinition(({ textDocument: { uri }, position }): Definition | null =>
   withDocument(
     uri,
-    (document) => Option.getOrNull(definitionOf(currentIndex(), document.getText(), position)),
+    (document) =>
+      Option.getOrNull(
+        definitionOf(currentIndex(), document.getText(), position, currentParseOptions()),
+      ),
     null,
   ),
 )
@@ -196,6 +216,7 @@ connection.onCodeAction(({ textDocument: { uri }, range }): CodeAction[] =>
       mapLinkActions(uri, document.getText(), range, {
         components: readsComponents(document),
         frontmatter: currentSettings().frontmatter,
+        parseOptions: currentParseOptions(),
       }),
     [],
   ),

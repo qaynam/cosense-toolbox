@@ -859,12 +859,46 @@
       ]
     },
     {
-      "description": "拡張子だけの画像は画像",
+      "description": "URL でない画像の名前は、Cosense Web と同じくページへのリンク",
       "input": "[a.png]",
       "expected": [
         {
-          "type": "image",
-          "src": "a.png"
+          "type": "internalLink",
+          "label": "a.png",
+          "target": "a.png"
+        }
+      ]
+    },
+    {
+      "description": ":/ で始まる画像のパスも、拡張が無ければページへのリンク",
+      "input": "[:/images/a.png]",
+      "expected": [
+        {
+          "type": "internalLink",
+          "label": ":/images/a.png",
+          "target": ":/images/a.png"
+        }
+      ]
+    },
+    {
+      "description": "[[a.png]] も URL でなければ大きい画像にならず、太字の文字",
+      "input": "[[a.png]]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "a.png",
+          "markers": ["*"],
+          "bold": true,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "text",
+              "value": "a.png"
+            }
+          ]
         }
       ]
     },

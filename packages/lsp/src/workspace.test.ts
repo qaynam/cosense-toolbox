@@ -1,11 +1,13 @@
 import { mkdir, mkdtemp, utimes, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { pathToFileURL } from "node:url"
 
+import { publicMedia } from "@cosense-toolbox/parser/extensions"
 import { Effect } from "effect"
 import { describe, expect, it } from "vitest"
 
-import { readIndex, rootsOf } from "./workspace"
+import { hasMediaRoot, readIndex, rootsOf } from "./workspace"
 
 const workspace = async (files: Record<string, string>): Promise<string> => {
   const root = await mkdtemp(join(tmpdir(), "csn-"))
@@ -108,5 +110,26 @@ describe("rootsOf", () => {
 
   it("skips a folder that is not a file:// URI", () => {
     expect(rootsOf([{ uri: "untitled:x" }], [])).toEqual([])
+  })
+})
+
+describe("hasMediaRoot", () => {
+  it("is true when a workspace folder holds the directory media is served from", async () => {
+    const root = await workspace({ "public/images/a.png": "" })
+    expect(hasMediaRoot([{ uri: pathToFileURL(root).href }], "public")).toBe(true)
+  })
+
+  it("is false when no folder holds it, as in a folder of plain Cosense pages", async () => {
+    const root = await workspace({ "a.csn": "T" })
+    expect(hasMediaRoot([{ uri: pathToFileURL(root).href }], "public")).toBe(false)
+  })
+})
+
+describe("readIndex with the site's notation", () => {
+  it("does not count a file under the media root as a link", async () => {
+    const root = await workspace({ "a.csn": "T\n[:/images/a.png] [ページ]" })
+    const options = { parseOptions: { extensions: [publicMedia()] } }
+    const [page] = (await Effect.runPromise(readIndex([root], options))).pages
+    expect(page?.links).toEqual(["ページ"])
   })
 })

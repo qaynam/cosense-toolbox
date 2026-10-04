@@ -37,6 +37,7 @@ export default defineConfig({
 | `tagUrl` `projectUrl` | `compile` の同名のオプションと同じ                                                                                                                                          |
 | `unresolvedLinks`     | サイトに無いページへのリンクの出し方。`'text'` (既定) はテキスト、`'link'` はタイトルから作った URL へのリンクにする                                                        |
 | `lint`                | ビルドの前にリンク切れを調べる。`{ unresolvedLinks?, frontmatter? }`。省略すると調べない。[下を参照](#リンク切れを調べる)                                                   |
+| `publicMedia`         | サイトに置いたファイルを `[:/images/a.png]` で画像・動画・音声として読む (parser の `publicMedia`)。パスの前に `base` が付く。`false` で無効。既定は有効                    |
 | `parseOptions`        | パースの設定。parser の `parse` のオプション (`extensions` など) がそのまま渡る                                                                                             |
 | `renderOptions`       | 描画の設定。parser の `toHast` のオプション (`extensions` `handlers` `classNames` `showPads` `iconImageUrl`) と `title` がそのまま渡る。色付けは `syntaxHighlight` で決める |
 | `rehypePlugins`       | `compile` の同名のオプションと同じ                                                                                                                                          |
@@ -56,6 +57,20 @@ export default defineConfig({
 
 ページの題名はファイルの 1 行目で、大文字小文字と、空白と `_` の違いは無視して比べる。`#タグ` と
 `[/別プロジェクト/ページ]` は調べない。
+
+## サイトに置いたファイル
+
+`public/` に置いた画像・動画・音声は、`[:/…]` とサイトの根元からのパスで書く。種類は拡張子で決まる。
+
+```
+[:/images/screenshot.png]
+[[:/images/hero.png]]
+[:/movies/demo.mp4]
+[:/audio/bgm.mp3]
+```
+
+`base: "/docs"` のサイトなら、`[:/images/a.png]` は `/docs/images/a.png` を指す。
+Cosense Web では `[:/images/a.png]` もページへのリンクなので、Cosense から持ってきたページの読み方は変わらない。
 
 ## Cosense 上の画像とファイル
 

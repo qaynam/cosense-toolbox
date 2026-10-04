@@ -10,12 +10,14 @@ describe("settingsOf", () => {
         unresolvedLinks: "error",
         mapLinks: "off",
         frontmatter: false,
+        mediaRoot: "static",
       }),
     ).toEqual({
       sources: ["examples/astro-blog/src"],
       unresolvedLinks: "error",
       mapLinks: "off",
       frontmatter: false,
+      mediaRoot: "static",
     })
   })
 
@@ -26,6 +28,7 @@ describe("settingsOf", () => {
       unresolvedLinks: "warning",
       mapLinks: "information",
       frontmatter: true,
+      mediaRoot: "public",
     })
   })
 

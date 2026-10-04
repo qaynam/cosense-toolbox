@@ -12,6 +12,9 @@ toc:
   - id: links
     text: リンク切れの検査
     depth: 2
+  - id: public-media
+    text: サイトに置いたファイル
+    depth: 2
   - id: assets
     text: Cosense の画像とファイル
     depth: 2
@@ -67,6 +70,12 @@ code:csnx
 `lint` を設定すると、ページ内の `[ページ名]` がサイトに存在するかビルド前に検査できます。`unresolvedLinks: "error"` ならリンク切れでビルドが失敗し、`warning` ならログに報告します。
 
 エディター上の診断と同じ判定を使います。CI でもビルドを実行すれば、ローカルと公開時の検査をそろえられます。
+
+<DocHeading level={2} id="public-media" title="サイトに置いたファイル" />
+
+`public/` に置いた画像・動画・音声は、`[:/images/a.png]` のようにサイトの根元からのパスで書きます。種類は拡張子で決まり、`[[:/images/a.png]]` は大きい画像になります。サイトに `base` があれば、その下のパスを指します。
+
+Cosense Web では `[:/images/a.png]` もページへのリンクなので、Cosense から持ってきたページの読み方は変わりません。`publicMedia: false` を渡すと、この読み方を止められます。
 
 <DocHeading level={2} id="assets" title="Cosense の画像とファイル" />
 
