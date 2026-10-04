@@ -13,6 +13,8 @@ import type { Element, ElementContent, Properties, Root, Text } from "hast"
 
 import { childrenOf } from "../ast"
 import { asImageSrc } from "../core/image-url"
+import { asMapUrl } from "../core/map-url"
+import { asEmbedSrc } from "../core/media-url"
 import type {
   AnyNode,
   AnyNodeType,
@@ -107,6 +109,13 @@ export interface HtmlClassNames {
   readonly hashtag?: string
   readonly inlineCode?: string
   readonly image?: string
+  readonly video?: string
+  /** 音声の `<audio>` とラベルを包む要素 */
+  readonly audio?: string
+  /** 埋め込みの `<iframe>` */
+  readonly embed?: string
+  /** 地図 (`[N35,E139]`) の、Google マップへのリンク */
+  readonly location?: string
   readonly icon?: string
   readonly formula?: string
   readonly decoration?: string
@@ -137,6 +146,10 @@ export const defaultClassNames: HtmlClassNames = {
   hashtag: "hashtag",
   inlineCode: "code",
   image: "image",
+  video: "video",
+  audio: "audio",
+  embed: "embed",
+  location: "link link-location",
   icon: "icon",
   formula: "formula",
   decoration: "decoration",
@@ -343,6 +356,17 @@ const pageHrefOf = (node: PageRefNode, options: ResolvedHastOptions): string | u
 
 const anchor = (className: string | undefined, href: string | undefined, label: string): Element =>
   element("a", withClass(className, { href }), [text(label)])
+
+/** 遷移先があるときだけ `<a>` で包む。スキームが安全でなければ包まない。 */
+const linkedTo = (link: string | undefined, content: Element): Element =>
+  pipe(
+    Option.fromNullable(link),
+    Option.flatMap((url) => nonEmpty(safeHref(url))),
+    Option.match({
+      onNone: () => content,
+      onSome: (href) => element("a", { href }, [content]),
+    }),
+  )
 
 /**
  * 装飾を表す要素を、内側から外側の順に並べたもの。
@@ -650,18 +674,71 @@ export const defaultHastHandlers = {
         dataLarge: node.large ? "true" : undefined,
       }),
     )
-    // 遷移先があるときだけ <a> で包む。スキームが安全でなければ包まない。
-    const href = pipe(
-      Option.fromNullable(node.link),
-      Option.flatMap((link) => nonEmpty(safeHref(link))),
-    )
-    return [
-      Option.match(href, {
-        onNone: () => img,
-        onSome: (url) => element("a", { href: url }, [img]),
-      }),
-    ]
+    return [linkedTo(node.link, img)]
   },
+
+  // Cosense Web と同じく、操作できてループする動画にする。
+  video: (node, ctx) => {
+    const video = element(
+      "video",
+      withClass(ctx.options.classNames.video, {
+        src: Option.getOrUndefined(nonEmpty(safeSrc(node.src))),
+        controls: true,
+        loop: true,
+        preload: "metadata",
+        dataLarge: node.large ? "true" : undefined,
+      }),
+    )
+    return [linkedTo(node.link, video)]
+  },
+
+  audio: (node, ctx) => [
+    element("span", withClass(ctx.options.classNames.audio), [
+      element("audio", {
+        src: Option.getOrUndefined(nonEmpty(safeSrc(node.src))),
+        controls: true,
+        preload: "metadata",
+      }),
+      ...(node.label === undefined ? [] : [text(node.label)]),
+    ]),
+  ],
+
+  // プレーヤーの URL を作れないサービス (拡張が足したもの) は、書かれた URL へのリンクにする。
+  embed: (node, ctx) => [
+    pipe(
+      Option.fromNullable(asEmbedSrc(node)),
+      Option.match({
+        onNone: () =>
+          anchor(
+            ctx.options.classNames.externalLink,
+            Option.getOrUndefined(nonEmpty(safeHref(node.url))),
+            node.url,
+          ),
+        onSome: (src) =>
+          element(
+            "iframe",
+            withClass(ctx.options.classNames.embed, {
+              src,
+              title: node.provider,
+              loading: "lazy",
+              allow: "encrypted-media; fullscreen; picture-in-picture",
+              referrerPolicy: "strict-origin-when-cross-origin",
+              dataProvider: node.provider,
+              dataKind: node.kind,
+            }),
+          ),
+      }),
+    ),
+  ],
+
+  // 地図を描くには地図のサービスの鍵が要るので、既定では Cosense Web の地図のリンク先へのリンクにする。
+  location: (node, ctx) => [
+    anchor(
+      ctx.options.classNames.location,
+      asMapUrl(node),
+      node.label ?? `${node.latitude},${node.longitude}`,
+    ),
+  ],
 
   // Cosense Web と同じく、そのユーザーのページへのリンクで画像を包む。
   icon: (node, ctx) => {

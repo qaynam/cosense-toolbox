@@ -12,6 +12,9 @@ toc:
   - id: table
     text: テーブルセルの記法
     depth: 2
+  - id: embed
+    text: 独自の埋め込み
+    depth: 2
   - id: node
     text: 独自ノード型
     depth: 2
@@ -55,6 +58,10 @@ code:ts
 テーブルセルでは既定でリンク記法だけを解析します。`tableCellNotation()` を `extensions` に加えると、装飾などを含めてセル内の記法を解析できます。
 
 特定のノードだけをセルに残すには、拡張の `keepInTableCell` で判定します。セル内の文字列を `<br>` に置き換える描画拡張 `tableCellLineBreaks()` は [HTML への変換] を参照してください。
+
+<DocHeading level={2} id="embed" title="独自の埋め込み" />
+
+Cosense Web が埋め込まないサービスも、`BracketRule` から独自の `provider` の `embed` ノードを返せば埋め込みとして扱えます。Apple Music、Instagram、地図を OpenStreetMap にする例は [メディアと埋め込み] にあります。
 
 <DocHeading level={2} id="node" title="独自ノード型" />
 

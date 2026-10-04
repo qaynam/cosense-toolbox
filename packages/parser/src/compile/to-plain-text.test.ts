@@ -16,6 +16,24 @@ describe("toPlainText", () => {
     expect(toPlainText(parseLine("[* 自由を奪う「[牢屋]」]"))).toBe("自由を奪う「牢屋」")
   })
 
+  it("動画と埋め込みは URL にする", () => {
+    expect(toPlainText(parseLine("[https://x.test/a.mp4] [https://vimeo.com/1]"))).toBe(
+      "https://x.test/a.mp4 https://vimeo.com/1",
+    )
+  })
+
+  it("音声はラベルがあればラベル、無ければ URL にする", () => {
+    expect(toPlainText(parseLine("[BGM https://x.test/a.mp3] [https://x.test/b.mp3]"))).toBe(
+      "BGM https://x.test/b.mp3",
+    )
+  })
+
+  it("地図はラベルがあればラベル、無ければ座標にする", () => {
+    expect(toPlainText(parseLine("[東京駅 N35.68,E139.76] [S33.86,W151.2]"))).toBe(
+      "東京駅 -33.86,-151.2",
+    )
+  })
+
   it("引用とインデントを保つ", () => {
     expect(toPlainText(parseLine("  > 引用文"))).toBe("    > 引用文")
   })

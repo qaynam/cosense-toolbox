@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/lsp",
-  "version": "0.1.0-beta.6",
+  "version": "0.1.0-beta.7",
   "type": "module",
   "description": "Language server for .csn and .csnx, and a check of a whole site's links: csn-lsp.",
   "license": "MIT",
@@ -27,6 +27,10 @@
     "./completion": {
       "types": "./dist/completion.d.mts",
       "default": "./dist/completion.mjs"
+    },
+    "./suggest": {
+      "types": "./dist/suggest.d.mts",
+      "default": "./dist/suggest.mjs"
     },
     "./link": {
       "types": "./dist/link.d.mts",

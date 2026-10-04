@@ -6,7 +6,7 @@
 
 - 色付け: [`@cosense-toolbox/textmate`](../../packages/textmate) の TextMate 文法で色を付け、
   [`@cosense-toolbox/lsp`](../../packages/lsp) の semantic tokens で上書きする。サーバーが起動する前から色が付く
-- `[` の中と `#` の後での、ページの題名の補完
+- `[` の中と `#` の後での、ページの題名の補完。候補の選び方と並べ方は Cosense Web と同じ
 - `[ページ名]` からそのページのファイルへの定義ジャンプ
 - 存在しないページへのリンクの診断
 - `[` を打つと `]` を補う

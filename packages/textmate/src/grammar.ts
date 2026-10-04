@@ -73,6 +73,33 @@ const IMAGE_URL = oneOf([
 
 const URL = re`(?i:https?)://[^\s\[\]]+`
 
+const VIDEO_EXT = re`\.(?i:mp4|webm|mov)`
+
+/** A URL that is a video on its own (`[x]`, `[[x]]`): no query allowed. */
+const VIDEO_URL = re`(?i:https?)://[^\s\[\]]+${VIDEO_EXT}`
+
+/** The video of a linked video (`[link video]`), which may carry a query. */
+const LINKED_VIDEO_URL = re`(?i:https?)://[^\s\[\]]*${VIDEO_EXT}(?:\?[^\s\[\]]+)?`
+
+const AUDIO_URL = re`(?i:https?)://[^\s\[\]]*\.(?i:wav|mp3|weba|ogg|aac)`
+
+/** A map's coordinates (`N35.68,E139.76,Z14`): capital letters only, and no spaces. */
+const COORDINATES = re`[NS]\d+(?:\.\d+)?,[EW]\d+(?:\.\d+)?(?:,Z\d+)?`
+
+/**
+ * A URL Cosense embeds a player for, as the parser reads them: YouTube (case-sensitive, as
+ * in Cosense Web), Vimeo, Spotify, and anchor.fm or its successor.
+ */
+const EMBED_URL = oneOf([
+  re`https?://(?:www\.|music\.|)youtube\.com/watch\?(?:[^\s\[\]]+&|)v=[a-zA-Z\d_-]+(?:&[^\s\[\]]+|)`,
+  re`https?://youtu\.be/[a-zA-Z\d_-]+(?:\?[^\s\[\]]{0,100}|)`,
+  re`https?://(?:www\.|)youtube\.com/(?:shorts|live)/[a-zA-Z\d_-]+(?:\?[^\s\[\]]+|)`,
+  re`https?://(?:www\.|music\.|)youtube\.com/playlist\?(?:[^\s\[\]]+&|)list=[a-zA-Z\d_-]+(?:&[^\s\[\]]+|)`,
+  re`(?i:https?://vimeo\.com/[0-9]+(?:/[a-z0-9]+)?(?:\?[^\s\[\]]+|))`,
+  re`(?i:https?://open\.spotify\.com/(?:[^/\s\[\]]+/|)(?:track|artist|playlist|album|episode|show)/[a-zA-Z\d_-]+(?:\?[^\s\[\]]{0,100}|))`,
+  re`(?i:https?://(?:anchor\.fm|podcasters\.spotify\.com/pod/show)/[a-zA-Z\d_-]+/episodes/[a-zA-Z\d_-]+(?:/[a-zA-Z\d_-]+)?(?:\?[^\s\[\]]{0,100}|))`,
+])
+
 /** What a bracket must end with somewhere, or it is plain text and not worth a rule. */
 const CLOSES = re`(?=.*\])`
 
@@ -288,8 +315,12 @@ const emphasisRules: ReadonlyArray<Pattern> = Arr.map(MARKER_SETS, (emphasis) =>
 /** Anything up to, but not over, a `]]`. */
 const UNTIL_DOUBLE_CLOSE = re`(?:(?!\]\]).)`
 
-/** `[[x]]`: an image when x is one, bold otherwise. Closes on the first `]]`, depth or not. */
+/**
+ * `[[x]]`: an image or a video when x is one, bold otherwise. Closes on the first `]]`, depth
+ * or not. A sound or an embedded player is not made large: it is a link inside bold.
+ */
 const strongRules: ReadonlyArray<Pattern> = [
+  single(re`\[\[${NO_CODE_INSIDE_DOUBLE}${VIDEO_URL}\]\]`, { scopes: [SCOPES.media] }),
   single(
     re`\[\[${NO_CODE_INSIDE_DOUBLE}(?:${IMAGE_URL}|${UNTIL_DOUBLE_CLOSE}*?${IMAGE_EXT}(?:[?#]${UNTIL_DOUBLE_CLOSE}*)?)\]\]`,
     { scopes: [SCOPES.image] },
@@ -312,13 +343,46 @@ const formulaRule: Pattern = region({
 })
 
 /**
- * Brackets whose body holds no brackets, tried in the parser's order: an icon before a
- * URL before an image path before a project link, and anything left is a page link.
+ * Brackets whose body holds no brackets, tried in the parser's order: an icon before media
+ * before a URL before an image path before a project link, and anything left is a page link.
  */
 const simpleTargetRules = (allowImagePath: boolean): ReadonlyArray<Pattern> =>
   Arr.getSomes([
     Option.some(
       single(re`\[${NO_CODE_INSIDE}[^\[\]]+\.icon(?:\*\d+)?\]`, { scopes: [SCOPES.icon] }),
+    ),
+    // A player, a map, a video or a sound, alone or linked: tried before images, as the parser does.
+    Option.some(
+      single(
+        re`\[${NO_CODE_INSIDE}(?:${COORDINATES}(?:\s+[^\[\]]+)?|[^\[\]]+?\s+${COORDINATES})\]`,
+        {
+          scopes: [SCOPES.media],
+        },
+      ),
+    ),
+    Option.some(
+      single(re`\[${NO_CODE_INSIDE}(?:${EMBED_URL}|${VIDEO_URL}|${AUDIO_URL})\]`, {
+        scopes: [SCOPES.media],
+      }),
+    ),
+    Option.some(
+      single(
+        re`\[${NO_CODE_INSIDE}(?:${URL}\s+${LINKED_VIDEO_URL}|${LINKED_VIDEO_URL}\s+${URL})\]`,
+        { scopes: [SCOPES.media] },
+      ),
+    ),
+    // A sound with words before or after it, unless the words are one image URL: that makes
+    // an image linking to the sound.
+    Option.some(
+      single(re`\[${NO_CODE_INSIDE}${AUDIO_URL}\s+(?!\s*(?:${IMAGE_URL})\s*\])[^\[\]]*\]`, {
+        scopes: [SCOPES.media],
+      }),
+    ),
+    Option.some(
+      single(
+        re`\[${NO_CODE_INSIDE}(?!\s*(?:${IMAGE_URL})\s+${AUDIO_URL}\])[^\[\]]+\s${AUDIO_URL}\]`,
+        { scopes: [SCOPES.media] },
+      ),
     ),
     // Only URLs, and one of them an image: the image, linking to another URL if there is one.
     Option.some(

@@ -70,6 +70,9 @@
 
 `[` の中と `#` の後で、`sources` の下にある `.csn` / `.csnx` のページを候補に出す。題名はファイルの 1 行目で、
 候補の横にはそのファイルの場所 (`sources` からのパス) を出す。
+候補の選び方と並べ方は Cosense Web と同じで、短い題名が先に並び、3 文字以上なら 1 文字違いの題名も出る。
+まだ無いページへのリンクも、「まだ無いページ」として候補に出す。
+タイトル行と、コードやコマンドの行 (`$ ls`) の中では出さない。Cosense がそこを記法として読まないため。
 
 ### 存在しないページへのリンク
 
@@ -93,6 +96,7 @@
     { "token_type": "hashtag", "style": ["attribute"] },
     { "token_type": "icon", "style": ["link_text"] },
     { "token_type": "image", "style": ["link_text"] },
+    { "token_type": "media", "style": ["link_text"] },
     { "token_type": "code", "style": ["text.literal"] },
     { "token_type": "codeBlock", "style": ["text.literal"] },
     { "token_type": "formula", "style": ["text.literal"] },

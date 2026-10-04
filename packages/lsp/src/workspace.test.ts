@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises"
+import { mkdir, mkdtemp, utimes, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
@@ -67,6 +67,22 @@ describe("readIndex", () => {
   it("does not walk into directories that never hold pages", async () => {
     const found = await titles({ "a.csn": "投稿", "node_modules/pkg/b.csn": "入ってはいけない" })
     expect(found).toEqual(["投稿"])
+  })
+
+  it("records the pages each page links to, by a link or a tag, and none in code", async () => {
+    const root = await workspace({
+      "a.csn": "T [題の括弧]\n[設計メモ] #日記 `[コード]`\n[設計メモ]",
+    })
+    const [page] = (await Effect.runPromise(readIndex([root]))).pages
+    expect(page?.links).toEqual(["設計メモ", "日記"])
+  })
+
+  it("records when the file was last changed", async () => {
+    const root = await workspace({ "a.csn": "T\n本文" })
+    const changed = new Date("2026-09-30T12:00:00Z")
+    await utimes(join(root, "a.csn"), changed, changed)
+    const [page] = (await Effect.runPromise(readIndex([root]))).pages
+    expect(page?.updated).toBe(changed.getTime())
   })
 
   it("reads .csnx as well as .csn", async () => {

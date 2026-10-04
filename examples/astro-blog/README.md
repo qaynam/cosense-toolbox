@@ -31,7 +31,7 @@ npm に公開されたバージョンへ戻す場合は、`bun install --force` 
 
 | パス                                      | 内容                                                                                                                       |
 | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
-| `src/content/posts/*.csn`                 | 記事。frontmatter はファイル先頭の YAML と `code:frontmatter.yml` の両方の書き方を使っている                               |
+| `src/content/posts/*.csn`                 | 記事。frontmatter はファイル先頭の YAML に書いている                                                                       |
 | `src/content/posts/notes/components.csnx` | Svelte のコンポーネントを埋め込んだ記事                                                                                    |
 | `src/content/posts/draft.csn`             | draft の記事。一覧に出ず、ここへのリンクはテキストになる                                                                   |
 | `src/pages/about.csnx`                    | `src/pages` に置いた `.csnx`。frontmatter の `layout` でレイアウトを指定している                                           |

@@ -8,9 +8,25 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 - どのノードも元のテキストの何行目の何文字目から始まるかを持つので、エディタの色付けやカーソル位置の判定に使える
 - AST はメソッドを持たないただのオブジェクト。`JSON.stringify` して保存しておき、あとで読み直せる
 - 記法そのものを増やせる。プロジェクト固有の書きかたも元からある記法と同じように扱える
-- パースだけなら gzip 約 8 KB。HTML 変換や走査は別の import 元なので、使わなければバンドルに入らない
+- パースだけなら gzip 約 10 KB。HTML 変換や走査は別の import 元なので、使わなければバンドルに入らない
 
 > **beta**：公開 API はまだ変わりうる。安定するまではバージョンを固定して使うほうが安全。
+
+### 0.1.0-beta.7 の変更
+
+- 動画・音声・埋め込みのノードを足した。どれも Cosense Web がパースの段階で読み分けているもので、今までは外部リンクになっていた。
+  - `video`: `[https://…/a.mp4]` (拡張子は mp4 / webm / mov)。`[[…]]` で大きい動画 (`large`)、
+    URL を 2 つ並べるとリンク付き動画 (`link`) になる。単独の動画 URL にはクエリを付けられない。
+  - `audio`: `[https://…/a.mp3]` (拡張子は wav / mp3 / weba / ogg / aac)。前後に文字を書くと、その文字が `label` になる。
+  - `embed`: YouTube / Vimeo / Spotify / anchor.fm の URL。`provider` と、サービスの中での `id` (と `kind`) を持つ。
+    `<iframe>` に入れる URL は `asEmbedSrc` で作る。
+- `toHtml` / `toHast` は、動画を `<video>`、音声を `<audio>`、埋め込みを `<iframe>` にする。
+  class 名は `classNames` の `video` / `audio` / `embed` で変えられる。
+- 地図のノード `location` を足した。`[N35.68,E139.76]` (ズームは `,Z14`) で、座標の前後に書いた文字が `label` になる。
+  緯度と経度は数値で、南緯と西経は負の数になる。Google マップの URL は `asMapUrl` で作り、`toHtml` はそこへのリンクを出す
+  (class 名は `classNames` の `location`)。
+- Cosense Web が埋め込まないサービスは、拡張の `bracketRules` から独自の `provider` の `embed` を返せば足せる。
+  既定の `toHtml` はプレーヤーの URL を知らない埋め込みを外部リンクとして出すので、見た目は `handlers` か `extensions` で決める。
 
 ### 0.1.0-beta.6 の変更
 
@@ -82,14 +98,14 @@ toHtml(page) // → '<div class="page"><h1 class="title">今日のメモ</h1>…
 
 モジュールごとに export が分かれている。使うものだけ import すればよい。
 
-| モジュール                           | 役割                                                | API                                                                                     |
-| :----------------------------------- | :-------------------------------------------------- | :-------------------------------------------------------------------------------------- |
-| `@cosense-toolbox/parser`            | テキストを AST にする                               | `parse` `parseLine` `tokenizeInline` `createParser` `asImageSrc` `normalizeLineEndings` |
-| `@cosense-toolbox/parser/utils`      | ヘルパー。AST から取り出す                          | `visit` `find` `collect` `collectLinks` `firstImage` `rawTextOf`                        |
-| `@cosense-toolbox/parser/html`       | AST を HTML 系の出力 (hast と HTML の文字列) にする | `toHast` `toHtml` `codeLineNumbers` `tableCellLineBreaks`                               |
-| `@cosense-toolbox/parser/compile`    | AST を HTML 以外の形式にする                        | `toPlainText` `createCompiler`                                                          |
-| `@cosense-toolbox/parser/extensions` | 記法を足す                                          | `Extension` `InlineConstruct` `BracketRule` `tableCellNotation`                         |
-| `@cosense-toolbox/parser/schema`     | 外から来た値を検証する                              | `decodePage`                                                                            |
+| モジュール                           | 役割                                                | API                                                                                                             |
+| :----------------------------------- | :-------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
+| `@cosense-toolbox/parser`            | テキストを AST にする                               | `parse` `parseLine` `tokenizeInline` `createParser` `asImageSrc` `asEmbedSrc` `asMapUrl` `normalizeLineEndings` |
+| `@cosense-toolbox/parser/utils`      | ヘルパー。AST から取り出す                          | `visit` `find` `collect` `collectLinks` `firstImage` `rawTextOf`                                                |
+| `@cosense-toolbox/parser/html`       | AST を HTML 系の出力 (hast と HTML の文字列) にする | `toHast` `toHtml` `codeLineNumbers` `tableCellLineBreaks`                                                       |
+| `@cosense-toolbox/parser/compile`    | AST を HTML 以外の形式にする                        | `toPlainText` `createCompiler`                                                                                  |
+| `@cosense-toolbox/parser/extensions` | 記法を足す                                          | `Extension` `InlineConstruct` `BracketRule` `tableCellNotation`                                                 |
+| `@cosense-toolbox/parser/schema`     | 外から来た値を検証する                              | `decodePage`                                                                                                    |
 
 `parse` はページ全体を読む。1 行目はタイトルで、Cosense Web と同じく記法を読まない。
 記法を読みたい文字列がページでないなら、本文の 1 行は `parseLine`、文章の断片は `tokenizeInline` で読む。
