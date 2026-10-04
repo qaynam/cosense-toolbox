@@ -95,7 +95,7 @@
         "cosense.mediaRoot": {
           "type": "string",
           "default": "public",
-          "markdownDescription": "サイトがファイルを配るディレクトリ (ワークスペースからの相対パス)。これがあるワークスペースでは、`[:/images/a.png]` を画像として読む。"
+          "markdownDescription": "サイトがファイルを配るディレクトリ。ページから上にたどって最初にこれを持つディレクトリをそのページのサイトとし、`[:/images/a.png]` をそこの画像として読む。"
         },
         "cosense.frontmatter": {
           "type": "boolean",

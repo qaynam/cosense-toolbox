@@ -69,7 +69,7 @@ code:ts
  
  const page = parse(text, { extensions: [publicMedia({ base: "/docs" })] })
 
-Astro 統合はこの拡張を既定で有効にし、サイトの `base` を付けます。エディタの Language Server も、ワークスペースに `public/` があれば同じように読みます。
+Astro 統合はこの拡張を既定で有効にし、サイトの `base` を付けます。エディタの Language Server も、ページの上のディレクトリに `public/` があれば同じように読みます。
 
 <DocHeading level={2} id="apple-music" title="Apple Music" />
 

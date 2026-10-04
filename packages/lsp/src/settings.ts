@@ -31,10 +31,10 @@ export interface Settings {
    */
   readonly frontmatter: boolean
   /**
-   * The directory a site serves its files from, relative to each workspace folder. When one
-   * holds it, `[:/images/a.png]` is read as the image there (the parser's `publicMedia`)
-   * rather than as a link to a page of that name. A folder of plain Cosense pages has none,
-   * and reads such a bracket as Cosense Web does.
+   * The directory a site serves its files from, as a site holds it (`public`, or a deeper
+   * path). A page whose nearest directory above holding one is a site reads `[:/images/a.png]`
+   * as the image there (the parser's `publicMedia`), and any other page as Cosense Web does.
+   * A repository may hold several sites; each page belongs to the nearest.
    */
   readonly mediaRoot: string
 }

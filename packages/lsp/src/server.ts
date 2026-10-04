@@ -1,5 +1,6 @@
+import { fileURLToPath } from "node:url"
+
 import type { ParseOptions } from "@cosense-toolbox/parser"
-import { publicMedia } from "@cosense-toolbox/parser/extensions"
 import { Array as Arr, Effect, Option, pipe, Ref } from "effect"
 import {
   type CodeAction,
@@ -21,7 +22,15 @@ import { mapLinkActions, mapLinkDiagnostics } from "./map-link"
 import { mediaCompletionItems, mediaFilesIn, missingMediaDiagnostics } from "./media"
 import { defaultSettings, settingsOf } from "./settings"
 import { computeTokens, encodeTokens, LEGEND } from "./tokens"
-import { emptyIndex, type Index, mediaRootsOf, readIndex, rootsOf } from "./workspace"
+import {
+  emptyIndex,
+  findMediaRoots,
+  type Index,
+  readIndex,
+  rootsOf,
+  siteOf,
+  withSiteFiles,
+} from "./workspace"
 
 const connection = createConnection(ProposedFeatures.all)
 const documents = new TextDocuments(TextDocument)
@@ -43,26 +52,47 @@ const settings = Ref.unsafeMake(defaultSettings)
 
 const currentSettings = () => Effect.runSync(Ref.get(settings))
 
+// --- Sites -------------------------------------------------------------------------------
+
+/** The workspace folders, where the sites are looked for. */
+const folders = Ref.unsafeMake<ReadonlyArray<string>>([])
+
 /**
- * How pages are parsed: as Cosense Web does, plus `[:/…]` as a site's media when a workspace
- * folder holds the directory it is served from (see `mediaRoot` in settings.ts).
+ * Each site's media root (see `mediaRoot` in settings.ts) and the files there, as site paths.
+ * A repository can hold several sites, so each page belongs to the nearest one above it.
  */
-const parseOptions = Ref.unsafeMake<ParseOptions>({})
+const sites = Ref.unsafeMake<ReadonlyMap<string, ReadonlyArray<string>>>(new Map())
 
-const currentParseOptions = () => Effect.runSync(Ref.get(parseOptions))
+const currentSites = () => Effect.runSync(Ref.get(sites))
 
-/** Where the site's files are, and the files there as site paths (see media.ts). */
-const mediaRoots = Ref.unsafeMake<ReadonlyArray<string>>([])
-const mediaFiles = Ref.unsafeMake<ReadonlyArray<string>>([])
+const pathOf = (document: TextDocument): Option.Option<string> =>
+  Option.liftThrowable(fileURLToPath)(document.uri)
 
-const currentMediaFiles = () => Effect.runSync(Ref.get(mediaFiles))
+/**
+ * How a page is parsed: as Cosense Web does, plus `[:/…]` as its site's files when it is in
+ * a site.
+ */
+const parseOptionsOf = (document: TextDocument): ParseOptions =>
+  Option.match(pathOf(document), {
+    onNone: () => ({}),
+    onSome: (path) => withSiteFiles({}, path, [...currentSites().keys()]),
+  })
+
+/** The files of the site `document` is in, or none outside a site. */
+const siteFilesOf = (document: TextDocument): ReadonlyArray<string> =>
+  pipe(
+    pathOf(document),
+    Option.flatMap((path) => siteOf(path, [...currentSites().keys()])),
+    Option.flatMap((root) => Option.fromNullable(currentSites().get(root))),
+    Option.getOrElse((): ReadonlyArray<string> => []),
+  )
 
 const semanticTokensOf = (document: TextDocument): SemanticTokens => ({
   data: encodeTokens(
     computeTokens(document.getText(), {
       components: readsComponents(document),
       frontmatter: currentSettings().frontmatter,
-      parseOptions: currentParseOptions(),
+      parseOptions: parseOptionsOf(document),
     }),
   ),
 })
@@ -113,19 +143,19 @@ const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
                   severity: set.unresolvedLinks,
                   components: readsComponents(document),
                   frontmatter: set.frontmatter,
-                  parseOptions: currentParseOptions(),
+                  parseOptions: parseOptionsOf(document),
                 }),
-                ...missingMediaDiagnostics(document.getText(), new Set(currentMediaFiles()), {
+                ...missingMediaDiagnostics(document.getText(), new Set(siteFilesOf(document)), {
                   severity: set.unresolvedLinks,
                   components: readsComponents(document),
                   frontmatter: set.frontmatter,
-                  parseOptions: currentParseOptions(),
+                  parseOptions: parseOptionsOf(document),
                 }),
                 ...mapLinkDiagnostics(document.getText(), {
                   severity: set.mapLinks,
                   components: readsComponents(document),
                   frontmatter: set.frontmatter,
-                  parseOptions: currentParseOptions(),
+                  parseOptions: parseOptionsOf(document),
                 }),
               ],
             }),
@@ -140,15 +170,23 @@ const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
  */
 const refreshIndex = (): void => {
   pipe(
-    Effect.all([Ref.get(roots), Ref.get(settings)]),
-    Effect.flatMap(([at, set]) =>
-      readIndex(at, { frontmatter: set.frontmatter, parseOptions: currentParseOptions() }),
+    Effect.all([Ref.get(roots), Ref.get(settings), Ref.get(folders)]),
+    // The sites and their files change outside the pages, so they are read again first.
+    Effect.flatMap(([at, set, workspace]) =>
+      pipe(
+        findMediaRoots(workspace, set.mediaRoot),
+        Effect.flatMap((found) =>
+          Effect.forEach(found, (root) =>
+            Effect.map(mediaFilesIn(root), (files) => [root, files] as const),
+          ),
+        ),
+        Effect.flatMap((found) => Ref.set(sites, new Map(found))),
+        Effect.flatMap(() =>
+          readIndex(at, { frontmatter: set.frontmatter, mediaRoots: [...currentSites().keys()] }),
+        ),
+      ),
     ),
     Effect.flatMap((next) => Ref.set(index, Option.some(next))),
-    // The site's files change outside the pages, so they are read again along with them.
-    Effect.flatMap(() => Ref.get(mediaRoots)),
-    Effect.flatMap(Effect.forEach(mediaFilesIn)),
-    Effect.flatMap((found) => Ref.set(mediaFiles, Arr.flatten(found))),
     Effect.flatMap(() => Effect.forEach(documents.all(), publishDiagnostics, { discard: true })),
     Effect.runFork,
   )
@@ -160,9 +198,7 @@ connection.onInitialize(({ workspaceFolders, initializationOptions }): Initializ
   const read = settingsOf(initializationOptions)
   Effect.runSync(Ref.set(settings, read))
   Effect.runSync(Ref.set(roots, rootsOf(workspaceFolders, read.sources)))
-  const sites = mediaRootsOf(workspaceFolders, read.mediaRoot)
-  Effect.runSync(Ref.set(mediaRoots, sites))
-  Effect.runSync(Ref.set(parseOptions, sites.length > 0 ? { extensions: [publicMedia()] } : {}))
+  Effect.runSync(Ref.set(folders, rootsOf(workspaceFolders, [])))
   refreshIndex()
   return {
     capabilities: {
@@ -207,16 +243,16 @@ connection.onCompletion(({ textDocument: { uri }, position }): CompletionList =>
     uri,
     (document) =>
       pipe(
-        detectCompletionInDocument(document.getText(), position, currentParseOptions(), {
+        detectCompletionInDocument(document.getText(), position, parseOptionsOf(document), {
           frontmatter: currentSettings().frontmatter,
         }),
         // Inside `[:/…`, the site's files rather than pages, once there are any to offer.
         Option.map((detection) =>
-          mediaCompletionItems(currentMediaFiles(), detection, position.line),
+          mediaCompletionItems(siteFilesOf(document), detection, position.line),
         ),
         Option.filter(Arr.isNonEmptyArray),
         Option.getOrElse(() =>
-          completionItems(currentIndex(), document.getText(), position, currentParseOptions(), {
+          completionItems(currentIndex(), document.getText(), position, parseOptionsOf(document), {
             frontmatter: currentSettings().frontmatter,
           }),
         ),
@@ -230,7 +266,7 @@ connection.onDefinition(({ textDocument: { uri }, position }): Definition | null
     uri,
     (document) =>
       Option.getOrNull(
-        definitionOf(currentIndex(), document.getText(), position, currentParseOptions()),
+        definitionOf(currentIndex(), document.getText(), position, parseOptionsOf(document)),
       ),
     null,
   ),
@@ -243,7 +279,7 @@ connection.onCodeAction(({ textDocument: { uri }, range }): CodeAction[] =>
       mapLinkActions(uri, document.getText(), range, {
         components: readsComponents(document),
         frontmatter: currentSettings().frontmatter,
-        parseOptions: currentParseOptions(),
+        parseOptions: parseOptionsOf(document),
       }),
     [],
   ),

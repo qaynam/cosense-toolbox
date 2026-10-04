@@ -1,11 +1,12 @@
 import { type Dirent, statSync } from "node:fs"
 import { readdir, readFile, stat } from "node:fs/promises"
-import { basename, extname, join, relative, resolve, sep } from "node:path"
+import { basename, dirname, extname, join, relative, resolve, sep } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
 import { parse, type ParseOptions } from "@cosense-toolbox/parser"
+import { publicMedia } from "@cosense-toolbox/parser/extensions"
 import { collectLinks } from "@cosense-toolbox/parser/utils"
-import { Array as Arr, Effect, Match, Option, pipe } from "effect"
+import { Array as Arr, Effect, Match, Option, Order, pipe } from "effect"
 
 /**
  * The pages a workspace holds, read from disk.
@@ -144,9 +145,26 @@ export interface ReadIndexOptions {
    * Whether a `---` fence on the first line opens YAML to skip (default: true). Off for
    * Cosense pages, which have no frontmatter: a page titled `---` keeps its title.
    */
-  readonly frontmatter?: boolean /** How to parse: the site's notation extensions, so a site's own notation is not a link. */
+  readonly frontmatter?: boolean
+  /** How to parse: the site's notation extensions, so a site's own notation is not a link. */
   readonly parseOptions?: ParseOptions
+  /** The sites' media roots (`findMediaRoots`): in a page of one, `[:/…]` is a file, not a link. */
+  readonly mediaRoots?: ReadonlyArray<string>
 }
+
+/** `parseOptions`, reading `[:/…]` as the site's files too when `path` is in a site. */
+export const withSiteFiles = (
+  parseOptions: ParseOptions,
+  path: string,
+  mediaRoots: ReadonlyArray<string>,
+): ParseOptions =>
+  Option.match(siteOf(path, mediaRoots), {
+    onNone: () => parseOptions,
+    onSome: () => ({
+      ...parseOptions,
+      extensions: [...(parseOptions.extensions ?? []), publicMedia()],
+    }),
+  })
 
 /** A page file as read: the page it makes, where it is on disk, and its text. */
 export interface PageFile {
@@ -159,7 +177,7 @@ export interface PageFile {
 const readPageFile = (
   root: string,
   path: string,
-  { frontmatter = true, parseOptions = {} }: ReadIndexOptions,
+  { frontmatter = true, parseOptions = {}, mediaRoots = [] }: ReadIndexOptions,
 ): Effect.Effect<Option.Option<PageFile>> =>
   pipe(
     Effect.all([
@@ -174,7 +192,7 @@ const readPageFile = (
           uri: pathToFileURL(path).href,
           location: locationOf(root, path),
           updated: mtimeMs,
-          links: collectLinks(parse(body, parseOptions)),
+          links: collectLinks(parse(body, withSiteFiles(parseOptions, path, mediaRoots))),
         },
         path,
         text,
@@ -241,18 +259,56 @@ const isDirectory = (path: string): boolean =>
     () => false,
   )
 
-/** `mediaRoot`, the directory a site serves its files from, in each workspace folder holding one. */
-export const mediaRootsOf = (
-  folders: ReadonlyArray<{ readonly uri: string }> | null | undefined,
-  mediaRoot: string,
-): ReadonlyArray<string> =>
-  Arr.filter(
-    Arr.map(rootsOf(folders, []), (folder) => resolve(folder, mediaRoot)),
-    isDirectory,
+/** Every directory under `directory`, depth-first, past the ones that never hold a site. */
+const directoriesUnder = (directory: string): Effect.Effect<ReadonlyArray<string>> =>
+  pipe(
+    entriesOf(directory),
+    Effect.map(
+      Arr.filter(
+        (entry) =>
+          entry.isDirectory() &&
+          !entry.name.startsWith(".") &&
+          !Arr.contains(SKIP_DIRECTORIES, entry.name),
+      ),
+    ),
+    Effect.flatMap(
+      Effect.forEach((entry) => {
+        const path = join(directory, entry.name)
+        return Effect.map(directoriesUnder(path), (below) => [path, ...below])
+      }),
+    ),
+    Effect.map(Arr.flatten),
   )
 
-/** Whether any workspace folder holds `mediaRoot`. */
-export const hasMediaRoot = (
-  folders: ReadonlyArray<{ readonly uri: string }> | null | undefined,
+/**
+ * Each site's media root under `roots`: `mediaRoot` (`public`, or a deeper path) wherever a
+ * directory holds it. A repository can hold several sites, each with its own.
+ */
+export const findMediaRoots = (
+  roots: ReadonlyArray<string>,
   mediaRoot: string,
-): boolean => mediaRootsOf(folders, mediaRoot).length > 0
+): Effect.Effect<ReadonlyArray<string>> =>
+  pipe(
+    Effect.forEach(roots, (root) =>
+      Effect.map(directoriesUnder(root), (below) => [root, ...below]),
+    ),
+    Effect.map((found) =>
+      Arr.dedupe(
+        Arr.filter(
+          Arr.map(Arr.flatten(found), (directory) => join(directory, mediaRoot)),
+          isDirectory,
+        ),
+      ),
+    ),
+  )
+
+/**
+ * The media root of the site `path` is in: the one whose site is the nearest above it. None
+ * for a file in no site, such as a folder of plain Cosense pages.
+ */
+export const siteOf = (path: string, mediaRoots: ReadonlyArray<string>): Option.Option<string> =>
+  pipe(
+    Arr.filter(mediaRoots, (root) => path.startsWith(`${dirname(root)}${sep}`)),
+    Arr.sort(Order.reverse(Order.mapInput(Order.number, (root: string) => root.length))),
+    Arr.head,
+  )
