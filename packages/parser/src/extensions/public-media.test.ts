@@ -39,9 +39,17 @@ describe("publicMedia", () => {
     ])
   })
 
-  it("メディアでないファイルは、ページへのリンクのまま", () => {
-    expect(read("[:/files/a.pdf]")).toEqual([
-      { type: "internalLink", label: ":/files/a.pdf", target: ":/files/a.pdf" },
+  it("メディアでないファイルは、ページではなく、そのファイルへのリンクになる", () => {
+    expect(read("[:/files/a.pdf]", { base: "/docs" })).toEqual([
+      { type: "externalLink", label: "/files/a.pdf", target: "/docs/files/a.pdf" },
+    ])
+  })
+
+  it("書きかけのパスも、ページではなくファイルへのリンクとして読む", () => {
+    expect(read("[:/] [:/ima]")).toEqual([
+      { type: "externalLink", label: "/", target: "/" },
+      { type: "text", value: " " },
+      { type: "externalLink", label: "/ima", target: "/ima" },
     ])
   })
 

@@ -70,6 +70,7 @@ export default defineConfig({
 ```
 
 `base: "/docs"` のサイトなら、`[:/images/a.png]` は `/docs/images/a.png` を指す。
+メディアでないファイル (`[:/files/a.pdf]`) は、そのファイルへのリンクになる。
 Cosense Web では `[:/images/a.png]` もページへのリンクなので、Cosense から持ってきたページの読み方は変わらない。
 
 ## Cosense 上の画像とファイル

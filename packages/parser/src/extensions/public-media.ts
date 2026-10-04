@@ -4,8 +4,14 @@ import { mediaKindOf } from "../core/media-url"
 import type { Extension } from "../inline/types"
 import type { InlineNodeInit } from "../types"
 
-/** `:` のすぐ後の `/` からがパス。空白と角括弧は、記法の区切りと見分けられないので含めない。 */
-const PATH_RE = /^:(\/[^\s[\]]+)$/
+/**
+ * `:` のすぐ後の `/` からがパス。空白と角括弧は、記法の区切りと見分けられないので含めない。
+ * 書きかけの `[:/]` も、ページへのリンクにならないよう、空のパスとして受ける。
+ */
+const PATH_RE = /^:(\/[^\s[\]]*)$/
+
+const pathOf = (inner: string): Option.Option<string> =>
+  Option.fromNullable(PATH_RE.exec(inner)?.[1])
 
 export interface PublicMediaOptions {
   /**
@@ -19,7 +25,7 @@ export interface PublicMediaOptions {
 /** `[:/…]` の中身が指すメディア。 */
 const mediaAt = (inner: string, root: string, large: boolean): Option.Option<InlineNodeInit> =>
   pipe(
-    Option.fromNullable(PATH_RE.exec(inner)?.[1]),
+    pathOf(inner),
     Option.flatMap((path) =>
       Option.map(mediaKindOf(path), (kind) => ({ kind, src: `${root}${path}` })),
     ),
@@ -30,15 +36,28 @@ const mediaAt = (inner: string, root: string, large: boolean): Option.Option<Inl
     ),
   )
 
+/** `[:/…]` の中身が指すファイル。メディアならそのノード、ほかはファイルへのリンク。 */
+const siteFileAt = (inner: string, root: string): Option.Option<InlineNodeInit> =>
+  pipe(
+    mediaAt(inner, root, false),
+    Option.orElse(() =>
+      Option.map(pathOf(inner), (path): InlineNodeInit => ({
+        type: "externalLink",
+        label: path,
+        target: `${root}${path}`,
+      })),
+    ),
+  )
+
 /**
  * サイトに置いたファイル (Astro なら `public/` の下) を、`[:/images/a.png]` のように
  * サイトの根元からのパスで画像・動画・音声として読む拡張。Cosense Web には無い記法。
  *
  * Cosense Web では `[a.png]` も `[:/images/a.png]` もページへのリンクで、既定のパーサーも同じに読む。
- * `:/` で始まる題名のページはまず無いので、その形だけを手元のファイルとして読む。
- * 種類は拡張子で決める。メディアでない拡張子 (`.pdf` など) は、ページへのリンクのまま。
+ * `:/` で始まる題名のページはまず無いので、この拡張を渡したときは、その形をすべてサイトのファイルとして読む。
  *
- * - `[:/images/a.png]` は画像、`[:/movies/a.mp4]` は動画、`[:/audio/a.mp3]` は音声
+ * - `[:/images/a.png]` は画像、`[:/movies/a.mp4]` は動画、`[:/audio/a.mp3]` は音声 (種類は拡張子で決める)
+ * - ほかのファイル (`[:/files/a.pdf]`) と書きかけのパスは、そのファイルへのリンク
  * - `[[:/images/a.png]]` は大きい画像、`[[:/movies/a.mp4]]` は大きい動画
  * - 装飾の中では、URL の画像と同じくリンクのまま
  *
@@ -51,7 +70,7 @@ export const publicMedia = ({ base = "" }: PublicMediaOptions = {}): Extension =
   const root = base.replace(/\/+$/, "")
   return {
     bracketRules: [
-      (inner, ctx) => (ctx.allowDecoration ? Option.getOrNull(mediaAt(inner, root, false)) : null),
+      (inner, ctx) => (ctx.allowDecoration ? Option.getOrNull(siteFileAt(inner, root)) : null),
     ],
     constructs: [
       (source, index) => {
