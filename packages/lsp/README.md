@@ -17,6 +17,7 @@ csn-lsp --stdio
 - `[` の中と `#` の後での、ページの題名の補完。候補の選び方と並べ方は Cosense Web と同じで、まだ無いページへのリンクも候補に出す
 - `[ページ名]` からそのページのファイルへの定義ジャンプ
 - 存在しないページへのリンクの診断
+- サイトのファイル (`[:/images/a.png]`) の補完と、無いファイルの診断。ワークスペースに `mediaRoot` があるときだけ
 - Google マップの URL を、Cosense の地図の記法 (`[N35.68,E139.76,Z15]`) に変える提案とクイックフィックス
 
 設定はエディターの `initialization_options` で渡します。いずれも省略できます。
@@ -85,6 +86,10 @@ csn-lsp check src/content src/pages
   - `mergeVectorPages(ranked, pages, index, query)`: ベクトル検索の結果のうち近いものを、Cosense Web と同じく上位 6 件の中に混ぜる
   - `iconKeys(text)`: ページが使っているアイコン。`rankCandidates` の `icons` に渡すと、そのアイコンのページが先頭に来る
   - `Asearch(pattern)`: 1〜3 文字違いまでを許す、あいまいな文字列の照合
+- `@cosense-toolbox/lsp/media`: サイトのファイル (`[:/images/a.png]`、parser の `publicMedia`) を扱う
+  - `mediaFilesIn(root)`: ディレクトリの下の画像・動画・音声を、サイトの中のパス (`/images/a.png`) で返す
+  - `mediaCompletionItems(files, detection, line)`: `[:/` の中で、入力を含むパスのファイルを候補にする
+  - `missingMediaDiagnostics(text, files, options)`: ファイルの無い `[:/…]` の診断
 - `@cosense-toolbox/lsp/link`: `linkAt(text, position, parseOptions?)` で、カーソルの下のリンクと、その行き先を返す
   - ページ (`[ページ]`、`#タグ`、`[/project/ページ]`、アイコンの `[taro.icon]` と `[[taro.icon]]`) は `kind: "page"`。
     別のプロジェクトなら `project`、`[ページ#<行 ID>]` なら `lineId` が付く

@@ -4,7 +4,7 @@
  * 拡張を使わない利用者のバンドルに入らないよう、メインエントリからは切り離してある。
  * コンパイラを書くための型 (`NodeHandlers` 等) は `./compile` に、描画の拡張 (`RenderExtension`) は `./html` にある。
  */
-export { type PublicMediaOptions, publicMedia } from "./public-media"
+export { mediaKindOfPath, type PublicMediaOptions, publicMedia } from "./public-media"
 export { tableCellNotation } from "./table-cell-notation"
 export type { Origin } from "../core/position"
 export type {
@@ -15,4 +15,5 @@ export type {
   InlineConstruct,
   InlineContext,
 } from "../inline/types"
+export type { MediaKind } from "../core/media-url"
 export type { InlineNodeInit, WithoutPosition } from "../types"

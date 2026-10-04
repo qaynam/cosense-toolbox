@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { parseLine } from "../parse"
 import { stripPositions } from "../test-helpers"
-import { publicMedia } from "./public-media"
+import { mediaKindOfPath, publicMedia } from "./public-media"
 
 /** `source` を拡張つきで読んだ行の中身。 */
 const read = (source: string, options?: Parameters<typeof publicMedia>[0]) =>
@@ -58,5 +58,17 @@ describe("publicMedia", () => {
       type: "decoration",
       children: [{ type: "internalLink", target: ":/images/a.png" }],
     })
+  })
+})
+
+describe("mediaKindOfPath", () => {
+  it("is the kind of media a path's extension names", () => {
+    expect(mediaKindOfPath("/images/a.PNG")).toBe("image")
+    expect(mediaKindOfPath("/movies/a.webm")).toBe("video")
+    expect(mediaKindOfPath("/audio/a.ogg")).toBe("audio")
+  })
+
+  it("is null for any other file", () => {
+    expect(mediaKindOfPath("/docs/a.pdf")).toBeNull()
   })
 })

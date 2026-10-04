@@ -6,6 +6,7 @@ export default defineConfig({
     tokens: "src/tokens.ts",
     completion: "src/completion.ts",
     link: "src/link.ts",
+    media: "src/media.ts",
     suggest: "src/suggest.ts",
     check: "src/check.ts",
   },

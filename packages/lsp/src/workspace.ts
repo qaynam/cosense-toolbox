@@ -241,8 +241,18 @@ const isDirectory = (path: string): boolean =>
     () => false,
   )
 
-/** Whether any workspace folder holds `mediaRoot`, the directory a site serves its files from. */
+/** `mediaRoot`, the directory a site serves its files from, in each workspace folder holding one. */
+export const mediaRootsOf = (
+  folders: ReadonlyArray<{ readonly uri: string }> | null | undefined,
+  mediaRoot: string,
+): ReadonlyArray<string> =>
+  Arr.filter(
+    Arr.map(rootsOf(folders, []), (folder) => resolve(folder, mediaRoot)),
+    isDirectory,
+  )
+
+/** Whether any workspace folder holds `mediaRoot`. */
 export const hasMediaRoot = (
   folders: ReadonlyArray<{ readonly uri: string }> | null | undefined,
   mediaRoot: string,
-): boolean => Arr.some(rootsOf(folders, []), (folder) => isDirectory(resolve(folder, mediaRoot)))
+): boolean => mediaRootsOf(folders, mediaRoot).length > 0

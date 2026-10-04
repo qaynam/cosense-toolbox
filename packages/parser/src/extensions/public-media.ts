@@ -1,6 +1,6 @@
 import { Option, pipe } from "effect"
 
-import { mediaKindOf } from "../core/media-url"
+import { type MediaKind, mediaKindOf } from "../core/media-url"
 import type { Extension } from "../inline/types"
 import type { InlineNodeInit } from "../types"
 
@@ -87,3 +87,7 @@ export const publicMedia = ({ base = "" }: PublicMediaOptions = {}): Extension =
     ],
   }
 }
+
+/** パスの拡張子が示すメディアの種類。`publicMedia` がメディアとして読むかどうかと同じ判定。メディアでなければ null。 */
+export const mediaKindOfPath = (path: string): MediaKind | null =>
+  Option.getOrNull(mediaKindOf(path))

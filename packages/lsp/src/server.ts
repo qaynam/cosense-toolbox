@@ -15,12 +15,13 @@ import {
 } from "vscode-languageserver/node"
 import { TextDocument } from "vscode-languageserver-textdocument"
 
-import { completionItems, definitionOf } from "./completion"
+import { completionItems, definitionOf, detectCompletionInDocument } from "./completion"
 import { unresolvedLinkDiagnostics } from "./diagnostics"
 import { mapLinkActions, mapLinkDiagnostics } from "./map-link"
+import { mediaCompletionItems, mediaFilesIn, missingMediaDiagnostics } from "./media"
 import { defaultSettings, settingsOf } from "./settings"
 import { computeTokens, encodeTokens, LEGEND } from "./tokens"
-import { emptyIndex, hasMediaRoot, type Index, readIndex, rootsOf } from "./workspace"
+import { emptyIndex, type Index, mediaRootsOf, readIndex, rootsOf } from "./workspace"
 
 const connection = createConnection(ProposedFeatures.all)
 const documents = new TextDocuments(TextDocument)
@@ -49,6 +50,12 @@ const currentSettings = () => Effect.runSync(Ref.get(settings))
 const parseOptions = Ref.unsafeMake<ParseOptions>({})
 
 const currentParseOptions = () => Effect.runSync(Ref.get(parseOptions))
+
+/** Where the site's files are, and the files there as site paths (see media.ts). */
+const mediaRoots = Ref.unsafeMake<ReadonlyArray<string>>([])
+const mediaFiles = Ref.unsafeMake<ReadonlyArray<string>>([])
+
+const currentMediaFiles = () => Effect.runSync(Ref.get(mediaFiles))
 
 const semanticTokensOf = (document: TextDocument): SemanticTokens => ({
   data: encodeTokens(
@@ -108,6 +115,12 @@ const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
                   frontmatter: set.frontmatter,
                   parseOptions: currentParseOptions(),
                 }),
+                ...missingMediaDiagnostics(document.getText(), new Set(currentMediaFiles()), {
+                  severity: set.unresolvedLinks,
+                  components: readsComponents(document),
+                  frontmatter: set.frontmatter,
+                  parseOptions: currentParseOptions(),
+                }),
                 ...mapLinkDiagnostics(document.getText(), {
                   severity: set.mapLinks,
                   components: readsComponents(document),
@@ -132,6 +145,10 @@ const refreshIndex = (): void => {
       readIndex(at, { frontmatter: set.frontmatter, parseOptions: currentParseOptions() }),
     ),
     Effect.flatMap((next) => Ref.set(index, Option.some(next))),
+    // The site's files change outside the pages, so they are read again along with them.
+    Effect.flatMap(() => Ref.get(mediaRoots)),
+    Effect.flatMap(Effect.forEach(mediaFilesIn)),
+    Effect.flatMap((found) => Ref.set(mediaFiles, Arr.flatten(found))),
     Effect.flatMap(() => Effect.forEach(documents.all(), publishDiagnostics, { discard: true })),
     Effect.runFork,
   )
@@ -143,12 +160,9 @@ connection.onInitialize(({ workspaceFolders, initializationOptions }): Initializ
   const read = settingsOf(initializationOptions)
   Effect.runSync(Ref.set(settings, read))
   Effect.runSync(Ref.set(roots, rootsOf(workspaceFolders, read.sources)))
-  Effect.runSync(
-    Ref.set(
-      parseOptions,
-      hasMediaRoot(workspaceFolders, read.mediaRoot) ? { extensions: [publicMedia()] } : {},
-    ),
-  )
+  const sites = mediaRootsOf(workspaceFolders, read.mediaRoot)
+  Effect.runSync(Ref.set(mediaRoots, sites))
+  Effect.runSync(Ref.set(parseOptions, sites.length > 0 ? { extensions: [publicMedia()] } : {}))
   refreshIndex()
   return {
     capabilities: {
@@ -191,9 +205,21 @@ connection.onCompletion(({ textDocument: { uri }, position }): CompletionList =>
   items: withDocument(
     uri,
     (document) =>
-      completionItems(currentIndex(), document.getText(), position, currentParseOptions(), {
-        frontmatter: currentSettings().frontmatter,
-      }),
+      pipe(
+        detectCompletionInDocument(document.getText(), position, currentParseOptions(), {
+          frontmatter: currentSettings().frontmatter,
+        }),
+        // Inside `[:/…`, the site's files rather than pages, once there are any to offer.
+        Option.map((detection) =>
+          mediaCompletionItems(currentMediaFiles(), detection, position.line),
+        ),
+        Option.filter(Arr.isNonEmptyArray),
+        Option.getOrElse(() =>
+          completionItems(currentIndex(), document.getText(), position, currentParseOptions(), {
+            frontmatter: currentSettings().frontmatter,
+          }),
+        ),
+      ),
     [],
   ),
 }))
