@@ -1,8 +1,10 @@
 import type { Dirent } from "node:fs"
-import { readdir, readFile } from "node:fs/promises"
+import { readdir, readFile, stat } from "node:fs/promises"
 import { basename, extname, join, relative, resolve, sep } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
+import { parse } from "@cosense-toolbox/parser"
+import { collectLinks } from "@cosense-toolbox/parser/utils"
 import { Array as Arr, Effect, Match, Option, pipe } from "effect"
 
 /**
@@ -21,6 +23,10 @@ export interface Page {
    * next to the title so two pages of one title can be told apart.
    */
   readonly location: string
+  /** When the file was last changed, in milliseconds since the epoch */
+  readonly updated?: number
+  /** The pages it links to, by a link or a tag, whether they have a file or not */
+  readonly links?: ReadonlyArray<string>
 }
 
 export interface Index {
@@ -117,20 +123,17 @@ const firstLine = (text: string): Option.Option<string> =>
  *
  * An empty file falls back to its name, so it stays linkable.
  */
-const titleOf = (path: string, text: string, frontmatter: boolean): string =>
+const titleOf = (path: string, body: string): string =>
   pipe(
-    text.replace(/\r\n?/g, "\n"),
-    (normalized) =>
-      Option.getOrElse(
-        Option.map(
-          Option.liftPredicate(normalized, () => frontmatter),
-          withoutFrontmatter,
-        ),
-        () => normalized,
-      ),
-    firstLine,
+    firstLine(body),
     Option.getOrElse(() => basename(path, extname(path))),
   )
+
+/** The page as Cosense reads it: without the frontmatter, which is YAML and not the page. */
+const bodyOf = (text: string, frontmatter: boolean): string => {
+  const normalized = text.replace(/\r\n?/g, "\n")
+  return frontmatter ? withoutFrontmatter(normalized) : normalized
+}
 
 /** `path` from `root`, with `/` between directories whatever the platform. */
 const locationOf = (root: string, path: string): string => relative(root, path).split(sep).join("/")
@@ -158,18 +161,24 @@ const readPageFile = (
   { frontmatter = true }: ReadIndexOptions,
 ): Effect.Effect<Option.Option<PageFile>> =>
   pipe(
-    Effect.tryPromise(() => readFile(path, "utf8")),
-    Effect.map((text) =>
-      Option.some({
+    Effect.all([
+      Effect.tryPromise(() => readFile(path, "utf8")),
+      Effect.tryPromise(() => stat(path)),
+    ]),
+    Effect.map(([text, { mtimeMs }]) => {
+      const body = bodyOf(text, frontmatter)
+      return Option.some({
         page: {
-          title: titleOf(path, text, frontmatter),
+          title: titleOf(path, body),
           uri: pathToFileURL(path).href,
           location: locationOf(root, path),
+          updated: mtimeMs,
+          links: collectLinks(parse(body)),
         },
         path,
         text,
-      }),
-    ),
+      })
+    }),
     Effect.orElseSucceed(() => Option.none()),
   )
 

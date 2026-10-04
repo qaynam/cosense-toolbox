@@ -14,7 +14,7 @@ csn-lsp --stdio
 ```
 
 - 色付け (semantic tokens)
-- `[` の中と `#` の後での、ページの題名の補完
+- `[` の中と `#` の後での、ページの題名の補完。候補の選び方と並べ方は Cosense Web と同じで、まだ無いページへのリンクも候補に出す
 - `[ページ名]` からそのページのファイルへの定義ジャンプ
 - 存在しないページへのリンクの診断
 
@@ -59,7 +59,15 @@ csn-lsp check src/content src/pages
     無ければ LSP 標準の型 (`namespace`、`function` など) に直して送る。既定の legend (`LEGEND`) は LSP 標準の型だけなので、
     VS Code や Zed のように標準の型で色を付けるエディタにはそのまま渡せる。自前の名前で色を付けるクライアントは、
     `encodeTokens(tokens, [...TOKEN_TYPES, ...names])` のように自前の legend を渡す
-- `@cosense-toolbox/lsp/completion`: `detectCompletion` / `completionItems` / `definitionOf` など
+- `@cosense-toolbox/lsp/completion`: `detectCompletion` / `detectCompletionInDocument` / `completionItems` / `definitionOf` など
+  - `detectCompletionInDocument` は、タイトル行と、コードやコマンドの行 (`$ ls`) では補完の位置とみなさない
+- `@cosense-toolbox/lsp/suggest`: リンクの候補を、Cosense Web のエディタと同じ規則で選んで並べる。どれも入出力の無い関数
+  - `buildCandidateIndex(entries)`: ページ (`title` / `updated` / `image` / `links`) から候補を作る。リンク先にしかない題名も候補になる
+  - `rankCandidates(index, query, options)`: 空白で区切った語がすべて入る題名を、短い順 (同じ長さなら新しい順) に並べる。
+    見つかったものが少なければ、3 文字以上の入力で 1 文字違いの題名を足す。編集中のページと、入力と同じ題名は出さない
+  - `mergeVectorPages(ranked, pages, index, query)`: ベクトル検索の結果のうち近いものを、Cosense Web と同じく上位 6 件の中に混ぜる
+  - `iconKeys(text)`: ページが使っているアイコン。`rankCandidates` の `icons` に渡すと、そのアイコンのページが先頭に来る
+  - `Asearch(pattern)`: 1〜3 文字違いまでを許す、あいまいな文字列の照合
 - `@cosense-toolbox/lsp/link`: `linkAt(text, position, parseOptions?)` で、カーソルの下のリンクと、その行き先を返す
   - ページ (`[ページ]`、`#タグ`、`[/project/ページ]`、アイコンの `[taro.icon]` と `[[taro.icon]]`) は `kind: "page"`。
     別のプロジェクトなら `project`、`[ページ#<行 ID>]` なら `lineId` が付く
