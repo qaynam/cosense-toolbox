@@ -293,8 +293,10 @@ describe("エスケープと URL の安全性", () => {
     expect(line("[リンク]", { pageUrl: () => "java\tscript:alert(1)" })).not.toContain("href")
   })
 
-  it("画像の src が script になる場合も落とす", () => {
-    expect(line("[javascript:alert(1).png]")).toBe('<img class="image" alt="">')
+  it("画像の src が script になる場合も落とす (拡張が作った画像でも)", () => {
+    const asImage = (inner: string) => ({ type: "image" as const, src: inner })
+    const page = parseLine("[javascript:alert(1)]", { extensions: [{ bracketRules: [asImage] }] })
+    expect(toHtml(page)).toBe('<div class="line"><img class="image" alt=""></div>')
   })
 
   it("safeHref / safeSrc は独自ハンドラ用に公開されている", () => {

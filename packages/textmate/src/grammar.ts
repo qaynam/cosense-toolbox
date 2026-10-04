@@ -321,10 +321,7 @@ const UNTIL_DOUBLE_CLOSE = re`(?:(?!\]\]).)`
  */
 const strongRules: ReadonlyArray<Pattern> = [
   single(re`\[\[${NO_CODE_INSIDE_DOUBLE}${VIDEO_URL}\]\]`, { scopes: [SCOPES.media] }),
-  single(
-    re`\[\[${NO_CODE_INSIDE_DOUBLE}(?:${IMAGE_URL}|${UNTIL_DOUBLE_CLOSE}*?${IMAGE_EXT}(?:[?#]${UNTIL_DOUBLE_CLOSE}*)?)\]\]`,
-    { scopes: [SCOPES.image] },
-  ),
+  single(re`\[\[${NO_CODE_INSIDE_DOUBLE}(?:${IMAGE_URL})\]\]`, { scopes: [SCOPES.image] }),
   single(re`\[\[${NO_CODE_INSIDE_DOUBLE}(${UNTIL_DOUBLE_CLOSE}+)\]\]`, {
     scopes: [SCOPES.bold],
     captures: { 1: readAs(include("inline-in-emphasis")) },
@@ -344,69 +341,54 @@ const formulaRule: Pattern = region({
 
 /**
  * Brackets whose body holds no brackets, tried in the parser's order: an icon before media
- * before a URL before an image path before a project link, and anything left is a page link.
+ * before a URL before a project link, and anything left is a page link.
  */
-const simpleTargetRules = (allowImagePath: boolean): ReadonlyArray<Pattern> =>
-  Arr.getSomes([
-    Option.some(
-      single(re`\[${NO_CODE_INSIDE}[^\[\]]+\.icon(?:\*\d+)?\]`, { scopes: [SCOPES.icon] }),
+const simpleTargetRules: ReadonlyArray<Pattern> = Arr.getSomes([
+  Option.some(single(re`\[${NO_CODE_INSIDE}[^\[\]]+\.icon(?:\*\d+)?\]`, { scopes: [SCOPES.icon] })),
+  // A player, a map, a video or a sound, alone or linked: tried before images, as the parser does.
+  Option.some(
+    single(re`\[${NO_CODE_INSIDE}(?:${COORDINATES}(?:\s+[^\[\]]+)?|[^\[\]]+?\s+${COORDINATES})\]`, {
+      scopes: [SCOPES.media],
+    }),
+  ),
+  Option.some(
+    single(re`\[${NO_CODE_INSIDE}(?:${EMBED_URL}|${VIDEO_URL}|${AUDIO_URL})\]`, {
+      scopes: [SCOPES.media],
+    }),
+  ),
+  Option.some(
+    single(re`\[${NO_CODE_INSIDE}(?:${URL}\s+${LINKED_VIDEO_URL}|${LINKED_VIDEO_URL}\s+${URL})\]`, {
+      scopes: [SCOPES.media],
+    }),
+  ),
+  // A sound with words before or after it, unless the words are one image URL: that makes
+  // an image linking to the sound.
+  Option.some(
+    single(re`\[${NO_CODE_INSIDE}${AUDIO_URL}\s+(?!\s*(?:${IMAGE_URL})\s*\])[^\[\]]*\]`, {
+      scopes: [SCOPES.media],
+    }),
+  ),
+  Option.some(
+    single(
+      re`\[${NO_CODE_INSIDE}(?!\s*(?:${IMAGE_URL})\s+${AUDIO_URL}\])[^\[\]]+\s${AUDIO_URL}\]`,
+      { scopes: [SCOPES.media] },
     ),
-    // A player, a map, a video or a sound, alone or linked: tried before images, as the parser does.
-    Option.some(
-      single(
-        re`\[${NO_CODE_INSIDE}(?:${COORDINATES}(?:\s+[^\[\]]+)?|[^\[\]]+?\s+${COORDINATES})\]`,
-        {
-          scopes: [SCOPES.media],
-        },
-      ),
-    ),
-    Option.some(
-      single(re`\[${NO_CODE_INSIDE}(?:${EMBED_URL}|${VIDEO_URL}|${AUDIO_URL})\]`, {
-        scopes: [SCOPES.media],
-      }),
-    ),
-    Option.some(
-      single(
-        re`\[${NO_CODE_INSIDE}(?:${URL}\s+${LINKED_VIDEO_URL}|${LINKED_VIDEO_URL}\s+${URL})\]`,
-        { scopes: [SCOPES.media] },
-      ),
-    ),
-    // A sound with words before or after it, unless the words are one image URL: that makes
-    // an image linking to the sound.
-    Option.some(
-      single(re`\[${NO_CODE_INSIDE}${AUDIO_URL}\s+(?!\s*(?:${IMAGE_URL})\s*\])[^\[\]]*\]`, {
-        scopes: [SCOPES.media],
-      }),
-    ),
-    Option.some(
-      single(
-        re`\[${NO_CODE_INSIDE}(?!\s*(?:${IMAGE_URL})\s+${AUDIO_URL}\])[^\[\]]+\s${AUDIO_URL}\]`,
-        { scopes: [SCOPES.media] },
-      ),
-    ),
-    // Only URLs, and one of them an image: the image, linking to another URL if there is one.
-    Option.some(
-      single(
-        re`\[${NO_CODE_INSIDE}\s*(?:${URL}\s+)*(?:${IMAGE_URL})(?=[\s\]])(?:\s+${URL})*\s*\]`,
-        {
-          scopes: [SCOPES.image],
-        },
-      ),
-    ),
-    // Any other URL makes a link, labelled or not.
-    Option.some(
-      single(re`\[${NO_CODE_INSIDE}[^\[\]]*${URL}[^\[\]]*\]`, { scopes: [SCOPES.externalLink] }),
-    ),
-    // `[a.png]`, but not inside emphasis: there Cosense links to a page of that name.
-    onlyIf(
-      allowImagePath,
-      single(re`\[${NO_CODE_INSIDE}[^\[\]]*${IMAGE_EXT}\]`, { scopes: [SCOPES.image] }),
-    ),
-    Option.some(single(re`\[${NO_CODE_INSIDE}/[^\[\]]*\]`, { scopes: [SCOPES.projectLink] })),
-    Option.some(
-      single(re`\[${NO_CODE_INSIDE}(?=[^\[\]]*[^\s\[\]])[^\[\]]+\]`, { scopes: [SCOPES.link] }),
-    ),
-  ])
+  ),
+  // Only URLs, and one of them an image: the image, linking to another URL if there is one.
+  Option.some(
+    single(re`\[${NO_CODE_INSIDE}\s*(?:${URL}\s+)*(?:${IMAGE_URL})(?=[\s\]])(?:\s+${URL})*\s*\]`, {
+      scopes: [SCOPES.image],
+    }),
+  ),
+  // Any other URL makes a link, labelled or not.
+  Option.some(
+    single(re`\[${NO_CODE_INSIDE}[^\[\]]*${URL}[^\[\]]*\]`, { scopes: [SCOPES.externalLink] }),
+  ),
+  Option.some(single(re`\[${NO_CODE_INSIDE}/[^\[\]]*\]`, { scopes: [SCOPES.projectLink] })),
+  Option.some(
+    single(re`\[${NO_CODE_INSIDE}(?=[^\[\]]*[^\s\[\]])[^\[\]]+\]`, { scopes: [SCOPES.link] }),
+  ),
+])
 
 /** What follows the bracketed notation in both contexts, in the parser's order. */
 const unbracketedRules: ReadonlyArray<Pattern> = [
@@ -518,13 +500,13 @@ const REPOSITORY: { readonly [K in Exclude<RepositoryKey, "head">]: Pattern } = 
     ...strongRules,
     formulaRule,
     ...emphasisRules,
-    ...simpleTargetRules(true),
+    ...simpleTargetRules,
     ...unbracketedRules,
   ]),
   "inline-in-emphasis": group([
     ...strongRules,
     formulaRule,
-    ...simpleTargetRules(false),
+    ...simpleTargetRules,
     ...unbracketedRules,
   ]),
   // A bracket that is no notation, but whose `]` must not close the one around it:

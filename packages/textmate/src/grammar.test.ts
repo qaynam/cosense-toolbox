@@ -147,8 +147,8 @@ describe("URL と画像", () => {
     expect(scopesOf(`T\n${proxied}`, proxied)).toEqual([SCOPES.externalLink])
   })
 
-  it("URL でなくても、拡張子が画像なら [a.png] は画像になる", () => {
-    expect(scopesOf("T\n[a.png]", "[a.png]")).toEqual([SCOPES.image])
+  it("URL でない [a.png] は、Cosense Web と同じくページへのリンクになる", () => {
+    expect(scopesOf("T\n[a.png]", "[a.png]")).toEqual([SCOPES.link])
   })
 })
 

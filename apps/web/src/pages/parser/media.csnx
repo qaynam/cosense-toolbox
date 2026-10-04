@@ -9,6 +9,9 @@ toc:
   - id: ways
     text: 足し方は 3 通り
     depth: 2
+  - id: public-media
+    text: サイトに置いたファイル
+    depth: 2
   - id: apple-music
     text: Apple Music
     depth: 2
@@ -53,6 +56,20 @@ Cosense Web がパースの段階で読み分けているものは、最初か�
  どれでもないもの (3D モデルなど) → ノードの型から足す ([記法の拡張] の独自ノード型)
 
 どれも、`[...]` の中身を読む `BracketRule` で URL を見分けます。拡張のルールは既定のルールより先に試されるので、YouTube などを横取りしないよう、URL の形は狭く書きます。
+
+<DocHeading level={2} id="public-media" title="サイトに置いたファイル" />
+
+`[a.png]` は URL ではないので、Cosense Web と同じくページへのリンクです。サイトに置いたファイルを出すには、拡張 `publicMedia` を渡し、`[:/images/a.png]` のようにサイトの根元からのパスで書きます。種類は拡張子で決まります。
+
+[:/icons/cosense.svg]
+
+code:ts
+ import { parse } from "@cosense-toolbox/parser"
+ import { publicMedia } from "@cosense-toolbox/parser/extensions"
+ 
+ const page = parse(text, { extensions: [publicMedia({ base: "/docs" })] })
+
+Astro 統合はこの拡張を既定で有効にし、サイトの `base` を付けます。エディタの Language Server も、ページの上のディレクトリに `public/` があれば同じように読みます。
 
 <DocHeading level={2} id="apple-music" title="Apple Music" />
 

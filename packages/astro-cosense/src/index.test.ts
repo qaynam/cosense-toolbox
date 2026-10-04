@@ -26,10 +26,14 @@ const fakeLogger = () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() })
  * 開発中の lint はサーバーを待たせないよう裏で走り、終わりを待つ手段が無い。そのため、
  * 同じサイトをビルドの lint で調べ終えたことを、開発中のほうも終えた目安にする。
  */
-const lintOnDevServer = async (root: URL, logger: ReturnType<typeof fakeLogger>) => {
-  const integration = cosense({ lint: { unresolvedLinks: "error" } })
+const lintOnDevServer = async (
+  root: URL,
+  logger: ReturnType<typeof fakeLogger>,
+  options: Parameters<typeof cosense>[0] = {},
+) => {
+  const integration = cosense({ lint: { unresolvedLinks: "error" }, ...options })
   const hooks = integration.hooks as Record<string, (options: object) => unknown>
-  const config = { root, srcDir: new URL("src/", root) }
+  const config = { root, srcDir: new URL("src/", root), base: "/" }
   hooks["astro:config:done"]?.({ config, injectTypes: () => {} })
   hooks["astro:server:setup"]?.({
     server: { watcher: { on: () => {} } },
@@ -53,6 +57,22 @@ describe("開発サーバーの lint", () => {
     const root = await project({ "src/content/a.csn": "投稿\n[無いページ]" })
     const logger = fakeLogger()
     await lintOnDevServer(root, logger)
+    await vi.waitFor(() => expect(logger.error).toHaveBeenCalledTimes(1))
+  })
+})
+
+describe("サイトに置いたメディア ([:/…])", () => {
+  it("画像を指す [:/images/a.png] は、リンク切れとして数えない", async () => {
+    const root = await project({ "src/content/a.csn": "投稿\n[:/images/a.png] [:/movies/a.mp4]" })
+    const logger = fakeLogger()
+    await lintOnDevServer(root, logger)
+    expect(logger.error).not.toHaveBeenCalled()
+  })
+
+  it("publicMedia: false なら、Cosense Web と同じくページへのリンクとして読む", async () => {
+    const root = await project({ "src/content/a.csn": "投稿\n[:/images/a.png]" })
+    const logger = fakeLogger()
+    await lintOnDevServer(root, logger, { publicMedia: false })
     await vi.waitFor(() => expect(logger.error).toHaveBeenCalledTimes(1))
   })
 })

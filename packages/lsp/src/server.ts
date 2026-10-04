@@ -1,3 +1,6 @@
+import { fileURLToPath } from "node:url"
+
+import type { ParseOptions } from "@cosense-toolbox/parser"
 import { Array as Arr, Effect, Option, pipe, Ref } from "effect"
 import {
   type CodeAction,
@@ -13,12 +16,21 @@ import {
 } from "vscode-languageserver/node"
 import { TextDocument } from "vscode-languageserver-textdocument"
 
-import { completionItems, definitionOf } from "./completion"
+import { completionItems, definitionOf, detectCompletionInDocument } from "./completion"
 import { unresolvedLinkDiagnostics } from "./diagnostics"
 import { mapLinkActions, mapLinkDiagnostics } from "./map-link"
+import { mediaCompletionItems, mediaFilesIn, missingMediaDiagnostics } from "./media"
 import { defaultSettings, settingsOf } from "./settings"
 import { computeTokens, encodeTokens, LEGEND } from "./tokens"
-import { emptyIndex, type Index, readIndex, rootsOf } from "./workspace"
+import {
+  emptyIndex,
+  findMediaRoots,
+  type Index,
+  readIndex,
+  rootsOf,
+  siteOf,
+  withSiteFiles,
+} from "./workspace"
 
 const connection = createConnection(ProposedFeatures.all)
 const documents = new TextDocuments(TextDocument)
@@ -40,11 +52,47 @@ const settings = Ref.unsafeMake(defaultSettings)
 
 const currentSettings = () => Effect.runSync(Ref.get(settings))
 
+// --- Sites -------------------------------------------------------------------------------
+
+/** The workspace folders, where the sites are looked for. */
+const folders = Ref.unsafeMake<ReadonlyArray<string>>([])
+
+/**
+ * Each site's media root (see `mediaRoot` in settings.ts) and the files there, as site paths.
+ * A repository can hold several sites, so each page belongs to the nearest one above it.
+ */
+const sites = Ref.unsafeMake<ReadonlyMap<string, ReadonlyArray<string>>>(new Map())
+
+const currentSites = () => Effect.runSync(Ref.get(sites))
+
+const pathOf = (document: TextDocument): Option.Option<string> =>
+  Option.liftThrowable(fileURLToPath)(document.uri)
+
+/**
+ * How a page is parsed: as Cosense Web does, plus `[:/…]` as its site's files when it is in
+ * a site.
+ */
+const parseOptionsOf = (document: TextDocument): ParseOptions =>
+  Option.match(pathOf(document), {
+    onNone: () => ({}),
+    onSome: (path) => withSiteFiles({}, path, [...currentSites().keys()]),
+  })
+
+/** The files of the site `document` is in, or none outside a site. */
+const siteFilesOf = (document: TextDocument): ReadonlyArray<string> =>
+  pipe(
+    pathOf(document),
+    Option.flatMap((path) => siteOf(path, [...currentSites().keys()])),
+    Option.flatMap((root) => Option.fromNullable(currentSites().get(root))),
+    Option.getOrElse((): ReadonlyArray<string> => []),
+  )
+
 const semanticTokensOf = (document: TextDocument): SemanticTokens => ({
   data: encodeTokens(
     computeTokens(document.getText(), {
       components: readsComponents(document),
       frontmatter: currentSettings().frontmatter,
+      parseOptions: parseOptionsOf(document),
     }),
   ),
 })
@@ -95,11 +143,19 @@ const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
                   severity: set.unresolvedLinks,
                   components: readsComponents(document),
                   frontmatter: set.frontmatter,
+                  parseOptions: parseOptionsOf(document),
+                }),
+                ...missingMediaDiagnostics(document.getText(), new Set(siteFilesOf(document)), {
+                  severity: set.unresolvedLinks,
+                  components: readsComponents(document),
+                  frontmatter: set.frontmatter,
+                  parseOptions: parseOptionsOf(document),
                 }),
                 ...mapLinkDiagnostics(document.getText(), {
                   severity: set.mapLinks,
                   components: readsComponents(document),
                   frontmatter: set.frontmatter,
+                  parseOptions: parseOptionsOf(document),
                 }),
               ],
             }),
@@ -114,8 +170,22 @@ const publishDiagnostics = (document: TextDocument): Effect.Effect<void> =>
  */
 const refreshIndex = (): void => {
   pipe(
-    Effect.all([Ref.get(roots), Ref.get(settings)]),
-    Effect.flatMap(([at, set]) => readIndex(at, { frontmatter: set.frontmatter })),
+    Effect.all([Ref.get(roots), Ref.get(settings), Ref.get(folders)]),
+    // The sites and their files change outside the pages, so they are read again first.
+    Effect.flatMap(([at, set, workspace]) =>
+      pipe(
+        findMediaRoots(workspace, set.mediaRoot),
+        Effect.flatMap((found) =>
+          Effect.forEach(found, (root) =>
+            Effect.map(mediaFilesIn(root), (files) => [root, files] as const),
+          ),
+        ),
+        Effect.flatMap((found) => Ref.set(sites, new Map(found))),
+        Effect.flatMap(() =>
+          readIndex(at, { frontmatter: set.frontmatter, mediaRoots: [...currentSites().keys()] }),
+        ),
+      ),
+    ),
     Effect.flatMap((next) => Ref.set(index, Option.some(next))),
     Effect.flatMap(() => Effect.forEach(documents.all(), publishDiagnostics, { discard: true })),
     Effect.runFork,
@@ -128,6 +198,7 @@ connection.onInitialize(({ workspaceFolders, initializationOptions }): Initializ
   const read = settingsOf(initializationOptions)
   Effect.runSync(Ref.set(settings, read))
   Effect.runSync(Ref.set(roots, rootsOf(workspaceFolders, read.sources)))
+  Effect.runSync(Ref.set(folders, rootsOf(workspaceFolders, [])))
   refreshIndex()
   return {
     capabilities: {
@@ -138,9 +209,10 @@ connection.onInitialize(({ workspaceFolders, initializationOptions }): Initializ
         legend: { tokenTypes: [...LEGEND], tokenModifiers: [] },
         full: true,
       },
-      // `[` and `#` open a link and a tag. The editor asks again on every character after
-      // one, so nothing else has to be declared for typing to keep the menu up to date.
-      completionProvider: { triggerCharacters: ["[", "#"] },
+      // `[` and `#` open a link and a tag, and the editor asks again on every character
+      // after one while its menu is open. `/` is for `[:/` (a site's file): by then the menu
+      // has closed when no page title starts with `:`, and nothing else would reopen it.
+      completionProvider: { triggerCharacters: ["[", "#", "/"] },
       definitionProvider: true,
       codeActionProvider: { codeActionKinds: [CodeActionKind.QuickFix] },
     },
@@ -170,12 +242,20 @@ connection.onCompletion(({ textDocument: { uri }, position }): CompletionList =>
   items: withDocument(
     uri,
     (document) =>
-      completionItems(
-        currentIndex(),
-        document.getText(),
-        position,
-        {},
-        { frontmatter: currentSettings().frontmatter },
+      pipe(
+        detectCompletionInDocument(document.getText(), position, parseOptionsOf(document), {
+          frontmatter: currentSettings().frontmatter,
+        }),
+        // Inside `[:/…`, the site's files rather than pages, once there are any to offer.
+        Option.map((detection) =>
+          mediaCompletionItems(siteFilesOf(document), detection, position.line),
+        ),
+        Option.filter(Arr.isNonEmptyArray),
+        Option.getOrElse(() =>
+          completionItems(currentIndex(), document.getText(), position, parseOptionsOf(document), {
+            frontmatter: currentSettings().frontmatter,
+          }),
+        ),
       ),
     [],
   ),
@@ -184,7 +264,10 @@ connection.onCompletion(({ textDocument: { uri }, position }): CompletionList =>
 connection.onDefinition(({ textDocument: { uri }, position }): Definition | null =>
   withDocument(
     uri,
-    (document) => Option.getOrNull(definitionOf(currentIndex(), document.getText(), position)),
+    (document) =>
+      Option.getOrNull(
+        definitionOf(currentIndex(), document.getText(), position, parseOptionsOf(document)),
+      ),
     null,
   ),
 )
@@ -196,6 +279,7 @@ connection.onCodeAction(({ textDocument: { uri }, range }): CodeAction[] =>
       mapLinkActions(uri, document.getText(), range, {
         components: readsComponents(document),
         frontmatter: currentSettings().frontmatter,
+        parseOptions: parseOptionsOf(document),
       }),
     [],
   ),

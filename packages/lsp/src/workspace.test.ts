@@ -2,10 +2,10 @@ import { mkdir, mkdtemp, utimes, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
-import { Effect } from "effect"
+import { Effect, Option } from "effect"
 import { describe, expect, it } from "vitest"
 
-import { readIndex, rootsOf } from "./workspace"
+import { findMediaRoots, readIndex, rootsOf, siteOf } from "./workspace"
 
 const workspace = async (files: Record<string, string>): Promise<string> => {
   const root = await mkdtemp(join(tmpdir(), "csn-"))
@@ -108,5 +108,55 @@ describe("rootsOf", () => {
 
   it("skips a folder that is not a file:// URI", () => {
     expect(rootsOf([{ uri: "untitled:x" }], [])).toEqual([])
+  })
+})
+
+describe("findMediaRoots", () => {
+  it("finds each site's media root, wherever in the workspace the site is", async () => {
+    const root = await workspace({
+      "apps/web/public/a.png": "",
+      "examples/blog/public/b.png": "",
+      "notes/a.csn": "T",
+    })
+    const found = await Effect.runPromise(findMediaRoots([root], "public"))
+    expect([...found].sort()).toEqual([
+      join(root, "apps/web/public"),
+      join(root, "examples/blog/public"),
+    ])
+  })
+
+  it("does not look inside directories that never hold a site", async () => {
+    const root = await workspace({ "node_modules/pkg/public/a.png": "" })
+    expect(await Effect.runPromise(findMediaRoots([root], "public"))).toEqual([])
+  })
+})
+
+describe("siteOf", () => {
+  it("is the media root of the nearest site above the file", () => {
+    const roots = ["/w/public", "/w/apps/web/public"]
+    expect(Option.getOrNull(siteOf("/w/apps/web/src/pages/a.csn", roots))).toBe(
+      "/w/apps/web/public",
+    )
+    expect(Option.getOrNull(siteOf("/w/notes/a.csn", roots))).toBe("/w/public")
+  })
+
+  it("is none for a file in no site", () => {
+    expect(Option.isNone(siteOf("/w/notes/a.csn", ["/w/apps/web/public"]))).toBe(true)
+  })
+})
+
+describe("readIndex in a workspace with a site", () => {
+  it("reads [:/…] as a file only in a page of the site", async () => {
+    const root = await workspace({
+      "apps/web/public/a.png": "",
+      "apps/web/src/a.csn": "A\n[:/a.png]",
+      "notes/b.csn": "B\n[:/a.png]",
+    })
+    const options = { mediaRoots: [join(root, "apps/web/public")] }
+    const pages = (await Effect.runPromise(readIndex([root], options))).pages
+    expect(pages.map((page) => [page.title, page.links])).toEqual([
+      ["A", []],
+      ["B", [":/a.png"]],
+    ])
   })
 })

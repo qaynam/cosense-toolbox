@@ -6,7 +6,7 @@ import { type Severity, severityOf } from "./diagnostics"
  * What the reader can set, through the editor's initialization options:
  *
  * ```json
- * { "sources": ["src"], "unresolvedLinks": "warning", "mapLinks": "information", "frontmatter": true }
+ * { "sources": ["src"], "unresolvedLinks": "warning", "mapLinks": "information", "frontmatter": true, "mediaRoot": "public" }
  * ```
  *
  * Which markers open a decoration is not among them: that is Cosense's syntax, and the parser
@@ -30,6 +30,13 @@ export interface Settings {
    * which have no frontmatter: a page titled `---` would otherwise lose its first lines.
    */
   readonly frontmatter: boolean
+  /**
+   * The directory a site serves its files from, as a site holds it (`public`, or a deeper
+   * path). A page whose nearest directory above holding one is a site reads `[:/images/a.png]`
+   * as the image there (the parser's `publicMedia`), and any other page as Cosense Web does.
+   * A repository may hold several sites; each page belongs to the nearest.
+   */
+  readonly mediaRoot: string
 }
 
 export const defaultSettings: Settings = {
@@ -37,6 +44,7 @@ export const defaultSettings: Settings = {
   unresolvedLinks: "warning",
   mapLinks: "information",
   frontmatter: true,
+  mediaRoot: "public",
 }
 
 /** `schema`'s reading of `value`, or `fallback` when `value` is not of that shape. */
@@ -71,5 +79,6 @@ export const settingsOf = (options: unknown): Settings => {
     unresolvedLinks: severityOf(field("unresolvedLinks")),
     mapLinks: severityOf(field("mapLinks"), defaultSettings.mapLinks),
     frontmatter: decodeOr(Schema.Boolean, defaultSettings.frontmatter)(field("frontmatter")),
+    mediaRoot: decodeOr(Schema.NonEmptyString, defaultSettings.mediaRoot)(field("mediaRoot")),
   }
 }

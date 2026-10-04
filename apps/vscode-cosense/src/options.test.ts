@@ -17,6 +17,7 @@ describe("initializationOptionsOf", () => {
           unresolvedLinks: "error",
           mapLinks: "hint",
           frontmatter: false,
+          mediaRoot: "static",
         }),
       ),
     ).toEqual({
@@ -24,6 +25,7 @@ describe("initializationOptionsOf", () => {
       unresolvedLinks: "error",
       mapLinks: "hint",
       frontmatter: false,
+      mediaRoot: "static",
     })
   })
 

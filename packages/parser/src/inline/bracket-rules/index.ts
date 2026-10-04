@@ -9,7 +9,6 @@ import { decorationRule } from "./decoration"
 import { embedRule } from "./embed"
 import { formulaRule } from "./formula"
 import { iconRule } from "./icon"
-import { imageExtensionRule } from "./image-extension"
 import { internalLinkRule } from "./internal-link"
 import { locationRule } from "./location"
 import { projectLinkRule } from "./project-link"
@@ -32,10 +31,9 @@ export const simpleTargetRules: readonly InternalBracketRule[] = [
   videoRule,
   audioRule,
   urlRule,
-  imageExtensionRule,
   projectLinkRule,
   internalLinkRule,
 ]
 
-export { audioRule, decorationRule, embedRule, formulaRule, iconRule, imageExtensionRule }
+export { audioRule, decorationRule, embedRule, formulaRule, iconRule }
 export { internalLinkRule, locationRule, projectLinkRule, urlRule, videoRule }
