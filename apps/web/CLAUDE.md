@@ -2,38 +2,47 @@
 
 ## このプロジェクトは何か
 
-`cosense-toolbox` は、**Cosense (旧Scrapbox) のための道具を配る**プロジェクト。配布形態は素の Astro のサイトで、いまは記法パーサーとテーマビルダーの 2 つを載せている。
+`cosense-toolbox` は、Cosense (旧 Scrapbox) の記法を扱うライブラリ、Astro 統合、エディター連携などを開発するモノレポ。`apps/web` はパッケージのドキュメントサイトとテーマビルダーを提供する Astro アプリ。
 
 もともとは userscript のギャラリーだったが、2026-09-06 に userscript 系を全部落とした（下の「方針」を参照）。
 
 ## 方針：トップは「道具の入り口」
 
-トップは**道具をカードで並べる入り口**にしてある（void0 / TanStack のような、ロゴを前に出した中央寄せ）。並び順とラベルの単一情報源は `src/lib/tools.ts`。道具を足したら、ページを作ってからここに登録する。道具どうしの移動はヘッダのナビが担う。
+トップはパッケージとテーマビルダーへの入り口。種類ごと (ライブラリ・エディター連携・道具) にカードを並べ、並び順と文言は `src/lib/tools.ts` の `TOOL_GROUPS` で管理する。パッケージの説明とガイドは `/docs/` 以下に置き、各ページへの移動はドキュメントのカテゴリナビとヘッダの検索 (⌘K / Ctrl+K) で行う。
 
 **userscript 系は全部削除した（2026-09-06）。** ギャラリー、詳細ページ、使い方ページ、content collection（50本の md）、ソース全文（`src/sources/`）、A層ライブデモ、Gyazo 埋め込み、ツールボックス（カート）、そしてそれらを支えていた Base のモーダル機構まで含む。復活させるなら `5de8ca1` の前を見る。
 
-いま残っているのは **記法パーサー**（`/parser/`）と**テーマビルダー**（`/builder/`）の 2 つ。**Starlightは撤去済み**。
+Starlight は使わず、手書き CSS の Astro サイトとして構成する。ドキュメント本文は `@cosense-toolbox/astro` 統合で `.csnx` から生成する。テーマビルダーは `/builder/` にある。
 
 ## 技術スタック / コマンド
 
-- **素の Astro**（Starlightなし）、パッケージマネージャは **Bun**（`bun.lock`）
-- `bun install` / `bun run dev`（→ localhost:4321）/ `bun run build`（→ `./dist/`）/ `bun run preview`
-- スタイルは**手書きCSS**（`src/styles/global.css`）。**Cosense(cosenseの#111ダークテーマ)寄りのパレット**で、ブランドアクセントはインデントドットの星グラデ `#F8E42E→#FF7D54`（`--grad`）
-- **未導入で追加候補**: `@astrojs/alpinejs`（B層デモ＝Alpine製スクリプトの実物マウント用）
+- **Astro**（Starlight なし）。Cosense X の Astro 統合を追加し、`.csnx` をページとして扱う。パッケージマネージャは **Bun**（`bun.lock`）
+- 検索は **Pagefind**。`bun run build` が `astro build` の後に `pagefind --site dist` で索引を作る。索引が無い開発中は、`src/lib/docs.ts` のページ一覧から探す
+- `bun install` / `bun run dev`（→ localhost:4321）/ `bun run build`（→ `./dist/` と検索の索引）/ `bun run preview`
+- スタイルは**手書きCSS**（`src/styles/global.css`）。**Cosense(cosenseの#111ダークテーマ)寄りのパレット**で、ブランドアクセントはインデントドットの星グラデ `#F8E42E→#FF7D54`
+- コードの色は shiki の 2 つのテーマ (`github-light-default` / `github-dark-default`) を CSS 変数で出し、サイトのテーマに合わせて選ぶ (`astro.config.mjs`)。`.csn` / `.csnx` の例は `@cosense-toolbox/textmate` の文法で色付けする
+- 文字と背景のコントラストは、ライト・ダークとも WCAG AA (4.5:1) を保つ
 
 ## ページ / コンポーネント構成
 
-- `src/pages/index.astro` … **トップ**。`TOOLS` を `ToolCard` でグリッド表示するだけ
+- `src/pages/index.astro` … **トップ**。`TOOL_GROUPS` を種類ごとに `ToolCard` で表示
+- `src/pages/**/*.csnx` … ドキュメント本文。見出しは `DocHeading` を使い、frontmatter の `toc` と見出し ID を一致させる
+  - ページへのリンクは Cosense の `[ページのタイトル]` で書く。タイトルは各ページの 1 行目で、frontmatter の `title` も同じにする。書き間違えたリンクは `lint` でビルドが止まる
+  - 外部のリンクは `[ラベル https://…]`。`.csnx` でないページ (`/parser/demo/`) やページ内の見出しへのリンクだけ `DocLink` を使う
+  - `code:` のブロックの中の空行も、ブロックの字下げ (空白) を付ける。字下げの無い空行でブロックが終わるため
+- `src/lib/code-language.ts` … コードブロックの見出しに言語のアイコン (Material Icon Theme) と名前を出す描画の拡張。Cosense 記法のブロックは `public/icons/cosense.svg`
+- `src/components/SiteSearch.astro` … ヘッダの検索ボタンと、⌘K / Ctrl+K で開く検索のダイアログ
 - `src/layouts/Base.astro` … 共通レイアウト。**ライトモード切替**と、`[data-copy]` のコピーを 1 つの delegated `<script>` で処理する
-- `src/layouts/Doc.astro` / `src/components/DocSidebar.astro` / `DocToc.astro` … パーサーのドキュメント用の 3 カラム
+- `src/layouts/Doc.astro` / `src/components/DocSidebar.astro` / `DocToc.astro` … ドキュメント用のナビゲーション、本文、ページ内目次
+- `src/lib/docs.ts` … サイドバー、検索対象、前後ページの順序を管理する
 - `src/lib/site.ts` … サイト定数（いまは GitHub URL だけ）
 - `src/lib/tools.ts` … トップに並べる道具の一覧
 
 ## 現状
 
-`bun run build` で **11ページ**生成OK。実装済み：
+実装済み：
 
-- トップの道具一覧／記法パーサーのドキュメント／テーマビルダー
+- ドキュメントトップ、各パッケージガイド、テーマビルダー
 - **ライトモード**：ヘッダのトグルで切替（`is:inline`で描画前にテーマ確定、localStorage永続）
 
 ## テーマビルダー（`/builder`）
@@ -48,6 +57,6 @@ Cosenseの色をポチポチ変えて、疑似Cosense画面で即プレビュー
 
 ## ディレクトリ構成
 
-- `src/pages/` … ルーティング（index / builder / parser/*）
+- `src/pages/` … ルーティング（`.astro` と `.csnx`）
 - `src/components/` `src/layouts/` `src/lib/` `src/styles/`
 - `public/` … favicon等の静的アセット

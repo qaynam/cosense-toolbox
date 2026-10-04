@@ -1,8 +1,10 @@
 # examples/astro-blog
 
-`@cosense-toolbox/astro` を試すための小さなブログ。公開はしない。
+`@cosense-toolbox/astro` の動作を試すブログアプリです。公開用のサイトではありません。
 
-リポジトリのワークスペースには入っていない。`@cosense-toolbox/*` は npm に公開された版を使うので、利用者と同じ入れ方で動く。
+**使い方 → <https://cosense-toolbox.qaynam.dev/astro-blog/>**
+
+このサンプルはリポジトリのワークスペース外にあります。`@cosense-toolbox/*` は npm に公開された版を使うため、利用者と同じ依存関係で動作します。
 
 ```sh
 cd examples/astro-blog
@@ -12,7 +14,7 @@ bun run dev
 
 ## 手元のパッケージで試す
 
-公開前の変更を試すときは、そのパッケージをビルドして `bun link` でつなぐ。`package.json` と `bun.lock` は書き換わらない。
+公開前の変更を試す場合は、対象パッケージをビルドして `bun link` で接続します。`package.json` と `bun.lock` は変更されません。
 
 ```sh
 # パッケージ側 (例: packages/tailwind)
@@ -23,13 +25,13 @@ bun link
 bun link @cosense-toolbox/tailwind
 ```
 
-npm の版に戻すときは `bun install --force`。
+npm に公開されたバージョンへ戻す場合は、`bun install --force` を実行します。
 
 ## 置いてあるもの
 
 | パス                                      | 内容                                                                                                                       |
 | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
-| `src/content/posts/*.csn`                 | 記事。frontmatter はファイル先頭の YAML と `code:frontmatter.yml` の両方の書き方を使っている                               |
+| `src/content/posts/*.csn`                 | 記事。frontmatter はファイル先頭の YAML に書いている                                                                       |
 | `src/content/posts/notes/components.csnx` | Svelte のコンポーネントを埋め込んだ記事                                                                                    |
 | `src/content/posts/draft.csn`             | draft の記事。一覧に出ず、ここへのリンクはテキストになる                                                                   |
 | `src/pages/about.csnx`                    | `src/pages` に置いた `.csnx`。frontmatter の `layout` でレイアウトを指定している                                           |

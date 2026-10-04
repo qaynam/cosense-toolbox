@@ -9,6 +9,15 @@ import {
 } from "vscode-languageserver/node"
 
 import { linkAt, type LinkTarget, type PageTarget } from "./link"
+import {
+  buildCandidateIndex,
+  type Candidate,
+  type CandidateIndex,
+  iconKeys,
+  rankCandidates,
+  titleKey,
+} from "./suggest"
+import { fenceOf } from "./tokens"
 import type { Index, Page } from "./workspace"
 
 /**
@@ -133,10 +142,11 @@ export const detectCompletion = (
 // --- In a document ------------------------------------------------------------------------
 
 /**
- * Inside code, a bracket is not notation. The cursor must be strictly between the
+ * Whether the cursor is where Cosense reads no notation, so a bracket or a `#` is only text:
+ * inside code, or on a command line (`$ ls`). The cursor must be strictly between the
  * backticks (not touching them) to count as inside an inline span.
  */
-const isInCode = (
+const readsNoNotation = (
   text: string,
   { line, character }: Position,
   parseOptions: ParseOptions,
@@ -153,24 +163,44 @@ const isInCode = (
         line === position.start.line &&
         character > position.start.column &&
         character < position.end.column,
+    ) ||
+    Arr.some(
+      collect(page, "line"),
+      ({ monospace, position }) => monospace && position.start.line === line,
     )
   )
 }
 
+export interface CompletionOptions {
+  /** Whether a `---` fence on the first line opens YAML to skip (default: true). */
+  readonly frontmatter?: boolean
+}
+
+/** The line Cosense takes as the title: the first, or the first after the frontmatter. */
+const titleLineOf = (lines: ReadonlyArray<string>, frontmatter: boolean): number =>
+  Option.match(fenceOf(lines, frontmatter), { onNone: () => 0, onSome: (end) => end + 1 })
+
 /**
- * `detectCompletion` for one line of a document, suppressed inside code. `parseOptions` are
- * the site's notation extensions, parsed with as the site's build parses.
+ * `detectCompletion` for one line of a document. Nothing on the title line, which Cosense
+ * does not read as notation, nor where it reads none (code, a command line). `parseOptions`
+ * are the site's notation extensions, parsed with as the site's build parses.
  */
 export const detectCompletionInDocument = (
   text: string,
   position: Position,
   parseOptions: ParseOptions = {},
-): Option.Option<CompletionDetection> =>
-  pipe(
-    Option.liftPredicate(text, (document) => !isInCode(document, position, parseOptions)),
-    Option.map((document) => normalizeLineEndings(document).split("\n")[position.line] ?? ""),
-    Option.flatMap((line) => detectCompletion(line, position.character)),
+  { frontmatter = true }: CompletionOptions = {},
+): Option.Option<CompletionDetection> => {
+  const lines = normalizeLineEndings(text).split("\n")
+  return pipe(
+    Option.liftPredicate(
+      position,
+      (at) =>
+        at.line !== titleLineOf(lines, frontmatter) && !readsNoNotation(text, at, parseOptions),
+    ),
+    Option.flatMap((at) => detectCompletion(lines[at.line] ?? "", at.character)),
   )
+}
 
 // --- Matching titles ----------------------------------------------------------------------
 
@@ -193,61 +223,90 @@ export const isTaggable = (title: string): boolean => !/[\s[\]#]/.test(asTagName
 const fileNameOf = (location: string): string =>
   Option.getOrElse(Arr.last(location.split("/")), () => location)
 
-/**
- * A page as a candidate for `detection`, or None when it does not fit: a tag cannot hold a
- * space or a bracket, so a page whose title does is not offered after `#` (accepting it
- * would write something that reads as two tags).
- */
-const candidate =
-  (detection: CompletionDetection, line: number) =>
-  (page: Page): Option.Option<CompletionItem> => {
-    const query = normalizeForMatch(detection.query)
-    const normalized = normalizeForMatch(page.title)
-    const notation = Match.value(detection.kind).pipe(
-      Match.when("hashtag", () => `#${asTagName(page.title)}`),
-      Match.when("link", () => `[${page.title}]`),
-      Match.exhaustive,
-    )
-    return pipe(
-      Option.some(page),
-      Option.filter(() => detection.kind === "link" || isTaggable(page.title)),
-      Option.filter(() => query === "" || normalized.includes(query)),
-      Option.map((): CompletionItem => ({
-        label: page.title,
-        kind: CompletionItemKind.File,
-        // The file name alone: a whole path is cut off in the menu before the name shows.
-        detail: fileNameOf(page.location),
-        // The whole path, where the editor shows more room once the item is selected.
-        documentation: page.location,
-        // The whole notation is replaced, brackets included: the reader typed the `[`,
-        // and leaving it in place would give `[[title]]`.
-        textEdit: {
-          range: {
-            start: { line, character: detection.replaceStart },
-            end: { line, character: detection.replaceEnd },
-          },
-          newText: notation,
-        },
-        // A client filters by the text from the edit's start to the cursor, `[設` here, so
-        // it has to find that in the notation rather than in the bare title.
-        filterText: notation,
-        sortText: `${normalized} ${page.location}`,
-      })),
-    )
-  }
+/** The candidates of a workspace, built once per index: it only changes when files are read again. */
+const candidatesByPages = new WeakMap<ReadonlyArray<Page>, CandidateIndex>()
 
-/** The pages that complete what is typed at `position`, or none outside a link or a tag. */
+const candidatesOf = (pages: ReadonlyArray<Page>): CandidateIndex =>
+  Option.getOrElse(Option.fromNullable(candidatesByPages.get(pages)), () => {
+    const built = buildCandidateIndex(pages)
+    candidatesByPages.set(pages, built)
+    return built
+  })
+
+/** The title of the page being edited, which is not offered as a link from itself. */
+const titleOfDocument = (text: string, frontmatter: boolean): string => {
+  const lines = normalizeLineEndings(text).split("\n")
+  return (lines[titleLineOf(lines, frontmatter)] ?? "").trim()
+}
+
+/** A page with a file shows where the file is; a title only linked to has no file to show. */
+const whereOf = (
+  page: Option.Option<Page>,
+): Pick<CompletionItem, "kind" | "detail" | "documentation"> =>
+  Option.match(page, {
+    onNone: () => ({ kind: CompletionItemKind.Text, detail: "まだ無いページ" }),
+    onSome: ({ location }) => ({
+      kind: CompletionItemKind.File,
+      // The file name alone: a whole path is cut off in the menu before the name shows.
+      detail: fileNameOf(location),
+      // The whole path, where the editor shows more room once the item is selected.
+      documentation: location,
+    }),
+  })
+
+const itemOf =
+  (detection: CompletionDetection, line: number, pages: ReadonlyMap<string, Page>) =>
+  (candidate: Candidate, rank: number): CompletionItem => ({
+    label: candidate.title,
+    ...whereOf(Option.fromNullable(pages.get(candidate.key))),
+    // The whole notation is replaced, brackets included: the reader typed the `[`, and
+    // leaving it in place would give `[[title]]`.
+    textEdit: {
+      range: {
+        start: { line, character: detection.replaceStart },
+        end: { line, character: detection.replaceEnd },
+      },
+      newText: Match.value(detection.kind).pipe(
+        Match.when("hashtag", () => `#${asTagName(candidate.title)}`),
+        Match.when("link", () => `[${candidate.title}]`),
+        Match.exhaustive,
+      ),
+    },
+    // A client filters by the text from the edit's start to the cursor. That text matches
+    // itself, so the client keeps every item, near matches included, in the order given.
+    filterText: detection.typedText,
+    sortText: String(rank).padStart(4, "0"),
+  })
+
+/**
+ * The pages that complete what is typed at `position`, ordered as Cosense Web orders them
+ * (see suggest.ts), or none outside a link or a tag. A title only linked to is offered too,
+ * as Cosense Web offers it.
+ */
 export const completionItems = (
   index: Index,
   text: string,
   position: Position,
   parseOptions: ParseOptions = {},
+  options: CompletionOptions = {},
 ): CompletionItem[] =>
   pipe(
-    detectCompletionInDocument(text, position, parseOptions),
+    detectCompletionInDocument(text, position, parseOptions, options),
     Option.match({
       onNone: () => [],
-      onSome: (detection) => Arr.filterMap(index.pages, candidate(detection, position.line)),
+      onSome: (detection) =>
+        Arr.map(
+          rankCandidates(candidatesOf(index.pages), detection.query, {
+            tagsOnly: detection.kind === "hashtag",
+            pageTitle: titleOfDocument(text, options.frontmatter ?? true),
+            icons: iconKeys(text),
+          }),
+          itemOf(
+            detection,
+            position.line,
+            new Map(Arr.map(index.pages, (page) => [titleKey(page.title), page] as const)),
+          ),
+        ),
     }),
   )
 

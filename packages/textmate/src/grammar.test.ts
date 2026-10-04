@@ -152,6 +152,68 @@ describe("URL と画像", () => {
   })
 })
 
+describe("動画・音声・埋め込み", () => {
+  const VIDEO = "https://example.invalid/a.mp4"
+  const SOUND = "https://example.invalid/a.mp3"
+  const YOUTUBE = "https://www.youtube.com/watch?v=abc"
+
+  it("[動画 URL] はメディアになる", () => {
+    expect(scopesOf(`T\n[${VIDEO}]`, `[${VIDEO}]`)).toEqual([SCOPES.media])
+  })
+
+  it("[[動画 URL]] もメディアになる", () => {
+    expect(scopesOf(`T\n[[${VIDEO}]]`, `[[${VIDEO}]]`)).toEqual([SCOPES.media])
+  })
+
+  it("クエリの付いた動画 URL は、単独ではメディアにならない", () => {
+    expect(scopesOf(`T\n[${VIDEO}?t=1]`, `[${VIDEO}?t=1]`)).toEqual([SCOPES.externalLink])
+  })
+
+  it("[URL 動画 URL] はリンク付きの動画としてメディアになる", () => {
+    expect(scopesOf(`T\n[${PAGE} ${VIDEO}]`, `[${PAGE} ${VIDEO}]`)).toEqual([SCOPES.media])
+  })
+
+  it("ラベルの付いた動画 URL は外部リンクになる", () => {
+    expect(scopesOf(`T\n[動画 ${VIDEO}]`, `[動画 ${VIDEO}]`)).toEqual([SCOPES.externalLink])
+  })
+
+  it("ラベルの付いた音声 URL はメディアになる", () => {
+    expect(scopesOf(`T\n[BGM ${SOUND}]`, `[BGM ${SOUND}]`)).toEqual([SCOPES.media])
+    expect(scopesOf(`T\n[${SOUND} BGM]`, `[${SOUND} BGM]`)).toEqual([SCOPES.media])
+  })
+
+  it("音声 URL と画像 URL が並ぶと画像になる", () => {
+    expect(scopesOf(`T\n[${SOUND} ${IMAGE}]`, `[${SOUND} ${IMAGE}]`)).toEqual([SCOPES.image])
+  })
+
+  it("[YouTube の URL] はメディアになる", () => {
+    expect(scopesOf(`T\n[${YOUTUBE}]`, `[${YOUTUBE}]`)).toEqual([SCOPES.media])
+  })
+
+  it("[[YouTube の URL]] はメディアにならず、太字の中の外部リンクになる", () => {
+    expect(scopesOf(`T\n[[${YOUTUBE}]]`, YOUTUBE)).toEqual([SCOPES.bold, SCOPES.externalLink])
+  })
+})
+
+describe("地図", () => {
+  it("[座標] はメディアになる", () => {
+    expect(scopesOf("T\n[N35.68,E139.76,Z14]", "[N35.68,E139.76,Z14]")).toEqual([SCOPES.media])
+  })
+
+  it("前後にラベルを付けた座標もメディアになる", () => {
+    expect(scopesOf("T\n[東京駅 N35.68,E139.76]", "[東京駅 N35.68,E139.76]")).toEqual([
+      SCOPES.media,
+    ])
+    expect(scopesOf("T\n[N35.68,E139.76 東京駅]", "[N35.68,E139.76 東京駅]")).toEqual([
+      SCOPES.media,
+    ])
+  })
+
+  it("小文字の座標は地図にならず、ページへのリンクになる", () => {
+    expect(scopesOf("T\n[n35,e139]", "[n35,e139]")).toEqual([SCOPES.link])
+  })
+})
+
 describe("アイコン", () => {
   it("[user.icon] はアイコンになる", () => {
     expect(scopesOf("T\n[user.icon]", "[user.icon]")).toEqual([SCOPES.icon])
@@ -317,6 +379,50 @@ describe("文字の装飾", () => {
 
   it("閉じていない装飾は次の行に続かない", () => {
     expect(scopesOf("T\n[* a [b] c\n次の行", "次の行")).toEqual([])
+  })
+})
+
+describe("インラインコードと括弧", () => {
+  it("インラインコードが始まる括弧はリンクにならない (Cosense Web はコードを先に読む)", () => {
+    expect(scopesOf("T\n[リンク `x` です]", "[リンク ")).toEqual([])
+  })
+
+  it("その括弧の中のインラインコードは、コードになる", () => {
+    expect(scopesOf("T\n[リンク `x` です]", "`x`")).toEqual([SCOPES.code])
+  })
+
+  it("インラインコードが始まる括弧は装飾にならない", () => {
+    expect(scopesOf("T\n[* 太字 `x` です]", "[* 太字 ")).toEqual([])
+  })
+
+  it("入れ子の括弧の後でインラインコードが始まっても、装飾にならない", () => {
+    expect(scopesOf("T\n[* a [b] `c` d]", "[* a ")).toEqual([])
+  })
+
+  it("インラインコードが始まる [[ ]] は太字にならない", () => {
+    expect(scopesOf("T\n[[a `b` c]]", "[[a ")).toEqual([])
+  })
+
+  it("インラインコードが始まる [$ ] は数式にならない", () => {
+    expect(scopesOf("T\n[$ a``]", "[$ a")).toEqual([])
+  })
+
+  it("閉じないバッククォートは括弧を妨げない", () => {
+    expect(scopesOf("T\n[a ` b]", "[a ` b]")).toEqual([SCOPES.link])
+  })
+})
+
+describe("コマンドの行", () => {
+  it("字下げの後が $ と空白の行は、全体がコードになり、中の記法は読まない", () => {
+    expect(scopesOf("T\n  $ npm install [x] #tag", "$ npm install [x] #tag")).toEqual([SCOPES.code])
+  })
+
+  it("% と空白で始まる行もコマンドになる", () => {
+    expect(scopesOf("T\n% ls", "% ls")).toEqual([SCOPES.code])
+  })
+
+  it("$ の後に空白が無ければコマンドにならない", () => {
+    expect(scopesOf("T\n$[x]", "[x]")).toEqual([SCOPES.link])
   })
 })
 

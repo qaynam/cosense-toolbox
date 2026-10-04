@@ -127,16 +127,6 @@ const stopOnErrors = ({ errors }: LintResult): Effect.Effect<void, Error> =>
       Effect.fail(new Error(`リンク切れが ${found.length} 件あるので、ビルドを止めた`)),
   })
 
-/**
- * 開発中は止めずに知らせるだけにする。何も無いときも 1 行出して、調べたことが分かるようにする。
- */
-const noteWhenClean =
-  (logger: AstroIntegrationLogger) =>
-  ({ errors, warnings }: LintResult): Effect.Effect<void> =>
-    Arr.isEmptyReadonlyArray([...errors, ...warnings])
-      ? Effect.sync(() => logger.info("リンク切れは見つからなかった"))
-      : Effect.void
-
 /** `{base}/_cosense/`。base の末尾の `/` の有無を吸収する。 */
 const assetsPathOf = (config: AstroConfig): string => `${config.base.replace(/\/$/, "")}/_cosense/`
 
@@ -302,10 +292,8 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
       "astro:server:setup": ({ server, logger }) => {
         if (lint === undefined || astroConfig === undefined) return
         const config = astroConfig
-        const check = () =>
-          Effect.runFork(
-            Effect.flatMap(reportLint(config, lint, compileOptions, logger), noteWhenClean(logger)),
-          )
+        // ビルドと違って止めず、見つけたものを知らせるだけにする。
+        const check = () => Effect.runFork(reportLint(config, lint, compileOptions, logger))
         const onChange = (file: string) => {
           if (isCosenseFile(file)) check()
         }

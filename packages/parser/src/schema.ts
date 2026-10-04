@@ -13,9 +13,11 @@
 import { Schema } from "effect"
 
 import type {
+  AudioNode,
   CodeBlock,
   CodeLine,
   Decoration,
+  EmbedNode,
   ExternalLink,
   FormulaNode,
   Hashtag,
@@ -25,6 +27,7 @@ import type {
   InlineNode,
   InternalLink,
   LineBlock,
+  LocationNode,
   Page,
   Point,
   Position,
@@ -35,6 +38,7 @@ import type {
   TextNode,
   TitleBlock,
   TopLevelBlock,
+  VideoNode,
 } from "./types"
 
 export const PointSchema: Schema.Schema<Point> = Schema.Struct({
@@ -101,6 +105,39 @@ export const ImageNodeSchema: Schema.Schema<ImageNode> = Schema.Struct({
   ...withPosition,
 })
 
+export const VideoNodeSchema: Schema.Schema<VideoNode> = Schema.Struct({
+  type: Schema.Literal("video"),
+  src: Schema.String,
+  large: Schema.optionalWith(Schema.Boolean, { exact: true }),
+  link: Schema.optionalWith(Schema.String, { exact: true }),
+  ...withPosition,
+})
+
+export const AudioNodeSchema: Schema.Schema<AudioNode> = Schema.Struct({
+  type: Schema.Literal("audio"),
+  src: Schema.String,
+  label: Schema.optionalWith(Schema.String, { exact: true }),
+  ...withPosition,
+})
+
+export const EmbedNodeSchema: Schema.Schema<EmbedNode> = Schema.Struct({
+  type: Schema.Literal("embed"),
+  provider: Schema.String,
+  url: Schema.String,
+  id: Schema.String,
+  kind: Schema.optionalWith(Schema.String, { exact: true }),
+  ...withPosition,
+})
+
+export const LocationNodeSchema: Schema.Schema<LocationNode> = Schema.Struct({
+  type: Schema.Literal("location"),
+  latitude: Schema.Number,
+  longitude: Schema.Number,
+  zoom: Schema.optionalWith(Schema.Number, { exact: true }),
+  label: Schema.optionalWith(Schema.String, { exact: true }),
+  ...withPosition,
+})
+
 export const IconNodeSchema: Schema.Schema<IconNode> = Schema.Struct({
   type: Schema.Literal("icon"),
   user: Schema.String,
@@ -136,6 +173,10 @@ export const InlineNodeSchema: Schema.Schema<InlineNode> = Schema.Union(
   HashtagSchema,
   InlineCodeSchema,
   ImageNodeSchema,
+  VideoNodeSchema,
+  AudioNodeSchema,
+  EmbedNodeSchema,
+  LocationNodeSchema,
   IconNodeSchema,
   FormulaNodeSchema,
   DecorationSchema,

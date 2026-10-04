@@ -73,8 +73,47 @@ const IMAGE_URL = oneOf([
 
 const URL = re`(?i:https?)://[^\s\[\]]+`
 
+const VIDEO_EXT = re`\.(?i:mp4|webm|mov)`
+
+/** A URL that is a video on its own (`[x]`, `[[x]]`): no query allowed. */
+const VIDEO_URL = re`(?i:https?)://[^\s\[\]]+${VIDEO_EXT}`
+
+/** The video of a linked video (`[link video]`), which may carry a query. */
+const LINKED_VIDEO_URL = re`(?i:https?)://[^\s\[\]]*${VIDEO_EXT}(?:\?[^\s\[\]]+)?`
+
+const AUDIO_URL = re`(?i:https?)://[^\s\[\]]*\.(?i:wav|mp3|weba|ogg|aac)`
+
+/** A map's coordinates (`N35.68,E139.76,Z14`): capital letters only, and no spaces. */
+const COORDINATES = re`[NS]\d+(?:\.\d+)?,[EW]\d+(?:\.\d+)?(?:,Z\d+)?`
+
+/**
+ * A URL Cosense embeds a player for, as the parser reads them: YouTube (case-sensitive, as
+ * in Cosense Web), Vimeo, Spotify, and anchor.fm or its successor.
+ */
+const EMBED_URL = oneOf([
+  re`https?://(?:www\.|music\.|)youtube\.com/watch\?(?:[^\s\[\]]+&|)v=[a-zA-Z\d_-]+(?:&[^\s\[\]]+|)`,
+  re`https?://youtu\.be/[a-zA-Z\d_-]+(?:\?[^\s\[\]]{0,100}|)`,
+  re`https?://(?:www\.|)youtube\.com/(?:shorts|live)/[a-zA-Z\d_-]+(?:\?[^\s\[\]]+|)`,
+  re`https?://(?:www\.|music\.|)youtube\.com/playlist\?(?:[^\s\[\]]+&|)list=[a-zA-Z\d_-]+(?:&[^\s\[\]]+|)`,
+  re`(?i:https?://vimeo\.com/[0-9]+(?:/[a-z0-9]+)?(?:\?[^\s\[\]]+|))`,
+  re`(?i:https?://open\.spotify\.com/(?:[^/\s\[\]]+/|)(?:track|artist|playlist|album|episode|show)/[a-zA-Z\d_-]+(?:\?[^\s\[\]]{0,100}|))`,
+  re`(?i:https?://(?:anchor\.fm|podcasters\.spotify\.com/pod/show)/[a-zA-Z\d_-]+/episodes/[a-zA-Z\d_-]+(?:/[a-zA-Z\d_-]+)?(?:\?[^\s\[\]]{0,100}|))`,
+])
+
 /** What a bracket must end with somewhere, or it is plain text and not worth a rule. */
 const CLOSES = re`(?=.*\])`
+
+/**
+ * No inline code starts inside the bracket that opens here. Cosense reads code before
+ * brackets, so a bracket with a code span starting inside it is no notation (`[a `b` c]`).
+ * A span starts at a backtick with another one anywhere after it. One level of brackets is
+ * stepped over, as emphasis holds them (`[* a [b] `c`]`). The backtick is written `\x60`,
+ * which both regex engines read the same.
+ */
+const NO_CODE_INSIDE = re`(?!(?:\[[^\[\]]*\]|[^\]\x60])*\x60.*\x60)`
+
+/** The same for `[[x]]`, which closes on the first `]]`. */
+const NO_CODE_INSIDE_DOUBLE = re`(?!(?:(?!\]\])[^\x60])*\x60.*\x60)`
 
 /** A bracket closes on its own line or not at all. */
 const CLOSE_ON_LINE = re`\]|(?=$)`
@@ -104,6 +143,7 @@ type RepositoryKey =
   | "component-tag"
   | "expression"
   | "quote"
+  | "command"
   | "inline"
   | "inline-in-emphasis"
   | "nested-bracket"
@@ -266,7 +306,7 @@ const markerConditions = (emphasis: Emphasis): Regex =>
 const emphasisRules: ReadonlyArray<Pattern> = Arr.map(MARKER_SETS, (emphasis) =>
   region({
     scopes: emphasisScopes(emphasis),
-    begin: re`\[${markerConditions(emphasis)}(?=${MARKERS}+\s.*\])${MARKERS}+\s+`,
+    begin: re`\[${NO_CODE_INSIDE}${markerConditions(emphasis)}(?=${MARKERS}+\s.*\])${MARKERS}+\s+`,
     end: CLOSE_ON_LINE,
     patterns: [include("inline-in-emphasis"), include("nested-bracket")],
   }),
@@ -275,45 +315,97 @@ const emphasisRules: ReadonlyArray<Pattern> = Arr.map(MARKER_SETS, (emphasis) =>
 /** Anything up to, but not over, a `]]`. */
 const UNTIL_DOUBLE_CLOSE = re`(?:(?!\]\]).)`
 
-/** `[[x]]`: an image when x is one, bold otherwise. Closes on the first `]]`, depth or not. */
+/**
+ * `[[x]]`: an image or a video when x is one, bold otherwise. Closes on the first `]]`, depth
+ * or not. A sound or an embedded player is not made large: it is a link inside bold.
+ */
 const strongRules: ReadonlyArray<Pattern> = [
+  single(re`\[\[${NO_CODE_INSIDE_DOUBLE}${VIDEO_URL}\]\]`, { scopes: [SCOPES.media] }),
   single(
-    re`\[\[(?:${IMAGE_URL}|${UNTIL_DOUBLE_CLOSE}*?${IMAGE_EXT}(?:[?#]${UNTIL_DOUBLE_CLOSE}*)?)\]\]`,
+    re`\[\[${NO_CODE_INSIDE_DOUBLE}(?:${IMAGE_URL}|${UNTIL_DOUBLE_CLOSE}*?${IMAGE_EXT}(?:[?#]${UNTIL_DOUBLE_CLOSE}*)?)\]\]`,
     { scopes: [SCOPES.image] },
   ),
-  single(re`\[\[(${UNTIL_DOUBLE_CLOSE}+)\]\]`, {
+  single(re`\[\[${NO_CODE_INSIDE_DOUBLE}(${UNTIL_DOUBLE_CLOSE}+)\]\]`, {
     scopes: [SCOPES.bold],
     captures: { 1: readAs(include("inline-in-emphasis")) },
   }),
 ]
 
-/** `[$ x^2]`. Its body is TeX, not notation, and may hold brackets of its own. */
+/**
+ * `[$ x^2]`. Its body is TeX, not notation, and may hold brackets of its own. Like any
+ * bracket, it is no formula when inline code starts inside it (`[$ a``]`).
+ */
 const formulaRule: Pattern = region({
   scopes: [SCOPES.formula],
-  begin: re`\[(?=\$)${CLOSES}`,
+  begin: re`\[${NO_CODE_INSIDE}(?=\$)${CLOSES}`,
   end: CLOSE_ON_LINE,
   patterns: [include("bare-bracket")],
 })
 
 /**
- * Brackets whose body holds no brackets, tried in the parser's order: an icon before a
- * URL before an image path before a project link, and anything left is a page link.
+ * Brackets whose body holds no brackets, tried in the parser's order: an icon before media
+ * before a URL before an image path before a project link, and anything left is a page link.
  */
 const simpleTargetRules = (allowImagePath: boolean): ReadonlyArray<Pattern> =>
   Arr.getSomes([
-    Option.some(single(re`\[[^\[\]]+\.icon(?:\*\d+)?\]`, { scopes: [SCOPES.icon] })),
-    // Only URLs, and one of them an image: the image, linking to another URL if there is one.
     Option.some(
-      single(re`\[\s*(?:${URL}\s+)*(?:${IMAGE_URL})(?=[\s\]])(?:\s+${URL})*\s*\]`, {
-        scopes: [SCOPES.image],
+      single(re`\[${NO_CODE_INSIDE}[^\[\]]+\.icon(?:\*\d+)?\]`, { scopes: [SCOPES.icon] }),
+    ),
+    // A player, a map, a video or a sound, alone or linked: tried before images, as the parser does.
+    Option.some(
+      single(
+        re`\[${NO_CODE_INSIDE}(?:${COORDINATES}(?:\s+[^\[\]]+)?|[^\[\]]+?\s+${COORDINATES})\]`,
+        {
+          scopes: [SCOPES.media],
+        },
+      ),
+    ),
+    Option.some(
+      single(re`\[${NO_CODE_INSIDE}(?:${EMBED_URL}|${VIDEO_URL}|${AUDIO_URL})\]`, {
+        scopes: [SCOPES.media],
       }),
     ),
+    Option.some(
+      single(
+        re`\[${NO_CODE_INSIDE}(?:${URL}\s+${LINKED_VIDEO_URL}|${LINKED_VIDEO_URL}\s+${URL})\]`,
+        { scopes: [SCOPES.media] },
+      ),
+    ),
+    // A sound with words before or after it, unless the words are one image URL: that makes
+    // an image linking to the sound.
+    Option.some(
+      single(re`\[${NO_CODE_INSIDE}${AUDIO_URL}\s+(?!\s*(?:${IMAGE_URL})\s*\])[^\[\]]*\]`, {
+        scopes: [SCOPES.media],
+      }),
+    ),
+    Option.some(
+      single(
+        re`\[${NO_CODE_INSIDE}(?!\s*(?:${IMAGE_URL})\s+${AUDIO_URL}\])[^\[\]]+\s${AUDIO_URL}\]`,
+        { scopes: [SCOPES.media] },
+      ),
+    ),
+    // Only URLs, and one of them an image: the image, linking to another URL if there is one.
+    Option.some(
+      single(
+        re`\[${NO_CODE_INSIDE}\s*(?:${URL}\s+)*(?:${IMAGE_URL})(?=[\s\]])(?:\s+${URL})*\s*\]`,
+        {
+          scopes: [SCOPES.image],
+        },
+      ),
+    ),
     // Any other URL makes a link, labelled or not.
-    Option.some(single(re`\[[^\[\]]*${URL}[^\[\]]*\]`, { scopes: [SCOPES.externalLink] })),
+    Option.some(
+      single(re`\[${NO_CODE_INSIDE}[^\[\]]*${URL}[^\[\]]*\]`, { scopes: [SCOPES.externalLink] }),
+    ),
     // `[a.png]`, but not inside emphasis: there Cosense links to a page of that name.
-    onlyIf(allowImagePath, single(re`\[[^\[\]]*${IMAGE_EXT}\]`, { scopes: [SCOPES.image] })),
-    Option.some(single(re`\[/[^\[\]]*\]`, { scopes: [SCOPES.projectLink] })),
-    Option.some(single(re`\[(?=[^\[\]]*[^\s\[\]])[^\[\]]+\]`, { scopes: [SCOPES.link] })),
+    onlyIf(
+      allowImagePath,
+      single(re`\[${NO_CODE_INSIDE}[^\[\]]*${IMAGE_EXT}\]`, { scopes: [SCOPES.image] }),
+    ),
+    Option.some(single(re`\[${NO_CODE_INSIDE}/[^\[\]]*\]`, { scopes: [SCOPES.projectLink] })),
+    Option.some(
+      single(re`\[${NO_CODE_INSIDE}(?=[^\[\]]*[^\s\[\]])[^\[\]]+\]`, { scopes: [SCOPES.link] }),
+    ),
   ])
 
 /** What follows the bracketed notation in both contexts, in the parser's order. */
@@ -413,6 +505,8 @@ const REPOSITORY: { readonly [K in Exclude<RepositoryKey, "head">]: Pattern } = 
       single(re`\b(?:true|false|null|undefined)\b`, { scopes: ["constant.language.cosense"] }),
     ],
   }),
+  // `$ ls` or `% ls` after the indent: a command, code as a whole. Nothing in it is notation.
+  command: single(re`^${INDENT}([$%] .+)$`, { captures: { 1: scoped(SCOPES.code) } }),
   quote: region({
     scopes: ["markup.quote.cosense"],
     begin: re`^${INDENT}(>[> ]*)`,
@@ -521,6 +615,7 @@ const linePatterns = (dialect: DialectInfo): ReadonlyArray<Pattern> =>
     Option.some(include("code-block")),
     Option.some(include("table-block")),
     onlyIf(dialect.components, include("component")),
+    Option.some(include("command")),
     Option.some(include("quote")),
     Option.some(include("inline")),
   ])

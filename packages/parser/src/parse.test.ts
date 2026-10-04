@@ -102,10 +102,41 @@ describe("行", () => {
     expect(stripPositions(line.children)).toEqual([{ type: "text", value: "引用文" }])
   })
 
-  it("行頭が $ や % の行は等幅になる", () => {
+  it("行頭が $ や % と空白の行は、コマンドとして等幅になる", () => {
     expect(blockAt(body("$ x = 1"), 0, "line").monospace).toBe(true)
     expect(blockAt(body("% x = 1"), 0, "line").monospace).toBe(true)
     expect(blockAt(body("x = 1"), 0, "line").monospace).toBe(false)
+  })
+
+  it("コマンドの行は記法を読まず、書いたままの文字 1 つになる (Cosense Web と同じ)", () => {
+    expect(
+      stripPositions(blockAt(body("$ npm install [リンク] `x` #tag"), 0, "line").children),
+    ).toEqual([{ type: "text", value: "$ npm install [リンク] `x` #tag" }])
+  })
+
+  it("字下げした行も、字下げの後が $ と空白ならコマンドになる", () => {
+    expect(blockAt(body("  $ ls"), 0, "line").monospace).toBe(true)
+  })
+
+  it("$ や % の後に空白が無ければ、コマンドにならない", () => {
+    expect(blockAt(body("$aa"), 0, "line").monospace).toBe(false)
+  })
+
+  it("$ や % だけの行は、コマンドにならない", () => {
+    expect(blockAt(body("$"), 0, "line").monospace).toBe(false)
+    expect(blockAt(body("%"), 0, "line").monospace).toBe(false)
+  })
+
+  it("$ と空白の後に何も無ければ、コマンドにならない", () => {
+    expect(blockAt(body("$ "), 0, "line").monospace).toBe(false)
+  })
+
+  it("行の途中の $ はコマンドにならない", () => {
+    expect(blockAt(body("a$ aa"), 0, "line").monospace).toBe(false)
+  })
+
+  it("引用の行の $ はコマンドにならない", () => {
+    expect(blockAt(body("> $ ls"), 0, "line").monospace).toBe(false)
   })
 
   it("空行は子を持たない行になる", () => {
@@ -208,7 +239,7 @@ describe("table: ブロック", () => {
   })
 
   it("tableCellNotation にノード型を並べると、リンクに加えてその型だけを読む", () => {
-    const page = parse("title\ntable:data\n [* `code` [リンク]] `code`", {
+    const page = parse("title\ntable:data\n [* 太字 [リンク]] `code` [$ x]", {
       extensions: [tableCellNotation(["decoration"])],
     })
     const table = blockAt(page.children.slice(1), 0, "table")
@@ -217,11 +248,11 @@ describe("table: ブロック", () => {
         type: "decoration",
         markers: ["*"],
         children: [
-          { type: "text", value: "`code` " },
+          { type: "text", value: "太字 " },
           { type: "internalLink", label: "リンク", target: "リンク" },
         ],
       },
-      { type: "text", value: " `code`" },
+      { type: "text", value: " `code` [$ x]" },
     ])
   })
 

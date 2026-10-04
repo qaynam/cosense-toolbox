@@ -3,12 +3,13 @@ import type { MarkdownHeading } from "astro"
 
 import DocSidebar from "../components/DocSidebar.astro"
 import DocToc from "../components/DocToc.astro"
-import { adjacentDocs } from "../lib/parser-docs"
+import { adjacentDocs } from "../lib/docs"
 import Base from "./Base.astro"
 
 interface Frontmatter {
   title: string
   description?: string
+  toc?: { id: string; text: string; depth: number }[]
 }
 
 interface Props {
@@ -20,32 +21,33 @@ interface Props {
 }
 
 const { frontmatter, headings = [], title, description } = Astro.props
-const pageTitle = frontmatter?.title ?? title ?? "@cosense-toolbox/parser"
+const pageTitle = frontmatter?.title ?? title ?? "ドキュメント"
 const pageDescription =
-  frontmatter?.description ??
-  description ??
-  "Cosense 記法を位置情報つきの AST に変換する npm パッケージ"
+  frontmatter?.description ?? description ?? "Cosense Toolbox のパッケージと使い方を紹介します。"
+const tocHeadings =
+  frontmatter?.toc?.map(({ id, text, depth }) => ({ slug: id, text, depth })) ??
+  headings.map(({ slug, text, depth }) => ({ slug, text, depth }))
 const { prev, next } = adjacentDocs(Astro.url.pathname)
 ---
 
-<Base title={pageTitle} description={pageDescription} image="/og-parser.png" wide>
+<Base title={pageTitle} description={pageDescription} wide>
   <div class="doc-shell">
     <button class="doc-menu-btn" type="button" aria-expanded="false" aria-controls="doc-aside">
       <span class="doc-menu-icon" aria-hidden="true"></span>
-      メニュー
+      ページ一覧・目次
     </button>
     <div class="doc-scrim" hidden></div>
 
     {/* 広い画面では display:contents で、中身がそのまま左右の列になる */}
     <div class="doc-aside" id="doc-aside">
       <DocSidebar />
-      <DocToc headings={headings} />
+      <DocToc headings={tocHeadings} />
     </div>
 
-    <article class="doc">
+    <article class="doc" data-pagefind-body>
       <slot />
       {(prev !== undefined || next !== undefined) && (
-        <nav class="doc-pager" aria-label="前後のページ">
+        <nav class="doc-pager" aria-label="前後のページ" data-pagefind-ignore>
           {prev !== undefined ? (
             <a href={prev.href} rel="prev">
               <span>前へ</span>
@@ -93,8 +95,7 @@ const { prev, next } = adjacentDocs(Astro.url.pathname)
 </script>
 
 <script>
-  // 見出しにパーマリンクを付ける。id は Astro が Markdown から振ったものを使う。
-  // クリックでリンクを開かず、絶対 URL をクリップボードへ入れる。
+  // 見出しの URL をコピーできるようにする。
   const doc = document.querySelector(".doc")
 
   for (const heading of doc?.querySelectorAll<HTMLElement>("h2[id], h3[id], h4[id]") ?? []) {

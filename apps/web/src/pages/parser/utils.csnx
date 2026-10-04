@@ -1,0 +1,67 @@
+---
+layout: ../../layouts/Doc.astro
+title: AST のヘルパー
+description: AST の走査、ノード検索、リンク抽出に使う関数。
+toc:
+  - id: visit
+    text: visit
+    depth: 2
+  - id: find
+    text: find と collect
+    depth: 2
+  - id: links
+    text: collectLinks
+    depth: 2
+  - id: image
+    text: firstImage
+    depth: 2
+  - id: raw-text
+    text: rawTextOf
+    depth: 2
+---
+AST のヘルパー
+
+`@cosense-toolbox/parser/utils` は、AST の走査や必要なノードの抽出に使う関数を提供します。
+ここでは次のページを例にします。
+
+code:ts
+ import { parse } from "@cosense-toolbox/parser"
+ 
+ const page = parse(`関連ページ
+ [JavaScript] と [TypeScript] を比べる
+ #メモ`)
+
+<DocHeading level={2} id="visit" title="visit" />
+
+`visit(tree, type?, visitor)` は木を深さ優先で走査します。型を指定すると、その型のノードだけが visitor に渡ります。
+
+code:ts
+ import { visit } from "@cosense-toolbox/parser/utils"
+ 
+ visit(page, "internalLink", (node) => {
+   console.log(node.target)
+ })
+
+visitor が `"skip"` を返すと、そのノードの子をたどりません。`"exit"` を返すと走査全体を終了します。それ以外の値では走査を続けます。
+
+<DocHeading level={2} id="find" title="find と collect" />
+
+`find(tree, type)` は指定した型の最初のノードを返し、見つからなければ `null` を返します。`collect(tree, type)` は該当するノードを出現順にすべて返します。
+
+返り値の型は `type` から導出されるため、たとえば `collect(page, "icon")` は `IconNode[]` になります。
+
+<DocHeading level={2} id="links" title="collectLinks" />
+
+`collectLinks(tree)` は内部リンクとハッシュタグの参照先を、出現順・重複なしで返します。`[ページ名]` と `#ページ名` は同じ名前としてまとめられます。
+
+`includeProjectLinks: true` を指定すると、`[/project/page]` 形式の別プロジェクトへのリンクも含めます。既定では含めません。
+
+<DocHeading level={2} id="image" title="firstImage" />
+
+`firstImage(tree)` は最初に見つかった画像ノードを返します。画像がなければ `null` です。`src` はソースの URL のままなので、`<img>` に渡す前に <DocLink href="/parser/parse/#image-src" label="asImageSrc" /> を使ってください。
+
+<DocHeading level={2} id="raw-text" title="rawTextOf" />
+
+`rawTextOf(source, node)` は `position` を使ってノードに対応するソース文字列を切り出します。`[リンク]` のような記法では、括弧などのマーカーも含めて返します。
+
+この関数群はパーサー本体を import しないため、サーバーで作った AST をクライアントで走査する構成にも使えます。

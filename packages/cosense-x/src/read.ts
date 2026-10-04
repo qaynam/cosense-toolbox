@@ -8,7 +8,7 @@ import { normalizeLineEndings, type Page, parse, type ParseOptions } from "@cose
 import { Either, pipe } from "effect"
 
 import { type CosenseXError, orThrow } from "./errors"
-import { type Frontmatter, readFrontmatterEither, splitFrontmatterEither } from "./frontmatter"
+import { type Frontmatter, splitFrontmatterEither } from "./frontmatter"
 import { collectMetadata, type CollectMetadataOptions, type PageMetadata } from "./metadata"
 
 /** `.csn` は素の Cosense 記法、`.csnx` はそれにコンポーネントの行を足したもの。 */
@@ -30,7 +30,6 @@ export interface ReadResult {
   readonly format: Format
   readonly frontmatter: Frontmatter
   readonly metadata: PageMetadata
-  /** `code:frontmatter.yml` ブロックを取り除いたページ */
   readonly page: Page
   /** ファイル先頭の YAML を取り除いた本文。AST の位置情報はこれが基準になる */
   readonly body: string
@@ -50,22 +49,18 @@ export const readPageEither = (
 
   return pipe(
     splitFrontmatterEither(normalized),
-    Either.flatMap((head) =>
-      Either.map(
-        readFrontmatterEither(parse(head.body, options.parseOptions), head.data),
-        ({ data, page }): ReadResult => {
-          const removed = normalized.slice(0, normalized.length - head.body.length)
-          return {
-            format,
-            frontmatter: data,
-            metadata: collectMetadata(page, data, metadataOptions(head.body)),
-            page,
-            body: head.body,
-            bodyLineOffset: removed.split("\n").length - 1,
-          }
-        },
-      ),
-    ),
+    Either.map(({ data, body }): ReadResult => {
+      const page = parse(body, options.parseOptions)
+      const removed = normalized.slice(0, normalized.length - body.length)
+      return {
+        format,
+        frontmatter: data,
+        metadata: collectMetadata(page, data, metadataOptions(body)),
+        page,
+        body,
+        bodyLineOffset: removed.split("\n").length - 1,
+      }
+    }),
   )
 }
 

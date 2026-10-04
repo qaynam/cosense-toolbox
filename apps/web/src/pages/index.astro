@@ -1,7 +1,8 @@
 ---
 import ToolCard from "../components/ToolCard.astro"
 import Base from "../layouts/Base.astro"
-import { TOOLS } from "../lib/tools"
+import { SITE } from "../lib/site"
+import { TOOL_GROUPS } from "../lib/tools"
 ---
 
 <Base home>
@@ -9,11 +10,24 @@ import { TOOLS } from "../lib/tools"
     <img class="home-logo" src="/beaver.png" alt="" width="112" height="112" fetchpriority="high" />
     <h1>Cosense Toolbox</h1>
     <p>Cosense をもっと面白く、もっと強力に使うための道具を置いています。</p>
+    <div class="home-actions">
+      <a class="btn primary" href="/docs/">
+        ドキュメントを読む
+      </a>
+      <a class="btn" href={SITE.github} target="_blank" rel="noopener">
+        GitHub ↗
+      </a>
+    </div>
   </section>
 
-  <div class="tool-grid">
-    {TOOLS.map((tool) => (
-      <ToolCard tool={tool} />
-    ))}
-  </div>
+  {TOOL_GROUPS.map((group) => (
+    <section class="tool-group" aria-labelledby={`group-${group.id}`}>
+      <h2 id={`group-${group.id}`}>{group.label}</h2>
+      <div class="tool-grid">
+        {group.tools.map((tool) => (
+          <ToolCard tool={tool} />
+        ))}
+      </div>
+    </section>
+  ))}
 </Base>

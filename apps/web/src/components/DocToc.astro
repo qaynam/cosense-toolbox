@@ -1,18 +1,22 @@
 ---
-import type { MarkdownHeading } from "astro"
+interface Heading {
+  slug: string
+  text: string
+  depth: number
+}
 
 interface Props {
-  headings: MarkdownHeading[]
+  headings: Heading[]
 }
 
 interface Section {
-  heading: MarkdownHeading
+  heading: Heading
   children: Section[]
 }
 
 // h2 から h4 までを入れ子に組み直す。
 // オプションの一覧が h4 まで下がるので、h2 だけにすると個々のオプションへ飛べなくなる。
-const nest = (headings: MarkdownHeading[], depth: number): Section[] => {
+const nest = (headings: Heading[], depth: number): Section[] => {
   const sections: Section[] = []
   for (const heading of headings) {
     if (heading.depth < depth) continue

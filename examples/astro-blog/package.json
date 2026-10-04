@@ -11,20 +11,20 @@
   },
   "dependencies": {
     "@astrojs/svelte": "^9.0.1",
-    "@cosense-toolbox/astro": "^0.1.0-beta.3",
-    "@cosense-toolbox/cosense-x": "^0.1.0-beta.3",
-    "@cosense-toolbox/parser": "^0.1.0-beta.3",
-    "@cosense-toolbox/tailwind": "^0.1.0-beta.3",
-    "@cosense-toolbox/textmate": "^0.1.0-beta.3",
+    "@cosense-toolbox/astro": "^0.1.0-beta.7",
+    "@cosense-toolbox/cosense-x": "^0.1.0-beta.7",
+    "@cosense-toolbox/parser": "^0.1.0-beta.7",
+    "@cosense-toolbox/tailwind": "^0.1.0-beta.7",
+    "@cosense-toolbox/textmate": "^0.1.0-beta.7",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "7.2.3",
-    "shiki": "^4.4.3",
+    "shiki": "^4.5.0",
     "svelte": "^5.57.1",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
-    "@types/node": "^24",
+    "@types/node": "^24.19.0",
     "typescript": "^6.0.3"
   }
 }

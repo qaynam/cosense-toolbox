@@ -1,0 +1,57 @@
+---
+layout: ../../layouts/Doc.astro
+title: Zed 拡張
+description: Zed で .csn / .csnx を semantic tokens により色分けする方法。
+toc:
+  - id: overview
+    text: 仕組み
+    depth: 2
+  - id: install
+    text: 開発版をインストールする
+    depth: 2
+  - id: settings
+    text: 必須設定
+    depth: 2
+  - id: limitations
+    text: 対応状況
+    depth: 2
+---
+Zed 拡張
+
+Cosense Toolbox の Zed 拡張は、`.csn` / `.csnx` の色付けを Language Server の semantic tokens で行います。
+
+<DocHeading level={2} id="overview" title="仕組み" />
+
+記法の判定には `@cosense-toolbox/parser` を使うため、TextMate の正規表現だけで色を付ける場合より Cosense の解析結果に近づきます。
+
+<DocHeading level={2} id="install" title="開発版をインストールする" />
+
+まず、リポジトリのルートから Language Server をビルドします。
+
+code:sh
+ bun install
+ bun run --filter '@cosense-toolbox/lsp' build
+
+Zed で `zed: install dev extension` を実行し、`apps/zed-cosense` を選びます。Rust と `wasm32-wasip1` ターゲットが必要です。
+
+<DocHeading level={2} id="settings" title="必須設定" />
+
+Zed は semantic tokens が既定で無効です。`settings.json` で `.csn` / `.csnx` の両方に有効化し、保存時に行末の空白を削除しないよう設定してください。Cosense では空白だけの行がコードブロックや表の一部になる場合があります。
+
+code:jsonc
+ {
+   "languages": {
+     "Cosense": {
+       "semantic_tokens": "full",
+       "remove_trailing_whitespace_on_save": false
+     },
+     "Cosense X": {
+       "semantic_tokens": "full",
+       "remove_trailing_whitespace_on_save": false
+     }
+   }
+ }
+
+<DocHeading level={2} id="limitations" title="対応状況" />
+
+補完と定義ジャンプは未対応です。サーバー設定や色の変更方法は [Zed 拡張の README https://github.com/qaynam/cosense-toolbox/blob/main/apps/zed-cosense/README.md] をご覧ください。

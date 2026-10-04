@@ -55,6 +55,10 @@ export const MODIFIERS: readonly Modifier[] = [
   { name: "table", target: ".table", notation: "`table:名前` の表" },
   { name: "td", target: ".table td", notation: "表のセル" },
   { name: "image", target: ".image", notation: "画像" },
+  { name: "video", target: ".video", notation: "動画" },
+  { name: "audio", target: ".audio", notation: "音声" },
+  { name: "embed", target: ".embed", notation: "YouTube などの埋め込み" },
+  { name: "location", target: ".link-location", notation: "地図 `[N35,E139]`" },
   { name: "icon", target: ".icon", notation: "`[ユーザー名.icon]`" },
   { name: "formula", target: ".formula", notation: "`[$ 数式]`" },
 ]

@@ -1,0 +1,132 @@
+---
+layout: ../../layouts/Doc.astro
+title: HTML への変換
+description: toHast / toHtml の出力、オプション、URL の安全性について。
+toc:
+  - id: overview
+    text: 基本
+    depth: 2
+  - id: options
+    text: オプション
+    depth: 2
+  - id: page-url
+    text: pageUrl
+    depth: 3
+  - id: icon-url
+    text: iconImageUrl
+    depth: 3
+  - id: highlight
+    text: highlight
+    depth: 3
+  - id: class-names
+    text: classNames と showPads
+    depth: 3
+  - id: handlers
+    text: handlers と extensions
+    depth: 3
+  - id: style
+    text: style
+    depth: 3
+  - id: output
+    text: 出力の構造
+    depth: 2
+  - id: safety
+    text: エスケープと URL の検査
+    depth: 2
+---
+HTML への変換
+
+`@cosense-toolbox/parser/html` の `toHtml` は AST を HTML 文字列へ、`toHast` は HTML の構文木へ変換します。ページ全体だけでなく、`parseLine` の結果や AST 内の個別ノードも渡せます。
+
+code:ts
+ import { parse } from "@cosense-toolbox/parser"
+ import { toHtml, toHast } from "@cosense-toolbox/parser/html"
+ 
+ const page = parse("タイトル\nこれは [リンク] です")
+ const html = toHtml(page)
+ const hast = toHast(page)
+
+`toHtml` は `toHast` の結果を HTML 文字列にしたものです。rehype のプラグインへ渡したり JSX に組み立てたりする場合は `toHast` を使います。
+
+既定の CSS は別パッケージの `@cosense-toolbox/style` にあります。詳しくは [既定のスタイル] をご覧ください。
+
+<DocHeading level={2} id="overview" title="基本" />
+
+`toHtml(node, options?)` と `toHast(node, options?)` は共通の描画オプションを受け取ります。主な設定には `pageUrl`、`iconImageUrl`、`highlight`、`classNames`、`showPads`、`handlers`、`extensions` があります。
+
+<DocHeading level={2} id="options" title="オプション" />
+
+<DocHeading level={3} id="page-url" title="pageUrl" />
+
+`pageUrl(title, node)` はページリンク、タグ、プロジェクトリンク、アイコンリンクの遷移先を決めます。既定では `/{title}` です。タイトルに区切り文字を含む場合は各部分を URL エンコードします。
+
+code:ts
+ toHtml(page, {
+   pageUrl: (title) => `/wiki/${encodeURIComponent(title)}`,
+ })
+
+外部 URL は記法自体がリンク先なので、このオプションでは変更しません。
+
+<DocHeading level={3} id="icon-url" title="iconImageUrl" />
+
+`iconImageUrl(node)` は `[user.icon]` に使う画像 URL を返します。既定値は `null` で、画像を出さずユーザー名のテキストリンクにします。Cosense のアイコン URL はプロジェクト名を必要とするため、呼び出し側で指定します。
+
+code:ts
+ toHtml(page, {
+   iconImageUrl: (node) => `/api/pages/help-jp/${encodeURIComponent(node.user)}/icon`,
+ })
+
+<DocHeading level={3} id="highlight" title="highlight" />
+
+`highlight(code, language)` はコードブロックを色付けする関数です。`toHtml` は HTML 文字列、hast、または `null` を受け取ります。`toHast` には hast か `null` を返してください。
+
+`language` は `code:hello.js` なら `js`、`code:python` なら `python` です。ハイライターの言語名に合わせて必要なら変換してください。
+
+code:ts
+ toHtml(page, {
+   highlight: (code, language) =>
+     highlighter.getLoadedLanguages().includes(language)
+       ? highlighter.codeToHast(code, { lang: language, theme: "github-light" })
+       : null,
+ })
+
+ハイライト関数が返す文字列は HTML として埋め込まれます。信頼できないコードを扱う場合は、戻り値を安全にエスケープしてください。
+
+<DocHeading level={3} id="class-names" title="classNames と showPads" />
+
+`classNames` は描画要素の既定 class 名を差し替えます。指定したキーだけが置き換わり、既定名に追加したい場合は `"line my-class"` のように両方を書きます。空文字にすると class 属性を出しません。
+
+動画は `<video>`、音声は `<audio>`、埋め込みはサービスのプレーヤーの `<iframe>` になり、class 名は `video`、`audio`、`embed` です。プレーヤーの URL が分からない埋め込み (拡張が足したサービス) は、URL への外部リンクとして出します。地図は Google マップへのリンク (class 名は `link link-location`) です。地図そのものを描くには地図のサービスの鍵が要るため、既定ではリンクにしています。
+
+`showPads: true` は、インデントの余白と中点を `.indent-mark` / `.pad` / `.dot` 要素として出力します。既定では `data-indent` 属性だけを付け、スタイル側が中点を描きます。
+
+<DocHeading level={3} id="handlers" title="handlers と extensions" />
+
+`handlers` はノード型ごとの描画結果を作る関数です。指定した型だけ既定のハンドラーを置き換えます。`ctx.children(node)` で子の結果、`ctx.options` で描画オプション、`ctx.ancestors` で祖先ノードを参照できます。
+
+`extensions` は既定の描画または `handlers` の結果を後から加工します。たとえば画像ノードを `<figure>` で包む処理を追加できます。複数の拡張は配列の順に適用されます。
+
+標準の `codeLineNumbers()` はコード行に行番号属性を付け、`tableCellLineBreaks(marker)` は表セル内の指定文字列を `<br>` にします。
+
+<DocHeading level={3} id="style" title="style" />
+
+`toHtml` に `style` 文字列を渡すと、出力の先頭に `<style>` 要素を追加します。iframe の `srcdoc` のように、HTML と CSS を一つの文字列にまとめたい場合に使えます。
+
+code:ts
+ import css from "@cosense-toolbox/style/style.css?raw"
+ 
+ const html = toHtml(page, { style: css })
+
+<DocHeading level={2} id="output" title="出力の構造" />
+
+ページ全体は `<div class="page">` で包まれます。1行目は `<h1 class="title">`、通常行は `.line`、引用行は `<blockquote>` になります。字下げの深さは `.line[data-indent]` で表します。
+
+コードブロックの各行はそれぞれ要素になり、表は `<table class="table">` になります。装飾は `.decoration` と記号ごとの `deco-*` class で区別します。
+
+<DocHeading level={2} id="safety" title="エスケープと URL の検査" />
+
+既定のハンドラーはテキストと属性値をエスケープします。また、`javascript:` と `vbscript:` は `href` / `src` から除外し、`data:` は `href` から除外します (画像の `data:` は許可します)。
+
+独自の `handlers` を使うと、既定の URL 検査は適用されません。`raw` ノードとハイライターが返す HTML もそのまま出力されるため、信頼できない入力を描画するときは呼び出し側で検査してください。
+
+`escapeHtml`、`safeHref`、`safeSrc`、`defaultPageUrl`、`defaultClassNames` も同じサブパスから利用できます。

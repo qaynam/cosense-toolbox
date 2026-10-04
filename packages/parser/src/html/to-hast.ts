@@ -13,6 +13,8 @@ import type { Element, ElementContent, Properties, Root, Text } from "hast"
 
 import { childrenOf } from "../ast"
 import { asImageSrc } from "../core/image-url"
+import { asMapUrl } from "../core/map-url"
+import { asEmbedSrc } from "../core/media-url"
 import type {
   AnyNode,
   AnyNodeType,
@@ -21,8 +23,10 @@ import type {
   Hashtag,
   IconNode,
   InternalLink,
+  LineBlock,
   NodeOfType,
   ProjectLink,
+  TextNode,
 } from "../types"
 
 // ---------------------------------------------------------------------------
@@ -74,8 +78,14 @@ export interface HtmlClassNames {
   readonly line?: string
   /** 引用行の `<blockquote>` */
   readonly quote?: string
-  /** 等幅行の `<code>` */
+  /** コマンドの行 (`$ ls`) の `<code>` */
   readonly monospace?: string
+  /** コマンドの行の先頭の `$` / `%` */
+  readonly commandPrefix?: string
+  /** コマンドの行の、記号の後の空白 */
+  readonly commandSpace?: string
+  /** コマンドの行の、空白の後のコマンド */
+  readonly command?: string
   /** コードブロックに属する行 (ヘッダ行と本体行の両方) */
   readonly codeBlock?: string
   /** ヘッダ行の `<code>` */
@@ -99,6 +109,13 @@ export interface HtmlClassNames {
   readonly hashtag?: string
   readonly inlineCode?: string
   readonly image?: string
+  readonly video?: string
+  /** 音声の `<audio>` とラベルを包む要素 */
+  readonly audio?: string
+  /** 埋め込みの `<iframe>` */
+  readonly embed?: string
+  /** 地図 (`[N35,E139]`) の、Google マップへのリンク */
+  readonly location?: string
   readonly icon?: string
   readonly formula?: string
   readonly decoration?: string
@@ -111,6 +128,9 @@ export const defaultClassNames: HtmlClassNames = {
   line: "line",
   quote: "quote",
   monospace: "monospace",
+  commandPrefix: "prefix",
+  commandSpace: "space",
+  command: "command",
   codeBlock: "code-block",
   codeStart: "code-start",
   codeFilename: "code-block-start",
@@ -126,6 +146,10 @@ export const defaultClassNames: HtmlClassNames = {
   hashtag: "hashtag",
   inlineCode: "code",
   image: "image",
+  video: "video",
+  audio: "audio",
+  embed: "embed",
+  location: "link link-location",
   icon: "icon",
   formula: "formula",
   decoration: "decoration",
@@ -333,6 +357,17 @@ const pageHrefOf = (node: PageRefNode, options: ResolvedHastOptions): string | u
 const anchor = (className: string | undefined, href: string | undefined, label: string): Element =>
   element("a", withClass(className, { href }), [text(label)])
 
+/** 遷移先があるときだけ `<a>` で包む。スキームが安全でなければ包まない。 */
+const linkedTo = (link: string | undefined, content: Element): Element =>
+  pipe(
+    Option.fromNullable(link),
+    Option.flatMap((url) => nonEmpty(safeHref(url))),
+    Option.match({
+      onNone: () => content,
+      onSome: (href) => element("a", { href }, [content]),
+    }),
+  )
+
 /**
  * 装飾を表す要素を、内側から外側の順に並べたもの。
  *
@@ -384,6 +419,23 @@ const onlyChildOf = (children: readonly ElementContent[]): Option.Option<Element
     Option.some(children.filter((child) => !isBlank(child))),
     Option.filter((meaningful) => meaningful.length === 1),
     Option.flatMapNullable((meaningful) => meaningful[0]),
+  )
+
+/**
+ * コマンドの行 (`$ ls`) を、Cosense Web と同じく記号・空白・コマンドの 3 つの要素に分ける。
+ * 記号とコマンドを別に選べるので、記号を薄くしたり、コマンドだけをコピーさせたりできる。
+ * パーサーはコマンドの行を書いたままの文字 1 つにするので、そうでなければ (拡張が置き換えたなど) 分けない。
+ */
+const commandParts = (node: LineBlock, cls: HtmlClassNames): Option.Option<ElementContent[]> =>
+  pipe(
+    Option.liftPredicate(node.children, (children) => children.length === 1),
+    Option.flatMapNullable(([child]) => child),
+    Option.filter((child): child is TextNode => child.type === "text"),
+    Option.map(({ value }) => [
+      element("span", withClass(cls.commandPrefix), [text(value.slice(0, 1))]),
+      element("span", withClass(cls.commandSpace), [text(value.slice(1, 2))]),
+      element("span", withClass(cls.command), [text(value.slice(2))]),
+    ]),
   )
 
 const elementNamed =
@@ -550,8 +602,15 @@ export const defaultHastHandlers = {
 
   line: (node, ctx) => {
     const cls = ctx.options.classNames
-    const body = ctx.children(node)
-    const styled = node.monospace ? [element("code", withClass(cls.monospace), body)] : body
+    const styled = node.monospace
+      ? [
+          element(
+            "code",
+            withClass(cls.monospace),
+            Option.getOrElse(commandParts(node, cls), () => ctx.children(node)),
+          ),
+        ]
+      : ctx.children(node)
     const quoted = node.quote ? [element("blockquote", withClass(cls.quote), styled)] : styled
     // 空行も 1 行分の高さを保つ。Cosense では空行が段落の区切りとして意味を持つ。
     const inner = quoted.length === 0 ? [element("br", {})] : quoted
@@ -615,18 +674,71 @@ export const defaultHastHandlers = {
         dataLarge: node.large ? "true" : undefined,
       }),
     )
-    // 遷移先があるときだけ <a> で包む。スキームが安全でなければ包まない。
-    const href = pipe(
-      Option.fromNullable(node.link),
-      Option.flatMap((link) => nonEmpty(safeHref(link))),
-    )
-    return [
-      Option.match(href, {
-        onNone: () => img,
-        onSome: (url) => element("a", { href: url }, [img]),
-      }),
-    ]
+    return [linkedTo(node.link, img)]
   },
+
+  // Cosense Web と同じく、操作できてループする動画にする。
+  video: (node, ctx) => {
+    const video = element(
+      "video",
+      withClass(ctx.options.classNames.video, {
+        src: Option.getOrUndefined(nonEmpty(safeSrc(node.src))),
+        controls: true,
+        loop: true,
+        preload: "metadata",
+        dataLarge: node.large ? "true" : undefined,
+      }),
+    )
+    return [linkedTo(node.link, video)]
+  },
+
+  audio: (node, ctx) => [
+    element("span", withClass(ctx.options.classNames.audio), [
+      element("audio", {
+        src: Option.getOrUndefined(nonEmpty(safeSrc(node.src))),
+        controls: true,
+        preload: "metadata",
+      }),
+      ...(node.label === undefined ? [] : [text(node.label)]),
+    ]),
+  ],
+
+  // プレーヤーの URL を作れないサービス (拡張が足したもの) は、書かれた URL へのリンクにする。
+  embed: (node, ctx) => [
+    pipe(
+      Option.fromNullable(asEmbedSrc(node)),
+      Option.match({
+        onNone: () =>
+          anchor(
+            ctx.options.classNames.externalLink,
+            Option.getOrUndefined(nonEmpty(safeHref(node.url))),
+            node.url,
+          ),
+        onSome: (src) =>
+          element(
+            "iframe",
+            withClass(ctx.options.classNames.embed, {
+              src,
+              title: node.provider,
+              loading: "lazy",
+              allow: "encrypted-media; fullscreen; picture-in-picture",
+              referrerPolicy: "strict-origin-when-cross-origin",
+              dataProvider: node.provider,
+              dataKind: node.kind,
+            }),
+          ),
+      }),
+    ),
+  ],
+
+  // 地図を描くには地図のサービスの鍵が要るので、既定では Cosense Web の地図のリンク先へのリンクにする。
+  location: (node, ctx) => [
+    anchor(
+      ctx.options.classNames.location,
+      asMapUrl(node),
+      node.label ?? `${node.latitude},${node.longitude}`,
+    ),
+  ],
 
   // Cosense Web と同じく、そのユーザーのページへのリンクで画像を包む。
   icon: (node, ctx) => {

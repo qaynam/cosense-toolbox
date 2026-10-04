@@ -4,6 +4,7 @@ import { shiftOrigin } from "../../core/position"
 import { findClosingBracket } from "../../core/scan"
 import { bracketRules, simpleTargetRules } from "../bracket-rules"
 import type { BracketScanContext, InternalBracketRule, InternalConstruct } from "../internal-types"
+import { opensCodeSpan } from "./inline-code"
 
 /** ルールを順に試す。ジェネレータにしているのは最初に成立した時点で残りを評価しないため。 */
 function* attempts(rules: readonly InternalBracketRule[], inner: string, ctx: BracketScanContext) {
@@ -37,6 +38,8 @@ export const bracketConstruct: InternalConstruct = (source, index, ctx) => {
     Option.flatMap((end) => {
       const inner = source.slice(index + 1, end)
       if (inner.trim() === "") return Option.none()
+      // 中でインラインコードが始まる括弧は、数式も含めて記法にならない。Cosense Web はコードを先に読む
+      if (opensCodeSpan(source, index, end)) return Option.none()
 
       const innerCtx: BracketScanContext = {
         ...ctx,

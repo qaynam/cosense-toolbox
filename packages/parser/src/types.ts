@@ -100,6 +100,64 @@ export interface ImageNode extends NodeBase {
   readonly link?: string
 }
 
+/**
+ * `[url.mp4]` / `[[url.mp4]]` (large) / `[linkUrl videoUrl]` (link 付き)。
+ * 拡張子は mp4 / webm / mov。単独ではクエリの付いた URL は動画にならない (Cosense Web と同じ)。
+ */
+export interface VideoNode extends NodeBase {
+  readonly type: "video"
+  readonly src: string
+  /** `[[...]]` で囲まれた大きい表示 */
+  readonly large?: boolean
+  /** 動画をクリックしたときの遷移先 */
+  readonly link?: string
+}
+
+/** `[url.mp3]` / `[url.mp3 ラベル]` / `[ラベル url.mp3]`。拡張子は wav / mp3 / weba / ogg / aac。 */
+export interface AudioNode extends NodeBase {
+  readonly type: "audio"
+  readonly src: string
+  /** 再生ボタンに添える文字。URL の前後に書いた文字で、URL だけなら無い */
+  readonly label?: string
+}
+
+/**
+ * `[https://www.youtube.com/watch?v=…]` のような、外のサービスのプレーヤーを埋め込む URL。
+ *
+ * Cosense Web が埋め込むのは YouTube / Vimeo / Spotify / anchor.fm (Spotify for Podcasters) で、
+ * `provider` はそれぞれ `"youtube"` / `"vimeo"` / `"spotify"` / `"anchor"`。
+ * 拡張の `bracketRules` が独自の `provider` の埋め込みを返してもよい。
+ */
+export interface EmbedNode extends NodeBase {
+  readonly type: "embed"
+  readonly provider: string
+  /** 書かれた URL そのまま。プレーヤーの URL は `asEmbedSrc` で作る */
+  readonly url: string
+  /** サービスの中での ID。YouTube の動画 / 再生リスト、Vimeo の動画番号、Spotify の ID、エピソード */
+  readonly id: string
+  /**
+   * `id` が何の ID か。種類を持つサービスでだけ入る。
+   * YouTube は `"video"` / `"short"` / `"live"` / `"playlist"`、Spotify は `"track"` / `"album"` など URL に書かれた種類
+   */
+  readonly kind?: string
+}
+
+/**
+ * `[N35.68,E139.76]` / `[N35.68,E139.76,Z14]` と、その前後に文字を添えた `[東京駅 N35.68,E139.76]`。
+ * Cosense Web はここに地図を出す。
+ */
+export interface LocationNode extends NodeBase {
+  readonly type: "location"
+  /** 北緯が正、南緯 (`S`) が負 */
+  readonly latitude: number
+  /** 東経が正、西経 (`W`) が負 */
+  readonly longitude: number
+  /** `,Z14` のズーム。書かれていなければ無い */
+  readonly zoom?: number
+  /** 座標の前後に書いた文字 */
+  readonly label?: string
+}
+
 /** `[user.icon]` / `[user.icon*N]`。 */
 export interface IconNode extends NodeBase {
   readonly type: "icon"
@@ -148,6 +206,10 @@ export interface InlineNodeMap {
   hashtag: Hashtag
   inlineCode: InlineCode
   image: ImageNode
+  video: VideoNode
+  audio: AudioNode
+  embed: EmbedNode
+  location: LocationNode
   icon: IconNode
   formula: FormulaNode
   decoration: Decoration
@@ -226,7 +288,10 @@ export interface LineBlock extends NodeBase {
   readonly indent: number
   /** `>` で始まる引用行 */
   readonly quote: boolean
-  /** 行頭が `$` / `%` の等幅表示行 */
+  /**
+   * 字下げの後が `$` / `%` と空白のコマンドの行。等幅で表示し、中の記法は読まない
+   * (`children` は書いたままの文字の `text` 1 つ)
+   */
   readonly monospace: boolean
   /** 空行では空配列 */
   readonly children: readonly InlineNode[]

@@ -1,0 +1,47 @@
+---
+layout: ../../layouts/Doc.astro
+title: 独自形式への変換
+description: toPlainText と createCompiler を使って AST を変換する方法。
+toc:
+  - id: plain-text
+    text: toPlainText
+    depth: 2
+  - id: compiler
+    text: createCompiler
+    depth: 2
+---
+独自形式への変換
+
+`@cosense-toolbox/parser/compile` は、AST をプレーンテキストや独自形式に変換します。HTML や hast を出力する場合は [HTML への変換] を使ってください。
+
+<DocHeading level={2} id="plain-text" title="toPlainText" />
+
+`toPlainText(node)` は記法を外したテキストを返します。インデント、引用、コードブロック、表の内容はテキスト表現として残します。
+
+code:ts
+ import { toPlainText } from "@cosense-toolbox/parser/compile"
+ 
+ toPlainText(parse("タイトル\n[* 太字] と [リンク]"))
+ // → "タイトル\n太字 と リンク"
+
+全文検索のインデックスや、検索結果の抜粋を作るときに使えます。
+
+<DocHeading level={2} id="compiler" title="createCompiler" />
+
+`createCompiler<Out>({ handlers, fallback })` は、ノード型ごとのハンドラーを組み合わせて変換関数を作ります。出力型 `Out` は文字列以外でも構いません。
+
+code:ts
+ import { createCompiler } from "@cosense-toolbox/parser/compile"
+ 
+ const toSimpleText = createCompiler<string>({
+   handlers: {
+     internalLink: (node) => node.target,
+     decoration: (_node, context) => context.children(_node).join(""),
+     text: (node) => node.value,
+   },
+   fallback: (node, context) => context.children(node).join(""),
+ })
+
+ハンドラーを定義していないノードは `fallback` に渡ります。`ctx.children(node)` から子ノードの変換結果を取得できます。
+
+ハンドラーの型は AST のノード型から導出されます。独自ノードを追加すると、その型もコンパイラーに反映されます。

@@ -23,6 +23,15 @@ describe("computeTokens", () => {
     )
   })
 
+  it("marks a video, a sound and an embedded player alike, as media", () => {
+    const text = "T\n[https://x.invalid/a.mp4] [https://x.invalid/a.mp3] [https://youtu.be/abc]"
+    expect(typesOn(text, 1)).toEqual(["media", "media", "media"])
+  })
+
+  it("marks a map as media too", () => {
+    expect(typesOn("T\n[東京駅 N35.68,E139.76]", 1)).toEqual(["media"])
+  })
+
   it("applies every marker in one run, as Cosense does", () => {
     expect(typesOn("T\n[-* 太字で打ち消し]", 1)).toEqual(expect.arrayContaining(["strike", "bold"]))
   })
@@ -31,6 +40,12 @@ describe("computeTokens", () => {
     expect(typesOn("T\n[* 一]", 1)).toContain("bold")
     expect(typesOn("T\n[** 二]", 1)).toContain("bold2")
     expect(typesOn("T\n[**** 四]", 1)).toContain("bold3")
+  })
+
+  it("marks a command line as code, and reads no notation in it", () => {
+    expect(computeTokens("T\n  $ npm install [x] #tag", {}).filter((t) => t.line === 1)).toEqual([
+      { line: 1, char: 2, length: 22, type: "code" },
+    ])
   })
 
   it("marks a code block whole, line by line", () => {

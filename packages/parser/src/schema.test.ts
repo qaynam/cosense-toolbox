@@ -16,6 +16,19 @@ describe("decodePage", () => {
     expect(Either.isRight(decoded)).toBe(true)
   })
 
+  it("動画・音声・埋め込みの入ったパース結果も受理される", () => {
+    const source =
+      "タイトル\n[[https://x.com/a.mp4]] [https://x.com/a.mp3 BGM] [https://vimeo.com/1] [https://youtu.be/a]"
+    const decoded = decodePage(roundTrip(source))
+    expect(Either.getOrThrow(decoded)).toEqual(parse(source))
+  })
+
+  it("地図の入ったパース結果も受理される", () => {
+    const source = "タイトル\n[N35.68,E139.76,Z14 東京駅] [S33.86,W151.2]"
+    const decoded = decodePage(roundTrip(source))
+    expect(Either.getOrThrow(decoded)).toEqual(parse(source))
+  })
+
   it("受理した値は元の AST と等しい", () => {
     const source = "タイトル\n[リンク]"
     const decoded = decodePage(roundTrip(source))

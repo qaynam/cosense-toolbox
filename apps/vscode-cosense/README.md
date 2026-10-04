@@ -1,17 +1,19 @@
 # VS Code 拡張: Cosense
 
-`.csn` と `.csnx` を VS Code で書くための拡張。
+`.csn` / `.csnx` を VS Code で編集するための拡張です。
+
+**使い方 → <https://cosense-toolbox.qaynam.dev/vscode/>**
 
 - 色付け: [`@cosense-toolbox/textmate`](../../packages/textmate) の TextMate 文法で色を付け、
   [`@cosense-toolbox/lsp`](../../packages/lsp) の semantic tokens で上書きする。サーバーが起動する前から色が付く
-- `[` の中と `#` の後での、ページの題名の補完
+- `[` の中と `#` の後での、ページの題名の補完。候補の選び方と並べ方は Cosense Web と同じ
 - `[ページ名]` からそのページのファイルへの定義ジャンプ
 - 存在しないページへのリンクの診断
 - `[` を打つと `]` を補う
 
-Language Server は拡張の中に同梱しているので、`csn-lsp` を別に入れる必要はない。
+Language Server は拡張に同梱されているため、`csn-lsp` を別途インストールする必要はありません。
 
-## 試す
+## 開発版を試す
 
 1. ビルドする。
 
@@ -25,9 +27,9 @@ Language Server は拡張の中に同梱しているので、`csn-lsp` を別に
 
    コマンドからなら `code --extensionDevelopmentPath=apps/vscode-cosense examples/astro-blog` でも同じ。
 
-## インストールする
+## VSIX をインストールする
 
-いつもの VS Code に入れるなら、`.vsix` にまとめてから入れる。
+普段使っている VS Code に導入する場合は、拡張を `.vsix` にパッケージしてからインストールします。
 
 ```sh
 cd apps/vscode-cosense
@@ -47,7 +49,7 @@ code --install-extension vscode-cosense-0.1.0.vsix
 | `cosense.frontmatter`     | 1 行目の `---` を frontmatter (YAML) として飛ばすか                                    | `true`             |
 | `cosense.server.path`     | 使う Language Server のパス。空なら同梱のものを使う                                    | 空                 |
 
-設定を変えると、Language Server を起動し直して反映する。
+設定を変更した場合は、Language Server を再起動すると反映されます。
 
 `examples/astro-blog` の設定は、次のとおり (`.vscode/settings.json`)。
 

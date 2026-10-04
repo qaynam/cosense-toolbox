@@ -2,8 +2,10 @@
 
 > **beta.** class 名はまだ変わりえます。安定するまではバージョン固定での利用を推奨します。
 
-[`@cosense-toolbox/parser`](../parser) の `toHtml` が出す HTML に当てる既定のスタイルシート。
-CSS 1 枚だけのパッケージなので、スタイルが要らないなら入れなくてよい。
+[`@cosense-toolbox/parser`](../parser) の `toHtml` が出力する HTML に適用する、既定のスタイルシートです。
+CSS ファイル1枚だけで構成されているため、独自の見た目を使う場合はインストールする必要はありません。
+
+**ドキュメント → <https://cosense-toolbox.qaynam.dev/style/>**
 
 ```sh
 npm i @cosense-toolbox/style
@@ -17,8 +19,8 @@ import "@cosense-toolbox/style"
 > (`.line > .text > 1 文字ごとの .char-index`) に当てたもので `toHtml` の出力には当たらないため、
 > 見た目を寄せた別実装として書き起こしたものです。
 
-Tailwind CSS を使っているなら、この CSS を読み込む代わりに [`@cosense-toolbox/tailwind`](../tailwind) を使える。
-`class="cosense"` を付けた要素の中に、同じスタイルが当たる。
+Tailwind CSS を使う場合は、この CSS の代わりに [`@cosense-toolbox/tailwind`](../tailwind) を利用できます。
+`class="cosense"` を付けた要素の中に同じスタイルが適用されます。
 
 ## 前提
 
@@ -75,7 +77,7 @@ CSS 変数を定義するだけでよい。定義した変数が最優先にな�
 Cosense と同じく、字下げの右端に中点を出す。`toHtml` の既定の出力には中点にあたる要素が
 無いので `.line[data-indent]::before` で描いている。
 
-`toHtml(page, { showPads: true })` でCosense Web と同じ `.indent-mark` / `.pad` / `.dot` を
+`toHtml(page, { showPads: true })` で Cosense Web と同じ `.indent-mark` / `.pad` / `.dot` を
 書き出した場合は、擬似要素を止めて要素側のスタイルを使う。どちらでも見た目は同じ。
 
 ## コードブロックの行番号

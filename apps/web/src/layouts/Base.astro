@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css"
 
+import SiteSearch from "../components/SiteSearch.astro"
 import { SITE } from "../lib/site"
 
 interface Props {
@@ -53,7 +54,6 @@ const ogImageURL = new URL(image ?? "/og.png", siteUrl)
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImageURL} />
 
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.png" type="image/png" sizes="64x64" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -78,16 +78,17 @@ const ogImageURL = new URL(image ?? "/og.png", siteUrl)
       <div class="wrap">
         <a class="brand" href="/">
           <img class="logo" src="/beaver.png" alt="" width="30" height="30" />
-          <span>Cosense Toolbox</span>
+          <span class="brand-name">Cosense Toolbox</span>
         </a>
         <div class="header-actions">
           <nav>
-            <a href="/parser/">パーサー</a>
+            <a href="/docs/">ドキュメント</a>
             <a href="/builder/">テーマ作成</a>
             <a href={SITE.github} target="_blank" rel="noopener">
               GitHub ↗
             </a>
           </nav>
+          <SiteSearch />
           <button class="icon-btn" data-theme-toggle aria-label="テーマ切替" type="button">
             ☀
           </button>

@@ -1,18 +1,20 @@
 # Zed 拡張: Cosense
 
-`.csn` と `.csnx` に色を付ける。色は tree-sitter ではなく、
+**使い方 → <https://cosense-toolbox.qaynam.dev/zed/>**
+
+`.csn` / `.csnx` を色分けする拡張です。色は tree-sitter ではなく、
 [`@cosense-toolbox/lsp`](../../packages/lsp) が返す
 **LSP の semantic tokens** から来る。`@cosense-toolbox/parser` をそのまま使うので、
-記法の解釈が Cosense の描画とずれない。
+記法の解釈が Cosense の描画とそろいます。
 
-## 入れる
+## インストールする
 
 1. Zed の拡張の一覧 (`zed: extensions`) で「Cosense」を探して入れる。
 
    Language Server (`@cosense-toolbox/lsp`) は、拡張が npm から自動で入れ、Zed に同梱の Node.js で動かす。
    新しい版が出ていれば、Zed を起動したときに入れ直す。自分で用意したサーバーを使うときは、下の「サーバーの場所」を見る。
 
-2. **`settings.json` に次を足す。** どちらも拡張の側からは既定値を変えられない。
+2. **`settings.json` に次の設定を追加する。** これらの既定値は拡張側から変更できない。
 
    ```jsonc
    {
@@ -61,6 +63,9 @@
 
 `[` の中と `#` の後で、`sources` の下にある `.csn` / `.csnx` のページを候補に出す。題名はファイルの 1 行目で、
 候補の横にはそのファイルの場所 (`sources` からのパス) を出す。
+候補の選び方と並べ方は Cosense Web と同じで、短い題名が先に並び、3 文字以上なら 1 文字違いの題名も出る。
+まだ無いページへのリンクも、「まだ無いページ」として候補に出す。
+タイトル行と、コードやコマンドの行 (`$ ls`) の中では出さない。Cosense がそこを記法として読まないため。
 
 ### 存在しないページへのリンク
 
@@ -84,6 +89,7 @@
     { "token_type": "hashtag", "style": ["attribute"] },
     { "token_type": "icon", "style": ["link_text"] },
     { "token_type": "image", "style": ["link_text"] },
+    { "token_type": "media", "style": ["link_text"] },
     { "token_type": "code", "style": ["text.literal"] },
     { "token_type": "codeBlock", "style": ["text.literal"] },
     { "token_type": "formula", "style": ["text.literal"] },

@@ -1,10 +1,12 @@
 # @cosense-toolbox/tailwind
 
-Tailwind CSS のプラグイン。`class="cosense"` を付けた要素の中に、Cosense (旧 Scrapbox) の記法を描画した HTML の既定の見た目を当てる。
-typography プラグインの `prose` と同じ使い方をする。
+Tailwind CSS のプラグインです。`class="cosense"` を付けた要素の中に、Cosense (旧 Scrapbox) の記法を描画した HTML の既定スタイルを適用します。
+typography プラグインの `prose` と同じ要領で使えます。
 
-当てるスタイルは [`@cosense-toolbox/style`](../style) と同じもの。
-Tailwind を使っているなら、style.css を別に読み込まなくてよい。
+適用されるスタイルは [`@cosense-toolbox/style`](../style) と共通です。
+Tailwind を使う場合は、`style.css` を別途読み込む必要はありません。
+
+**ドキュメント → <https://cosense-toolbox.qaynam.dev/tailwind/>**
 
 > **beta**：class 名や出力はまだ変わりうる。
 
@@ -73,6 +75,10 @@ Tailwind v4 の CSS に `@plugin` で足す。
 | `cosense-table:{utility}`         | `.table`                       | `table:名前` の表                                           |
 | `cosense-td:{utility}`            | `.table td`                    | 表のセル                                                    |
 | `cosense-image:{utility}`         | `.image`                       | 画像                                                        |
+| `cosense-video:{utility}`         | `.video`                       | 動画                                                        |
+| `cosense-audio:{utility}`         | `.audio`                       | 音声                                                        |
+| `cosense-embed:{utility}`         | `.embed`                       | YouTube などの埋め込み                                      |
+| `cosense-location:{utility}`      | `.link-location`               | 地図 `[N35,E139]`                                           |
 | `cosense-icon:{utility}`          | `.icon`                        | `[ユーザー名.icon]`                                         |
 | `cosense-formula:{utility}`       | `.formula`                     | `[$ 数式]`                                                  |
 

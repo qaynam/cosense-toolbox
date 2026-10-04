@@ -2,8 +2,10 @@
 
 > **beta.** 設定の名前や出力の形はまだ変わりえます。
 
-`.csn` / `.csnx` の Language Server と、同じ判定でサイト全体を調べる `check` コマンド。
-どちらも [`@cosense-toolbox/parser`](../parser) で読むので、記法の解釈が Cosense の描画とずれない。
+`.csn` / `.csnx` に対応する Language Server と、サイト内のリンクをまとめて検査する `check` コマンドを提供します。
+どちらも [`@cosense-toolbox/parser`](../parser) で解析するため、記法の解釈が Cosense の描画とそろいます。
+
+**ドキュメント → <https://cosense-toolbox.qaynam.dev/lsp/>**
 
 ## Language Server
 
@@ -12,11 +14,11 @@ csn-lsp --stdio
 ```
 
 - 色付け (semantic tokens)
-- `[` の中と `#` の後での、ページの題名の補完
+- `[` の中と `#` の後での、ページの題名の補完。候補の選び方と並べ方は Cosense Web と同じで、まだ無いページへのリンクも候補に出す
 - `[ページ名]` からそのページのファイルへの定義ジャンプ
 - 存在しないページへのリンクの診断
 
-設定はエディタの `initialization_options` で渡す。どれも省略できる。
+設定はエディターの `initialization_options` で渡します。いずれも省略できます。
 
 | 設定              | 内容                                                                                   | 既定               |
 | :---------------- | :------------------------------------------------------------------------------------- | :----------------- |
@@ -26,25 +28,24 @@ csn-lsp --stdio
 
 ## check
 
-エディタの診断と同じ判定で、サイトのすべてのページのリンクを調べる。CI で使う想定。
+エディター上の診断と同じ判定で、指定したディレクトリ内のページリンクを検査します。CI での利用を想定しています。
 
 ```sh
 csn-lsp check src/content src/pages
 # src/content/posts/a.csn:5:3 error リンク先のページが見つからない: [無いページ]
 ```
 
-- 引数のディレクトリの下の `.csn` / `.csnx` を読む。省略すると今いるディレクトリを読む
-- ページの題名はファイルの 1 行目。大文字小文字と、空白と `_` の違いは無視する
-- `[! 注意]` のような Cosense の文字装飾の記号の括弧は、Cosense Web と同じく装飾として読み、リンクとして調べない
-- エラーが 1 件でもあれば終了コード 1、無ければ 0。オプションの誤りは 2
+- 引数に指定したディレクトリ以下の `.csn` / `.csnx` を読みます。省略した場合は、カレントディレクトリを対象にします。
+- ページ名は各ファイルの 1 行目から取得します。照合では大文字・小文字と空白・`_` の違いを無視します。
+- `[! 注意]` のような文字装飾は Cosense Web と同じ規則で判定し、リンクとして扱いません。
+- エラーが1件以上ある場合は終了コード `1`、エラーがない場合は `0`、オプションが不正な場合は `2` を返します。
 
 | オプション                   | 内容                                                 | 既定    |
 | :--------------------------- | :--------------------------------------------------- | :------ |
 | `--unresolved-links <level>` | `off` / `hint` / `information` / `warning` / `error` | `error` |
 | `--no-frontmatter`           | 1 行目の `---` を frontmatter ではなく題名として読む |         |
 
-`check` の既定が `error` なのは、ビルドを止めるための道具だから。報告だけにしたいときは
-`--unresolved-links warning` にする (終了コードは 0 になる)。
+`check` はリンク切れを見つけたらビルドを止めるため、重大度の既定値を `error` にしています。報告だけにしたい場合は `--unresolved-links warning` を指定してください (終了コードは `0` になります)。
 
 ## ライブラリとして
 
@@ -58,7 +59,15 @@ csn-lsp check src/content src/pages
     無ければ LSP 標準の型 (`namespace`、`function` など) に直して送る。既定の legend (`LEGEND`) は LSP 標準の型だけなので、
     VS Code や Zed のように標準の型で色を付けるエディタにはそのまま渡せる。自前の名前で色を付けるクライアントは、
     `encodeTokens(tokens, [...TOKEN_TYPES, ...names])` のように自前の legend を渡す
-- `@cosense-toolbox/lsp/completion`: `detectCompletion` / `completionItems` / `definitionOf` など
+- `@cosense-toolbox/lsp/completion`: `detectCompletion` / `detectCompletionInDocument` / `completionItems` / `definitionOf` など
+  - `detectCompletionInDocument` は、タイトル行と、コードやコマンドの行 (`$ ls`) では補完の位置とみなさない
+- `@cosense-toolbox/lsp/suggest`: リンクの候補を、Cosense Web のエディタと同じ規則で選んで並べる。どれも入出力の無い関数
+  - `buildCandidateIndex(entries)`: ページ (`title` / `updated` / `image` / `links`) から候補を作る。リンク先にしかない題名も候補になる
+  - `rankCandidates(index, query, options)`: 空白で区切った語がすべて入る題名を、短い順 (同じ長さなら新しい順) に並べる。
+    見つかったものが少なければ、3 文字以上の入力で 1 文字違いの題名を足す。編集中のページと、入力と同じ題名は出さない
+  - `mergeVectorPages(ranked, pages, index, query)`: ベクトル検索の結果のうち近いものを、Cosense Web と同じく上位 6 件の中に混ぜる
+  - `iconKeys(text)`: ページが使っているアイコン。`rankCandidates` の `icons` に渡すと、そのアイコンのページが先頭に来る
+  - `Asearch(pattern)`: 1〜3 文字違いまでを許す、あいまいな文字列の照合
 - `@cosense-toolbox/lsp/link`: `linkAt(text, position, parseOptions?)` で、カーソルの下のリンクと、その行き先を返す
   - ページ (`[ページ]`、`#タグ`、`[/project/ページ]`、アイコンの `[taro.icon]` と `[[taro.icon]]`) は `kind: "page"`。
     別のプロジェクトなら `project`、`[ページ#<行 ID>]` なら `lineId` が付く
