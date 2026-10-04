@@ -5,7 +5,7 @@ import type { ParseOptions } from "@cosense-toolbox/parser"
 import { Array as Arr, Effect, Match, Option, pipe, Predicate } from "effect"
 import { type Diagnostic, DiagnosticSeverity } from "vscode-languageserver/node"
 
-import { severityOf, unresolvedLinkDiagnostics, type UnresolvedSeverity } from "./diagnostics"
+import { type Severity, severityOf, unresolvedLinkDiagnostics } from "./diagnostics"
 import { indexOf, type PageFile, readPageFiles } from "./workspace"
 
 /**
@@ -35,7 +35,7 @@ export interface CheckSiteOptions {
   /** The directories whose `.csn` / `.csnx` pages are read, and checked against each other. */
   readonly roots: ReadonlyArray<string>
   /** How a link to a missing page is reported; `off` reports none. */
-  readonly unresolvedLinks: UnresolvedSeverity
+  readonly unresolvedLinks: Severity
   /** How to parse: a site's notation extensions, as its build parses with. */
   readonly parseOptions?: ParseOptions
   /** Whether a `---` fence on a page's first line opens YAML to skip (default: true). */
@@ -57,7 +57,7 @@ export interface Report {
  * Reports are errors unless told otherwise: the command exists to stop a build, and a
  * warning that passes would not.
  */
-const DEFAULT_LEVEL: UnresolvedSeverity = "error"
+const DEFAULT_LEVEL: Severity = "error"
 
 const argsOf = (args: ReadonlyArray<string>, cwd: string): Option.Option<CheckSiteOptions> =>
   pipe(
