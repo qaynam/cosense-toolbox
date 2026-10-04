@@ -7,7 +7,7 @@ import type {
   Position,
 } from "@cosense-toolbox/parser"
 import { normalizeLineEndings, parse } from "@cosense-toolbox/parser"
-import { Array as Arr, Match, Option, Order, pipe } from "effect"
+import { Array as Arr, Match, Option, Order, pipe, Schema } from "effect"
 
 import { branch, gather, leaf, type Picked } from "./tree"
 
@@ -136,6 +136,20 @@ const LSP_TYPE: Record<TokenType, (typeof LEGEND)[number]> = {
   // What a caller's notation is sent as when the legend has no type of its name.
   notation: "decorator",
 }
+
+/** Which names a client is sent token types by (see `legendFor`). */
+export const TokenNames = Schema.Literal("lsp", "cosense")
+
+export type TokenNames = typeof TokenNames.Type
+
+/**
+ * The legend to announce. `lsp` is the LSP's own types, which any client colours with no
+ * setup. `cosense` is this package's own names (`bold`, `strike`, `link`, ...), for a client
+ * that can be given rules for them: only those tell bold from strikethrough, since the LSP's
+ * types have no names for either.
+ */
+export const legendFor = (names: TokenNames): ReadonlyArray<string> =>
+  names === "cosense" ? TOKEN_TYPES : LEGEND
 
 /**
  * LEGEND with the names of `notations` after it, each once: the legend for a client that
