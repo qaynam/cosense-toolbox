@@ -1,7 +1,18 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+
 import type { Extension } from "@cosense-toolbox/parser/extensions"
 import { describe, expect, it } from "vitest"
 
-import { computeTokens, encodeTokens, LEGEND, legendOf, type RawToken, TOKEN_TYPES } from "./tokens"
+import {
+  computeTokens,
+  encodeTokens,
+  LEGEND,
+  legendFor,
+  legendOf,
+  type RawToken,
+  TOKEN_TYPES,
+} from "./tokens"
 
 const typesOn = (text: string, line: number, options = {}) =>
   computeTokens(text, options)
@@ -249,5 +260,40 @@ describe("frontmatter: false", () => {
     expect(typesOn(text, 0, { frontmatter: false })).toEqual(["title"])
     expect(typesOn(text, 1, { frontmatter: false })).toEqual([])
     expect(typesOn(text, 0)).toEqual(["frontmatter"])
+  })
+})
+
+describe("legendFor", () => {
+  it("is the LSP's own types by default, which every client colours", () => {
+    expect(legendFor("lsp")).toEqual(LEGEND)
+  })
+
+  it("is this package's own names for a client that styles them by name", () => {
+    expect(legendFor("cosense")).toEqual(TOKEN_TYPES)
+  })
+})
+
+describe("the Zed extension's rules", () => {
+  const rulesOf = (language: string): ReadonlyArray<{ token_type: string }> =>
+    JSON.parse(
+      readFileSync(
+        join(
+          import.meta.dirname,
+          `../../../apps/zed-cosense/languages/${language}/semantic_token_rules.json`,
+        ),
+        "utf8",
+      ),
+    )
+
+  it("style every token type the server sends by its own name", () => {
+    expect(
+      rulesOf("csn")
+        .map((rule) => rule.token_type)
+        .sort(),
+    ).toEqual([...TOKEN_TYPES].sort())
+  })
+
+  it("are the same for .csn and .csnx", () => {
+    expect(rulesOf("csnx")).toEqual(rulesOf("csn"))
   })
 })

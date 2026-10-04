@@ -14,7 +14,7 @@ import { TextDocument } from "vscode-languageserver-textdocument"
 import { completionItems, definitionOf } from "./completion"
 import { unresolvedLinkDiagnostics } from "./diagnostics"
 import { defaultSettings, settingsOf } from "./settings"
-import { computeTokens, encodeTokens, LEGEND } from "./tokens"
+import { computeTokens, encodeTokens, legendFor } from "./tokens"
 import { emptyIndex, type Index, readIndex, rootsOf } from "./workspace"
 
 const connection = createConnection(ProposedFeatures.all)
@@ -43,6 +43,7 @@ const semanticTokensOf = (document: TextDocument): SemanticTokens => ({
       components: readsComponents(document),
       frontmatter: currentSettings().frontmatter,
     }),
+    legendFor(currentSettings().tokenNames),
   ),
 })
 
@@ -124,7 +125,7 @@ connection.onInitialize(({ workspaceFolders, initializationOptions }): Initializ
       // every keystroke is what makes a large page feel slow.
       textDocumentSync: TextDocumentSyncKind.Incremental,
       semanticTokensProvider: {
-        legend: { tokenTypes: [...LEGEND], tokenModifiers: [] },
+        legend: { tokenTypes: [...legendFor(read.tokenNames)], tokenModifiers: [] },
         full: true,
       },
       // `[` and `#` open a link and a tag. The editor asks again on every character after

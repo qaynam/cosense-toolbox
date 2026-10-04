@@ -1,12 +1,13 @@
 import { Array as Arr, Option, pipe, Record as Rec, Schema } from "effect"
 
 import { severityOf, type UnresolvedSeverity } from "./diagnostics"
+import { TokenNames } from "./tokens"
 
 /**
  * What the reader can set, through the editor's initialization options:
  *
  * ```json
- * { "sources": ["src"], "unresolvedLinks": "warning", "frontmatter": true }
+ * { "sources": ["src"], "unresolvedLinks": "warning", "frontmatter": true, "tokenNames": "lsp" }
  * ```
  *
  * Which markers open a decoration is not among them: that is Cosense's syntax, and the parser
@@ -25,12 +26,15 @@ export interface Settings {
    * which have no frontmatter: a page titled `---` would otherwise lose its first lines.
    */
   readonly frontmatter: boolean
+  /** The names semantic tokens are sent by (see `legendFor`). */
+  readonly tokenNames: TokenNames
 }
 
 export const defaultSettings: Settings = {
   sources: [],
   unresolvedLinks: "warning",
   frontmatter: true,
+  tokenNames: "lsp",
 }
 
 /** `schema`'s reading of `value`, or `fallback` when `value` is not of that shape. */
@@ -64,5 +68,6 @@ export const settingsOf = (options: unknown): Settings => {
     sources: stringsOf(field("sources")),
     unresolvedLinks: severityOf(field("unresolvedLinks")),
     frontmatter: decodeOr(Schema.Boolean, defaultSettings.frontmatter)(field("frontmatter")),
+    tokenNames: decodeOr(TokenNames, defaultSettings.tokenNames)(field("tokenNames")),
   }
 }
