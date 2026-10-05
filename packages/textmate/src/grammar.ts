@@ -312,17 +312,21 @@ const emphasisRules: ReadonlyArray<Pattern> = Arr.map(MARKER_SETS, (emphasis) =>
   }),
 )
 
-/** Anything up to, but not over, a `]]`. */
-const UNTIL_DOUBLE_CLOSE = re`(?:(?!\]\]).)`
+/**
+ * The x of `[[x]]`, by Cosense Web's own rule, depth or not: never empty, never opening with
+ * `[[`, and closed by the last two of the `]` that run on from the first `]]`. So `[[[x]]]` is
+ * a link inside bold.
+ */
+const STRONG_INNER = re`(?:[^\[]|\[[^\[]).*?\]*`
 
 /**
- * `[[x]]`: an image or a video when x is one, bold otherwise. Closes on the first `]]`, depth
- * or not. A sound or an embedded player is not made large: it is a link inside bold.
+ * `[[x]]`: an image or a video when x is one, bold otherwise. A sound or an embedded player
+ * is not made large: it is a link inside bold.
  */
 const strongRules: ReadonlyArray<Pattern> = [
   single(re`\[\[${NO_CODE_INSIDE_DOUBLE}${VIDEO_URL}\]\]`, { scopes: [SCOPES.media] }),
   single(re`\[\[${NO_CODE_INSIDE_DOUBLE}(?:${IMAGE_URL})\]\]`, { scopes: [SCOPES.image] }),
-  single(re`\[\[${NO_CODE_INSIDE_DOUBLE}(${UNTIL_DOUBLE_CLOSE}+)\]\]`, {
+  single(re`\[\[${NO_CODE_INSIDE_DOUBLE}(${STRONG_INNER})\]\]`, {
     scopes: [SCOPES.bold],
     captures: { 1: readAs(include("inline-in-emphasis")) },
   }),

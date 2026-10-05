@@ -75,7 +75,7 @@ export const publishOrder = (workspaces: ReadonlyArray<Workspace>): ReadonlyArra
   return place([], workspaces)
 }
 
-/** バージョンが揃っていなければ、それぞれの版を挙げる。 */
+/** バージョンが揃っていなければ、それぞれのバージョンを挙げる。 */
 const versionProblems = (workspaces: ReadonlyArray<Workspace>): ReadonlyArray<string> =>
   Arr.dedupe(Arr.map(workspaces, ({ manifest }) => manifest.version)).length > 1
     ? [
@@ -106,11 +106,11 @@ const packageProblems = ({ dir, manifest, hasLicense }: Workspace): ReadonlyArra
     ...(manifest.publishConfig?.access === "public"
       ? []
       : [`${name}: publishConfig に access: "public" が無い`]),
-    // dist-tag は版から決める (distTagFor)。ここに書くと、v1 を出すときに消し忘れて
-    // latest が動かなかったり、消した後のベータが安定版を latest から押しのけたりする。
+    // dist-tag はバージョンから決める (distTagFor)。ここに書くと、v1 を出すときに消し忘れて
+    // latest が動かなかったり、消した後のベータが安定バージョンを latest から押しのけたりする。
     ...(manifest.publishConfig?.tag === undefined
       ? []
-      : [`${name}: publishConfig.tag は書かない (dist-tag は版から決める)`]),
+      : [`${name}: publishConfig.tag は書かない (dist-tag はバージョンから決める)`]),
     ...(Option.contains(directoryOf(manifest.repository), dir)
       ? []
       : [`${name}: repository.directory が ${dir} を指していない`]),
@@ -129,18 +129,18 @@ export const problemsOf = (workspaces: ReadonlyArray<Workspace>): ReadonlyArray<
   ...Arr.flatMap(workspaces, packageProblems),
 ]
 
-/** pre-release の付かない版 (`1.0.0`)。build metadata (`+…`) は見ない。 */
+/** pre-release の付かないバージョン (`1.0.0`)。build metadata (`+…`) は見ない。 */
 export const isStable = (version: string): boolean =>
   isVersion(version) && !(version.split("+")[0] ?? "").includes("-")
 
 /**
- * 公開する版に付ける dist-tag。
+ * 公開するバージョンに付ける dist-tag。
  *
  * - `override` があればそれ (`--tag` で渡したもの)
- * - 安定版は latest
- * - 安定版をまだ 1 つも出していないうちは、プレリリースも latest。守る安定版が無いので、
- *   分けると latest だけが古い版を指し続け、タグ無しで入れた人に古い API が入る
- * - 安定版を出した後のプレリリースは、識別子 (`1.1.0-beta.1` なら beta) を使う。
+ * - 安定バージョンは latest
+ * - 安定バージョンをまだ 1 つも出していないうちは、プレリリースも latest。守る安定バージョンが無いので、
+ *   分けると latest だけが古いバージョンを指し続け、タグ無しで入れた人に古い API が入る
+ * - 安定バージョンを出した後のプレリリースは、識別子 (`1.1.0-beta.1` なら beta) を使う。
  *   数字だけの識別子 (`1.1.0-0`) には名前が無いので next にする
  */
 export const distTagFor = (
@@ -155,7 +155,7 @@ export const distTagFor = (
     return /^[A-Za-z][0-9A-Za-z-]*$/.test(identifier) ? identifier : "next"
   })
 
-/** semver の版 (pre-release と build metadata も含む)。先頭の `v` は付けない。 */
+/** semver のバージョン (pre-release と build metadata も含む)。先頭の `v` は付けない。 */
 export const isVersion = (version: string): boolean =>
   /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(version)
 
@@ -168,8 +168,8 @@ export const withVersion = (text: string, version: string): string =>
 
 /**
  * 固めた (`bun pm pack`) あとの package.json で、ほかのパッケージへの依存のうち `version` を
- * 指していないもの。`bun pm pack` は `workspace:*` を lockfile の版に書き換えるので、
- * バージョンを上げたあと lockfile を更新していないと、古い版が残る。
+ * 指していないもの。`bun pm pack` は `workspace:*` を lockfile のバージョンに書き換えるので、
+ * バージョンを上げたあと lockfile を更新していないと、古いバージョンが残る。
  */
 export const mismatchedPins = (packed: Manifest, version: string): ReadonlyArray<string> =>
   Arr.filterMap(
@@ -183,8 +183,8 @@ export const mismatchedPins = (packed: Manifest, version: string): ReadonlyArray
 /**
  * bun.lock の、`dir` のワークスペースの `version` だけを書き換える。
  *
- * `bun pm pack` は `workspace:*` を lockfile に記録された版に書き換えるが、`bun install` は
- * package.json のバージョンだけが変わっても lockfile のその版を更新しない。そのため自分で揃える。
+ * `bun pm pack` は `workspace:*` を lockfile に記録されたバージョンに書き換えるが、`bun install` は
+ * package.json のバージョンだけが変わっても lockfile のそのバージョンを更新しない。そのため自分で揃える。
  */
 export const withLockVersion = (lock: string, dir: string, version: string): string =>
   lock.replace(
@@ -193,3 +193,94 @@ export const withLockVersion = (lock: string, dir: string, version: string): str
     ),
     `$1"${version}"`,
   )
+
+const RELEASE_BRANCH = /^release\/v(.+)$/
+
+/** `release/v0.1.0-beta.9` のバージョン。リリースのブランチでなければ None。 */
+export const versionOfBranch = (branch: string): Option.Option<string> =>
+  pipe(Option.fromNullable(RELEASE_BRANCH.exec(branch)?.[1]), Option.filter(isVersion))
+
+/** 前のリリースのあとにマージした PR と、それがリリースに入っているか。 */
+export interface MergedPullRequest {
+  readonly number: number
+  readonly title: string
+  /** マージした先のブランチ */
+  readonly baseRefName: string
+  readonly headRefName: string
+  /** PR の中身 (head かマージのコミット) が、リリースするコミットにあるか */
+  readonly contained: boolean
+}
+
+export interface ReleasePullRequest {
+  /** PR を向けた先のブランチ */
+  readonly base: string
+  /** PR のブランチ (`release/v<バージョン>`) */
+  readonly branch: string
+  readonly workspaces: ReadonlyArray<Workspace>
+  readonly merged: ReadonlyArray<MergedPullRequest>
+  /** npm に出ているバージョン (公開するパッケージのどれか 1 つの) */
+  readonly npmVersions: ReadonlyArray<string>
+  /** バージョンの大小。負なら a が古い (semver の順) */
+  readonly order: (a: string, b: string) => number
+}
+
+/** npm に対して、`version` を出してよいか。もうあるバージョンと、一番新しいバージョンより古いバージョンは出せない。 */
+const npmProblems = (
+  version: string,
+  npmVersions: ReadonlyArray<string>,
+  order: (a: string, b: string) => number,
+): ReadonlyArray<string> =>
+  Arr.contains(npmVersions, version)
+    ? [`${version} は npm にもう出ている`]
+    : pipe(
+        Arr.reduce(npmVersions, Option.none<string>(), (newest, each) =>
+          Option.match(newest, {
+            onNone: () => Option.some(each),
+            onSome: (current) => Option.some(order(each, current) > 0 ? each : current),
+          }),
+        ),
+        Option.filter((newest) => order(version, newest) < 0),
+        Option.match({
+          onNone: () => [],
+          onSome: (newest) => [`${version} は npm の一番新しいバージョン ${newest} より古い`],
+        }),
+      )
+
+/**
+ * リリースの PR を、マージする前に止める理由。
+ *
+ * どれも、積んだ PR を順にマージしたときに起きたこと。先の PR が main に入った後で、
+ * 後の PR が main ではなく先の PR のブランチにマージされ、main に届かなかった。
+ *
+ * - main 以外に向けたリリースの PR は、マージしても main のバージョンが変わらない
+ * - ブランチのバージョンと、パッケージのバージョンが揃っていない
+ * - そのバージョンが npm にもうあるか、npm の一番新しいバージョンより古い
+ * - 前のリリースの後にマージした PR が、リリースに入っていない (main に届かなかった)。
+ *   前のリリースの PR は後のリリースが置き換えるので数えない
+ */
+export const releasePullRequestProblems = ({
+  base,
+  branch,
+  workspaces,
+  merged,
+  npmVersions,
+  order,
+}: ReleasePullRequest): ReadonlyArray<string> => {
+  const published = Arr.dedupe(Arr.map(publishable(workspaces), ({ manifest }) => manifest.version))
+  return [
+    ...(base === "main" ? [] : [`リリースの PR は main に向ける (今は ${base})`]),
+    ...Option.match(versionOfBranch(branch), {
+      onNone: () => [`リリースのブランチの名前は release/v<バージョン> にする (今は ${branch})`],
+      onSome: (version) =>
+        Arr.every(published, (each) => each === version)
+          ? npmProblems(version, npmVersions, order)
+          : [
+              `ブランチのバージョン ${version} と、パッケージのバージョン ${published.join(", ")} が違う`,
+            ],
+    }),
+    ...Arr.map(
+      Arr.filter(merged, (pr) => !pr.contained && Option.isNone(versionOfBranch(pr.headRefName))),
+      (pr) => `#${pr.number}「${pr.title}」がリリースに入っていない (マージ先: ${pr.baseRefName})`,
+    ),
+  ]
+}

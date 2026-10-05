@@ -1,8 +1,8 @@
 name: publish
 
 # packages/ のパッケージは、すべて同じバージョンで一緒に公開する。
-#   1. bun run release:version <版> でバージョンを揃えてコミットする
-#   2. v<版> のタグ (例: v0.1.0-beta.2) を push すると、ここで全部を公開する
+#   1. bun run release:version <バージョン> でバージョンを揃えてコミットする
+#   2. v<バージョン> のタグ (例: v0.1.0-beta.2) を push すると、ここで全部を公開し、GitHub のリリースを作る
 # 手で動かすときは、既定で公開せずに中身だけ確かめる。
 on:
   push:
@@ -21,10 +21,14 @@ jobs:
     if: github.actor == github.repository_owner
     environment: npm
     permissions:
-      contents: read
+      # GitHub のリリースを作るため
+      contents: write
       id-token: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          # リリースノートの起点にする、前のタグを探すため
+          fetch-depth: 0
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -45,7 +49,7 @@ jobs:
           bun run typecheck
           bun run test
 
-      # タグから公開するときは、タグの版とパッケージの版が一致しなければ止める (--expect)。
+      # タグから公開するときは、タグのバージョンとパッケージのバージョンが一致しなければ止める (--expect)。
       - name: 公開する
         run: |
           npm --version
@@ -54,3 +58,12 @@ jobs:
           else
             bun run release:publish ${{ inputs.dryRun == true && '--dry-run' || '' }}
           fi
+
+      # npm に出せたときだけ作る。手で作ると、公開に失敗したバージョンのリリースが残る。
+      - name: GitHub のリリースを作る
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          previous=$(git describe --tags --abbrev=0 --match 'v*' "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes ${previous:+--notes-start-tag "$previous"}

@@ -6,10 +6,13 @@ import {
   isStable,
   isVersion,
   type Manifest,
+  type MergedPullRequest,
   mismatchedPins,
   problemsOf,
   publishable,
   publishOrder,
+  releasePullRequestProblems,
+  versionOfBranch,
   withLockVersion,
   withVersion,
   type Workspace,
@@ -86,7 +89,7 @@ describe("problemsOf", () => {
     expect(problemsOf([ready("packages/parser"), ready("packages/style")])).toEqual([])
   })
 
-  it("バージョンが揃っていなければ、それぞれの版を挙げる", () => {
+  it("バージョンが揃っていなければ、それぞれのバージョンを挙げる", () => {
     expect(
       problemsOf([ready("packages/parser", { version: "0.1.0-beta.1" }), ready("packages/style")]),
     ).toEqual([
@@ -110,10 +113,12 @@ describe("problemsOf", () => {
   })
 
   it("publishConfig.tag が書いてあれば止める", () => {
-    // 書いたままだと v1 が latest にならず、消すとベータが安定版を latest から押しのける。
+    // 書いたままだと v1 が latest にならず、消すとベータが安定バージョンを latest から押しのける。
     expect(
       problemsOf([ready("packages/lsp", { publishConfig: { access: "public", tag: "beta" } })]),
-    ).toEqual(["@cosense-toolbox/lsp: publishConfig.tag は書かない (dist-tag は版から決める)"])
+    ).toEqual([
+      "@cosense-toolbox/lsp: publishConfig.tag は書かない (dist-tag はバージョンから決める)",
+    ])
   })
 
   it("repository.directory がパッケージの場所を指していなければ止める", () => {
@@ -143,12 +148,12 @@ describe("problemsOf", () => {
 })
 
 describe("isVersion", () => {
-  it("semver の版と、pre-release 付きの版を受け付ける", () => {
+  it("semver のバージョンと、pre-release 付きのバージョンを受け付ける", () => {
     expect(isVersion("1.2.3")).toBe(true)
     expect(isVersion("0.1.0-beta.2")).toBe(true)
   })
 
-  it("版でないものは受け付けない", () => {
+  it("バージョンでないものは受け付けない", () => {
     expect(isVersion("v0.1.0")).toBe(false)
     expect(isVersion("0.1")).toBe(false)
     expect(isVersion("1.2.3.4")).toBe(false)
@@ -172,14 +177,14 @@ describe("withVersion", () => {
 })
 
 describe("mismatchedPins", () => {
-  it("固めたあとの依存が、公開する版と同じなら何も言わない", () => {
+  it("固めたあとの依存が、公開するバージョンと同じなら何も言わない", () => {
     const packed = ready("packages/astro", {
       dependencies: { "@cosense-toolbox/parser": "0.1.0-beta.2", unified: "^11.0.0" },
     }).manifest
     expect(mismatchedPins(packed, "0.1.0-beta.2")).toEqual([])
   })
 
-  it("古い版を指していれば、その依存を挙げる (lockfile が更新されていない)", () => {
+  it("古いバージョンを指していれば、その依存を挙げる (lockfile が更新されていない)", () => {
     const packed = ready("packages/astro", {
       dependencies: {
         "@cosense-toolbox/parser": "0.1.0-beta.1",
@@ -206,7 +211,7 @@ describe("withLockVersion", () => {
     "}",
   ].join("\n")
 
-  it("そのワークスペースの版だけを書き換える", () => {
+  it("そのワークスペースのバージョンだけを書き換える", () => {
     const written = withLockVersion(lock, "packages/parser", "0.1.0-beta.2")
     expect(written).toContain('"name": "@cosense-toolbox/parser",\n      "version": "0.1.0-beta.2"')
     expect(written).toContain('"name": "@cosense-toolbox/style",\n      "version": "0.1.0-beta.0"')
@@ -218,7 +223,7 @@ describe("withLockVersion", () => {
 })
 
 describe("isStable", () => {
-  it("pre-release の無い版だけを安定版とみなす", () => {
+  it("pre-release の無いバージョンだけを安定バージョンとみなす", () => {
     expect(isStable("1.0.0")).toBe(true)
     expect(isStable("1.0.0+build.5")).toBe(true)
     expect(isStable("1.0.0-beta.1")).toBe(false)
@@ -230,18 +235,18 @@ describe("isStable", () => {
 describe("distTagFor", () => {
   const none = Option.none<string>()
 
-  it("安定版をまだ出していないうちは、プレリリースも latest にする", () => {
-    // 守る安定版が無いので、分けると latest だけが古い版を指し続ける。
+  it("安定バージョンをまだ出していないうちは、プレリリースも latest にする", () => {
+    // 守る安定バージョンが無いので、分けると latest だけが古いバージョンを指し続ける。
     expect(distTagFor("0.1.0-beta.3", [], none)).toBe("latest")
     expect(distTagFor("0.1.0-beta.3", ["0.1.0-beta.1", "0.1.0-beta.2"], none)).toBe("latest")
   })
 
-  it("安定版は、package.json に何も書かなくても latest になる", () => {
+  it("安定バージョンは、package.json に何も書かなくても latest になる", () => {
     expect(distTagFor("1.0.0", ["0.1.0-beta.2"], none)).toBe("latest")
     expect(distTagFor("1.1.0", ["1.0.0"], none)).toBe("latest")
   })
 
-  it("安定版を出した後のプレリリースは、latest を押しのけず識別子のタグに入る", () => {
+  it("安定バージョンを出した後のプレリリースは、latest を押しのけず識別子のタグに入る", () => {
     expect(distTagFor("1.1.0-beta.1", ["1.0.0"], none)).toBe("beta")
     expect(distTagFor("2.0.0-rc.1", ["1.0.0", "1.1.0-beta.1"], none)).toBe("rc")
   })
@@ -253,5 +258,79 @@ describe("distTagFor", () => {
   it("--tag で渡したタグが何より優先される", () => {
     expect(distTagFor("0.1.0-beta.3", [], Option.some("next"))).toBe("next")
     expect(distTagFor("1.0.0", ["1.0.0-rc.1"], Option.some("beta"))).toBe("beta")
+  })
+})
+
+describe("versionOfBranch", () => {
+  it("リリースのブランチの名前からバージョンを読む", () => {
+    expect(Option.getOrNull(versionOfBranch("release/v0.1.0-beta.9"))).toBe("0.1.0-beta.9")
+  })
+
+  it("リリースのブランチでなければバージョンは無い", () => {
+    expect(Option.isNone(versionOfBranch("feat/media"))).toBe(true)
+  })
+})
+
+describe("releasePullRequestProblems", () => {
+  const merged = (
+    number: number,
+    contained: boolean,
+    head = `feat/${number}`,
+  ): MergedPullRequest => ({
+    number,
+    title: `PR ${number}`,
+    baseRefName: "main",
+    headRefName: head,
+    contained,
+  })
+  /** バージョンの大小。テストでは pre-release の番号だけを比べれば足りる。 */
+  const order = (a: string, b: string) => Number(a.split(".").at(-1)) - Number(b.split(".").at(-1))
+  const ok = {
+    base: "main",
+    branch: "release/v0.1.0-beta.2",
+    workspaces: [ready("packages/parser"), ready("packages/lsp")],
+    merged: [merged(1, true)],
+    npmVersions: ["0.1.0-beta.0", "0.1.0-beta.1"],
+    order,
+  }
+
+  it("main に向け、バージョンが揃い、マージした PR がすべて入っていれば、何も言わない", () => {
+    expect(releasePullRequestProblems(ok)).toEqual([])
+  })
+
+  it("main 以外に向けたリリースの PR は止める", () => {
+    expect(releasePullRequestProblems({ ...ok, base: "fix/zed-styles-to-main" })).toEqual([
+      "リリースの PR は main に向ける (今は fix/zed-styles-to-main)",
+    ])
+  })
+
+  it("ブランチのバージョンとパッケージのバージョンが違えば止める", () => {
+    expect(releasePullRequestProblems({ ...ok, branch: "release/v0.1.0-beta.3" })).toEqual([
+      "ブランチのバージョン 0.1.0-beta.3 と、パッケージのバージョン 0.1.0-beta.2 が違う",
+    ])
+  })
+
+  it("マージしたのにリリースに入っていない PR を挙げる", () => {
+    const pr = { ...merged(45, false), baseRefName: "feat/zed-publish" }
+    expect(releasePullRequestProblems({ ...ok, merged: [pr] })).toEqual([
+      "#45「PR 45」がリリースに入っていない (マージ先: feat/zed-publish)",
+    ])
+  })
+
+  it("npm にもうあるバージョンは止める", () => {
+    expect(
+      releasePullRequestProblems({ ...ok, npmVersions: ["0.1.0-beta.1", "0.1.0-beta.2"] }),
+    ).toEqual(["0.1.0-beta.2 は npm にもう出ている"])
+  })
+
+  it("npm の一番新しいバージョンより古いバージョンは止める", () => {
+    expect(releasePullRequestProblems({ ...ok, npmVersions: ["0.1.0-beta.5"] })).toEqual([
+      "0.1.0-beta.2 は npm の一番新しいバージョン 0.1.0-beta.5 より古い",
+    ])
+  })
+
+  it("前のリリースの PR は、後のリリースが置き換えるので数えない", () => {
+    const old = merged(50, false, "release/v0.1.0-beta.1")
+    expect(releasePullRequestProblems({ ...ok, merged: [old] })).toEqual([])
   })
 })

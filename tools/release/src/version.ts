@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * 公開するすべてのパッケージのバージョンを、1 つの版に揃えて書き換える。
+ * 公開するすべてのパッケージのバージョンを、1 つのバージョンに揃えて書き換える。
  *
  *   bun run release:version 0.1.0-beta.3
  */
@@ -21,7 +21,7 @@ const program = pipe(
   Effect.filterOrFail(
     Effect.succeed(version),
     isVersion,
-    () => new Error("使い方: bun run release:version <版> (例: 0.1.0-beta.3)"),
+    () => new Error("使い方: bun run release:version <バージョン> (例: 0.1.0-beta.3)"),
   ),
   Effect.flatMap(() => readWorkspaces(root)),
   Effect.map(publishable),
@@ -36,7 +36,7 @@ const program = pipe(
       }),
     ),
   ),
-  // bun pm pack は workspace:* を lockfile の版に書き換えるので、lockfile の版も揃える。
+  // bun pm pack は workspace:* を lockfile のバージョンに書き換えるので、lockfile のバージョンも揃える。
   // bun install はバージョンだけの変更では lockfile を更新しないので、自分で書き換える。
   Effect.tap((written) =>
     Effect.tryPromise({
