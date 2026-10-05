@@ -17,9 +17,12 @@ export interface Badge {
   /** 文字の前に置くアイコン。Iconify の `prefix:name` (`tabler:check` など) */
   readonly icon: Option.Option<string>
   readonly shape: BadgeShape
+  /** 背景の色。`plain` では使わない */
   readonly background: string
-  /** 文字の色。単色のアイコンもこの色で塗る */
+  /** 文字の色 */
   readonly foreground: string
+  /** 単色のアイコンを塗る色。絵文字のように色を持つアイコンには使わない */
+  readonly iconColor: string
 }
 
 /** 描くときの座標の高さ。書き出すときは {@link BADGE_SIZES} の高さに縮める。 */
@@ -132,23 +135,55 @@ export const scaledSize = (
 export interface BadgeFont {
   readonly id: string
   readonly label: string
+  /** 選ぶときの見出し。英語のフォントには日本語の字が無い */
+  readonly script: "ja" | "en"
   /** Google Fonts のファミリー名 */
   readonly family: string
   /** Google Fonts にある太さ。太字はこの中の一番太いもの */
   readonly weights: readonly number[]
 }
 
-/** 選べるフォント。読み込みに時間がかかるので、見た目の違うものを少しだけ置く。 */
+const ja = (id: string, label: string, family: string, weights: readonly number[]): BadgeFont => ({
+  id,
+  label,
+  script: "ja",
+  family,
+  weights,
+})
+const en = (id: string, family: string, weights: readonly number[]): BadgeFont => ({
+  id,
+  label: family,
+  script: "en",
+  family,
+  weights,
+})
+
+/**
+ * 選べるフォント。読み込みに時間がかかるので、見た目の違うものを少しだけ置く。
+ * どれも Google Fonts から読むので、OS に入っているフォントによらず同じ見た目になる。
+ */
 export const BADGE_FONTS: readonly BadgeFont[] = [
-  { id: "noto-sans-jp", label: "ゴシック", family: "Noto Sans JP", weights: [400, 700] },
-  { id: "m-plus-rounded", label: "丸ゴシック", family: "M PLUS Rounded 1c", weights: [400, 700] },
-  { id: "zen-maru", label: "やわらか丸", family: "Zen Maru Gothic", weights: [400, 700] },
-  { id: "noto-serif-jp", label: "明朝", family: "Noto Serif JP", weights: [400, 700] },
-  { id: "dela-gothic", label: "極太", family: "Dela Gothic One", weights: [400] },
-  { id: "reggae-one", label: "ポップ", family: "Reggae One", weights: [400] },
-  { id: "yusei-magic", label: "手書き", family: "Yusei Magic", weights: [400] },
-  { id: "dot-gothic", label: "ドット", family: "DotGothic16", weights: [400] },
+  ja("noto-sans-jp", "ゴシック", "Noto Sans JP", [400, 700]),
+  ja("m-plus-rounded", "丸ゴシック", "M PLUS Rounded 1c", [400, 700]),
+  ja("zen-maru", "やわらか丸", "Zen Maru Gothic", [400, 700]),
+  ja("noto-serif-jp", "明朝", "Noto Serif JP", [400, 700]),
+  ja("dela-gothic", "極太", "Dela Gothic One", [400]),
+  ja("reggae-one", "ポップ", "Reggae One", [400]),
+  ja("yusei-magic", "手書き", "Yusei Magic", [400]),
+  ja("dot-gothic", "ドット", "DotGothic16", [400]),
+  en("inter", "Inter", [400, 800]),
+  en("montserrat", "Montserrat", [400, 800]),
+  en("playfair", "Playfair Display", [400, 800]),
+  en("bebas-neue", "Bebas Neue", [400]),
+  en("pacifico", "Pacifico", [400]),
+  en("press-start", "Press Start 2P", [400]),
 ]
+
+/**
+ * フォントに無い字 (英語のフォントで書いた日本語など) を描くフォント。
+ * OS のフォントに任せると、Windows と macOS で違う字になる。
+ */
+export const FALLBACK_FONT = BADGE_FONTS[0]
 
 /** 知らない `id` は最初のフォントにする。 */
 export const badgeFontOf = (id: string): BadgeFont =>
@@ -157,6 +192,22 @@ export const badgeFontOf = (id: string): BadgeFont =>
 /** 描く太さ。太い字の無いフォントは太字にしない (太字を選んでも同じ見た目になる)。 */
 export const weightOf = (font: BadgeFont, bold: boolean): number =>
   bold ? Math.max(...font.weights) : Math.min(...font.weights)
+
+/** canvas の `font` に書くフォント名の並び。 */
+export const fontStackOf = (font: BadgeFont): string =>
+  font === FALLBACK_FONT
+    ? `"${font.family}", sans-serif`
+    : `"${font.family}", "${FALLBACK_FONT.family}", sans-serif`
+
+/** 保存するファイルの名前。Windows でファイル名に使えない字は `_` にする。 */
+export const fileNameOf = (text: string): string => {
+  const name = text
+    .replace(/[\\/:*?"<>|]/g, "_")
+    // Windows は名前の終わりの点と空白を落とす
+    .replace(/[. ]+$/, "")
+    .trim()
+  return `${name || "icon"}.png`
+}
 
 /** そのフォントのすべての太さを読み込む Google Fonts の CSS の URL。 */
 export const googleFontsUrl = (font: BadgeFont): string =>
@@ -178,6 +229,8 @@ const preset = (label: string, badge: Partial<Badge>): BadgePreset => ({
     shape: "plain",
     background: "#ffffff",
     foreground: "#111111",
+    // アイコンの色を書いていないひな形は、文字と同じ色にする
+    iconColor: badge.foreground ?? "#111111",
     ...badge,
   },
 })

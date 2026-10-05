@@ -6,6 +6,8 @@ import {
   type BadgeFont,
   badgeFontOf,
   type BadgeLayout,
+  FALLBACK_FONT,
+  fontStackOf,
   googleFontsUrl,
   type IconBox,
   layoutBadge,
@@ -23,7 +25,7 @@ const ITALIC_SLANT = 0.2
 
 const cssFontOf = (badge: Badge): string => {
   const font = badgeFontOf(badge.font)
-  return `${weightOf(font, badge.bold)} ${BADGE_FONT_SIZE}px "${font.family}", sans-serif`
+  return `${weightOf(font, badge.bold)} ${BADGE_FONT_SIZE}px ${fontStackOf(font)}`
 }
 
 /** フォントごとに一度だけ Google Fonts の CSS を読む。読み込んだフォントはブラウザがキャッシュする。 */
@@ -51,7 +53,8 @@ const loadStylesheet = (font: BadgeFont): Promise<void> => {
  * 書いてある字の入ったものだけを読む。読み込む前に描くと、別のフォントで測った幅になる。
  */
 export const loadBadgeFont = async (badge: Badge): Promise<void> => {
-  await loadStylesheet(badgeFontOf(badge.font))
+  await Promise.all([loadStylesheet(badgeFontOf(badge.font)), loadStylesheet(FALLBACK_FONT)])
+  // 並びのどのフォントも、書いてある字の分を読む (英語のフォントに無い字は代わりのフォントで描く)
   await document.fonts.load(cssFontOf(badge), badge.text || "あ")
 }
 

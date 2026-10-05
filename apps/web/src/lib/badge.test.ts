@@ -6,6 +6,9 @@ import {
   BADGE_FONTS,
   BADGE_HEIGHT,
   badgeFontOf,
+  FALLBACK_FONT,
+  fileNameOf,
+  fontStackOf,
   googleFontsUrl,
   layoutBadge,
   scaledSize,
@@ -21,6 +24,7 @@ const badge = (overrides: Partial<Badge> = {}): Badge => ({
   shape: "rounded",
   background: "#ffffff",
   foreground: "#111111",
+  iconColor: "#111111",
   ...overrides,
 })
 
@@ -104,8 +108,20 @@ describe("scaledSize", () => {
 })
 
 describe("フォント", () => {
-  const twoWeights = { id: "a", label: "a", family: "Zen Maru Gothic", weights: [400, 700] }
-  const oneWeight = { id: "b", label: "b", family: "Dela Gothic One", weights: [400] }
+  const twoWeights = {
+    id: "a",
+    label: "a",
+    script: "ja",
+    family: "Zen Maru Gothic",
+    weights: [400, 700],
+  } as const
+  const oneWeight = {
+    id: "b",
+    label: "b",
+    script: "ja",
+    family: "Dela Gothic One",
+    weights: [400],
+  } as const
 
   it("太字は一番太い太さ、太字でなければ一番細い太さで描く", () => {
     expect(weightOf(twoWeights, true)).toBe(700)
@@ -122,7 +138,33 @@ describe("フォント", () => {
     )
   })
 
+  it("無い字は、日本語の入ったフォントで描く", () => {
+    expect(fontStackOf(oneWeight)).toBe(`"Dela Gothic One", "${FALLBACK_FONT.family}", sans-serif`)
+  })
+
+  it("代わりのフォント自身は、同じ名前を 2 度並べない", () => {
+    expect(fontStackOf(FALLBACK_FONT)).toBe(`"${FALLBACK_FONT.family}", sans-serif`)
+  })
+
   it("知らない id は最初のフォントにする", () => {
     expect(badgeFontOf("unknown")).toBe(BADGE_FONTS[0])
+  })
+})
+
+describe("fileNameOf", () => {
+  it("文字をそのまま名前にする", () => {
+    expect(fileNameOf("はい、おしまい")).toBe("はい、おしまい.png")
+  })
+
+  it("Windows でファイル名に使えない字は _ にする", () => {
+    expect(fileNameOf('a/b\\c:d*e?f"g<h>i|j')).toBe("a_b_c_d_e_f_g_h_i_j.png")
+  })
+
+  it("終わりの点と空白は落とす", () => {
+    expect(fileNameOf("TODO. ")).toBe("TODO.png")
+  })
+
+  it("文字が無ければ icon にする", () => {
+    expect(fileNameOf("  ")).toBe("icon.png")
   })
 })

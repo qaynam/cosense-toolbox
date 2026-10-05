@@ -57,11 +57,12 @@ Cosenseの色をポチポチ変えて、疑似Cosense画面で即プレビュー
 
 ## アイコン作成（`/icon`）
 
-文字とアイコンでバッジを作り、Cosense のアイコン記法 (`[名前.icon]`) に使う PNG を書き出す画面。自由度はわざと絞っている（ひな形・文字・フォント・太字/斜体・アイコン・形・2 色・大きさだけ）。
+文字とアイコンでバッジを作り、Cosense のアイコン記法 (`[名前.icon]`) に使う PNG を書き出す画面。自由度はわざと絞っている（ひな形・文字・フォント・太字/斜体・アイコン・形・3 色・大きさだけ）。
 
-- 大きさと位置の計算、フォント、書き出す大きさは `src/lib/badge.ts`（純粋な関数、`badge.test.ts` でテスト）。座標は高さ 128 で計算し、書き出すときに 48 / 64 / 128px に縮める
-- アイコンは Tabler / Font Awesome 5 / Twemoji。`src/lib/icon-libraries.ts` が集まりと URL、`src/lib/icon-loader.ts` が取ってきた JSON を覚える。Iconify API の **JSON** を取り、SVG はページで組み立てる（`.svg` を直接取るとブラウザの拡張に止められることがあり、別オリジンの画像は canvas から書き出せなくなるため）
-- フォントは `BADGE_FONTS` の数種類だけ。選んだときに Google Fonts の CSS を 1 度だけ読み、書いてある字の分だけ読み込む
+- 大きさと位置の計算、フォント、書き出す大きさ、ファイル名は `src/lib/badge.ts`（純粋な関数、`badge.test.ts` でテスト）。座標は高さ 128 で計算し、書き出すときに 48 / 64 / 128px に縮める。プレビューは書き出す画像そのものを原寸で出す
+- アイコンは Tabler / Font Awesome 5 / Twemoji のすべて。`src/lib/icon-libraries.ts` が集まりと URL と絞り込み、`src/lib/icon-loader.ts` が取ってきた一覧と JSON を覚える。一覧は Iconify API の `/collection` から取り、名前での絞り込みはページの中で行う。数千あるので、見えるところまでを 120 個ずつ並べる
+- アイコンの SVG は Iconify API の **JSON** から組み立てる（`.svg` を直接取るとブラウザの拡張に止められることがあり、別オリジンの画像は canvas から書き出せなくなるため）
+- フォントは `BADGE_FONTS` の日本語と英語の数種類だけで、どれも Google Fonts から読む（OS のフォントに頼らないので、Windows と macOS で同じ見た目になる）。英語のフォントに無い字はゴシック (Noto Sans JP) で描く
 - canvas に描くのは `src/lib/badge-canvas.ts`。斜体は字体に頼らず座標を傾けて描く（日本語の字体は斜体を持たないことが多い）
 - プレビューは `@cosense-toolbox/style` の `.page img.icon` で、Cosense の行の中と同じ大きさ・位置に出す
 

@@ -1,5 +1,5 @@
 /**
- * バッジに置けるアイコンの集まり。アイコンの JSON と検索は Iconify の公開 API から取る
+ * バッジに置けるアイコンの集まり。アイコンの一覧と JSON は Iconify の公開 API から取る
  * (https://iconify.design/docs/api/)。数千あるアイコンをサイトに抱えずに済み、
  * 応答はブラウザに 1 週間キャッシュされる。
  */
@@ -18,7 +18,7 @@ export interface IconLibrary {
   readonly prefixes: readonly string[]
   /** 絵文字のように色を持つアイコンか。単色のアイコンは文字の色で塗る */
   readonly multicolor: boolean
-  /** 何も検索していないときに並べるアイコン */
+  /** 一覧の先頭に並べる、よく使うアイコン */
   readonly defaults: readonly string[]
   readonly license: string
   readonly url: string
@@ -109,6 +109,41 @@ export const iconSvg = (set: IconSet, icon: string, color: string): Option.Optio
 
 export const svgDataUrl = (svg: string): string => `data:image/svg+xml,${encodeURIComponent(svg)}`
 
-/** `library` の中から `query` (英語) で探す URL。応答は `{ icons: ["prefix:name", …] }`。 */
-export const iconSearchUrl = (library: IconLibrary, query: string): string =>
-  `${API}/search?query=${encodeURIComponent(query)}&prefixes=${library.prefixes.join(",")}&limit=64`
+/** 集まりの中のアイコンの一覧を取る URL。 */
+export const collectionUrl = (prefix: string): string => `${API}/collection?prefix=${prefix}`
+
+/** {@link collectionUrl} の応答。アイコンはどれか 1 つの分類か、分類なしに入っている */
+export interface Collection {
+  readonly prefix: string
+  readonly uncategorized?: readonly string[]
+  readonly categories?: Readonly<Record<string, readonly string[]>>
+}
+
+/** 集まりのすべてのアイコンを `prefix:name` で。同じ名前は 1 度だけ。 */
+export const iconsOfCollection = (collection: Collection): readonly string[] => [
+  ...new Set(
+    [...(collection.uncategorized ?? []), ...Object.values(collection.categories ?? {}).flat()].map(
+      (name) => `${collection.prefix}:${name}`,
+    ),
+  ),
+]
+
+/** よく使うアイコンを先に、残りを後ろに並べる。`all` に無いものは並べない。 */
+export const withDefaultsFirst = (
+  defaults: readonly string[],
+  all: readonly string[],
+): readonly string[] => {
+  const known = new Set(all)
+  const first = defaults.filter((icon) => known.has(icon))
+  const rest = all.filter((icon) => !first.includes(icon))
+  return [...first, ...rest]
+}
+
+/** 空白で区切った言葉が、どれもアイコンの名前に入っているか。大文字と小文字は区別しない。 */
+export const matchesQuery = (icon: string, query: string): boolean => {
+  const name = icon.split(":")[1].toLowerCase()
+  return query
+    .toLowerCase()
+    .split(/\s+/)
+    .every((word) => name.includes(word))
+}

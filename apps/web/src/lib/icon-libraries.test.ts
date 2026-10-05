@@ -2,11 +2,12 @@ import { Option } from "effect"
 import { describe, expect, it } from "vitest"
 
 import {
-  ICON_LIBRARIES,
-  iconSearchUrl,
   iconSetUrls,
+  iconsOfCollection,
   iconSvg,
   libraryOfIcon,
+  matchesQuery,
+  withDefaultsFirst,
 } from "./icon-libraries"
 
 describe("iconSetUrls", () => {
@@ -49,13 +50,51 @@ describe("iconSvg", () => {
   })
 })
 
-describe("iconSearchUrl", () => {
-  it("集まりのすべての prefix から探す", () => {
-    const fontAwesome = ICON_LIBRARIES.find(({ id }) => id === "font-awesome-5")!
+describe("iconsOfCollection", () => {
+  it("分類なしと各分類のアイコンを、prefix を付けて 1 つに並べる", () => {
+    expect(
+      iconsOfCollection({
+        prefix: "fa-solid",
+        uncategorized: ["a"],
+        categories: { Arrows: ["b", "c"], Media: ["d"] },
+      }),
+    ).toEqual(["fa-solid:a", "fa-solid:b", "fa-solid:c", "fa-solid:d"])
+  })
 
-    expect(iconSearchUrl(fontAwesome, "check circle")).toBe(
-      "https://api.iconify.design/search?query=check%20circle&prefixes=fa-solid,fa-regular&limit=64",
-    )
+  it("2 つの分類に入っているアイコンは 1 度だけ", () => {
+    expect(iconsOfCollection({ prefix: "t", categories: { A: ["x"], B: ["x", "y"] } })).toEqual([
+      "t:x",
+      "t:y",
+    ])
+  })
+})
+
+describe("withDefaultsFirst", () => {
+  it("よく使うアイコンを先に並べ、残りから同じものを除く", () => {
+    expect(withDefaultsFirst(["t:c", "t:a"], ["t:a", "t:b", "t:c"])).toEqual(["t:c", "t:a", "t:b"])
+  })
+
+  it("一覧に無いよく使うアイコンは並べない", () => {
+    expect(withDefaultsFirst(["t:gone"], ["t:a"])).toEqual(["t:a"])
+  })
+})
+
+describe("matchesQuery", () => {
+  it("言葉が名前のどこかに入っていれば合う", () => {
+    expect(matchesQuery("tabler:circle-check-filled", "check")).toBe(true)
+  })
+
+  it("空白で区切った言葉は、すべて入っていないと合わない", () => {
+    expect(matchesQuery("tabler:circle-check-filled", "circle fill")).toBe(true)
+    expect(matchesQuery("tabler:circle-check-filled", "circle star")).toBe(false)
+  })
+
+  it("prefix では探さない", () => {
+    expect(matchesQuery("tabler:check", "tabler")).toBe(false)
+  })
+
+  it("大文字でも探せる", () => {
+    expect(matchesQuery("tabler:check", "CHECK")).toBe(true)
   })
 })
 

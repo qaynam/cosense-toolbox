@@ -744,6 +744,17 @@ body.is-app {
 .badge-side .builder-side-scroll {
   padding: 0;
 }
+/* Windows では select の選択肢やチェックボックスを OS が描くので、画面の明暗を伝える */
+.badge-side {
+  color-scheme: dark;
+}
+:root[data-theme="light"] .badge-side {
+  color-scheme: light;
+}
+.badge-side .ctrl-swatch input[type="color"]:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
 .badge-section {
   padding: 14px 16px 16px;
   border-bottom: 1px solid var(--border);
@@ -812,8 +823,9 @@ body.is-app {
 .seg-fill {
   display: flex;
 }
+/* 名前の長さに合わせて幅を分ける。同じ幅に割ると、長い名前が欠ける */
 .seg-fill .seg-btn {
-  flex: 1;
+  flex: 1 1 auto;
   padding: 6px 4px;
   font-size: 12.5px;
   white-space: nowrap;
@@ -830,7 +842,7 @@ body.is-app {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 4px;
-  max-height: 196px;
+  max-height: 260px;
   overflow-y: auto;
   font-size: 12.5px;
   color: var(--text-faint);
@@ -864,6 +876,10 @@ body.is-app {
   mask-repeat: no-repeat;
   mask-position: center;
 }
+.badge-icon-more {
+  grid-column: 1 / -1;
+  height: 1px;
+}
 .badge-credit,
 .badge-note {
   margin: 0;
@@ -894,6 +910,7 @@ body.is-app {
 }
 .badge-large canvas {
   display: block;
+  max-width: 100%;
 }
 .badge-lines {
   width: 100%;
