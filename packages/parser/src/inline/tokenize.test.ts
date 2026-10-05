@@ -141,21 +141,23 @@ describe("装飾", () => {
     })
   })
 
-  it("[[...]] は深さを数えず最初の ]] で閉じる", () => {
-    // `[[強調 [リンク]]]` は `[[強調 [リンク` + `]]` と読まれ、末尾の `]` が余る。
+  it("[[...]] は深さを数えず、最初の ]] から続く ] の並びの最後の 2 つで閉じる", () => {
+    // `[[強調 [リンク]]]` の中身は `強調 [リンク]`。Cosense Web でも太字の中のリンクになる。
     expect(nodes("[[強調 [リンク]]]")).toEqual([
       {
         type: "decoration",
-        value: "強調 [リンク",
+        value: "強調 [リンク]",
         markers: ["*"],
         bold: true,
         italic: false,
         strike: false,
         underline: false,
         sizeLevel: 0,
-        children: [{ type: "text", value: "強調 [リンク" }],
+        children: [
+          { type: "text", value: "強調 " },
+          { type: "internalLink", label: "リンク", target: "リンク" },
+        ],
       },
-      { type: "text", value: "]" },
     ])
   })
 

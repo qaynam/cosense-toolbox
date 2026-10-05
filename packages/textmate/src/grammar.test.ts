@@ -435,8 +435,28 @@ describe("[[ ]]", () => {
     expect(scopesOf(`T\n[[${IMAGE}]]`, `[[${IMAGE}]]`)).toEqual([SCOPES.image])
   })
 
-  it("最初の ]] で閉じる", () => {
+  it("後の ]] までは伸びず、最初の ]] で閉じる", () => {
     expect(scopesOf("T\n[[a]] b]]", " b]]")).toEqual([])
+  })
+
+  it("最初の ]] から続く ] は、並びの最後の 2 つまで太字に入る", () => {
+    expect(scopesOf("T\n[[a]]] b", "]]]")).toEqual([SCOPES.bold])
+  })
+
+  it("[[[x]]] は太字のリンクになる", () => {
+    expect(scopesOf("T\n[[[ページ]]]", "[ページ]")).toEqual([SCOPES.bold, SCOPES.link].sort())
+  })
+
+  it("中身が空の [[]] は太字にならない", () => {
+    expect(scopesOf("T\n[[]]", "[[]]")).toEqual([])
+  })
+
+  it("中身が空にならないよう、[[]]a]] は後の ]] で閉じる", () => {
+    expect(scopesOf("T\n[[]]a]]", "a")).toEqual([SCOPES.bold])
+  })
+
+  it("中身は [[ で始められないので、[[[[x]]]] は 2 文字目から太字になる", () => {
+    expect(scopesOf("T\n[[[[x]]]]", "[")).toEqual([])
   })
 
   it("中のリンクは、太字とリンクの両方になる", () => {

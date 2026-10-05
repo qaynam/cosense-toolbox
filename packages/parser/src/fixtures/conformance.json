@@ -828,6 +828,114 @@
       ]
     },
     {
+      "description": "[[[リンク]]] は太字のリンク。[[ ]] は続く ] の並びの最後の 2 つで閉じる",
+      "input": "[[[リンク]]]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "[リンク]",
+          "markers": ["*"],
+          "bold": true,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "internalLink",
+              "label": "リンク",
+              "target": "リンク"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "[[a]]] の中身は a] (Cosense Web と同じく、] の並びの最後の 2 つで閉じる)",
+      "input": "[[a]]]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "a]",
+          "markers": ["*"],
+          "bold": true,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "text",
+              "value": "a]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "[[ の中身は空にできないので、[[]]a a]] は先の ]] を中身に含めて後の ]] で閉じる",
+      "input": "[[]]a a]]",
+      "expected": [
+        {
+          "type": "decoration",
+          "value": "]]a a",
+          "markers": ["*"],
+          "bold": true,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "text",
+              "value": "]]a a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "[[]] は中身が空なので太字にならない",
+      "input": "[[]]",
+      "expected": [
+        {
+          "type": "text",
+          "value": "[[]]"
+        }
+      ]
+    },
+    {
+      "description": "中身は [[ で始められないので、[[[[x]]]] は 2 文字目からの [[[x]]]] が太字になる",
+      "input": "[[[[x]]]]",
+      "expected": [
+        {
+          "type": "text",
+          "value": "["
+        },
+        {
+          "type": "decoration",
+          "value": "[x]]",
+          "markers": ["*"],
+          "bold": true,
+          "italic": false,
+          "strike": false,
+          "underline": false,
+          "sizeLevel": 0,
+          "children": [
+            {
+              "type": "internalLink",
+              "label": "x",
+              "target": "x"
+            },
+            {
+              "type": "text",
+              "value": "]"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "description": "画像 URL とリンク URL が並ぶとリンク付き画像",
       "input": "[https://google.com https://x.com/a.png]",
       "expected": [
@@ -960,6 +1068,36 @@
           "type": "video",
           "src": "https://x.com/a.mp4",
           "large": true
+        }
+      ]
+    },
+    {
+      "description": "[[画像 URL]]] は大きい画像と ]。大きい画像は太字より先に読み、URL に ] を含めない",
+      "input": "[[https://x.com/a.png]]]",
+      "expected": [
+        {
+          "type": "image",
+          "src": "https://x.com/a.png",
+          "large": true
+        },
+        {
+          "type": "text",
+          "value": "]"
+        }
+      ]
+    },
+    {
+      "description": "[[動画 URL]]] は大きい動画と ]",
+      "input": "[[https://x.com/a.mp4]]]",
+      "expected": [
+        {
+          "type": "video",
+          "src": "https://x.com/a.mp4",
+          "large": true
+        },
+        {
+          "type": "text",
+          "value": "]"
         }
       ]
     },
