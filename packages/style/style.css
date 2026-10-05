@@ -378,6 +378,7 @@
 /*
  * アイコンは a.icon > img.icon の入れ子。iconImageUrl を渡していないときは img が無く、
  * ユーザー名のテキストリンクとして出る (色は .link から継承する)。
+ * 行の真ん中に揃えてから少し上げるのは Cosense Web と同じ。baseline に揃えると行の上へ浮く。
  */
 .page img.icon {
   display: inline-block;
@@ -385,7 +386,7 @@
   top: -0.3em;
   height: 1.3em;
   max-width: 100%;
-  vertical-align: baseline;
+  vertical-align: middle;
 }
 
 .page .formula {

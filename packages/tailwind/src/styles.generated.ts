@@ -309,7 +309,7 @@ export const styles: CosenseStyles = {
         "top": "-0.3em",
         "height": "1.3em",
         "max-width": "100%",
-        "vertical-align": "baseline"
+        "vertical-align": "middle"
       }
     },
     {
