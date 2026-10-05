@@ -20,7 +20,7 @@ const shapes = [
 ---
 
 <Base title="アイコン作成" app>
-  <div class="builder-app">
+  <div class="builder-app badge-app">
     <aside class="builder-side badge-side">
       <div class="builder-side-head">
         <strong>アイコン作成</strong>
@@ -69,11 +69,17 @@ const shapes = [
         <section class="badge-section">
           <h2>アイコン</h2>
           <div class="seg seg-fill" role="radiogroup" aria-label="アイコンの種類">
-            <button class="seg-btn" type="button" data-library="">
+            <button class="seg-btn" type="button" role="radio" data-library="">
               なし
             </button>
             {ICON_LIBRARIES.map((library) => (
-              <button class="seg-btn" type="button" data-library={library.id} title={library.label}>
+              <button
+                class="seg-btn"
+                type="button"
+                role="radio"
+                data-library={library.id}
+                title={library.label}
+              >
                 {library.shortLabel}
               </button>
             ))}
@@ -98,7 +104,7 @@ const shapes = [
           <h2>形と色</h2>
           <div class="seg seg-fill" role="radiogroup" aria-label="形">
             {shapes.map((shape) => (
-              <button class="seg-btn" type="button" data-shape={shape.value}>
+              <button class="seg-btn" type="button" role="radio" data-shape={shape.value}>
                 {shape.label}
               </button>
             ))}
@@ -127,7 +133,7 @@ const shapes = [
           <h2>大きさ</h2>
           <div class="seg seg-fill" role="radiogroup" aria-label="大きさ">
             {BADGE_SIZES.map((size) => (
-              <button class="seg-btn" type="button" data-size={size.id}>
+              <button class="seg-btn" type="button" role="radio" data-size={size.id}>
                 {size.label} ({size.height}px)
               </button>
             ))}
@@ -148,7 +154,7 @@ const shapes = [
       </div>
     </aside>
 
-    <div class="builder-canvas">
+    <div class="builder-canvas badge-canvas">
       <div class="builder-canvas-bar">
         <span class="canvas-hint">プレビュー（保存される画像そのままの大きさ）</span>
         <span class="canvas-hint" data-dimensions></span>
@@ -244,6 +250,10 @@ const shapes = [
         b.classList.toggle("is-active", b.dataset.size === size.id),
       )
       $("[data-size-note]").textContent = size.note
+      // 読み上げにも、どれを選んでいるかを伝える
+      $$(".seg-btn").forEach((b) =>
+        b.setAttribute("aria-checked", String(b.classList.contains("is-active"))),
+      )
       $$<HTMLButtonElement>("[data-icon]").forEach((b) =>
         b.classList.toggle("is-active", Option.contains(badge.icon, b.dataset.icon!)),
       )
@@ -288,6 +298,14 @@ const shapes = [
     let loadingMore = false
     let filterTimer: ReturnType<typeof setTimeout> | undefined
     let query = ""
+
+    /** 一覧の代わりに出す一文。一覧の幅いっぱいに出す */
+    const showGridMessage = (text: string) => {
+      const message = document.createElement("p")
+      message.className = "badge-icon-message"
+      message.textContent = text
+      grid.replaceChildren(message)
+    }
 
     const iconCell = (lib: IconLibrary, id: string, svg: string) => {
       const button = document.createElement("button")
@@ -348,7 +366,7 @@ const shapes = [
 
     const listIcons = async (lib: IconLibrary) => {
       const current = ++generation
-      grid.textContent = "読み込み中…"
+      showGridMessage("読み込み中…")
       try {
         const all = await loadLibraryIcons(lib)
         if (current !== generation) return
@@ -356,10 +374,10 @@ const shapes = [
         shown = 0
         $("[data-icon-count]").textContent = ` · ${listed.length.toLocaleString()} 個`
         grid.replaceChildren(more)
-        if (!listed.length) grid.textContent = "見つからなかった"
+        if (!listed.length) showGridMessage("見つからなかった")
         else await showMore(lib)
       } catch {
-        if (current === generation) grid.textContent = "読み込めなかった。通信を確かめてほしい"
+        if (current === generation) showGridMessage("読み込めなかった。通信を確かめてほしい")
       }
     }
 
@@ -429,8 +447,14 @@ const shapes = [
       b.addEventListener("click", () => {
         const preset = BADGE_PRESETS[Number(b.dataset.preset)].badge
         badge = preset
-        // アイコンのあるひな形は、そのアイコンの集まりを開いておく
-        selectLibrary(Option.flatMap(preset.icon, (id) => Option.fromNullable(libraryOfIcon(id))))
+        // アイコンのあるひな形は、そのアイコンの集まりを開く。開いている集まりはそのままにして、
+        // アイコンの一覧が閉じたり読み直したりして、左の欄が動かないようにする
+        const presetLibrary = Option.flatMap(preset.icon, (id) =>
+          Option.fromNullable(libraryOfIcon(id)),
+        )
+        if (Option.isSome(presetLibrary) && !Option.contains(library, presetLibrary.value)) {
+          selectLibrary(presetLibrary)
+        }
         update({})
       }),
     )
