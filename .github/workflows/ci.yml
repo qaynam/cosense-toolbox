@@ -25,7 +25,7 @@ jobs:
           # --affected が TURBO_SCM_BASE のコミットと比べるため
           fetch-depth: 0
 
-      # 公開レジストリの版は bun.lock に "" と書かれる。URL があれば別のレジストリから入れたもの
+      # 公開レジストリのバージョンは bun.lock に "" と書かれる。URL があれば別のレジストリから入れたもの
       - name: bun.lock に公開レジストリ以外の URL が無い
         run: |
           ! grep -nE '"https?://[^"]+\.tgz"' bun.lock examples/astro-blog/bun.lock

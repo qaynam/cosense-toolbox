@@ -1,6 +1,6 @@
 name: example
 
-# example はワークスペースの外で npm の版を使うので、ci.yml (turbo) には入らない。
+# example はワークスペースの外で npm のバージョンを使うので、ci.yml (turbo) には入らない。
 on:
   pull_request:
     paths:

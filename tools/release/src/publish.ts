@@ -4,15 +4,15 @@
  *
  *   bun run release:publish               公開する
  *   bun run release:publish --dry-run     公開せず、中身だけ確かめる
- *   bun run release:publish --tag next    dist-tag を版から決めず、これにする
+ *   bun run release:publish --tag next    dist-tag をバージョンから決めず、これにする
  *   bun run release:publish --expect 0.1.0-beta.3
- *                                         揃った版がこれでなければ止める (タグからの公開用)
+ *                                         揃ったバージョンがこれでなければ止める (タグからの公開用)
  *
  * 1. 公開の前に直すこと (problemsOf) があれば止める
  * 2. 公開するパッケージをビルドする
  * 3. 依存されるものから順に、`bun pm pack` で固めて `npm publish` する。
- *    `bun pm pack` が `workspace:*` を実際の版に書き換える (npm publish は書き換えない)。
- *    npm に同じ版があるパッケージは飛ばすので、途中で失敗してもやり直せる。
+ *    `bun pm pack` が `workspace:*` を実際のバージョンに書き換える (npm publish は書き換えない)。
+ *    npm に同じバージョンがあるパッケージは飛ばすので、途中で失敗してもやり直せる。
  */
 import { mkdtemp, readdir } from "node:fs/promises"
 import { tmpdir } from "node:os"
@@ -50,7 +50,7 @@ const REGISTRY = "https://registry.npmjs.org"
 const run = <A>(label: string, command: () => Promise<A>): Effect.Effect<A, Error> =>
   Effect.tryPromise({ try: command, catch: (cause) => new Error(`${label}: ${String(cause)}`) })
 
-/** npm にこの版がもうあるか。 */
+/** npm にこのバージョンがもうあるか。 */
 const isPublished = ({ manifest }: Workspace) =>
   pipe(
     run("npm view", () =>
@@ -62,8 +62,8 @@ const isPublished = ({ manifest }: Workspace) =>
   )
 
 /**
- * npm に出ている版の一覧。まだ 1 つも無いパッケージは空。
- * dist-tag を決めるのに、安定版をもう出したかを知るために使う。
+ * npm に出ているバージョンの一覧。まだ 1 つも無いパッケージは空。
+ * dist-tag を決めるのに、安定バージョンをもう出したかを知るために使う。
  */
 const publishedVersions = ({ manifest }: Workspace) =>
   pipe(
@@ -73,7 +73,7 @@ const publishedVersions = ({ manifest }: Workspace) =>
     Effect.map((result): ReadonlyArray<string> => {
       if (result.exitCode !== 0) return []
       try {
-        // 版が 1 つだけのときは配列ではなく文字列で返ってくる。
+        // バージョンが 1 つだけのときは配列ではなく文字列で返ってくる。
         const parsed: unknown = JSON.parse(result.stdout.toString())
         return Array.isArray(parsed)
           ? parsed.filter((v): v is string => typeof v === "string")
@@ -86,7 +86,7 @@ const publishedVersions = ({ manifest }: Workspace) =>
     }),
   )
 
-/** `bun pm pack` で固めた tarball のパス。`workspace:*` はここで実際の版になる。 */
+/** `bun pm pack` で固めた tarball のパス。`workspace:*` はここで実際のバージョンになる。 */
 const pack = ({ dir }: Workspace) =>
   pipe(
     run("mkdtemp", () => mkdtemp(join(tmpdir(), "cosense-release-"))),
@@ -110,8 +110,8 @@ const pack = ({ dir }: Workspace) =>
   )
 
 /**
- * 固めた tarball の package.json で、ほかのパッケージへの依存が公開する版を指しているか。
- * 指していなければ、古い版に依存したパッケージを出してしまうので止める。
+ * 固めた tarball の package.json で、ほかのパッケージへの依存が公開するバージョンを指しているか。
+ * 指していなければ、古いバージョンに依存したパッケージを出してしまうので止める。
  */
 const checkPins = (tarball: string, { name, version }: Manifest) =>
   pipe(
@@ -123,7 +123,7 @@ const checkPins = (tarball: string, { name, version }: Manifest) =>
         onNonEmpty: (stale) =>
           Effect.fail(
             new Error(
-              `${name} が古い版に依存している (${stale.join(", ")})。bun install で lockfile を更新する`,
+              `${name} が古いバージョンに依存している (${stale.join(", ")})。bun install で lockfile を更新する`,
             ),
           ),
       }),
