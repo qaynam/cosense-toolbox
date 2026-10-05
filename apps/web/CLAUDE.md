@@ -42,7 +42,7 @@ Starlight は使わず、手書き CSS の Astro サイトとして構成する�
 
 実装済み：
 
-- ドキュメントトップ、各パッケージガイド、テーマビルダー
+- ドキュメントトップ、各パッケージガイド、テーマビルダー、アイコン作成
 - **ライトモード**：ヘッダのトグルで切替（`is:inline`で描画前にテーマ確定、localStorage永続）
 
 ## テーマビルダー（`/builder`）
@@ -54,6 +54,15 @@ Cosenseの色をポチポチ変えて、疑似Cosense画面で即プレビュー
 - 操作対象トークンは `src/lib/theme-tokens.ts`（既定値は blue テーマ基準）。`src/pages/builder.astro` が UI＋クライアントロジック（color input → 生成CSSを iframe へ `postMessage`、出力表示、コピー、記事/一覧切替、リセット）
 - **プレビューの実体**は `public/builder/` の静的ファイル：`cosense.css`（=index.css）＋ `preview-article.html` / `preview-list.html`（`src/styles/knowledge/` のDOMから個人userCSS/script/linkを除去し、`<html data-project-theme=blue>`＋`<link cosense.css>`＋`<style id="user">`＋postMessageリスナーで包んだもの）
 - **これらは生成物**。元(`src/styles/knowledge/`)を変えたら `bun run scripts/build-preview.mjs` で再生成する
+
+## アイコン作成（`/icon`）
+
+文字と記号でバッジを作り、Cosense のアイコン記法 (`[名前.icon]`) に使う PNG を書き出す画面。自由度はわざと絞っている（ひな形・文字・記号・形・2 色・斜体だけ）。
+
+- 大きさと位置の計算は `src/lib/badge.ts`（純粋な関数、`badge.test.ts` でテスト）。高さは 128px に固定し、横にだけ伸ばす
+- canvas に描くのは `src/lib/badge-canvas.ts`。斜体は字体に頼らず座標を傾けて描く（日本語の字体は斜体を持たないことが多い）
+- プレビューは `@cosense-toolbox/style` の `.page img.icon` で、Cosense の行の中と同じ大きさに出す
+- 作らずに済む場合のために、公開アイコンの `/icons` プロジェクト (`[/icons/check.icon]`) を案内している
 
 ## ディレクトリ構成
 

@@ -1,0 +1,245 @@
+---
+import Base from "../layouts/Base.astro"
+import { BADGE_PRESETS } from "../lib/badge"
+
+const shapes = [
+  { value: "square", label: "四角" },
+  { value: "rounded", label: "角丸" },
+  { value: "pill", label: "丸" },
+  { value: "plain", label: "背景なし" },
+]
+const marks = [
+  { value: "none", label: "なし" },
+  { value: "check", label: "✓" },
+  { value: "exclamation", label: "!" },
+  { value: "question", label: "?" },
+]
+const first = BADGE_PRESETS[0].badge
+---
+
+<Base title="アイコン作成" app>
+  <div class="builder-app">
+    <aside class="builder-side">
+      <div class="builder-side-head">
+        <strong>アイコン作成</strong>
+        <p>
+          文字と記号でバッジを作り、PNG で保存する。Cosense のページに貼れば
+          <code>[名前.icon]</code> で使える。
+        </p>
+      </div>
+
+      <div class="builder-side-scroll">
+        <section class="ctrl-group">
+          <h2>ひな形</h2>
+          <div class="badge-presets">
+            {BADGE_PRESETS.map((preset, index) => (
+              <button class="btn" type="button" data-preset={index}>
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section class="ctrl-group">
+          <h2>中身</h2>
+          <label class="ctrl ctrl-stack">
+            <span class="ctrl-label">文字</span>
+            <input class="badge-input" type="text" data-field="text" value={first.text} />
+          </label>
+          <div class="ctrl ctrl-stack">
+            <span class="ctrl-label">記号</span>
+            <div class="seg" role="radiogroup" aria-label="記号">
+              {marks.map((mark) => (
+                <button class="seg-btn" type="button" data-mark={mark.value}>
+                  {mark.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label class="ctrl">
+            <span class="ctrl-label">斜体</span>
+            <input type="checkbox" data-field="italic" checked={first.italic} />
+          </label>
+        </section>
+
+        <section class="ctrl-group">
+          <h2>見た目</h2>
+          <div class="ctrl ctrl-stack">
+            <span class="ctrl-label">形</span>
+            <div class="seg" role="radiogroup" aria-label="形">
+              {shapes.map((shape) => (
+                <button class="seg-btn" type="button" data-shape={shape.value}>
+                  {shape.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label class="ctrl">
+            <span class="ctrl-label">背景</span>
+            <span class="ctrl-swatch">
+              <input type="color" data-field="background" value={first.background} />
+            </span>
+          </label>
+          <label class="ctrl">
+            <span class="ctrl-label">文字と記号</span>
+            <span class="ctrl-swatch">
+              <input type="color" data-field="foreground" value={first.foreground} />
+            </span>
+          </label>
+        </section>
+
+        <section class="ctrl-group">
+          <h2>ページの名前</h2>
+          <label class="ctrl ctrl-stack">
+            <span class="ctrl-label">アイコンを置くページのタイトル</span>
+            <input class="badge-input" type="text" data-name placeholder={first.text} />
+          </label>
+        </section>
+      </div>
+
+      <div class="builder-side-foot">
+        <code class="badge-notation" data-notation></code>
+        <div class="side-actions">
+          <button class="btn" type="button" data-copy="" data-notation-copy>
+            <span class="label">記法をコピー</span>
+          </button>
+          <button class="btn primary" type="button" data-download>
+            PNG を保存
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="builder-canvas">
+      <div class="builder-canvas-bar">
+        <span class="canvas-hint">プレビュー（Cosense の行の中の大きさ）</span>
+      </div>
+      <div class="badge-stage">
+        <div class="badge-large">
+          <canvas data-badge-canvas></canvas>
+        </div>
+
+        <div class="badge-lines">
+          <div class="page badge-line" data-tone="light">
+            <div class="line">
+              今日の作業 <img class="icon" data-badge-img alt="" /> これで終わり
+            </div>
+          </div>
+          <div class="page badge-line" data-tone="dark">
+            <div class="line">
+              今日の作業 <img class="icon" data-badge-img alt="" /> これで終わり
+            </div>
+          </div>
+        </div>
+
+        <ol class="badge-steps">
+          <li>「PNG を保存」で画像を保存する</li>
+          <li>Cosense で、名前と同じタイトルのページを作り、画像をドラッグ&ドロップで貼る</li>
+          <li>
+            ほかのページで <code data-notation></code> と書くと、行の中にアイコンが出る
+          </li>
+        </ol>
+        <p class="badge-more">
+          作らなくても、公開されているアイコンを <code>[/icons/check.icon]</code> のように
+          プロジェクト名を付けて書けば使える。
+          <a href="https://scrapbox.io/icons/" target="_blank" rel="noopener">
+            /icons
+          </a>
+          にたくさんある。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { type Badge, BADGE_PRESETS, type BadgeMark, type BadgeShape } from "../lib/badge"
+    import { drawBadge, loadBadgeFonts } from "../lib/badge-canvas"
+
+    const canvas = document.querySelector<HTMLCanvasElement>("[data-badge-canvas]")!
+    const images = document.querySelectorAll<HTMLImageElement>("[data-badge-img]")
+    const field = (name: string) =>
+      document.querySelector<HTMLInputElement>(`[data-field="${name}"]`)!
+    const nameInput = document.querySelector<HTMLInputElement>("[data-name]")!
+
+    let badge: Badge = BADGE_PRESETS[0].badge
+
+    /** ページの名前を空にしておくと、バッジの文字をそのまま名前にする */
+    const pageName = () => nameInput.value.trim() || badge.text.trim() || "badge"
+
+    const syncControls = () => {
+      field("text").value = badge.text
+      field("italic").checked = badge.italic
+      field("background").value = badge.background
+      field("foreground").value = badge.foreground
+      document
+        .querySelectorAll<HTMLButtonElement>("[data-shape]")
+        .forEach((b) => b.classList.toggle("is-active", b.dataset.shape === badge.shape))
+      document
+        .querySelectorAll<HTMLButtonElement>("[data-mark]")
+        .forEach((b) => b.classList.toggle("is-active", b.dataset.mark === badge.mark))
+    }
+
+    const render = async () => {
+      const drawn = badge
+      await loadBadgeFonts(drawn)
+      // 字体を待つあいだに次の変更が来ていたら、そちらの描画に任せる
+      if (drawn !== badge) return
+      drawBadge(canvas, drawn)
+      const url = canvas.toDataURL("image/png")
+      images.forEach((img) => (img.src = url))
+
+      nameInput.placeholder = badge.text.trim() || "badge"
+      const notation = `[${pageName()}.icon]`
+      document.querySelectorAll("[data-notation]").forEach((el) => (el.textContent = notation))
+      document.querySelector<HTMLElement>("[data-notation-copy]")!.dataset.copy = notation
+    }
+
+    const update = (change: Partial<Badge>) => {
+      badge = { ...badge, ...change }
+      syncControls()
+      void render()
+    }
+
+    field("text").addEventListener("input", (e) =>
+      update({ text: (e.target as HTMLInputElement).value }),
+    )
+    field("italic").addEventListener("change", (e) =>
+      update({ italic: (e.target as HTMLInputElement).checked }),
+    )
+    field("background").addEventListener("input", (e) =>
+      update({ background: (e.target as HTMLInputElement).value }),
+    )
+    field("foreground").addEventListener("input", (e) =>
+      update({ foreground: (e.target as HTMLInputElement).value }),
+    )
+    nameInput.addEventListener("input", () => void render())
+    document
+      .querySelectorAll<HTMLButtonElement>("[data-shape]")
+      .forEach((b) =>
+        b.addEventListener("click", () => update({ shape: b.dataset.shape as BadgeShape })),
+      )
+    document
+      .querySelectorAll<HTMLButtonElement>("[data-mark]")
+      .forEach((b) =>
+        b.addEventListener("click", () => update({ mark: b.dataset.mark as BadgeMark })),
+      )
+    document
+      .querySelectorAll<HTMLButtonElement>("[data-preset]")
+      .forEach((b) =>
+        b.addEventListener("click", () => update(BADGE_PRESETS[Number(b.dataset.preset)].badge)),
+      )
+
+    document.querySelector("[data-download]")!.addEventListener("click", () =>
+      canvas.toBlob((blob) => {
+        if (!blob) return
+        const link = document.createElement("a")
+        link.href = URL.createObjectURL(blob)
+        link.download = `${pageName()}.png`
+        link.click()
+        URL.revokeObjectURL(link.href)
+      }, "image/png"),
+    )
+
+    update({})
+  </script>
+</Base>

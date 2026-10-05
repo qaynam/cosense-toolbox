@@ -118,6 +118,13 @@ export const TOOL_GROUPS: ToolGroup[] = [
         icon: "◐",
         accent: "orange",
       },
+      {
+        href: "/icon/",
+        title: "アイコン作成",
+        description: "文字と記号でバッジを作り、[名前.icon] で使う画像を書き出す。",
+        icon: "✓",
+        accent: "orange",
+      },
     ],
   },
 ]
