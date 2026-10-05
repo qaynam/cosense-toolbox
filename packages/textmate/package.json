@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/textmate",
-  "version": "0.1.0-beta.7",
+  "version": "0.1.0-beta.9",
   "type": "module",
   "description": "TextMate grammars for Cosense notation (.csn / .csnx), ready for Shiki and VS Code.",
   "license": "MIT",

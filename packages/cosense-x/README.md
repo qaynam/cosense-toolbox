@@ -14,7 +14,7 @@ Cosense (旧 Scrapbox) の記法で書いたページを、JSX モジュール�
 
 > **beta**：公開 API はまだ変わりうる。
 
-### 次のリリースでの変更
+### 0.1.0-beta.9 の変更
 
 - `code:frontmatter.yml` のブロックを frontmatter として読むのをやめた。frontmatter はファイル先頭の YAML だけに書く。
   ブロックは、ほかのコードブロックと同じく本文に出る。
