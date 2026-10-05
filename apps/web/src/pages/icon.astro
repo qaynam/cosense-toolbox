@@ -1,6 +1,7 @@
 ---
 import Base from "../layouts/Base.astro"
-import { BADGE_PRESETS } from "../lib/badge"
+import { BADGE_FONTS, BADGE_PRESETS, BADGE_SIZES } from "../lib/badge"
+import { ICON_LIBRARIES } from "../lib/icon-libraries"
 
 const shapes = [
   { value: "square", label: "四角" },
@@ -8,28 +9,20 @@ const shapes = [
   { value: "pill", label: "丸" },
   { value: "plain", label: "背景なし" },
 ]
-const marks = [
-  { value: "none", label: "なし" },
-  { value: "check", label: "✓" },
-  { value: "exclamation", label: "!" },
-  { value: "question", label: "?" },
-]
-const first = BADGE_PRESETS[0].badge
 ---
 
 <Base title="アイコン作成" app>
   <div class="builder-app">
-    <aside class="builder-side">
+    <aside class="builder-side badge-side">
       <div class="builder-side-head">
         <strong>アイコン作成</strong>
         <p>
-          文字と記号でバッジを作り、PNG で保存する。Cosense のページに貼れば
-          <code>[名前.icon]</code> で使える。
+          文字とアイコンでバッジを作り、画像にする。Cosense のページに貼ればアイコンとして使える。
         </p>
       </div>
 
       <div class="builder-side-scroll">
-        <section class="ctrl-group">
+        <section class="badge-section">
           <h2>ひな形</h2>
           <div class="badge-presets">
             {BADGE_PRESETS.map((preset, index) => (
@@ -40,68 +33,92 @@ const first = BADGE_PRESETS[0].badge
           </div>
         </section>
 
-        <section class="ctrl-group">
-          <h2>中身</h2>
-          <label class="ctrl ctrl-stack">
-            <span class="ctrl-label">文字</span>
-            <input class="badge-input" type="text" data-field="text" value={first.text} />
-          </label>
-          <div class="ctrl ctrl-stack">
-            <span class="ctrl-label">記号</span>
-            <div class="seg" role="radiogroup" aria-label="記号">
-              {marks.map((mark) => (
-                <button class="seg-btn" type="button" data-mark={mark.value}>
-                  {mark.label}
-                </button>
+        <section class="badge-section">
+          <h2>文字</h2>
+          <input class="badge-input" type="text" data-field="text" aria-label="文字" />
+          <label class="badge-row">
+            <span>フォント</span>
+            <select class="badge-select" data-field="font">
+              {BADGE_FONTS.map((font) => (
+                <option value={font.id}>{font.label}</option>
               ))}
-            </div>
+            </select>
+          </label>
+          <div class="badge-toggles">
+            <label>
+              <input type="checkbox" data-field="bold" /> 太字
+            </label>
+            <label>
+              <input type="checkbox" data-field="italic" /> 斜体
+            </label>
           </div>
-          <label class="ctrl">
-            <span class="ctrl-label">斜体</span>
-            <input type="checkbox" data-field="italic" checked={first.italic} />
+        </section>
+
+        <section class="badge-section">
+          <h2>アイコン</h2>
+          <div class="seg seg-fill" role="radiogroup" aria-label="アイコンの種類">
+            <button class="seg-btn" type="button" data-library="">
+              なし
+            </button>
+            {ICON_LIBRARIES.map((library) => (
+              <button class="seg-btn" type="button" data-library={library.id} title={library.label}>
+                {library.shortLabel}
+              </button>
+            ))}
+          </div>
+          <div class="badge-icon-picker" data-icon-picker hidden>
+            <input
+              class="badge-input"
+              type="search"
+              data-icon-search
+              placeholder="英語で探す (check, star…)"
+              aria-label="アイコンを探す"
+            />
+            <div class="badge-icon-grid" data-icon-grid></div>
+            <p class="badge-credit" data-icon-credit></p>
+          </div>
+        </section>
+
+        <section class="badge-section">
+          <h2>形と色</h2>
+          <div class="seg seg-fill" role="radiogroup" aria-label="形">
+            {shapes.map((shape) => (
+              <button class="seg-btn" type="button" data-shape={shape.value}>
+                {shape.label}
+              </button>
+            ))}
+          </div>
+          <label class="badge-row">
+            <span>背景</span>
+            <span class="ctrl-swatch">
+              <input type="color" data-field="background" />
+            </span>
+          </label>
+          <label class="badge-row">
+            <span>文字とアイコン</span>
+            <span class="ctrl-swatch">
+              <input type="color" data-field="foreground" />
+            </span>
           </label>
         </section>
 
-        <section class="ctrl-group">
-          <h2>見た目</h2>
-          <div class="ctrl ctrl-stack">
-            <span class="ctrl-label">形</span>
-            <div class="seg" role="radiogroup" aria-label="形">
-              {shapes.map((shape) => (
-                <button class="seg-btn" type="button" data-shape={shape.value}>
-                  {shape.label}
-                </button>
-              ))}
-            </div>
+        <section class="badge-section">
+          <h2>大きさ</h2>
+          <div class="seg seg-fill" role="radiogroup" aria-label="大きさ">
+            {BADGE_SIZES.map((size) => (
+              <button class="seg-btn" type="button" data-size={size.id}>
+                {size.label} ({size.height}px)
+              </button>
+            ))}
           </div>
-          <label class="ctrl">
-            <span class="ctrl-label">背景</span>
-            <span class="ctrl-swatch">
-              <input type="color" data-field="background" value={first.background} />
-            </span>
-          </label>
-          <label class="ctrl">
-            <span class="ctrl-label">文字と記号</span>
-            <span class="ctrl-swatch">
-              <input type="color" data-field="foreground" value={first.foreground} />
-            </span>
-          </label>
-        </section>
-
-        <section class="ctrl-group">
-          <h2>ページの名前</h2>
-          <label class="ctrl ctrl-stack">
-            <span class="ctrl-label">アイコンを置くページのタイトル</span>
-            <input class="badge-input" type="text" data-name placeholder={first.text} />
-          </label>
+          <p class="badge-note" data-size-note></p>
         </section>
       </div>
 
       <div class="builder-side-foot">
-        <code class="badge-notation" data-notation></code>
         <div class="side-actions">
-          <button class="btn" type="button" data-copy="" data-notation-copy>
-            <span class="label">記法をコピー</span>
+          <button class="btn" type="button" data-copy-image>
+            画像をコピー
           </button>
           <button class="btn primary" type="button" data-download>
             PNG を保存
@@ -112,11 +129,12 @@ const first = BADGE_PRESETS[0].badge
 
     <div class="builder-canvas">
       <div class="builder-canvas-bar">
-        <span class="canvas-hint">プレビュー（Cosense の行の中の大きさ）</span>
+        <span class="canvas-hint">プレビュー</span>
+        <span class="canvas-hint" data-dimensions></span>
       </div>
       <div class="badge-stage">
         <div class="badge-large">
-          <canvas data-badge-canvas></canvas>
+          <canvas data-badge-display></canvas>
         </div>
 
         <div class="badge-lines">
@@ -133,65 +151,98 @@ const first = BADGE_PRESETS[0].badge
         </div>
 
         <ol class="badge-steps">
-          <li>「PNG を保存」で画像を保存する</li>
-          <li>Cosense で、名前と同じタイトルのページを作り、画像をドラッグ&ドロップで貼る</li>
+          <li>「PNG を保存」か「画像をコピー」で画像にする</li>
+          <li>Cosense でアイコンの名前のページを作り、画像を貼る</li>
           <li>
-            ほかのページで <code data-notation></code> と書くと、行の中にアイコンが出る
+            ほかのページで <code>[ページの名前.icon]</code> と書くと、行の中にアイコンが出る
           </li>
         </ol>
-        <p class="badge-more">
-          作らなくても、公開されているアイコンを <code>[/icons/check.icon]</code> のように
-          プロジェクト名を付けて書けば使える。
-          <a href="https://scrapbox.io/icons/" target="_blank" rel="noopener">
-            /icons
-          </a>
-          にたくさんある。
-        </p>
       </div>
     </div>
   </div>
 
   <script>
-    import { type Badge, BADGE_PRESETS, type BadgeMark, type BadgeShape } from "../lib/badge"
-    import { drawBadge, loadBadgeFonts } from "../lib/badge-canvas"
+    import { Option } from "effect"
 
-    const canvas = document.querySelector<HTMLCanvasElement>("[data-badge-canvas]")!
-    const images = document.querySelectorAll<HTMLImageElement>("[data-badge-img]")
-    const field = (name: string) =>
-      document.querySelector<HTMLInputElement>(`[data-field="${name}"]`)!
-    const nameInput = document.querySelector<HTMLInputElement>("[data-name]")!
+    import {
+      type Badge,
+      BADGE_HEIGHT,
+      BADGE_PRESETS,
+      BADGE_SIZES,
+      badgeFontOf,
+      type BadgeShape,
+    } from "../lib/badge"
+    import { drawBadge, loadBadgeFont, loadIcon } from "../lib/badge-canvas"
+    import {
+      ICON_LIBRARIES,
+      type IconLibrary,
+      iconSearchUrl,
+      libraryOfIcon,
+      svgDataUrl,
+    } from "../lib/icon-libraries"
+    import { loadedIconSvg, loadIconSets } from "../lib/icon-loader"
+
+    const $ = <E extends HTMLElement = HTMLElement>(selector: string) =>
+      document.querySelector<E>(selector)!
+    const $$ = <E extends HTMLElement = HTMLElement>(selector: string) =>
+      Array.from(document.querySelectorAll<E>(selector))
+    const field = <E extends HTMLElement = HTMLInputElement>(name: string) =>
+      $<E>(`[data-field="${name}"]`)
+
+    // 見せる方はいつも大きく描き、書き出す方は選んだ大きさで描く
+    const display = $<HTMLCanvasElement>("[data-badge-display]")
+    const output = document.createElement("canvas")
 
     let badge: Badge = BADGE_PRESETS[0].badge
+    let library: Option.Option<IconLibrary> = Option.none()
+    let size = BADGE_SIZES[1]
 
-    /** ページの名前を空にしておくと、バッジの文字をそのまま名前にする */
-    const pageName = () => nameInput.value.trim() || badge.text.trim() || "badge"
+    const fileName = () => `${badge.text.trim() || "icon"}.png`
 
     const syncControls = () => {
+      const font = badgeFontOf(badge.font)
       field("text").value = badge.text
+      field<HTMLSelectElement>("font").value = font.id
+      field("bold").checked = badge.bold
+      // 太さが 1 つしかないフォントは太字にならないので、選べないことを見せる
+      field("bold").disabled = font.weights.length < 2
       field("italic").checked = badge.italic
       field("background").value = badge.background
       field("foreground").value = badge.foreground
-      document
-        .querySelectorAll<HTMLButtonElement>("[data-shape]")
-        .forEach((b) => b.classList.toggle("is-active", b.dataset.shape === badge.shape))
-      document
-        .querySelectorAll<HTMLButtonElement>("[data-mark]")
-        .forEach((b) => b.classList.toggle("is-active", b.dataset.mark === badge.mark))
+      const libraryId = Option.match(library, { onNone: () => "", onSome: ({ id }) => id })
+      $$<HTMLButtonElement>("[data-library]").forEach((b) =>
+        b.classList.toggle("is-active", b.dataset.library === libraryId),
+      )
+      $$<HTMLButtonElement>("[data-shape]").forEach((b) =>
+        b.classList.toggle("is-active", b.dataset.shape === badge.shape),
+      )
+      $$<HTMLButtonElement>("[data-size]").forEach((b) =>
+        b.classList.toggle("is-active", b.dataset.size === size.id),
+      )
+      $("[data-size-note]").textContent = size.note
+      $$<HTMLButtonElement>("[data-icon]").forEach((b) =>
+        b.classList.toggle("is-active", Option.contains(badge.icon, b.dataset.icon!)),
+      )
     }
 
     const render = async () => {
-      const drawn = badge
-      await loadBadgeFonts(drawn)
-      // 字体を待つあいだに次の変更が来ていたら、そちらの描画に任せる
-      if (drawn !== badge) return
-      drawBadge(canvas, drawn)
-      const url = canvas.toDataURL("image/png")
-      images.forEach((img) => (img.src = url))
-
-      nameInput.placeholder = badge.text.trim() || "badge"
-      const notation = `[${pageName()}.icon]`
-      document.querySelectorAll("[data-notation]").forEach((el) => (el.textContent = notation))
-      document.querySelector<HTMLElement>("[data-notation-copy]")!.dataset.copy = notation
+      const drawn = { badge, size }
+      const [icon] = await Promise.all([
+        Option.match(badge.icon, {
+          onNone: async () => Option.none<HTMLImageElement>(),
+          // 読めなければアイコン無しで描く
+          onSome: (id) =>
+            loadIcon(id, badge.foreground).then(Option.some, () => Option.none<HTMLImageElement>()),
+        }),
+        loadBadgeFont(badge).catch(() => {}),
+      ])
+      // 読み込みを待つあいだに次の変更が来ていたら、そちらの描画に任せる
+      if (drawn.badge !== badge || drawn.size !== size) return
+      drawBadge(display, badge, BADGE_HEIGHT, icon)
+      drawBadge(output, badge, size.height, icon)
+      const url = output.toDataURL("image/png")
+      $$<HTMLImageElement>("[data-badge-img]").forEach((img) => (img.src = url))
+      $("[data-dimensions]").textContent = `保存される画像: ${output.width} × ${output.height} px`
     }
 
     const update = (change: Partial<Badge>) => {
@@ -200,8 +251,96 @@ const first = BADGE_PRESETS[0].badge
       void render()
     }
 
+    // ---- アイコンを選ぶ ----
+
+    const grid = $("[data-icon-grid]")
+    let searchTimer: ReturnType<typeof setTimeout> | undefined
+    let searchQuery = ""
+
+    const iconCell = (lib: IconLibrary, id: string, svg: string) => {
+      const button = document.createElement("button")
+      button.type = "button"
+      button.className = "badge-icon-cell"
+      button.dataset.icon = id
+      button.title = id.split(":")[1]
+      if (lib.multicolor) {
+        const img = document.createElement("img")
+        img.src = svgDataUrl(svg)
+        img.alt = ""
+        button.append(img)
+      } else {
+        // 単色のアイコンは形だけを使い、画面の文字の色で見せる
+        const glyph = document.createElement("span")
+        glyph.className = "badge-icon-glyph"
+        glyph.style.maskImage = `url("${svgDataUrl(svg)}")`
+        button.append(glyph)
+      }
+      button.addEventListener("click", () => update({ icon: Option.some(id) }))
+      return button
+    }
+
+    const searchIcons = async (lib: IconLibrary, query: string) => {
+      try {
+        const icons = query
+          ? ((await (await fetch(iconSearchUrl(lib, query))).json()) as { icons: string[] }).icons
+          : lib.defaults
+        await loadIconSets(icons)
+        // 届くまでに、探す言葉か集まりが変わっていたら捨てる
+        if (query !== searchQuery || !Option.contains(library, lib)) return
+        const cells = icons.flatMap((id) =>
+          Option.match(loadedIconSvg(id, "#000000"), {
+            onNone: () => [],
+            onSome: (svg) => [iconCell(lib, id, svg)],
+          }),
+        )
+        grid.replaceChildren(...cells)
+        if (!cells.length) grid.textContent = "見つからなかった"
+        syncControls()
+      } catch {
+        grid.textContent = "探せなかった。通信を確かめてほしい"
+      }
+    }
+
+    const selectLibrary = (lib: Option.Option<IconLibrary>) => {
+      library = lib
+      $("[data-icon-picker]").hidden = Option.isNone(lib)
+      if (Option.isNone(lib)) return update({ icon: Option.none() })
+      const credit = document.createElement("a")
+      credit.href = lib.value.url
+      credit.target = "_blank"
+      credit.rel = "noopener"
+      credit.textContent = lib.value.label
+      $("[data-icon-credit]").replaceChildren(credit, ` · ${lib.value.license}`)
+      void searchIcons(lib.value, searchQuery)
+      syncControls()
+    }
+
+    $<HTMLInputElement>("[data-icon-search]").addEventListener("input", (e) => {
+      searchQuery = (e.target as HTMLInputElement).value.trim()
+      clearTimeout(searchTimer)
+      searchTimer = setTimeout(() => {
+        if (Option.isSome(library)) void searchIcons(library.value, searchQuery)
+      }, 250)
+    })
+
+    $$<HTMLButtonElement>("[data-library]").forEach((b) =>
+      b.addEventListener("click", () =>
+        selectLibrary(
+          Option.fromNullable(ICON_LIBRARIES.find(({ id }) => id === b.dataset.library)),
+        ),
+      ),
+    )
+
+    // ---- 文字・形・色・大きさ ----
+
     field("text").addEventListener("input", (e) =>
       update({ text: (e.target as HTMLInputElement).value }),
+    )
+    field<HTMLSelectElement>("font").addEventListener("change", (e) =>
+      update({ font: (e.target as HTMLSelectElement).value }),
+    )
+    field("bold").addEventListener("change", (e) =>
+      update({ bold: (e.target as HTMLInputElement).checked }),
     )
     field("italic").addEventListener("change", (e) =>
       update({ italic: (e.target as HTMLInputElement).checked }),
@@ -212,34 +351,54 @@ const first = BADGE_PRESETS[0].badge
     field("foreground").addEventListener("input", (e) =>
       update({ foreground: (e.target as HTMLInputElement).value }),
     )
-    nameInput.addEventListener("input", () => void render())
-    document
-      .querySelectorAll<HTMLButtonElement>("[data-shape]")
-      .forEach((b) =>
-        b.addEventListener("click", () => update({ shape: b.dataset.shape as BadgeShape })),
-      )
-    document
-      .querySelectorAll<HTMLButtonElement>("[data-mark]")
-      .forEach((b) =>
-        b.addEventListener("click", () => update({ mark: b.dataset.mark as BadgeMark })),
-      )
-    document
-      .querySelectorAll<HTMLButtonElement>("[data-preset]")
-      .forEach((b) =>
-        b.addEventListener("click", () => update(BADGE_PRESETS[Number(b.dataset.preset)].badge)),
-      )
+    $$<HTMLButtonElement>("[data-shape]").forEach((b) =>
+      b.addEventListener("click", () => update({ shape: b.dataset.shape as BadgeShape })),
+    )
+    $$<HTMLButtonElement>("[data-size]").forEach((b) =>
+      b.addEventListener("click", () => {
+        size = BADGE_SIZES.find(({ id }) => id === b.dataset.size) ?? size
+        update({})
+      }),
+    )
+    $$<HTMLButtonElement>("[data-preset]").forEach((b) =>
+      b.addEventListener("click", () => {
+        const preset = BADGE_PRESETS[Number(b.dataset.preset)].badge
+        badge = preset
+        // アイコンのあるひな形は、そのアイコンの集まりを開いておく
+        selectLibrary(Option.flatMap(preset.icon, (id) => Option.fromNullable(libraryOfIcon(id))))
+        update({})
+      }),
+    )
 
-    document.querySelector("[data-download]")!.addEventListener("click", () =>
-      canvas.toBlob((blob) => {
+    // ---- 書き出す ----
+
+    $("[data-download]").addEventListener("click", () =>
+      output.toBlob((blob) => {
         if (!blob) return
         const link = document.createElement("a")
         link.href = URL.createObjectURL(blob)
-        link.download = `${pageName()}.png`
+        link.download = fileName()
         link.click()
         URL.revokeObjectURL(link.href)
       }, "image/png"),
     )
 
+    const copyButton = $<HTMLButtonElement>("[data-copy-image]")
+    copyButton.addEventListener("click", async () => {
+      // Safari はクリックの中で ClipboardItem を作らないと書き込ませないので、画像は Promise で渡す
+      const png = new Promise<Blob>((resolve, reject) =>
+        output.toBlob((blob) => (blob ? resolve(blob) : reject()), "image/png"),
+      )
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": png })])
+        copyButton.textContent = "コピーした"
+      } catch {
+        copyButton.textContent = "コピーできなかった"
+      }
+      setTimeout(() => (copyButton.textContent = "画像をコピー"), 1600)
+    })
+
+    selectLibrary(Option.none())
     update({})
   </script>
 </Base>

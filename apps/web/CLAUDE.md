@@ -57,12 +57,13 @@ Cosenseの色をポチポチ変えて、疑似Cosense画面で即プレビュー
 
 ## アイコン作成（`/icon`）
 
-文字と記号でバッジを作り、Cosense のアイコン記法 (`[名前.icon]`) に使う PNG を書き出す画面。自由度はわざと絞っている（ひな形・文字・記号・形・2 色・斜体だけ）。
+文字とアイコンでバッジを作り、Cosense のアイコン記法 (`[名前.icon]`) に使う PNG を書き出す画面。自由度はわざと絞っている（ひな形・文字・フォント・太字/斜体・アイコン・形・2 色・大きさだけ）。
 
-- 大きさと位置の計算は `src/lib/badge.ts`（純粋な関数、`badge.test.ts` でテスト）。高さは 128px に固定し、横にだけ伸ばす
+- 大きさと位置の計算、フォント、書き出す大きさは `src/lib/badge.ts`（純粋な関数、`badge.test.ts` でテスト）。座標は高さ 128 で計算し、書き出すときに 48 / 64 / 128px に縮める
+- アイコンは Tabler / Font Awesome 5 / Twemoji。`src/lib/icon-libraries.ts` が集まりと URL、`src/lib/icon-loader.ts` が取ってきた JSON を覚える。Iconify API の **JSON** を取り、SVG はページで組み立てる（`.svg` を直接取るとブラウザの拡張に止められることがあり、別オリジンの画像は canvas から書き出せなくなるため）
+- フォントは `BADGE_FONTS` の数種類だけ。選んだときに Google Fonts の CSS を 1 度だけ読み、書いてある字の分だけ読み込む
 - canvas に描くのは `src/lib/badge-canvas.ts`。斜体は字体に頼らず座標を傾けて描く（日本語の字体は斜体を持たないことが多い）
-- プレビューは `@cosense-toolbox/style` の `.page img.icon` で、Cosense の行の中と同じ大きさに出す
-- 作らずに済む場合のために、公開アイコンの `/icons` プロジェクト (`[/icons/check.icon]`) を案内している
+- プレビューは `@cosense-toolbox/style` の `.page img.icon` で、Cosense の行の中と同じ大きさ・位置に出す
 
 ## ディレクトリ構成
 
