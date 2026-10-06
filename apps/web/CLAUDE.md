@@ -42,7 +42,7 @@ Starlight は使わず、手書き CSS の Astro サイトとして構成する�
 
 実装済み：
 
-- ドキュメントトップ、各パッケージガイド、テーマビルダー
+- ドキュメントトップ、各パッケージガイド、テーマビルダー、アイコン作成
 - **ライトモード**：ヘッダのトグルで切替（`is:inline`で描画前にテーマ確定、localStorage永続）
 
 ## テーマビルダー（`/builder`）
@@ -54,6 +54,17 @@ Cosenseの色をポチポチ変えて、疑似Cosense画面で即プレビュー
 - 操作対象トークンは `src/lib/theme-tokens.ts`（既定値は blue テーマ基準）。`src/pages/builder.astro` が UI＋クライアントロジック（color input → 生成CSSを iframe へ `postMessage`、出力表示、コピー、記事/一覧切替、リセット）
 - **プレビューの実体**は `public/builder/` の静的ファイル：`cosense.css`（=index.css）＋ `preview-article.html` / `preview-list.html`（`src/styles/knowledge/` のDOMから個人userCSS/script/linkを除去し、`<html data-project-theme=blue>`＋`<link cosense.css>`＋`<style id="user">`＋postMessageリスナーで包んだもの）
 - **これらは生成物**。元(`src/styles/knowledge/`)を変えたら `bun run scripts/build-preview.mjs` で再生成する
+
+## アイコン作成（`/icon`）
+
+文字とアイコンでバッジを作り、Cosense のアイコン記法 (`[名前.icon]`) に使う PNG を書き出す画面。自由度はわざと絞っている（ひな形・文字・フォント・太字/斜体・アイコン・形・3 色・大きさだけ）。
+
+- 大きさと位置の計算、フォント、書き出す大きさ、ファイル名は `src/lib/badge.ts`（純粋な関数、`badge.test.ts` でテスト）。座標は高さ 128 で計算し、書き出すときに 48 / 64 / 128px に縮める。プレビューは書き出す画像そのものを原寸で出す
+- アイコンは Tabler / Font Awesome 5 / Twemoji のすべて。`src/lib/icon-libraries.ts` が集まりと URL と絞り込み、`src/lib/icon-loader.ts` が取ってきた一覧と JSON を覚える。一覧は Iconify API の `/collection` から取り、名前での絞り込みはページの中で行う。数千あるので、見えるところまでを 120 個ずつ並べる
+- アイコンの SVG は Iconify API の **JSON** から組み立てる（`.svg` を直接取るとブラウザの拡張に止められることがあり、別オリジンの画像は canvas から書き出せなくなるため）
+- フォントは `BADGE_FONTS` の日本語と英語の数種類だけで、どれも Google Fonts から読む（OS のフォントに頼らないので、Windows と macOS で同じ見た目になる）。英語のフォントに無い字はゴシック (Noto Sans JP) で描く
+- canvas に描くのは `src/lib/badge-canvas.ts`。斜体は字体に頼らず座標を傾けて描く（日本語の字体は斜体を持たないことが多い）
+- プレビューは `@cosense-toolbox/style` の `.page img.icon` で、Cosense の行の中と同じ大きさ・位置に出す
 
 ## ディレクトリ構成
 
