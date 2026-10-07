@@ -168,7 +168,8 @@ src/
     table-cell-line-breaks.ts  描画の拡張。セルの中の text ノードの文字列を <br> にする
   from-markdown/        Markdown を読む (./from-markdown サブパス)
     to-cosense-text.ts  mdast を Cosense の記法のテキストにする。Cosense に移す規則はここだけに持つ
-    parse-from-markdown.ts  Markdown を mdast にし、上のテキストを parse で読む
+    parse-from-markdown.ts  Markdown を mdast にし、上のテキストを parse で読む (math オプション)
+    dollar-math.ts      `$...$` を数式とみなす決まりを pandoc にそろえる (値段を数式にしない)
   utils/                visit / links
   fixtures/             conformance.json（記法仕様）
 ```

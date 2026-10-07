@@ -18,7 +18,8 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
   effect を使わずに検証できる。どこが違うかを知りたいときは、今までどおり `decodePage` (effect の `Either` を返す) を使う。
 - `@cosense-toolbox/parser/from-markdown` を足した。`parseFromMarkdown` は Markdown (ChatGPT の回答や README など) を読んで、
   Cosense のページの AST にする。箇条書きは字下げに、見出しは大きい文字の装飾に、フェンスは `code:` に、表は `table:` になる。
-  先頭が `#` の見出しならタイトルになる。
+  先頭が `#` の見出しならタイトルになる。`$...$` は pandoc と同じ決まりで数式にし (`$5と$10` のような値段は数式にしない)、
+  `math: false` を渡すと数式として読まない。
 
 ### 0.1.0-beta.8 の変更
 

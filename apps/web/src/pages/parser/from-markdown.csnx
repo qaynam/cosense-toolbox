@@ -12,6 +12,9 @@ toc:
   - id: title
     text: タイトル
     depth: 2
+  - id: math
+    text: 数式
+    depth: 2
   - id: position
     text: 位置情報
     depth: 2
@@ -32,7 +35,7 @@ code:ts
 
 Markdown をいったん Cosense の記法のテキストに書き直し、それを `parse` で読みます。そのため、できる AST は、書き直したテキストを Cosense に貼ったときとまったく同じになります。
 
-Markdown の読み方は remark と同じです (CommonMark と GFM、`$...$` の数式)。第 2 引数には `parse` と同じオプションを渡せます。
+Markdown の読み方は remark と同じです (CommonMark と GFM、`$...$` の数式)。第 2 引数には、数式を読むかどうかの `math` (下の「数式」) と、`parse` と同じオプションを渡せます。
 
 <DocHeading level={2} id="mapping" title="記法の対応" />
 
@@ -46,7 +49,7 @@ Markdown の読み方は remark と同じです (CommonMark と GFM、`$...$` �
  フェンス → `code:言語名`。言語名の後ろにファイル名があればファイル名、どちらも無ければ `code:text`
  表 → `table:table`。セルはタブで区切ります
  引用 → `>` の行
- `$数式$` `$$数式$$` → `[$ 数式]`
+ `$数式$` `$$数式$$` → `[$ 数式]`。`$5と$10` のような値段は数式にしません
  区切り線 → 空行
 
 Cosense の装飾は入れ子にできないので、装飾の中の装飾は記号を外します (装飾の中のリンクは残します)。
@@ -58,6 +61,19 @@ Cosense の記法には逃がし (エスケープ) が無いので、Markdown �
 <DocHeading level={2} id="title" title="タイトル" />
 
 Markdown の先頭が `#` の見出しなら、それがページのタイトル (1 行目) になります。先頭が見出しでなければ、タイトルは空になります。2 つ目からの `#` の見出しは `[***** ]` になります。
+
+<DocHeading level={2} id="math" title="数式" />
+
+数式は CommonMark にも GFM にも無い拡張です。広く使われている pandoc の決まりに合わせ、次のどれかに当てはまる `$...$` は数式にせず、文字のまま残します。
+ 開く `$` のすぐ後が空白
+ 閉じる `$` のすぐ前が空白
+ 閉じる `$` のすぐ後が数字
+そのため、`$x^2$` は `[$ x^2]` になり、`$5と$10` や `$5 と $10` は文字のまま残ります。`$$...$$` は値段と紛れないので、いつも数式にします。
+
+`$` を一切数式として読まないときは、`math: false` を渡します。`$` も `$$` も文字のまま残ります。
+
+code:ts
+ parseFromMarkdown("$x^2$", { math: false }) // 本文は「$x^2$」の文字
 
 <DocHeading level={2} id="position" title="位置情報" />
 

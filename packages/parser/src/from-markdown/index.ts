@@ -5,3 +5,4 @@
  * 使わない人のバンドルには入らない。
  */
 export { parseFromMarkdown } from "./parse-from-markdown"
+export type { ParseFromMarkdownOptions } from "./parse-from-markdown"

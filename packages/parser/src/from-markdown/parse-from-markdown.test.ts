@@ -191,6 +191,44 @@ describe("ブロック", () => {
   })
 })
 
+describe("$ で囲んだ数式 (pandoc と同じ決まり)", () => {
+  it("1 つの文に数式が 2 つあっても、それぞれ数式になる", () => {
+    expect(markdownToCosenseText("$x$と$y$")).toBe("\n[$ x]と[$ y]")
+  })
+
+  it("閉じる $ のすぐ後が数字なら、値段とみなして文字のまま残す", () => {
+    expect(markdownToCosenseText("$5と$10")).toBe("\n$5と$10")
+  })
+
+  it("閉じる $ のすぐ前が空白なら、数式にしない", () => {
+    expect(markdownToCosenseText("$a $")).toBe("\n$a $")
+  })
+
+  it("開く $ のすぐ後が空白なら、数式にしない", () => {
+    expect(markdownToCosenseText("$ a$")).toBe("\n$ a$")
+  })
+
+  it("$$ で囲んだ数式は値段と紛れないので、すぐ後が数字でも数式にする", () => {
+    expect(markdownToCosenseText("式 $$x$$2 です")).toBe("\n式 [$ x]2 です")
+  })
+
+  it("数式にしなかった $ の前後の文字は、そのまま残る", () => {
+    expect(markdownToCosenseText("**a** $5と$10 [b](https://example.com)")).toBe(
+      "\n[* a] $5と$10 [b https://example.com]",
+    )
+  })
+})
+
+describe("math オプション", () => {
+  it("math: false なら、$ で囲んだ文字を数式にしない", () => {
+    expect(markdownToCosenseText("$x^2$", { math: false })).toBe("\n$x^2$")
+  })
+
+  it("math: false なら、$$ のブロックも数式にしない", () => {
+    expect(markdownToCosenseText("$$\nx\n$$", { math: false })).toBe("\n$$\nx\n$$")
+  })
+})
+
 describe("Markdown の記法を含まない文字列", () => {
   it("1 行だけの文は、そのまま本文の 1 行になる", () => {
     expect(markdownToCosenseText("ただの文")).toBe("\nただの文")
@@ -234,6 +272,10 @@ describe("parseFromMarkdown", () => {
       column: 0,
       offset: 1,
     })
+  })
+
+  it("math オプションを受け取り、そのとおりに読む", () => {
+    expect(parseFromMarkdown("$x$", { math: false })).toEqual(parse("\n$x$"))
   })
 
   it("parse と同じオプションを受け取り、そのとおりに読む", () => {
