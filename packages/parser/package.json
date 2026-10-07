@@ -72,14 +72,14 @@
         "default": "./dist/html.cjs"
       }
     },
-    "./from-markdown": {
+    "./markdown": {
       "import": {
-        "types": "./dist/from-markdown.d.mts",
-        "default": "./dist/from-markdown.mjs"
+        "types": "./dist/markdown.d.mts",
+        "default": "./dist/markdown.mjs"
       },
       "require": {
-        "types": "./dist/from-markdown.d.cts",
-        "default": "./dist/from-markdown.cjs"
+        "types": "./dist/markdown.d.cts",
+        "default": "./dist/markdown.cjs"
       }
     },
     "./package.json": "./package.json"

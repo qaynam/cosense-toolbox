@@ -8,7 +8,7 @@ export default defineConfig({
     extensions: "src/extensions/index.ts",
     compile: "src/compile/index.ts",
     html: "src/html/index.ts",
-    "from-markdown": "src/from-markdown/index.ts",
+    markdown: "src/markdown/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,

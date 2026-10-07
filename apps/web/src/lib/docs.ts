@@ -62,7 +62,7 @@ export const DOC_GROUPS: DocGroup[] = [
         keywords: "toHast toHtml handlers highlight classNames style",
       },
       {
-        href: "/parser/from-markdown/",
+        href: "/parser/markdown/",
         label: "Markdown から読む",
         description: "parseFromMarkdown で Markdown を AST にする。",
         keywords: "parseFromMarkdown markdown ChatGPT 貼り付け 変換",

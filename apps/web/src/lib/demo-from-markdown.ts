@@ -1,5 +1,5 @@
-import { parseFromMarkdown } from "@cosense-toolbox/parser/from-markdown"
 import { toHtml } from "@cosense-toolbox/parser/html"
+import { parseFromMarkdown } from "@cosense-toolbox/parser/markdown"
 import style from "@cosense-toolbox/style/style.css?raw"
 
 // ChatGPT の回答のような Markdown

@@ -21,10 +21,10 @@ toc:
 ---
 Markdown から読む
 
-`@cosense-toolbox/parser/from-markdown` の `parseFromMarkdown` は、Markdown を読んで Cosense のページの AST にします。ChatGPT の回答や README のような Markdown を、Cosense の記法として扱えます。
+`@cosense-toolbox/parser/markdown` の `parseFromMarkdown` は、Markdown を読んで Cosense のページの AST にします。ChatGPT の回答や README のような Markdown を、Cosense の記法として扱えます。
 
 code:ts
- import { parseFromMarkdown } from "@cosense-toolbox/parser/from-markdown"
+ import { parseFromMarkdown } from "@cosense-toolbox/parser/markdown"
  import { toHtml } from "@cosense-toolbox/parser/html"
  const page = parseFromMarkdown("## 予定\n\n- **会議**の資料を作る\n- [議事録](https://example.com)を読む")
  toHtml(page)
