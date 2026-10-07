@@ -9,6 +9,7 @@ export default defineConfig({
     compile: "src/compile/index.ts",
     html: "src/html/index.ts",
     markdown: "src/markdown/index.ts",
+    "from-markdown": "src/from-markdown/index.ts",
   },
   format: ["esm", "cjs"],
   dts: true,

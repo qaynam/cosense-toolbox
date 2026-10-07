@@ -23,7 +23,7 @@
 4. **自己完結**。ワークスペース内の他パッケージ（`@cosense/*`）を import しない。
    `tsconfig.json` も `extends` せず内容を直接持つ。ディレクトリを別リポにコピーしただけで
    `bun install && bun run build && bun run test` が通る状態を常に維持する。
-5. **runtime dependency は `effect` と、`./html` / `./markdown` が使う hast / mdast の標準の部品だけ**。他は増やさない。
+5. **runtime dependency は `effect` と、`./html` / `./markdown` / `./from-markdown` が使う hast / mdast / micromark の標準の部品だけ**。他は増やさない。
    - `effect`：パーサー本体を含むすべての層で使う
    - `hast-util-to-html` と `@types/hast`：`./html` の `toHast` / `toHtml` だけが使う。
      HTML 系の出力 (HTML の文字列・JSX・rehype) を hast 1 つにまとめ、hast を文字列にする処理は
@@ -31,6 +31,8 @@
    - `mdast-util-to-markdown` と `@types/mdast`、その拡張 (`mdast-util-gfm-table` / `mdast-util-gfm-strikethrough` /
      `mdast-util-math`)：`./markdown` の `toMdast` / `toMarkdown` だけが使う。hast と同じ理由で、
      Markdown のエスケープや表の桁揃えを自前で持たない。拡張は Cosense の記法を移すのに要るもの (表・打ち消し・数式) だけを入れる
+   - `mdast-util-from-markdown` と `micromark-extension-gfm` / `mdast-util-gfm`、`micromark-extension-math`、`mdast-util-to-string`：
+     `./from-markdown` の `parseFromMarkdown` だけが使う。Markdown の読み方 (CommonMark と GFM) を自前で持たず、remark と同じに読むため
    - `parse` だけを使う人のバンドルには入らないこと (§4 の tree-shaking の確認) を保つ
      （`tsdown` / `vitest` / `typescript` / `fast-check` は devDependencies なので対象外。）
 6. **CSS をこのパッケージに置かない**。既定の見た目は `@cosense-toolbox/style`（別パッケージ）
@@ -101,6 +103,7 @@ utils/     → types, ast のみ
 compile/   → types, ast のみ
 html/      → types, ast, core/ のみ
 markdown/  → types, ast, core/, compile/ のみ (html/ を import しない。共有する部品は core/ に置く)
+from-markdown/ → parse.ts, types のみ (Markdown を Cosense の記法のテキストに書き直し、parse で読む)
 extensions/ → 型の再エクスポートと、既製の Extension
 ```
 
@@ -117,16 +120,17 @@ extensions/ → 型の再エクスポートと、既製の Extension
 
 ### レイヤーの責務
 
-| レイヤー    | 責務                                                                  | やらないこと                                       |
-| ----------- | --------------------------------------------------------------------- | -------------------------------------------------- |
-| `core/`     | 文字列走査のプリミティブ、Point/Position の生成、URL の判定           | 記法の知識を持たない                               |
-| `inline/`   | 1 行の中のインライン記法 → `InlineNode[]`                             | 複数行のことを知らない                             |
-| `block/`    | 行の分類とブロック（code:/table:/title）のグルーピング                | インライン記法の中身を知らない（`inline/` に委譲） |
-| `parse.ts`  | ページ全文 → `Page`。extension の合成                                 | 記法そのものを実装しない                           |
-| `compile/`  | AST → HTML 以外の形式 (ハンドラ機構と toPlainText)                    | パースしない                                       |
-| `html/`     | AST → hast / HTML の文字列と描画の拡張。表示のための書き換えもここ    | パースしない                                       |
-| `markdown/` | AST → mdast / Markdown の文字列。行を段落・箇条書きにまとめるのもここ | パースしない                                       |
-| `utils/`    | AST の走査・抽出                                                      | パースしない                                       |
+| レイヤー         | 責務                                                                      | やらないこと                                       |
+| ---------------- | ------------------------------------------------------------------------- | -------------------------------------------------- |
+| `core/`          | 文字列走査のプリミティブ、Point/Position の生成、URL の判定               | 記法の知識を持たない                               |
+| `inline/`        | 1 行の中のインライン記法 → `InlineNode[]`                                 | 複数行のことを知らない                             |
+| `block/`         | 行の分類とブロック（code:/table:/title）のグルーピング                    | インライン記法の中身を知らない（`inline/` に委譲） |
+| `parse.ts`       | ページ全文 → `Page`。extension の合成                                     | 記法そのものを実装しない                           |
+| `compile/`       | AST → HTML 以外の形式 (ハンドラ機構と toPlainText)                        | パースしない                                       |
+| `html/`          | AST → hast / HTML の文字列と描画の拡張。表示のための書き換えもここ        | パースしない                                       |
+| `markdown/`      | AST → mdast / Markdown の文字列。行を段落・箇条書きにまとめるのもここ     | パースしない                                       |
+| `from-markdown/` | Markdown → Cosense の記法のテキスト → `parse`。ブロックを行に開くのもここ | AST を直に組み立てない (`parse` に任せる)          |
+| `utils/`         | AST の走査・抽出                                                          | パースしない                                       |
 
 ---
 
@@ -174,6 +178,9 @@ src/
     to-mdast.ts         公式の mdast コンパイラ。Markdown に移す規則はここだけに持つ
                         （pageUrl / iconImageUrl / headingDepth）
     to-markdown.ts      toMdast の出力を文字列にする近道（GFM の表・打ち消し線と $...$ の数式）
+  from-markdown/        Markdown を読む (./from-markdown サブパス)
+    to-cosense-text.ts  mdast を Cosense の記法のテキストにする。Cosense に移す規則はここだけに持つ
+    parse-from-markdown.ts  Markdown を mdast にし、上のテキストを parse で読む
   utils/                visit / links
   fixtures/             conformance.json（記法仕様）
 ```
@@ -200,7 +207,7 @@ src/
 
 ## 4. tree-shaking ルール
 
-配布物は「`parse` だけ使う人のバンドルに `schema` も `compile` も `html` も `markdown` も入らない」状態を保つ。
+配布物は「`parse` だけ使う人のバンドルに `schema` も `compile` も `html` も `markdown` も `from-markdown` も入らない」状態を保つ。
 
 - `package.json` の `"sideEffects": false` を**壊さない**。すなわち:
   - モジュールのトップレベルで**関数を実行しない**（定数と関数宣言のみ）
@@ -208,7 +215,7 @@ src/
   - polyfill や prototype 拡張を書かない
 - **class を使わない。** AST は plain object（`JSON.stringify` / `JSON.parse` で往復できること）。
   worklet / postMessage / CLI の `--json` 出力がこの制約に依存している。
-- 重い層はサブパス export に分ける（`./schema` `./utils` `./extensions` `./compile` `./html` `./markdown`）。
+- 重い層はサブパス export に分ける（`./schema` `./utils` `./extensions` `./compile` `./html` `./markdown` `./from-markdown`）。
   メインエントリ `index.ts` からは**それらを re-export しない**（したら opt-in の意味が消える）。
 - effect は必ず named import（`import { Option } from 'effect'`）。default import / `import * as` は使わない。
 - **`import { Array } from 'effect'` は使わない。** effect の `Array` モジュールはそれだけで
@@ -228,7 +235,7 @@ src/
 - ノード型による分岐は**網羅 switch**にし、`default` で `node satisfies never` を書く。
   これにより NodeMap に型を足したとき、対応漏れがコンパイルエラーになる。
 - **公開 API のシグネチャに effect を漏らさない。** `parse` / `parseLine` / `tokenizeInline` /
-  `utils` / `compile` / `html` / `markdown` の引数・戻り値に `Option` / `Either` / `Effect` / `Schema` が
+  `utils` / `compile` / `html` / `markdown` / `from-markdown` の引数・戻り値に `Option` / `Either` / `Effect` / `Schema` が
   現れてはいけない。内部で使った `Option<A>` は境界で `Option.getOrNull` 等でアンラップし、
   `A | null` にする（`asImageSrc(): string | null` がその例）。
   検証コマンド（CI でも動く。`tools/public-types`）:
@@ -302,6 +309,13 @@ grep -c "inlineMath\|listItemIndent" /tmp/bundle.js   # → 0
 echo "import { toMarkdown } from './dist/markdown.mjs'; console.log(toMarkdown)" > only-markdown.tmp.mjs
 bunx esbuild only-markdown.tmp.mjs --bundle --format=esm --minify --outfile=/tmp/bundle.js
 grep -c "code-block-start\|allowDangerousHtml" /tmp/bundle.js   # → 0
+# Markdown を読む部品 (micromark の本体) は ./from-markdown を使うバンドルにだけ入ること
+for entry in index markdown html; do
+  echo "import * as m from './dist/$entry.mjs'; console.log(m)" > only-entry.tmp.mjs
+  bunx esbuild only-entry.tmp.mjs --bundle --format=esm --outfile=/tmp/bundle.js
+  grep -c "mdast-util-from-markdown\|micromark-extension-gfm" /tmp/bundle.js   # → 0
+done
+rm only-entry.tmp.mjs
 rm only-parse.tmp.mjs only-compile.tmp.mjs only-html.tmp.mjs only-markdown.tmp.mjs
 ```
 
