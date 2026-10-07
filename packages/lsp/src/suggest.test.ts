@@ -60,6 +60,20 @@ describe("buildCandidateIndex", () => {
     expect(byKey.get("only_a")?.soleLinker).toBe("A")
     expect(byKey.get("both")?.soleLinker).toBeUndefined()
   })
+
+  it("a page linking to a title twice is still its one linker", () => {
+    const { byKey } = buildCandidateIndex([{ title: "A", links: ["Idea", "idea"] }])
+    expect(byKey.get("idea")?.soleLinker).toBe("A")
+  })
+
+  it("pages whose titles are one key are one candidate: the first given", () => {
+    const { byKey, sorted } = buildCandidateIndex([
+      { title: "Design Notes", updated: 1 },
+      { title: "design_notes", updated: 2 },
+    ])
+    expect(sorted).toHaveLength(1)
+    expect(byKey.get("design_notes")?.title).toBe("Design Notes")
+  })
 })
 
 describe("rankCandidates — matching", () => {
