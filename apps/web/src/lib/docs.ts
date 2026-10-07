@@ -34,8 +34,8 @@ export const DOC_GROUPS: DocGroup[] = [
       {
         href: "/parser/demo/",
         label: "パーサーの出力例",
-        description: "記法を HTML に変換した結果を確認できます。",
-        keywords: "parser toHtml デモ",
+        description: "記法を HTML に変換した結果と、Markdown を読んだ結果を確認できます。",
+        keywords: "parser toHtml parseFromMarkdown デモ",
       },
       {
         href: "/parser/parse/",
@@ -60,6 +60,12 @@ export const DOC_GROUPS: DocGroup[] = [
         label: "HTML への変換",
         description: "toHast と toHtml の出力・オプション。",
         keywords: "toHast toHtml handlers highlight classNames style",
+      },
+      {
+        href: "/parser/from-markdown/",
+        label: "Markdown から読む",
+        description: "parseFromMarkdown で Markdown を AST にする。",
+        keywords: "parseFromMarkdown markdown ChatGPT 貼り付け 変換",
       },
       {
         href: "/parser/compile/",
