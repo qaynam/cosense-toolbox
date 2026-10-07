@@ -14,9 +14,11 @@ import type { Index } from "./workspace"
  */
 
 /** How loudly a diagnostic is reported, as the reader sets it. */
-export const Severity = Schema.Literal("off", "hint", "information", "warning", "error")
+export const SEVERITIES = ["off", "hint", "information", "warning", "error"] as const
 
-export type Severity = typeof Severity.Type
+export type Severity = (typeof SEVERITIES)[number]
+
+const SeveritySchema = Schema.Literal(...SEVERITIES)
 
 /**
  * The severity a setting names, or `fallback` for one that is missing or unknown. For links
@@ -24,7 +26,7 @@ export type Severity = typeof Severity.Type
  * (`unresolved: "warn"`).
  */
 export const severityOf = (setting: unknown, fallback: Severity = "warning"): Severity =>
-  Option.getOrElse(Schema.decodeUnknownOption(Severity)(setting), () => fallback)
+  Option.getOrElse(Schema.decodeUnknownOption(SeveritySchema)(setting), () => fallback)
 
 /** The LSP's severity for a setting, or None for `off`. */
 export const lspSeverity = (severity: Severity): Option.Option<DiagnosticSeverity> =>

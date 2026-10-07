@@ -49,7 +49,9 @@ export const lintSite = (
   parseOptions: ParseOptions = {},
 ): Effect.Effect<LintResult> =>
   Effect.map(
-    checkSite({ roots: [srcDir], unresolvedLinks, parseOptions, frontmatter }),
+    Effect.promise(() =>
+      checkSite({ roots: [srcDir], unresolvedLinks, parseOptions, frontmatter }),
+    ),
     (reports) => {
       const [warnings, errors] = Arr.partition(reports, ({ level }) => level === "error")
       return {

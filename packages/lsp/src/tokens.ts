@@ -7,7 +7,7 @@ import type {
   Position,
 } from "@cosense-toolbox/parser"
 import { normalizeLineEndings, parse } from "@cosense-toolbox/parser"
-import { Array as Arr, Match, Option, Order, pipe, Schema } from "effect"
+import { Array as Arr, Match, Option, Order, pipe } from "effect"
 
 import { branch, gather, leaf, type Picked } from "./tree"
 
@@ -138,9 +138,9 @@ const LSP_TYPE: Record<TokenType, (typeof LEGEND)[number]> = {
 }
 
 /** Which names a client is sent token types by (see `legendFor`). */
-export const TokenNames = Schema.Literal("lsp", "cosense")
+export const TOKEN_NAMES = ["lsp", "cosense"] as const
 
-export type TokenNames = typeof TokenNames.Type
+export type TokenNames = (typeof TOKEN_NAMES)[number]
 
 /**
  * The legend to announce. `lsp` is the LSP's own types, which any client colours with no
