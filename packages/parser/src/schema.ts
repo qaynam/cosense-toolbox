@@ -249,7 +249,13 @@ export const PageSchema: Schema.Schema<Page> = Schema.Struct({
 })
 
 /**
- * 未知の値を `Page` として検証する。成功なら `Right<Page>`、失敗なら `Left<ParseError>`。
- * パースそのものは失敗しないので、このパッケージで Either を返すのはここだけ。
+ * 未知の値が `Page` の形か。effect を使わない利用者向けで、`true` なら `Page` として扱える。
+ * どこが違うかを知りたいときは {@link decodePage} を使う。
+ */
+export const isPage = (value: unknown): value is Page => Schema.is(PageSchema)(value)
+
+/**
+ * 未知の値を `Page` として検証する。成功なら `Right<Page>`、失敗なら `Left<ParseError>`
+ * (effect の `Either`)。パースそのものは失敗しないので、このパッケージで Either を返すのはここだけ。
  */
 export const decodePage = Schema.decodeUnknownEither(PageSchema)

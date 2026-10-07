@@ -80,15 +80,25 @@ code:ts
 
 <DocHeading level={2} id="schema" title="AST を検証する" />
 
-`@cosense-toolbox/parser/schema` の `decodePage` は、Worker や `postMessage` など外部から受け取った値が `Page` の形かを検証します。通常の `parse` は必ず AST を返すため、外部データを扱う場合に使います。
+`@cosense-toolbox/parser/schema` の `isPage` は、Worker や `postMessage` など外部から受け取った値が `Page` の形かを検証します。通常の `parse` は必ず AST を返すため、外部データを扱う場合に使います。
+
+code:ts
+ import { isPage } from "@cosense-toolbox/parser/schema"
+ 
+ const value: unknown = JSON.parse(input)
+ if (isPage(value)) {
+   // ここでは value を Page として扱える
+ }
+
+どこが違うかを知りたい場合は `decodePage` を使います。結果は effect の `Either` で、失敗すると違っていた場所が分かります。
 
 code:ts
  import { decodePage } from "@cosense-toolbox/parser/schema"
  import { Either } from "effect"
  
  const result = decodePage(JSON.parse(input))
- if (Either.isRight(result)) {
-   const page = result.right
+ if (Either.isLeft(result)) {
+   console.error(String(result.left))
  }
 
 不具合や記法の不足を見つけた場合は [GitHub の Issue https://github.com/qaynam/cosense-toolbox/issues] で報告できます。
