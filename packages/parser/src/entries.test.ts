@@ -38,6 +38,10 @@ describe("サブパスの入口", () => {
     )
   })
 
+  it("./markdown は Markdown 系の出力 (mdast と Markdown の文字列) を出す", async () => {
+    expect(Object.keys(await import("./markdown")).sort()).toEqual(["toMarkdown", "toMdast"])
+  })
+
   it("./compile は出力の形式を問わない土台だけを出す", async () => {
     expect(Object.keys(await import("./compile")).sort()).toEqual(["createCompiler", "toPlainText"])
   })

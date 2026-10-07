@@ -72,6 +72,16 @@
         "default": "./dist/html.cjs"
       }
     },
+    "./markdown": {
+      "import": {
+        "types": "./dist/markdown.d.mts",
+        "default": "./dist/markdown.mjs"
+      },
+      "require": {
+        "types": "./dist/markdown.d.cts",
+        "default": "./dist/markdown.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -92,8 +102,13 @@
   },
   "dependencies": {
     "@types/hast": "^3.0.4",
+    "@types/mdast": "^4.0.4",
     "effect": "^3.22.1",
-    "hast-util-to-html": "^9.0.5"
+    "hast-util-to-html": "^9.0.5",
+    "mdast-util-gfm-strikethrough": "^2.0.1",
+    "mdast-util-gfm-table": "^2.0.0",
+    "mdast-util-math": "^3.0.0",
+    "mdast-util-to-markdown": "^2.2.0"
   },
   "devDependencies": {
     "fast-check": "^3.23.1",
