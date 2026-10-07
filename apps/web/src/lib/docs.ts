@@ -33,9 +33,9 @@ export const DOC_GROUPS: DocGroup[] = [
       },
       {
         href: "/parser/demo/",
-        label: "パーサーの出力例",
-        description: "記法を HTML に変換した結果を確認できます。",
-        keywords: "parser toHtml デモ",
+        label: "デモ",
+        description: "記法を HTML と Markdown に変換した結果を確認できます。",
+        keywords: "parser toHtml toMarkdown デモ",
       },
       {
         href: "/parser/parse/",

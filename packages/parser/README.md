@@ -139,7 +139,7 @@ toHtml(page) // → '<div class="page"><h1 class="title">今日のメモ</h1>…
 | ページ                                                                 | 内容                                                      |
 | :--------------------------------------------------------------------- | :-------------------------------------------------------- |
 | [概要](https://cosense-toolbox.qaynam.dev/parser/)                     | インストールと、どの API を使うかの早見表                 |
-| [例](https://cosense-toolbox.qaynam.dev/parser/demo/)                  | 記法をひととおり変換した結果とコード                      |
+| [デモ](https://cosense-toolbox.qaynam.dev/parser/demo/)                | 記法をひととおり HTML と Markdown に変換した結果とコード  |
 | [パース](https://cosense-toolbox.qaynam.dev/parser/parse/)             | `parse` / `parseLine` / `tokenizeInline` / `createParser` |
 | [AST と位置情報](https://cosense-toolbox.qaynam.dev/parser/ast/)       | ノードの構造と `position` の意味                          |
 | [ヘルパー](https://cosense-toolbox.qaynam.dev/parser/utils/)           | `visit` / `find` / `collect` など                         |

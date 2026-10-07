@@ -2,7 +2,7 @@ import { parse } from "@cosense-toolbox/parser"
 import { toHtml } from "@cosense-toolbox/parser/html"
 import style from "@cosense-toolbox/style/style.css?raw"
 
-const source = [
+export const source = [
   "その他の書き方",
   "基本的な[ブラケティング]の他にも、色々な[記法]があります",
   "",
