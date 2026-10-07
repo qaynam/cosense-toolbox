@@ -15,6 +15,15 @@ import { parse, type ParseOptions } from "../parse"
 import type { Page } from "../types"
 import { toCosenseText } from "./to-cosense-text"
 
+/** Markdown (GFM と `$...$` の数式) を、Cosense の記法のテキストに書き直す。1 行目はタイトル。 */
+export const markdownToCosenseText = (markdown: string): string =>
+  toCosenseText(
+    fromMarkdown(markdown, {
+      extensions: [gfm(), math()],
+      mdastExtensions: [gfmFromMarkdown(), mathFromMarkdown()],
+    }),
+  )
+
 /**
  * Markdown (GFM と `$...$` の数式) を読んで、Cosense のページの AST にする。
  *
@@ -23,12 +32,4 @@ import { toCosenseText } from "./to-cosense-text"
  * `options` は `parse` と同じで、記法の拡張をそのまま渡せる。
  */
 export const parseFromMarkdown = (markdown: string, options?: ParseOptions): Page =>
-  parse(
-    toCosenseText(
-      fromMarkdown(markdown, {
-        extensions: [gfm(), math()],
-        mdastExtensions: [gfmFromMarkdown(), mathFromMarkdown()],
-      }),
-    ),
-    options,
-  )
+  parse(markdownToCosenseText(markdown), options)
