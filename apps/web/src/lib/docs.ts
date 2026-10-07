@@ -62,10 +62,16 @@ export const DOC_GROUPS: DocGroup[] = [
         keywords: "toHast toHtml handlers highlight classNames style",
       },
       {
+        href: "/parser/markdown/",
+        label: "Markdown への変換",
+        description: "toMdast と toMarkdown の出力・オプション。",
+        keywords: "toMdast toMarkdown markdown mdast remark",
+      },
+      {
         href: "/parser/compile/",
         label: "独自形式への変換",
         description: "テキスト化や独自コンパイラーの作り方。",
-        keywords: "toPlainText createCompiler markdown",
+        keywords: "toPlainText createCompiler",
       },
       {
         href: "/parser/extend/",
