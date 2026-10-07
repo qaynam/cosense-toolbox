@@ -4,11 +4,11 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 **ドキュメント → <https://cosense-toolbox.qaynam.dev/parser/>**
 
-- 依存は `effect` だけ。DOM も Node の API も使わないので、ブラウザでも Node でも Workers でも動く
+- パースに使う依存は `effect` だけ。DOM も Node の API も使わないので、ブラウザでも Node でも Workers でも動く
 - どのノードも元のテキストの何行目の何文字目から始まるかを持つので、エディタの色付けやカーソル位置の判定に使える
 - AST はメソッドを持たないただのオブジェクト。`JSON.stringify` して保存しておき、あとで読み直せる
 - 記法そのものを増やせる。プロジェクト固有の書きかたも元からある記法と同じように扱える
-- パースだけなら gzip 約 10 KB。HTML 変換や走査は別の import 元なので、使わなければバンドルに入らない
+- パースだけなら gzip 約 10 KB。HTML・Markdown への変換や走査は別の import 元なので、使わなければバンドルに入らない
 
 > **beta**：公開 API はまだ変わりうる。安定するまではバージョンを固定して使うほうが安全。
 
@@ -16,6 +16,9 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 - `isPage` を足した (`@cosense-toolbox/parser/schema`)。外から来た値が `Page` の形かを `true` / `false` で返すので、
   effect を使わずに検証できる。どこが違うかを知りたいときは、今までどおり `decodePage` (effect の `Either` を返す) を使う。
+- `@cosense-toolbox/parser/markdown` を足した。`toMarkdown` はページを Markdown の文字列に、`toMdast` は mdast にする。
+  字下げした行は入れ子の箇条書き、行全体の `[** ]` 以上は見出し、`table:` は GFM の表、`[$ ]` は `$...$` になる。
+  ページへのリンク先は `toHtml` と同じく `pageUrl` で決める。
 
 ### 0.1.0-beta.8 の変更
 
@@ -118,14 +121,15 @@ toHtml(page) // → '<div class="page"><h1 class="title">今日のメモ</h1>…
 
 モジュールごとに export が分かれている。使うものだけ import すればよい。
 
-| モジュール                           | 役割                                                | API                                                                                                             |
-| :----------------------------------- | :-------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
-| `@cosense-toolbox/parser`            | テキストを AST にする                               | `parse` `parseLine` `tokenizeInline` `createParser` `asImageSrc` `asEmbedSrc` `asMapUrl` `normalizeLineEndings` |
-| `@cosense-toolbox/parser/utils`      | ヘルパー。AST から取り出す                          | `visit` `find` `collect` `collectLinks` `firstImage` `rawTextOf`                                                |
-| `@cosense-toolbox/parser/html`       | AST を HTML 系の出力 (hast と HTML の文字列) にする | `toHast` `toHtml` `codeLineNumbers` `tableCellLineBreaks`                                                       |
-| `@cosense-toolbox/parser/compile`    | AST を HTML 以外の形式にする                        | `toPlainText` `createCompiler`                                                                                  |
-| `@cosense-toolbox/parser/extensions` | 記法を足す                                          | `Extension` `InlineConstruct` `BracketRule` `tableCellNotation`                                                 |
-| `@cosense-toolbox/parser/schema`     | 外から来た値を検証する                              | `isPage` `decodePage`                                                                                           |
+| モジュール                           | 役割                                                         | API                                                                                                             |
+| :----------------------------------- | :----------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
+| `@cosense-toolbox/parser`            | テキストを AST にする                                        | `parse` `parseLine` `tokenizeInline` `createParser` `asImageSrc` `asEmbedSrc` `asMapUrl` `normalizeLineEndings` |
+| `@cosense-toolbox/parser/utils`      | ヘルパー。AST から取り出す                                   | `visit` `find` `collect` `collectLinks` `firstImage` `rawTextOf`                                                |
+| `@cosense-toolbox/parser/html`       | AST を HTML 系の出力 (hast と HTML の文字列) にする          | `toHast` `toHtml` `codeLineNumbers` `tableCellLineBreaks`                                                       |
+| `@cosense-toolbox/parser/markdown`   | AST を Markdown 系の出力 (mdast と Markdown の文字列) にする | `toMdast` `toMarkdown`                                                                                          |
+| `@cosense-toolbox/parser/compile`    | AST を HTML 以外の形式にする                                 | `toPlainText` `createCompiler`                                                                                  |
+| `@cosense-toolbox/parser/extensions` | 記法を足す                                                   | `Extension` `InlineConstruct` `BracketRule` `tableCellNotation`                                                 |
+| `@cosense-toolbox/parser/schema`     | 外から来た値を検証する                                       | `isPage` `decodePage`                                                                                           |
 
 `parse` はページ全体を読む。1 行目はタイトルで、Cosense Web と同じく記法を読まない。
 記法を読みたい文字列がページでないなら、本文の 1 行は `parseLine`、文章の断片は `tokenizeInline` で読む。
