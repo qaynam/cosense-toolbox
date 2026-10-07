@@ -121,18 +121,31 @@ const linkersOf = (
         (link) => ({ link, from: entry.title }),
       ),
     ),
-    // Grown in place, once per link. A Map and not a record: a record would put number-like
-    // titles (`7`, `2024`) first, and the order titles were first linked in breaks ties.
-    new Map<string, { readonly title: string; readonly from: ReadonlySet<string> }>(),
+    // Grown in place, once per link: a title a whole project links to can't afford a copy of
+    // its linkers per link. A Map and not a record: a record would put number-like titles
+    // (`7`, `2024`) first, and the order titles were first linked in breaks ties.
+    new Map<string, { readonly title: string; readonly from: Set<string> }>(),
     (found, { link, from }) => {
       const key = titleKey(link)
       const known = found.get(key)
-      return found.set(key, {
-        title: known?.title ?? link,
-        from: new Set([...(known?.from ?? []), from]),
-      })
+      if (known === undefined) return found.set(key, { title: link, from: new Set([from]) })
+      known.from.add(from)
+      return found
     },
   )
+
+/**
+ * The first candidate of each key, in order. Not `Arr.dedupeWith`, which compares every
+ * pair: a project of 20,000 pages would take seconds.
+ */
+const firstOfEachKey = (candidates: ReadonlyArray<Candidate>): ReadonlyArray<Candidate> => {
+  const seen = new Set<string>()
+  return Arr.filter(candidates, ({ key }) => {
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
 
 const BY_LENGTH_THEN_RECENT: Order.Order<Candidate> = Order.combine(
   Order.mapInput(Order.number, (c: Candidate) => c.sortLength),
@@ -144,12 +157,11 @@ const BY_LENGTH_THEN_RECENT: Order.Order<Candidate> = Order.combine(
  * to that a page also has is that page, with the page's own casing.
  */
 export const buildCandidateIndex = (entries: ReadonlyArray<TitleEntryLike>): CandidateIndex => {
-  const pages = Arr.dedupeWith(
+  const pages = firstOfEachKey(
     Arr.map(
       Arr.filter(entries, (entry) => entry.title !== ""),
       pageOf,
     ),
-    (a: Candidate, b: Candidate) => a.key === b.key,
   )
   const pageKeys = new Set(Arr.map(pages, (page) => page.key))
   const missing = Arr.filterMap([...linkersOf(entries)], ([key, { title, from }]) =>
