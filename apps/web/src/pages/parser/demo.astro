@@ -69,10 +69,13 @@ const markdownDemo = {
   </div>
 
   <p class="lead">
-    ただし、アイコンが画像になりません。<code>[rakusai.icon]</code> の画像は
-    <code>/api/pages/{"{project}"}/rakusai/icon</code>
-    にありますが、記法にプロジェクト名が書かれていないので、パーサーには URL
-    を組み立てられないからです。 リンク先が <code>/タイトル</code> になっているのも同じ理由です。
+    ただし、アイコンが画像になりません。アイコンの画像は Cosense の
+    <code>
+      /api/pages/{"{project}"}/{"{user}"}/icon
+    </code>{" "}
+    にありますが、<code>[user.icon]</code>
+    のように記法にプロジェクト名が書かれていないことがあるので、パーサーは既定では URL
+    を組み立てないからです。 リンク先が <code>/タイトル</code> になっているのも同じ理由です。
   </p>
 
   <h2 id="リンク先とアイコンを渡す">{demos[1].heading}</h2>
@@ -119,7 +122,7 @@ const markdownDemo = {
     <div data-demo-panel="code" class="demo-panel">
       <Code lang="ts" code={markdownDemo.code} />
     </div>
-    <div data-demo-panel="view" class="demo-panel demo-output" hidden>
+    <div data-demo-panel="view" class="demo-panel" hidden>
       <Code lang="md" code={markdown} />
     </div>
   </div>
@@ -172,10 +175,6 @@ const markdownDemo = {
     border: 1px solid var(--border);
     border-radius: 0 var(--radius) var(--radius) var(--radius);
     overflow: auto;
-  }
-
-  .demo-output {
-    max-height: 70vh;
   }
 
   .demo-panel iframe {

@@ -13,42 +13,51 @@ const source = [
   " 別のプロジェクトのページ",
   "  [/icons/すごい]",
   " アイコン",
-  "  [rakusai.icon]",
-  "  [/icons/炎上.icon]",
+  "  [/qaynam/qaynam.icon]",
+  "  [/Icons2/trainSymbol-M.icon]",
 ].join("\n")
 
 const encodePath = (path: string) => path.split("/").map(encodeURIComponent).join("/")
 
-async function resolveIconSrc(user: string): Promise<string> {
-  const path = user.startsWith("/")
-    ? encodePath(user)
-    : `/${encodeURIComponent(project)}/${encodeURIComponent(user)}`
-  const api = `https://scrapbox.io/api/pages${path}/icon`
+/** `/project/page` はそのまま、`page` は `project` のページとして、Cosense のパスにする。 */
+const pagePath = (title: string) =>
+  title.startsWith("/")
+    ? encodePath(title)
+    : `/${encodeURIComponent(project)}/${encodeURIComponent(title)}`
 
+/**
+ * アイコンの画像を取ってきて、`data:` URL にする。取れなければ null (ユーザー名のリンクになる)。
+ *
+ * API の URL を `<img>` にそのまま入れることはできない。API は `Cross-Origin-Resource-Policy: same-origin`
+ * を返すので、ほかのサイトからは読めない。転送先の URL も、期限付き (数分で切れる) のことがある。
+ */
+async function fetchIconDataUrl(user: string): Promise<string | null> {
   try {
-    const res = await fetch(api, { signal: AbortSignal.timeout(4000) })
-    return res.ok ? res.url : api
+    const res = await fetch(`https://scrapbox.io/api/pages${pagePath(user)}/icon`, {
+      signal: AbortSignal.timeout(4000),
+    })
+    if (!res.ok) return null
+    const type = res.headers.get("content-type") ?? "image/png"
+    const bytes = Buffer.from(await res.arrayBuffer()).toString("base64")
+    return `data:${type};base64,${bytes}`
   } catch {
-    return api
+    return null
   }
 }
 
 const page = parse(source)
 
-const iconSrcByUser = new Map(
+const iconByUser = new Map(
   await Promise.all(
     collect(page, "icon").map(
-      async (icon) => [icon.user, await resolveIconSrc(icon.user)] as const,
+      async (icon) => [icon.user, await fetchIconDataUrl(icon.user)] as const,
     ),
   ),
 )
 
 const body = toHtml(page, {
-  pageUrl: (title) =>
-    title.startsWith("/")
-      ? `https://scrapbox.io${encodePath(title)}`
-      : `https://scrapbox.io/${encodeURIComponent(project)}/${encodeURIComponent(title)}`,
-  iconImageUrl: (icon) => iconSrcByUser.get(icon.user) ?? null,
+  pageUrl: (title) => `https://scrapbox.io${pagePath(title)}`,
+  iconImageUrl: (icon) => iconByUser.get(icon.user) ?? null,
 })
 
 export const html = `<!doctype html>
