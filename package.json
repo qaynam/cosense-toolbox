@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "build": "turbo run build",
+    "check:public-types": "turbo run check:public-types",
     "deploy": "bun run --filter '@cosense-toolbox/web' deploy:ci",
     "dev": "turbo run dev",
     "test": "turbo run test",

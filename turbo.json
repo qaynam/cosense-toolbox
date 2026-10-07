@@ -7,6 +7,11 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".astro/**"]
     },
+    "check:public-types": {
+      "dependsOn": ["build"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/tools/public-types/src/**"],
+      "outputs": []
+    },
     "dev": {
       "cache": false,
       "persistent": true

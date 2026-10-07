@@ -1,0 +1,19 @@
+{
+  "name": "@cosense-toolbox/public-types",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Fails when a package's published types expose effect, so its users never have to use it.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format:check": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "effect": "^3.22.1",
+    "typescript": "^6.0.0",
+    "vitest": "^2.1.8"
+  }
+}

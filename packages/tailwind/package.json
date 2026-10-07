@@ -33,6 +33,7 @@
     "generate": "bun scripts/generate.ts",
     "compare": "bun scripts/compare.ts",
     "build": "tsdown",
+    "check:public-types": "bun ../../tools/public-types/src/check.ts",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

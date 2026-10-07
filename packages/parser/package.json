@@ -81,6 +81,7 @@
   ],
   "scripts": {
     "build": "tsdown",
+    "check:public-types": "bun ../../tools/public-types/src/check.ts --allow schema",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
