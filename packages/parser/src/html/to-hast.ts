@@ -12,47 +12,27 @@ import { Match, Option, pipe } from "effect"
 import type { Element, ElementContent, Properties, Root, Text } from "hast"
 
 import { childrenOf } from "../ast"
+import { codeLanguageOf } from "../core/code-language"
 import { asImageSrc } from "../core/image-url"
 import { asMapUrl } from "../core/map-url"
 import { asEmbedSrc } from "../core/media-url"
+import { defaultPageUrl, type PageRefNode, pageTitleOf } from "../core/page-ref"
+import { safeHref, safeSrc } from "../core/safe-url"
 import type {
   AnyNode,
   AnyNodeType,
   CodeBlock,
   Decoration,
-  Hashtag,
   IconNode,
-  InternalLink,
   LineBlock,
   NodeOfType,
-  ProjectLink,
   TextNode,
 } from "../types"
 
-// ---------------------------------------------------------------------------
-// URL の検査
-// ---------------------------------------------------------------------------
-
-/** `href` に入れると script が動くスキーム。`data:text/html` があるので data: も拒む。 */
-const UNSAFE_HREF_RE = /^(?:javascript|vbscript|data):/
-
-/** `src` に入れると script が動くスキーム。`data:` 画像は正当な使い道があるので許す。 */
-const UNSAFE_SRC_RE = /^(?:javascript|vbscript):/
-
-/**
- * スキームだけを見るために空白と制御文字を落とす。
- * ブラウザは途中にタブや改行が挟まった `javascript:` もスキームとして解釈するため。
- */
-const schemeOf = (url: string): string => url.replace(/[\s\p{Cc}]/gu, "").toLowerCase()
-
-const safeUrl = (url: string, unsafe: RegExp): string | null =>
-  unsafe.test(schemeOf(url)) ? null : url
-
-/** `href` に入れて安全な URL だけを返す。script が動くスキームなら null。 */
-export const safeHref = (url: string): string | null => safeUrl(url, UNSAFE_HREF_RE)
-
-/** `src` に入れて安全な URL だけを返す。script が動くスキームなら null。 */
-export const safeSrc = (url: string): string | null => safeUrl(url, UNSAFE_SRC_RE)
+// 描画の部品のうち形式を問わないものは core に置き、Markdown の出力 (`./markdown`) と共有している。
+// `./html` の公開 API としてはここから出し続ける。
+export { codeLanguageOf, defaultPageUrl, safeHref, safeSrc }
+export type { PageRefNode }
 
 /** 空文字は「指定なし」とみなす。class 名や URL を空にして属性ごと消せるようにするため。 */
 const nonEmpty = (value: string | null | undefined): Option.Option<string> =>
@@ -64,9 +44,6 @@ const nonEmpty = (value: string | null | undefined): Option.Option<string> =>
 // ---------------------------------------------------------------------------
 // オプション
 // ---------------------------------------------------------------------------
-
-/** プロジェクト内のページを指すノード。Cosense Web ではアイコンもユーザーのページへのリンクになる。 */
-export type PageRefNode = InternalLink | ProjectLink | Hashtag | IconNode
 
 /**
  * 出力する要素に付ける class 名。指定したキーだけが既定を上書きする。
@@ -290,33 +267,6 @@ export interface HastOptions extends HastRenderOptions {
    */
   readonly extensions?: readonly RenderExtension[]
 }
-
-/**
- * コードブロックのファイル名から言語名を推測する。拡張子があればそれ、無ければファイル名全体。
- * Cosense では `code:python` のように言語名だけを書くこともできるため。
- * `highlight` に渡る言語名はこれで決めている。
- */
-export const codeLanguageOf = (filename: string): string => {
-  const dot = filename.lastIndexOf(".")
-  return (dot > 0 ? filename.slice(dot + 1) : filename).toLowerCase()
-}
-
-/**
- * `pageUrl` の既定の実装。`/proj/page` のように区切りを含むタイトルは、
- * 区切りを残したまま各段を encode する。
- */
-export const defaultPageUrl = (title: string): string =>
-  title.startsWith("/")
-    ? title.split("/").map(encodeURIComponent).join("/")
-    : `/${encodeURIComponent(title)}`
-
-/** 記法に書かれたページタイトル。ノード型ごとに置き場所が違うのをここで吸収する。 */
-const pageTitleOf = (node: PageRefNode): string =>
-  Match.value(node).pipe(
-    Match.when({ type: "hashtag" }, (tag) => tag.value),
-    Match.when({ type: "icon" }, (icon) => icon.user),
-    Match.orElse((link) => link.target),
-  )
 
 // ---------------------------------------------------------------------------
 // hast の組み立て
