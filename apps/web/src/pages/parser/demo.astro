@@ -3,6 +3,7 @@ import { Code } from "astro:components"
 
 import Doc from "../../layouts/Doc.astro"
 import { html as basicHtml } from "../../lib/demo-basic"
+import { html as fromMarkdownHtml } from "../../lib/demo-from-markdown"
 import { html as iconsHtml } from "../../lib/demo-icons"
 import { markdown } from "../../lib/demo-markdown"
 
@@ -27,6 +28,12 @@ const demos = [
   },
 ]
 
+const fromMarkdownDemo = {
+  heading: "Markdown から読む",
+  code: raw["../../lib/demo-from-markdown.ts"],
+  document: fromMarkdownHtml,
+}
+
 const markdownDemo = {
   heading: "Markdown に変換する",
   code: raw["../../lib/demo-markdown.ts"],
@@ -35,7 +42,7 @@ const markdownDemo = {
 
 <Doc
   title="デモ"
-  description="Cosense の記法を parse して、toHtml と toMarkdown で変換した結果と、その実装"
+  description="Cosense の記法を parse して toHtml と toMarkdown で変換した結果と、Markdown を parseFromMarkdown で読んだ結果、その実装"
 >
   <h1>デモ</h1>
   <p class="lead">
@@ -124,6 +131,31 @@ const markdownDemo = {
     </div>
     <div data-demo-panel="view" class="demo-panel" hidden>
       <Code lang="md" code={markdown} />
+    </div>
+  </div>
+
+  <h2 id="Markdownから読む">{fromMarkdownDemo.heading}</h2>
+  <p class="lead">
+    逆向きに、Markdown を <a href="/parser/from-markdown/">parseFromMarkdown</a> で読むと Cosense の
+    AST になります。ChatGPT の回答のような Markdown
+    が、箇条書きは字下げに、見出しは大きい文字に、表は
+    <code>table:</code> になります。
+  </p>
+
+  <div class="demo">
+    <div class="demo-tabs" role="tablist">
+      <button type="button" role="tab" data-demo-tab="code" aria-selected="true">
+        実装
+      </button>
+      <button type="button" role="tab" data-demo-tab="view" aria-selected="false">
+        描画
+      </button>
+    </div>
+    <div data-demo-panel="code" class="demo-panel">
+      <Code lang="ts" code={fromMarkdownDemo.code} />
+    </div>
+    <div data-demo-panel="view" class="demo-panel" hidden>
+      <iframe title={fromMarkdownDemo.heading} srcdoc={fromMarkdownDemo.document}></iframe>
     </div>
   </div>
 </Doc>

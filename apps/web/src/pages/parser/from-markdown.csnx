@@ -1,0 +1,64 @@
+---
+layout: ../../layouts/Doc.astro
+title: Markdown から読む
+description: parseFromMarkdown で Markdown を Cosense の AST にする。
+toc:
+  - id: overview
+    text: 基本
+    depth: 2
+  - id: mapping
+    text: 記法の対応
+    depth: 2
+  - id: title
+    text: タイトル
+    depth: 2
+  - id: position
+    text: 位置情報
+    depth: 2
+---
+Markdown から読む
+
+`@cosense-toolbox/parser/from-markdown` の `parseFromMarkdown` は、Markdown を読んで Cosense のページの AST にします。ChatGPT の回答や README のような Markdown を、Cosense の記法として扱えます。
+
+code:ts
+ import { parseFromMarkdown } from "@cosense-toolbox/parser/from-markdown"
+ import { toHtml } from "@cosense-toolbox/parser/html"
+ const page = parseFromMarkdown("## 予定\n\n- **会議**の資料を作る\n- [議事録](https://example.com)を読む")
+ toHtml(page)
+
+できた AST は `parse` の結果と同じ形なので、[HTML への変換] や [AST のヘルパー] にそのまま渡せます。
+
+<DocHeading level={2} id="overview" title="基本" />
+
+Markdown をいったん Cosense の記法のテキストに書き直し、それを `parse` で読みます。そのため、できる AST は、書き直したテキストを Cosense に貼ったときとまったく同じになります。
+
+Markdown の読み方は remark と同じです (CommonMark と GFM、`$...$` の数式)。第 2 引数には `parse` と同じオプションを渡せます。
+
+<DocHeading level={2} id="mapping" title="記法の対応" />
+
+ `## 見出し` → `[**** 見出し]`。`#` が 1 つ増えるごとに `*` が 1 つ減り、`#####` 以降は `[* ]`
+ 箇条書き → 字下げ。入れ子は深い字下げ
+ 番号付きの箇条書き → 番号を残した字下げ (` 1. `)
+ タスク (`- [ ]` `- [x]`) → `☐` `☑` の印を付けた字下げ
+ `**太字**` `*斜体*` `~~打ち消し~~` → `[* ]` `[/ ]` `[- ]`。ちょうど重なった装飾は `[*/ ]` のように記号をまとめます
+ `[ラベル](URL)` → `[ラベル URL]`。http でない URL (相対パスやアンカー) は、Cosense ではリンクにならないので文字だけ
+ 画像 → `[画像の URL]`。リンク付きの画像は `[リンク先 画像の URL]`
+ フェンス → `code:言語名`。言語名の後ろにファイル名があればファイル名、どちらも無ければ `code:text`
+ 表 → `table:table`。セルはタブで区切ります
+ 引用 → `>` の行
+ `$数式$` `$$数式$$` → `[$ 数式]`
+ 区切り線 → 空行
+
+Cosense の装飾は入れ子にできないので、装飾の中の装飾は記号を外します (装飾の中のリンクは残します)。
+
+ブロックの間は Cosense の書きかたに合わせます。段落どうしの間は空行にし、見出しのすぐ後と、箇条書きの前には空行を挟みません。ただし、コードブロックと表の後の箇条書きは空行で区切ります。Cosense ではコードブロックと表が、後ろに続く深い字下げの行を自分の中身として読むからです。
+
+Cosense の記法には逃がし (エスケープ) が無いので、Markdown の文字に `[...]` や `#タグ` があれば、Cosense と同じくリンクやタグとして読みます。
+
+<DocHeading level={2} id="title" title="タイトル" />
+
+Markdown の先頭が `#` の見出しなら、それがページのタイトル (1 行目) になります。[Markdown への変換] がタイトルを `#` にするのと対になる決まりです。先頭が見出しでなければ、タイトルは空になります。2 つ目からの `#` の見出しは `[***** ]` になります。
+
+<DocHeading level={2} id="position" title="位置情報" />
+
+ノードの `position` は、Markdown ではなく、書き直した Cosense の記法のテキストの中の位置を指します。

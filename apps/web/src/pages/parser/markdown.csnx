@@ -24,7 +24,7 @@ toc:
 ---
 Markdown への変換
 
-`@cosense-toolbox/parser/markdown` の `toMarkdown` は AST を Markdown の文字列へ、`toMdast` は Markdown の構文木 (mdast) へ変換します。
+`@cosense-toolbox/parser/markdown` の `toMarkdown` は AST を Markdown の文字列へ、`toMdast` は Markdown の構文木 (mdast) へ変換します。逆向き (Markdown を AST にする) は [Markdown から読む] を使います。
 
 code:ts
  import { parse } from "@cosense-toolbox/parser"
