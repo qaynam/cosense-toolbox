@@ -38,6 +38,10 @@ describe("サブパスの入口", () => {
     )
   })
 
+  it("./from-markdown は Markdown を読む関数だけを出す", async () => {
+    expect(Object.keys(await import("./from-markdown"))).toEqual(["parseFromMarkdown"])
+  })
+
   it("./compile は出力の形式を問わない土台だけを出す", async () => {
     expect(Object.keys(await import("./compile")).sort()).toEqual(["createCompiler", "toPlainText"])
   })
