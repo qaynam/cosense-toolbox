@@ -1,0 +1,4 @@
+module CosenseParser {
+  header "cosense_parser.h"
+  export *
+}

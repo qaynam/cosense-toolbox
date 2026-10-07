@@ -19,6 +19,17 @@
         "typescript-eslint": "^8.70.1",
       },
     },
+    "apps/parser-native": {
+      "name": "@cosense-toolbox/parser-native",
+      "version": "0.0.0",
+      "dependencies": {
+        "@cosense-toolbox/parser": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.0",
+        "typescript": "^6.0.0",
+      },
+    },
     "apps/vscode-cosense": {
       "name": "vscode-cosense",
       "version": "0.1.0",
@@ -315,6 +326,8 @@
     "@cosense-toolbox/lsp": ["@cosense-toolbox/lsp@workspace:packages/lsp"],
 
     "@cosense-toolbox/parser": ["@cosense-toolbox/parser@workspace:packages/parser"],
+
+    "@cosense-toolbox/parser-native": ["@cosense-toolbox/parser-native@workspace:apps/parser-native"],
 
     "@cosense-toolbox/release": ["@cosense-toolbox/release@workspace:tools/release"],
 

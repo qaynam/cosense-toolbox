@@ -21,6 +21,7 @@ Cosense (旧 Scrapbox) のもっと楽しく便利に使うためのツールキ
 | [`packages/textmate`](./packages/textmate) · [`@cosense-toolbox/textmate`](https://www.npmjs.com/package/@cosense-toolbox/textmate)     | Shiki や VS Code で使える TextMate 文法を提供します。                          |
 | [`apps/vscode-cosense`](./apps/vscode-cosense)                                                                                          | VS Code で `.csn` / `.csnx` を編集するための拡張です。                         |
 | [`apps/zed-cosense`](./apps/zed-cosense)                                                                                                | Zed で semantic tokens による色付けを行う拡張です。                            |
+| [`apps/parser-native`](./apps/parser-native)                                                                                            | パーサーを QuickJS で動かす、iOS / Android 向けの C のライブラリです。         |
 | [`apps/web`](./apps/web)                                                                                                                | パッケージのドキュメントサイトと、Cosense テーマの作成ツールです。             |
 | [`examples/astro-blog`](./examples/astro-blog)                                                                                          | Astro 統合を使ったブログのサンプルです。                                       |
 | [`tools/release`](./tools/release)                                                                                                      | npm パッケージのバージョン更新と公開を補助します。                             |

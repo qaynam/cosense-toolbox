@@ -1,0 +1,114 @@
+name: native
+
+# apps/parser-native: パーサーの JS を QuickJS で動かす C のライブラリ。
+# C のコンパイラや NDK、Xcode が要るので、ci.yml (turbo) とは分けて動かす。
+on:
+  pull_request:
+    paths:
+      - apps/parser-native/**
+      - packages/parser/**
+      - bun.lock
+      - .github/workflows/native.yml
+  push:
+    branches: [main]
+    paths:
+      - apps/parser-native/**
+      - packages/parser/**
+      - bun.lock
+      - .github/workflows/native.yml
+
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  host:
+    name: Bun と同じ結果か (AddressSanitizer / UBSan つき)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/parser-native
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+      - run: bun install --frozen-lockfile
+      - name: パーサーをビルドして 1 つの JS にまとめる
+        run: |
+          bunx turbo run build --filter=@cosense-toolbox/parser --output-logs=errors-only
+          bun run bundle
+      # メモリの読み書きの誤りと、解放し忘れ (Linux の ASan は LeakSanitizer も動かす) で落とす。
+      # -O0 だと ASan で 1 つの関数のスタックが膨らみ、QuickJS のスタックの上限 (1MB) に届くので -O1 にする
+      - name: サニタイザーつきでビルドする
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_C_FLAGS="-O1 -fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=undefined" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+          cmake --build build --parallel
+      - name: Bun で動かしたパーサーと JSON を比べる
+        run: bun run compare
+
+  android:
+    name: Android (.so)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/parser-native
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+      - run: bun install --frozen-lockfile
+      - run: |
+          bunx turbo run build --filter=@cosense-toolbox/parser --output-logs=errors-only
+          bun run bundle
+      # NDK は ubuntu-latest に入っているもの (ANDROID_NDK_HOME) を使う
+      - name: ABI ごとにビルドする
+        run: scripts/build-android.sh
+      - name: cosense_* の関数だけを見せている
+        run: |
+          nm="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-nm"
+          exported=$("$nm" -D --defined-only dist/android/jniLibs/arm64-v8a/libcosense_parser.so | awk '{print $3}' | sort)
+          echo "$exported"
+          test "$(echo "$exported" | grep -vc '^cosense_')" = 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cosense-parser-android
+          path: apps/parser-native/dist/android
+
+  ios:
+    name: iOS (.xcframework)
+    runs-on: macos-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/parser-native
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+      - run: bun install --frozen-lockfile
+      - run: |
+          bunx turbo run build --filter=@cosense-toolbox/parser --output-logs=errors-only
+          bun run bundle
+      - name: xcframework を作る
+        run: scripts/build-ios.sh
+      # Swift から import でき、リンクできるかだけを見る (シミュレーターでは動かさない)
+      - name: Swift から読める
+        run: |
+          framework=dist/ios/CosenseParser.xcframework/ios-arm64_x86_64-simulator
+          xcrun -sdk iphonesimulator swiftc -target arm64-apple-ios13.0-simulator \
+            -I "$framework/Headers" -L "$framework" -lCosenseParser \
+            test/smoke.swift -o build/smoke
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cosense-parser-ios
+          path: apps/parser-native/dist/ios

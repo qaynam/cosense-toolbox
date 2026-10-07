@@ -1,0 +1,21 @@
+{
+  "name": "@cosense-toolbox/parser-native",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The parser, unchanged JS, run by an embedded QuickJS as a C library for iOS and Android.",
+  "scripts": {
+    "bundle": "bun scripts/bundle.ts",
+    "compare": "bun test/compare.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ignore-pattern 'generated/**' --ignore-pattern 'build/**'",
+    "format:check": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore --ignore-path .gitignore"
+  },
+  "dependencies": {
+    "@cosense-toolbox/parser": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.0",
+    "typescript": "^6.0.0"
+  }
+}

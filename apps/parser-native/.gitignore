@@ -1,0 +1,4 @@
+# bun run bundle が作る
+generated/
+# cmake の出力
+build/
