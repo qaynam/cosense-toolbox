@@ -55,4 +55,4 @@ AST の走査、リンク抽出、HTML 変換、独自形式への変換は別�
 
 <DocHeading level={2} id="next" title="次に読む" />
 ノードの形と位置情報は [AST と位置情報]、HTML 出力の設定は [HTML への変換] をご覧ください。
-動く例は <DocLink href="/parser/demo/" label="パーサーの出力例" /> にあります。公開 API は beta のため、利用するバージョンを固定してください。
+動く例は <DocLink href="/parser/demo/" label="デモ" /> にあります。公開 API は beta のため、利用するバージョンを固定してください。
