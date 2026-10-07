@@ -6,7 +6,7 @@ import { Either } from "effect"
 import { describe, expect, it } from "vitest"
 
 import { parse } from "./parse"
-import { decodePage } from "./schema"
+import { decodePage, isPage } from "./schema"
 
 const roundTrip = (source: string) => JSON.parse(JSON.stringify(parse(source)))
 
@@ -51,5 +51,22 @@ describe("decodePage", () => {
     const broken = roundTrip("タイトル\n本文")
     broken.children[1].position = undefined
     expect(Either.isLeft(decodePage(broken))).toBe(true)
+  })
+})
+
+describe("isPage", () => {
+  it("パース結果は JSON を往復しても Page とみなす", () => {
+    expect(isPage(roundTrip("タイトル\n[* [リンク]] と #tag\ncode:a.ts\n x"))).toBe(true)
+  })
+
+  it("Page でない値は Page とみなさない", () => {
+    expect(isPage({ type: "page" })).toBe(false)
+    expect(isPage(null)).toBe(false)
+  })
+
+  it("位置情報が欠けていれば Page とみなさない", () => {
+    const broken = roundTrip("タイトル\n本文")
+    broken.children[1].position = undefined
+    expect(isPage(broken)).toBe(false)
   })
 })

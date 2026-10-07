@@ -52,6 +52,7 @@
   ],
   "scripts": {
     "build": "tsdown",
+    "check:public-types": "bun ../../tools/public-types/src/check.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "eslint .",

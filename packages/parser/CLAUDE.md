@@ -219,13 +219,14 @@ src/
   `utils` / `compile` / `html` の引数・戻り値に `Option` / `Either` / `Effect` / `Schema` が
   現れてはいけない。内部で使った `Option<A>` は境界で `Option.getOrNull` 等でアンラップし、
   `A | null` にする（`asImageSrc(): string | null` がその例）。
-  検証コマンド（何もヒットしなければ OK）:
+  検証コマンド（CI でも動く。`tools/public-types`）:
 
   ```sh
-  bun run build && grep -nE "Option\.|Either\.|Effect\.|Schema\." dist/index.d.mts dist/utils.d.mts dist/compile.d.mts dist/html.d.mts dist/extensions.d.mts
+  bun run build && bun run check:public-types
   ```
 
-  例外は `./schema` だけ (effect ネイティブに使いたい人向けの opt-in サブパス)。
+  例外は `./schema` だけ (effect ネイティブに使いたい人向けの opt-in サブパス。`--allow schema` で外している)。
+  effect を使わない人のために、`./schema` にも `isPage` のような素の値を返す関数を置く。
 
 - `import { Array, String, Number } from 'effect'` はグローバルをシャドウする。
   **必ずエイリアスする**（`import { Array as Arr } from 'effect'`）。

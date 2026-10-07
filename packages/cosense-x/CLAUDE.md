@@ -59,7 +59,7 @@ parser の §1 と同じ。
 - 公開 API のシグネチャに effect の型を出さない。確認:
 
   ```sh
-  bun run build && grep -nE "Option\.|Either\.|Effect\.|Match\." dist/*.d.mts   # 何も出なければよい
+  bun run build && bun run check:public-types   # CI でも動く (tools/public-types)
   ```
 
 - コメントは「なぜそうなっているか」を書く。Cosense や MDX の挙動に合わせた結果、直感に反している箇所は必ず理由を残す。

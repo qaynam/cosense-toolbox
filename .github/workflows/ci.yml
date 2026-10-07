@@ -53,7 +53,7 @@ jobs:
       - name: 検査
         run: >-
           bunx turbo run
-          lint lint:root format:check format:check:root typecheck test build
+          lint lint:root format:check format:check:root typecheck test build check:public-types
           --affected
           --continue=dependencies-successful
           --output-logs=errors-only

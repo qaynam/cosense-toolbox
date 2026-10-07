@@ -1,7 +1,7 @@
 import { Array as Arr, Option, pipe, Record as Rec, Schema } from "effect"
 
 import { type Severity, severityOf } from "./diagnostics"
-import { TokenNames } from "./tokens"
+import { TOKEN_NAMES, type TokenNames } from "./tokens"
 
 /**
  * What the reader can set, through the editor's initialization options:
@@ -58,6 +58,8 @@ const decodeOr =
     Option.getOrElse(Schema.decodeUnknownOption(schema)(value), () => fallback)
 
 /** The options as an object, which the editor may send in any shape or not at all. */
+const TokenNamesSchema = Schema.Literal(...TOKEN_NAMES)
+
 const OptionsObject = Schema.Record({ key: Schema.String, value: Schema.Unknown })
 
 /**
@@ -84,6 +86,6 @@ export const settingsOf = (options: unknown): Settings => {
     mapLinks: severityOf(field("mapLinks"), defaultSettings.mapLinks),
     frontmatter: decodeOr(Schema.Boolean, defaultSettings.frontmatter)(field("frontmatter")),
     mediaRoot: decodeOr(Schema.NonEmptyString, defaultSettings.mediaRoot)(field("mediaRoot")),
-    tokenNames: decodeOr(TokenNames, defaultSettings.tokenNames)(field("tokenNames")),
+    tokenNames: decodeOr(TokenNamesSchema, defaultSettings.tokenNames)(field("tokenNames")),
   }
 }

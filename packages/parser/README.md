@@ -12,6 +12,11 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 > **beta**：公開 API はまだ変わりうる。安定するまではバージョンを固定して使うほうが安全。
 
+### 0.1.0-beta.9 の変更
+
+- `isPage` を足した (`@cosense-toolbox/parser/schema`)。外から来た値が `Page` の形かを `true` / `false` で返すので、
+  effect を使わずに検証できる。どこが違うかを知りたいときは、今までどおり `decodePage` (effect の `Either` を返す) を使う。
+
 ### 0.1.0-beta.8 の変更
 
 - **不具合の修正:** URL でない画像の名前 (`[a.png]`) を画像として、`[[a.png]]` を大きい画像として読んでいたのをやめた。
@@ -120,7 +125,7 @@ toHtml(page) // → '<div class="page"><h1 class="title">今日のメモ</h1>…
 | `@cosense-toolbox/parser/html`       | AST を HTML 系の出力 (hast と HTML の文字列) にする | `toHast` `toHtml` `codeLineNumbers` `tableCellLineBreaks`                                                       |
 | `@cosense-toolbox/parser/compile`    | AST を HTML 以外の形式にする                        | `toPlainText` `createCompiler`                                                                                  |
 | `@cosense-toolbox/parser/extensions` | 記法を足す                                          | `Extension` `InlineConstruct` `BracketRule` `tableCellNotation`                                                 |
-| `@cosense-toolbox/parser/schema`     | 外から来た値を検証する                              | `decodePage`                                                                                                    |
+| `@cosense-toolbox/parser/schema`     | 外から来た値を検証する                              | `isPage` `decodePage`                                                                                           |
 
 `parse` はページ全体を読む。1 行目はタイトルで、Cosense Web と同じく記法を読まない。
 記法を読みたい文字列がページでないなら、本文の 1 行は `parseLine`、文章の断片は `tokenizeInline` で読む。

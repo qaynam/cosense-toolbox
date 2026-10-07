@@ -68,7 +68,16 @@ csn-lsp check src/content src/pages
 
 ## ライブラリとして
 
-エディタのプラグインなどから、部品として使える。
+エディタのプラグインなどから、部品として使える。中は effect で書いているが、使う側が effect を知らなくてよいように、
+見つからないものは `null`、時間のかかるものは `Promise` で返す。
+
+### 0.1.0-beta.9 の変更
+
+- **移行:** 公開の関数が effect の型を返さなくなった。今までの `Option` は値か `null`、`Effect` は `Promise` になる。
+  - `linkAt` / `detectCompletion` / `detectCompletionInDocument` / `definitionOf` / `frontmatterEnd` / `fenceOf` は `null` を返す
+    (`Option.isNone(x)` は `x === null` に、`Option.getOrUndefined(x)` は `x ?? undefined` に書き換える)
+  - `mediaFilesIn` / `checkSite` / `runCheck` は `Promise` を返す (`Effect.runPromise(x)` は `x` を `await` するだけでよい)
+  - `TokenNames` は `TOKEN_NAMES` (`["lsp", "cosense"]`) になった。型の `TokenNames` は今までどおり
 
 - `@cosense-toolbox/lsp/tokens`: `computeTokens` / `encodeTokens` / `legendOf` など
   - `notations` で装飾の記号に名前を付け、その名前のトークンとして送れる (`[! 注意]` の `!` に `warning` など)。
@@ -79,7 +88,8 @@ csn-lsp check src/content src/pages
     VS Code や Zed のように標準の型で色を付けるエディタにはそのまま渡せる。自前の名前で色を付けるクライアントは、
     `encodeTokens(tokens, [...TOKEN_TYPES, ...names])` のように自前の legend を渡す
 - `@cosense-toolbox/lsp/completion`: `detectCompletion` / `detectCompletionInDocument` / `completionItems` / `definitionOf` など
-  - `detectCompletionInDocument` は、タイトル行と、コードやコマンドの行 (`$ ls`) では補完の位置とみなさない
+  - `detectCompletionInDocument` は、タイトル行と、コードやコマンドの行 (`$ ls`) では補完の位置とみなさない (`null` を返す)
+  - `definitionOf` は、リンク先のページのファイルが無ければ `null`
 - `@cosense-toolbox/lsp/suggest`: リンクの候補を、Cosense Web のエディタと同じ規則で選んで並べる。どれも入出力の無い関数
   - `buildCandidateIndex(entries)`: ページ (`title` / `updated` / `image` / `links`) から候補を作る。リンク先にしかない題名も候補になる
   - `rankCandidates(index, query, options)`: 空白で区切った語がすべて入る題名を、短い順 (同じ長さなら新しい順) に並べる。
@@ -88,10 +98,10 @@ csn-lsp check src/content src/pages
   - `iconKeys(text)`: ページが使っているアイコン。`rankCandidates` の `icons` に渡すと、そのアイコンのページが先頭に来る
   - `Asearch(pattern)`: 1〜3 文字違いまでを許す、あいまいな文字列の照合
 - `@cosense-toolbox/lsp/media`: サイトのファイル (`[:/images/a.png]`、parser の `publicMedia`) を扱う
-  - `mediaFilesIn(root)`: ディレクトリの下の画像・動画・音声を、サイトの中のパス (`/images/a.png`) で返す
+  - `mediaFilesIn(root)`: ディレクトリの下の画像・動画・音声を、サイトの中のパス (`/images/a.png`) で返す (`Promise`)
   - `mediaCompletionItems(files, detection, line)`: `[:/` の中で、入力を含むパスのファイルを候補にする
   - `missingMediaDiagnostics(text, files, options)`: ファイルの無い `[:/…]` の診断
-- `@cosense-toolbox/lsp/link`: `linkAt(text, position, parseOptions?)` で、カーソルの下のリンクと、その行き先を返す
+- `@cosense-toolbox/lsp/link`: `linkAt(text, position, parseOptions?)` で、カーソルの下のリンクと、その行き先を返す。リンクが無ければ `null`
   - ページ (`[ページ]`、`#タグ`、`[/project/ページ]`、アイコンの `[taro.icon]` と `[[taro.icon]]`) は `kind: "page"`。
     別のプロジェクトなら `project`、`[ページ#<行 ID>]` なら `lineId` が付く
   - 外部リンクと画像は `kind: "url"`。リンク付きの画像は、画像ではなくリンクの URL
