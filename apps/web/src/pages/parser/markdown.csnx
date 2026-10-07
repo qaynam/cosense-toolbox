@@ -1,0 +1,86 @@
+---
+layout: ../../layouts/Doc.astro
+title: Markdown への変換
+description: toMdast / toMarkdown の出力とオプション。
+toc:
+  - id: overview
+    text: 基本
+    depth: 2
+  - id: mapping
+    text: 記法の対応
+    depth: 2
+  - id: options
+    text: オプション
+    depth: 2
+  - id: page-url
+    text: pageUrl と iconImageUrl
+    depth: 3
+  - id: heading-depth
+    text: headingDepth
+    depth: 3
+  - id: mdast
+    text: toMdast
+    depth: 2
+---
+Markdown への変換
+
+`@cosense-toolbox/parser/markdown` の `toMarkdown` は AST を Markdown の文字列へ、`toMdast` は Markdown の構文木 (mdast) へ変換します。
+
+code:ts
+ import { parse } from "@cosense-toolbox/parser"
+ import { toMarkdown } from "@cosense-toolbox/parser/markdown"
+ 
+ toMarkdown(parse("今日のメモ\n[*** 予定]\n [リンク] を見る"))
+ // → "# 今日のメモ\n\n### 予定\n\n- [リンク](/%E3%83%AA%E3%83%B3%E3%82%AF) を見る\n"
+
+<DocHeading level={2} id="overview" title="基本" />
+
+Cosense は 1 行が 1 つの単位ですが、Markdown は段落や箇条書きが単位です。`toMarkdown` は続いている行を次のようにまとめます。
+ 字下げの無い行が続くと、行の区切りを保った 1 つの段落になります。空行が段落を区切ります。
+ `>` の行が続くと 1 つの引用になります。
+ 字下げした行は箇条書きになり、字下げの深さが入れ子の深さになります。字下げしたコードブロックと表も箇条書きの中に入ります。
+
+Markdown の記号として読まれる文字はエスケープします。`javascript:` のようなスキームの URL は、リンクや画像にしません。
+
+<DocHeading level={2} id="mapping" title="記法の対応" />
+
+ タイトル (1 行目) → 見出し 1 (`#`)
+ 行全体が `[** ]` 以上の装飾 → 見出し。文の中にあれば太字
+ `[* ]` `[/ ]` `[- ]` → `**太字**` `*斜体*` `~~打ち消し~~`
+ `[_ ]` → Markdown に下線が無いので、中身の文字だけ
+ `[ページ]` `#タグ` `[/project/page]` → ページへのリンク
+ `[URL]` `[ラベル URL]` → リンク
+ 画像 → 画像。Gyazo のページの URL は画像の URL に直します
+ アイコン → ユーザーのページへのリンク
+ `code:ファイル名` → ファイル名から決めた言語名の付いたフェンス
+ `table:名前` → GFM の表。1 行目が見出しの行になり、名前は表の前の段落になります
+ `[$ 数式]` → `$数式$`
+ `$ コマンド` の行 → インラインコード
+ 動画・音声・埋め込み・地図 → 書かれた URL へのリンク
+
+<DocHeading level={2} id="options" title="オプション" />
+
+<DocHeading level={3} id="page-url" title="pageUrl と iconImageUrl" />
+
+ページへのリンク先とアイコンの画像は、[HTML への変換] と同じ `pageUrl` と `iconImageUrl` で決めます。既定では、リンク先は `/{title}`、アイコンはユーザー名のリンクです。
+
+code:ts
+ toMarkdown(page, {
+   pageUrl: (title) => `https://scrapbox.io/help-jp/${encodeURIComponent(title)}`,
+   iconImageUrl: (node) => `https://scrapbox.io/api/pages/help-jp/${encodeURIComponent(node.user)}/icon`,
+ })
+
+<DocHeading level={3} id="heading-depth" title="headingDepth" />
+
+`headingDepth(sizeLevel)` は、行全体が大きい文字の装飾のとき、それを何段目の見出しにするかを返します。`sizeLevel` は `[** ]` で 1、`[***** ]` で 4 です。`null` を返すと見出しにせず太字の段落にします。
+
+既定では `[** ]` が 4 段目、`[*** ]` が 3 段目、`[**** ]` 以上が 2 段目です。1 段目はタイトルが使います。
+
+code:ts
+ // 見出しにせず、すべて太字にする
+ toMarkdown(page, { headingDepth: () => null })
+
+<DocHeading level={2} id="mdast" title="toMdast" />
+
+`toMdast(node, options?)` は `toMarkdown` と同じオプションで mdast を返します。remark のプラグインに渡したり、出力に手を加えてから文字列にしたりするときに使います。
+数式は `inlineMath`、表は `table` のノードになるので、文字列にするときは `mdast-util-math` と `mdast-util-gfm-table` の拡張を渡します。
