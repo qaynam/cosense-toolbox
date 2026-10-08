@@ -20,7 +20,7 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
   書き換えた AST や、別の形式から作った AST をページに貼れるテキストにできる。`toHtml` と同じく `handlers` と `extensions` で出力を変えられる。
 - `@cosense-toolbox/parser/markdown` を足した。`fromMdast` は mdast (Markdown の AST) を Cosense のページの AST にする。
   箇条書きは字下げに、見出しは大きい文字の装飾に、フェンスはコードブロックに、表は表になる。先頭が `#` の見出しならタイトルになる。
-  依存は mdast の型だけで、Markdown の文字列を読む部品は持たない。
+  依存は mdast の型だけで、Markdown の文字列を読む部品は持たない。文字列から読むなら新しい `@cosense-toolbox/markdown` を使う。
 
 ### 0.1.0-beta.8 の変更
 

@@ -13,6 +13,7 @@ Cosense (旧 Scrapbox) のもっと楽しく便利に使うためのツールキ
 | 名前                                                                                                                                    | 役割                                                                           |
 | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | [`packages/parser`](./packages/parser) · [`@cosense-toolbox/parser`](https://www.npmjs.com/package/@cosense-toolbox/parser)             | Cosense 記法を、位置情報つきの AST に変換します。                              |
+| [`packages/markdown`](./packages/markdown) · [`@cosense-toolbox/markdown`](https://www.npmjs.com/package/@cosense-toolbox/markdown)     | Markdown を Cosense の記法のテキストや AST に変換します。                      |
 | [`packages/cosense-x`](./packages/cosense-x) · [`@cosense-toolbox/cosense-x`](https://www.npmjs.com/package/@cosense-toolbox/cosense-x) | `.csn` / `.csnx` ページを JSX モジュールへコンパイルします。                   |
 | [`packages/astro-cosense`](./packages/astro-cosense) · [`@cosense-toolbox/astro`](https://www.npmjs.com/package/@cosense-toolbox/astro) | `.csn` / `.csnx` を Astro のページや content collection で使えるようにします。 |
 | [`packages/style`](./packages/style) · [`@cosense-toolbox/style`](https://www.npmjs.com/package/@cosense-toolbox/style)                 | パーサーが出力する HTML に適用する CSS を提供します。                          |

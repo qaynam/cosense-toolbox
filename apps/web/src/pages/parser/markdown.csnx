@@ -1,10 +1,13 @@
 ---
 layout: ../../layouts/Doc.astro
 title: Markdown から読む
-description: fromMdast で Markdown の AST (mdast) を Cosense の AST にする。
+description: Markdown を Cosense の記法のテキストや AST にする。
 toc:
-  - id: overview
-    text: 基本
+  - id: package
+    text: "@cosense-toolbox/markdown"
+    depth: 2
+  - id: mdast
+    text: fromMdast
     depth: 2
   - id: mapping
     text: 記法の対応
@@ -12,35 +15,49 @@ toc:
   - id: title
     text: タイトル
     depth: 2
+  - id: math
+    text: 数式
+    depth: 2
   - id: position
     text: 位置情報
     depth: 2
 ---
 Markdown から読む
 
-`@cosense-toolbox/parser/markdown` の `fromMdast` は、mdast (Markdown の AST) を Cosense のページの AST にします。ChatGPT の回答や README のような Markdown を、Cosense の記法として扱えます。
+ChatGPT の回答や README のような Markdown を、Cosense のページに貼れる記法のテキストや、Cosense の AST にします。
 
 code:ts
- import { fromMarkdown } from "mdast-util-from-markdown"
- import { gfmFromMarkdown } from "mdast-util-gfm"
- import { gfm } from "micromark-extension-gfm"
+ import { markdownToCosenseText } from "@cosense-toolbox/markdown"
+ 
+ markdownToCosenseText("## 予定\n\n- **会議**の資料を作る")
+ // → "\n[**** 予定]\n [* 会議]の資料を作る"
+
+<DocHeading level={2} id="package" title="@cosense-toolbox/markdown" />
+
+Markdown の文字列から読むなら、`@cosense-toolbox/markdown` を使います。読み方は remark と同じです (CommonMark と GFM、`$...$` の数式)。
+
+ `markdownToCosenseText(markdown, options?)` → Cosense のページに貼れる記法のテキスト。1 行目はタイトル
+ `parseFromMarkdown(markdown, options?)` → Cosense の AST。`parse` の結果と同じ型なので、[HTML への変換] や [AST のヘルパー] にそのまま渡せます
+
+`markdownToCosenseText` には、[独自形式への変換] の `toCosenseText` と同じ `handlers` と `extensions` を渡せます。書き出しを変えたいときに使います。
+
+code:ts
+ // ### の見出しを [** ] にする
+ markdownToCosenseText(markdown, {
+   extensions: [{ decoration: (output, node) => (node.sizeLevel === 2 ? output.replace("***", "**") : output) }],
+ })
+
+Markdown を読む部品 (micromark) は大きいので、このパッケージだけが持ちます。`@cosense-toolbox/parser` を使うだけの人には入りません。
+
+<DocHeading level={2} id="mdast" title="fromMdast" />
+
+`@cosense-toolbox/parser/markdown` の `fromMdast` は、mdast (Markdown の AST) を Cosense の AST にします。`@cosense-toolbox/markdown` も中でこれを使っていて、記法の対応はここで決まります。remark を使っているアプリなら、手元の mdast をそのまま渡せます。依存は mdast の型だけです。
+
+code:ts
  import { toCosenseText } from "@cosense-toolbox/parser/compile"
  import { fromMdast } from "@cosense-toolbox/parser/markdown"
  
- const mdast = fromMarkdown("## 予定\n\n- **会議**の資料を作る", {
-   extensions: [gfm()],
-   mdastExtensions: [gfmFromMarkdown()],
- })
- const page = fromMdast(mdast)
- toCosenseText(page) // → "\n[**** 予定]\n [* 会議]の資料を作る"
-
-できた AST は `parse` の結果と同じ型なので、[HTML への変換] や [AST のヘルパー] にそのまま渡せます。Cosense のページに貼るテキストにするには、[独自形式への変換] の `toCosenseText` を使います。
-
-<DocHeading level={2} id="overview" title="基本" />
-
-このパッケージは Markdown の文字列を読む部品を持ちません。Markdown を読む部品 (micromark) は大きく、Markdown を使わない人にまで入れたくないからです。文字列から読むときは、`mdast-util-from-markdown` などで作った mdast を渡します。remark を使っているアプリなら、手元の mdast をそのまま渡せます。
-
-`fromMdast` の依存は mdast の型だけです。
+ toCosenseText(fromMdast(mdast))
 
 <DocHeading level={2} id="mapping" title="記法の対応" />
 
@@ -54,7 +71,7 @@ code:ts
  フェンス → `code:言語名`。言語名の後ろにファイル名があればファイル名、どちらも無ければ `code:text`
  表 → `table:table`。セルの中の装飾も読みます
  引用 → `>` の行
- 数式 (`mdast-util-math` で読んだもの) → `[$ 数式]`
+ `$数式$` `$$数式$$` → `[$ 数式]` (下の「数式」)
  区切り線 → 空行
 
 Cosense の装飾は入れ子にできないので、装飾の中の装飾は記号を外します (装飾の中のリンクは残します)。
@@ -66,6 +83,19 @@ Markdown の文字は、Markdown のとおり文字のノードになります�
 <DocHeading level={2} id="title" title="タイトル" />
 
 Markdown の先頭が `#` の見出しなら、それがページのタイトル (1 行目) になります。先頭が見出しでなければ、タイトルは空になります。2 つ目からの `#` の見出しは `[***** ]` になります。
+
+<DocHeading level={2} id="math" title="数式" />
+
+数式は CommonMark にも GFM にも無い拡張です。`@cosense-toolbox/markdown` は、広く使われている pandoc の決まりに合わせ、次のどれかに当てはまる `$...$` を数式にせず、文字のまま残します。
+ 開く `$` のすぐ後が空白
+ 閉じる `$` のすぐ前が空白
+ 閉じる `$` のすぐ後が数字
+そのため、`$x^2$` は `[$ x^2]` になり、`$5と$10` や `$5 と $10` は文字のまま残ります。`$$...$$` は値段と紛れないので、いつも数式にします。
+
+`$` を一切数式として読まないときは、`math: false` を渡します。`$` も `$$` も文字のまま残ります。
+
+code:ts
+ markdownToCosenseText("$x^2$", { math: false }) // → "\n$x^2$"
 
 <DocHeading level={2} id="position" title="位置情報" />
 

@@ -29,7 +29,8 @@
      HTML 系の出力 (HTML の文字列・JSX・rehype) を hast 1 つにまとめ、hast を文字列にする処理は
      unified の標準に任せるため (属性名の変換やエスケープを自前で持たない)
    - `@types/mdast`：`./markdown` の `fromMdast` が受け取る mdast の型。型だけで runtime のコードは無い。
-     Markdown の文字列を読む部品 (micromark / `mdast-util-from-markdown`) はここに入れない (使う人が入れる)
+     Markdown の文字列を読む部品 (micromark / `mdast-util-from-markdown`) はここに入れない。
+     文字列から読む近道は別パッケージ `@cosense-toolbox/markdown` が持つ
    - `parse` だけを使う人のバンドルには入らないこと (§4 の tree-shaking の確認) を保つ
      （`tsdown` / `vitest` / `typescript` / `fast-check` は devDependencies なので対象外。）
 6. **CSS をこのパッケージに置かない**。既定の見た目は `@cosense-toolbox/style`（別パッケージ）
