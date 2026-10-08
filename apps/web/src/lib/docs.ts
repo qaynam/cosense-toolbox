@@ -62,6 +62,12 @@ export const DOC_GROUPS: DocGroup[] = [
         keywords: "toHast toHtml handlers highlight classNames style",
       },
       {
+        href: "/parser/markdown/",
+        label: "Markdown から読む",
+        description: "fromMdast で Markdown の AST を Cosense の AST にする。",
+        keywords: "fromMdast mdast markdown ChatGPT 貼り付け 変換",
+      },
+      {
         href: "/parser/compile/",
         label: "独自形式への変換",
         description: "テキスト化、Cosense の記法への書き出し、独自コンパイラーの作り方。",

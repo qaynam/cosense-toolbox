@@ -18,6 +18,9 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
   effect を使わずに検証できる。どこが違うかを知りたいときは、今までどおり `decodePage` (effect の `Either` を返す) を使う。
 - `toCosenseText` を足した (`@cosense-toolbox/parser/compile`)。AST を Cosense の記法のテキストに書き出す。`parse` の逆向きで、
   書き換えた AST や、別の形式から作った AST をページに貼れるテキストにできる。`toHtml` と同じく `handlers` と `extensions` で出力を変えられる。
+- `@cosense-toolbox/parser/markdown` を足した。`fromMdast` は mdast (Markdown の AST) を Cosense のページの AST にする。
+  箇条書きは字下げに、見出しは大きい文字の装飾に、フェンスはコードブロックに、表は表になる。先頭が `#` の見出しならタイトルになる。
+  依存は mdast の型だけで、Markdown の文字列を読む部品は持たない。
 
 ### 0.1.0-beta.8 の変更
 
@@ -125,6 +128,7 @@ toHtml(page) // → '<div class="page"><h1 class="title">今日のメモ</h1>…
 | `@cosense-toolbox/parser`            | テキストを AST にする                               | `parse` `parseLine` `tokenizeInline` `createParser` `asImageSrc` `asEmbedSrc` `asMapUrl` `normalizeLineEndings` |
 | `@cosense-toolbox/parser/utils`      | ヘルパー。AST から取り出す                          | `visit` `find` `collect` `collectLinks` `firstImage` `rawTextOf`                                                |
 | `@cosense-toolbox/parser/html`       | AST を HTML 系の出力 (hast と HTML の文字列) にする | `toHast` `toHtml` `codeLineNumbers` `tableCellLineBreaks`                                                       |
+| `@cosense-toolbox/parser/markdown`   | mdast (Markdown の AST) を AST にする               | `fromMdast`                                                                                                     |
 | `@cosense-toolbox/parser/compile`    | AST を HTML 以外の形式にする                        | `toPlainText` `toCosenseText` `createCompiler`                                                                  |
 | `@cosense-toolbox/parser/extensions` | 記法を足す                                          | `Extension` `InlineConstruct` `BracketRule` `tableCellNotation`                                                 |
 | `@cosense-toolbox/parser/schema`     | 外から来た値を検証する                              | `isPage` `decodePage`                                                                                           |
@@ -134,16 +138,17 @@ toHtml(page) // → '<div class="page"><h1 class="title">今日のメモ</h1>…
 
 各 API の詳細はドキュメントにある。
 
-| ページ                                                                 | 内容                                                      |
-| :--------------------------------------------------------------------- | :-------------------------------------------------------- |
-| [概要](https://cosense-toolbox.qaynam.dev/parser/)                     | インストールと、どの API を使うかの早見表                 |
-| [例](https://cosense-toolbox.qaynam.dev/parser/demo/)                  | 記法をひととおり変換した結果とコード                      |
-| [パース](https://cosense-toolbox.qaynam.dev/parser/parse/)             | `parse` / `parseLine` / `tokenizeInline` / `createParser` |
-| [AST と位置情報](https://cosense-toolbox.qaynam.dev/parser/ast/)       | ノードの構造と `position` の意味                          |
-| [ヘルパー](https://cosense-toolbox.qaynam.dev/parser/utils/)           | `visit` / `find` / `collect` など                         |
-| [HTML への変換](https://cosense-toolbox.qaynam.dev/parser/html/)       | `toHast` / `toHtml` と 8 つのオプション                   |
-| [独自形式への変換](https://cosense-toolbox.qaynam.dev/parser/compile/) | `toPlainText` / `toCosenseText` / `createCompiler`        |
-| [記法の拡張](https://cosense-toolbox.qaynam.dev/parser/extend/)        | `Extension` と独自のノード型                              |
+| ページ                                                                   | 内容                                                      |
+| :----------------------------------------------------------------------- | :-------------------------------------------------------- |
+| [概要](https://cosense-toolbox.qaynam.dev/parser/)                       | インストールと、どの API を使うかの早見表                 |
+| [例](https://cosense-toolbox.qaynam.dev/parser/demo/)                    | 記法をひととおり変換した結果とコード                      |
+| [パース](https://cosense-toolbox.qaynam.dev/parser/parse/)               | `parse` / `parseLine` / `tokenizeInline` / `createParser` |
+| [AST と位置情報](https://cosense-toolbox.qaynam.dev/parser/ast/)         | ノードの構造と `position` の意味                          |
+| [ヘルパー](https://cosense-toolbox.qaynam.dev/parser/utils/)             | `visit` / `find` / `collect` など                         |
+| [HTML への変換](https://cosense-toolbox.qaynam.dev/parser/html/)         | `toHast` / `toHtml` と 8 つのオプション                   |
+| [Markdown から読む](https://cosense-toolbox.qaynam.dev/parser/markdown/) | `fromMdast`                                               |
+| [独自形式への変換](https://cosense-toolbox.qaynam.dev/parser/compile/)   | `toPlainText` / `toCosenseText` / `createCompiler`        |
+| [記法の拡張](https://cosense-toolbox.qaynam.dev/parser/extend/)          | `Extension` と独自のノード型                              |
 
 ## 互換性の方針
 

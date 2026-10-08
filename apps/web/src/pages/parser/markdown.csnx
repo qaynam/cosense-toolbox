@@ -1,0 +1,72 @@
+---
+layout: ../../layouts/Doc.astro
+title: Markdown から読む
+description: fromMdast で Markdown の AST (mdast) を Cosense の AST にする。
+toc:
+  - id: overview
+    text: 基本
+    depth: 2
+  - id: mapping
+    text: 記法の対応
+    depth: 2
+  - id: title
+    text: タイトル
+    depth: 2
+  - id: position
+    text: 位置情報
+    depth: 2
+---
+Markdown から読む
+
+`@cosense-toolbox/parser/markdown` の `fromMdast` は、mdast (Markdown の AST) を Cosense のページの AST にします。ChatGPT の回答や README のような Markdown を、Cosense の記法として扱えます。
+
+code:ts
+ import { fromMarkdown } from "mdast-util-from-markdown"
+ import { gfmFromMarkdown } from "mdast-util-gfm"
+ import { gfm } from "micromark-extension-gfm"
+ import { toCosenseText } from "@cosense-toolbox/parser/compile"
+ import { fromMdast } from "@cosense-toolbox/parser/markdown"
+ 
+ const mdast = fromMarkdown("## 予定\n\n- **会議**の資料を作る", {
+   extensions: [gfm()],
+   mdastExtensions: [gfmFromMarkdown()],
+ })
+ const page = fromMdast(mdast)
+ toCosenseText(page) // → "\n[**** 予定]\n [* 会議]の資料を作る"
+
+できた AST は `parse` の結果と同じ型なので、[HTML への変換] や [AST のヘルパー] にそのまま渡せます。Cosense のページに貼るテキストにするには、[独自形式への変換] の `toCosenseText` を使います。
+
+<DocHeading level={2} id="overview" title="基本" />
+
+このパッケージは Markdown の文字列を読む部品を持ちません。Markdown を読む部品 (micromark) は大きく、Markdown を使わない人にまで入れたくないからです。文字列から読むときは、`mdast-util-from-markdown` などで作った mdast を渡します。remark を使っているアプリなら、手元の mdast をそのまま渡せます。
+
+`fromMdast` の依存は mdast の型だけです。
+
+<DocHeading level={2} id="mapping" title="記法の対応" />
+
+ `## 見出し` → `[**** 見出し]`。`#` が 1 つ増えるごとに大きさが 1 段下がり、`#####` 以降は `[* ]`
+ 箇条書き → 字下げ。入れ子は深い字下げ
+ 番号付きの箇条書き → 番号を残した字下げ (` 1. `)
+ タスク (`- [ ]` `- [x]`) → `☐` `☑` の印を付けた字下げ
+ `**太字**` `*斜体*` `~~打ち消し~~` → `[* ]` `[/ ]` `[- ]`。ちょうど重なった装飾は `[*/ ]` のように記号をまとめます
+ `[ラベル](URL)` → `[ラベル URL]`。http でない URL (相対パスやアンカー) は、Cosense ではリンクにならないので文字だけ
+ 画像 → `[画像の URL]`。リンク付きの画像は `[リンク先 画像の URL]`
+ フェンス → `code:言語名`。言語名の後ろにファイル名があればファイル名、どちらも無ければ `code:text`
+ 表 → `table:table`。セルの中の装飾も読みます
+ 引用 → `>` の行
+ 数式 (`mdast-util-math` で読んだもの) → `[$ 数式]`
+ 区切り線 → 空行
+
+Cosense の装飾は入れ子にできないので、装飾の中の装飾は記号を外します (装飾の中のリンクは残します)。
+
+ブロックの間は Cosense の書きかたに合わせます。段落どうしの間は空行にし、見出しのすぐ後と、箇条書きの前には空行を挟みません。ただし、コードブロックと表の後の箇条書きは空行で区切ります。Cosense ではコードブロックと表が、後ろに続く深い字下げの行を自分の中身として読むからです。
+
+Markdown の文字は、Markdown のとおり文字のノードになります。`[ページ]` や `#タグ` を Cosense のリンクとして読み直すことはしません。ただし、Cosense の記法には逃がし (エスケープ) が無いので、`toCosenseText` で書き出したテキストを Cosense に貼ると、Cosense はそれをリンクやタグとして読みます。
+
+<DocHeading level={2} id="title" title="タイトル" />
+
+Markdown の先頭が `#` の見出しなら、それがページのタイトル (1 行目) になります。先頭が見出しでなければ、タイトルは空になります。2 つ目からの `#` の見出しは `[***** ]` になります。
+
+<DocHeading level={2} id="position" title="位置情報" />
+
+ノードの `position` は、元になった Markdown のノードの位置を指します。段落の中の改行で分けた行のように、1 つの Markdown のノードから複数のノードを作ったときは、どれも同じ位置を持ちます。空行や箇条書きの番号のように Markdown に無いノードは、隣のノードの始まりに幅 0 で置きます。
