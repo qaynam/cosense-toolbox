@@ -1,10 +1,13 @@
 ---
 layout: ../../layouts/Doc.astro
 title: 独自形式への変換
-description: toPlainText と createCompiler を使って AST を変換する方法。
+description: toPlainText、toCosenseText、createCompiler を使って AST を変換する方法。
 toc:
   - id: plain-text
     text: toPlainText
+    depth: 2
+  - id: cosense-text
+    text: toCosenseText
     depth: 2
   - id: compiler
     text: createCompiler
@@ -25,6 +28,31 @@ code:ts
  // → "タイトル\n太字 と リンク"
 
 全文検索のインデックスや、検索結果の抜粋を作るときに使えます。
+
+<DocHeading level={2} id="cosense-text" title="toCosenseText" />
+
+`toCosenseText(node, options?)` は、AST を Cosense の記法のテキストに書き出します。`parse` の逆向きです。書き換えた AST や、別の形式から作った AST を、Cosense のページに貼れるテキストにできます。
+
+code:ts
+ import { parse } from "@cosense-toolbox/parser"
+ import { toCosenseText } from "@cosense-toolbox/parser/compile"
+ 
+ toCosenseText(parse("タイトル\n[https://example.com 例] と [[強調]]"))
+ // → "タイトル\n[例 https://example.com] と [* 強調]"
+
+AST は書きかたの違いを持たないので、同じ意味の記法は決まった 1 つの書きかたで出します。`[[強調]]` は `[* 強調]`、`[URL ラベル]` は `[ラベル URL]`、全角空白やタブの字下げは半角空白になります。書かれたとおりの文字が欲しいときは、元のテキストから `rawTextOf` で切り出します。
+
+Cosense の記法には逃がし (エスケープ) が無いので、text ノードの文字はそのまま出します。文字に `[` や `` ` `` があると、読み直したときに隣の記法と組み合わさることがあります。
+
+出力は [HTML への変換] と同じ仕組みで変えられます。`handlers` はノード型ごとに出力を一から作り直し、`extensions` はできた出力に手を加えます。拡張は並べた順に重なり、`ctx.ancestors` で祖先のノードも見られます。
+
+code:ts
+ // 大きい文字を 1 段小さくする
+ toCosenseText(page, {
+   extensions: [
+     { decoration: (output, node) => node.sizeLevel > 0 ? output.replace("*", "") : output },
+   ],
+ })
 
 <DocHeading level={2} id="compiler" title="createCompiler" />
 

@@ -3,8 +3,18 @@
  * パースはしない (この層はパーサー本体を import しない)。
  *
  * ノード型ごとのハンドラで出力を組み立てる `createCompiler` と、その参照実装の `toPlainText`。
+ * AST を Cosense の記法のテキストに書き出す `toCosenseText` (`toHast` と同じ handlers / extensions の仕組み)。
  * HTML 系の出力 (hast / HTML の文字列) は `./html` にある。
  */
 export { createCompiler } from "./create-compiler"
 export type { CompileContext, CompilerOptions, NodeHandler, NodeHandlers } from "./create-compiler"
+export { defaultCosenseTextHandlers, toCosenseText } from "./to-cosense-text"
+export type {
+  CosenseTextContext,
+  CosenseTextExtension,
+  CosenseTextHandler,
+  CosenseTextHandlers,
+  CosenseTextOptions,
+  CosenseTextTransform,
+} from "./to-cosense-text"
 export { toPlainText } from "./to-plain-text"

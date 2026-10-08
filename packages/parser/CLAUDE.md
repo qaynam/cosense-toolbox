@@ -119,7 +119,7 @@ extensions/ → 型の再エクスポートと、既製の Extension
 | `inline/`  | 1 行の中のインライン記法 → `InlineNode[]`                          | 複数行のことを知らない                             |
 | `block/`   | 行の分類とブロック（code:/table:/title）のグルーピング             | インライン記法の中身を知らない（`inline/` に委譲） |
 | `parse.ts` | ページ全文 → `Page`。extension の合成                              | 記法そのものを実装しない                           |
-| `compile/` | AST → HTML 以外の形式 (ハンドラ機構と toPlainText)                 | パースしない                                       |
+| `compile/` | AST → HTML 以外の形式 (ハンドラ機構と toPlainText / toCosenseText) | パースしない                                       |
 | `html/`    | AST → hast / HTML の文字列と描画の拡張。表示のための書き換えもここ | パースしない                                       |
 | `utils/`   | AST の走査・抽出                                                   | パースしない                                       |
 
@@ -156,6 +156,7 @@ src/
   compile/
     create-compiler.ts  ハンドラ機構 (HTML 以外の形式を AST から直接作るとき用)
     to-plain-text.ts    参照実装
+    to-cosense-text.ts  AST を Cosense の記法に書き出す。toHast と同じ handlers / extensions の仕組み
   html/                 HTML 系の出力 (./html サブパス)
     to-hast.ts          公式の hast コンパイラ。描画の規則はここだけに持つ
                         （pageUrl / iconImageUrl / highlight / classNames / showPads / handlers / extensions）

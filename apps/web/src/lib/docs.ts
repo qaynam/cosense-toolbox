@@ -64,8 +64,8 @@ export const DOC_GROUPS: DocGroup[] = [
       {
         href: "/parser/compile/",
         label: "独自形式への変換",
-        description: "テキスト化や独自コンパイラーの作り方。",
-        keywords: "toPlainText createCompiler markdown",
+        description: "テキスト化、Cosense の記法への書き出し、独自コンパイラーの作り方。",
+        keywords: "toPlainText toCosenseText createCompiler markdown",
       },
       {
         href: "/parser/extend/",
