@@ -141,6 +141,21 @@ const decoratedOf = (node: DecorationNode): Decorated => {
 const inOneLine = (runs: readonly Run[], position: Position): InlineNode[] =>
   runs.map((run) => (run.type === "break" ? textNode(" ", position) : run))
 
+/** 先頭の空白を落とす。空白だけの文字のノードは、ノードごと落とす。 */
+const trimStart = (nodes: readonly InlineNode[]): InlineNode[] => {
+  const [first, ...rest] = nodes
+  if (first?.type !== "text") return [...nodes]
+  const value = first.value.trimStart()
+  return value === "" ? trimStart(rest) : [{ ...first, value }, ...rest]
+}
+
+/**
+ * 装飾の中身。装飾は 1 行に収める。
+ * Cosense は記号の後の空白を記号との区切りとして読む (`[*  a]` の中身は `a`) ので、先頭の空白も落とす。
+ */
+const decorationContentOf = (runs: readonly Run[], position: Position): InlineNode[] =>
+  trimStart(inOneLine(runs, position))
+
 const decorationNode = (
   markers: readonly string[],
   sizeLevel: number,
@@ -163,8 +178,8 @@ const decorationRuns = (node: DecorationNode, ctx: Context): Run[] => {
   if (ctx.inDecoration) return runsOf(node.children, ctx)
   const { markers, children } = decoratedOf(node)
   const position = positionOf(node)
-  const inner = inOneLine(runsOf(children, { ...ctx, inDecoration: true }), position)
-  return [decorationNode([...new Set(markers)], 0, inner, position)]
+  const inner = decorationContentOf(runsOf(children, { ...ctx, inDecoration: true }), position)
+  return inner.length === 0 ? [] : [decorationNode([...new Set(markers)], 0, inner, position)]
 }
 
 /** リンク先がある記法を Cosense の外部リンクにする。リンクにできなければ中身だけにする。 */
@@ -219,8 +234,14 @@ const phrasingRuns = (node: PhrasingContent, ctx: Context): Run[] => {
     case "emphasis":
     case "delete":
       return decorationRuns(node, ctx)
-    case "inlineCode":
-      return [{ type: "inlineCode", value: node.value, position }]
+    case "inlineCode": {
+      // Markdown はコードの中の改行を空白として読む。Cosense のインラインコードは 1 行に収める。
+      const value = node.value.replace(/\r?\n/g, " ")
+      // Cosense は装飾の中のバッククォートをコードとして読まない (`[* \`a\`]` は太字にならない) ので、文字にする。
+      return [
+        ctx.inDecoration ? textNode(value, position) : { type: "inlineCode", value, position },
+      ]
+    }
     case "break":
       return [BREAK]
     case "link":
@@ -278,7 +299,10 @@ const lineOf = (
 /** `#` が 1 つの見出しが `[***** ]` (段階 4) で、深くなるほど段階が下がり、`#####` 以降は太字。 */
 const headingLines = (node: Heading, indent: number, ctx: Context): TopLevelBlock[] => {
   const position = positionOf(node)
-  const children = inOneLine(runsOf(node.children, { ...ctx, inDecoration: true }), position)
+  const children = decorationContentOf(
+    runsOf(node.children, { ...ctx, inDecoration: true }),
+    position,
+  )
   return [
     lineOf(
       indent,
@@ -369,8 +393,10 @@ const itemLines = (
 }
 
 const listLines = (node: List, indent: number, ctx: Context): TopLevelBlock[] =>
-  node.children.flatMap((item, index) =>
-    itemLines(item, itemPrefixOf(node, item, index), indent + 1, ctx),
+  node.children.reduce<TopLevelBlock[]>(
+    (lines, item, index) =>
+      appendLines(lines, itemLines(item, itemPrefixOf(node, item, index), indent + 1, ctx), false),
+    [],
   )
 
 /** 引用の中の行に `>` を付ける。コードブロックと表は Cosense では引用にできないので、そのまま置く。 */
@@ -449,19 +475,34 @@ const linesOf = (node: RootContent, indent: number, ctx: Context): TopLevelBlock
 
 /**
  * Cosense のコードブロックと表は、後ろに続くより深い字下げの行を自分の中身として読む。
- * そのすぐ後に箇条書きを置くと、項目がコードや表の行になってしまうので、空行で区切る (空行でブロックが終わる)。
+ * そこへ深い行 (箇条書きなど) を続けると、コードや表の行になってしまうので、空行で区切る (空行でブロックが終わる)。
+ * 引用や項目の中で終わったコードブロックもあるので、Markdown のノードではなく、できた行どうしで見る。
  */
-const swallowsDeeperLines = (node: RootContent): boolean =>
-  node.type === "code" || node.type === "table"
+const swallows = (last: TopLevelBlock | undefined, next: TopLevelBlock | undefined): boolean =>
+  (last?.type === "codeBlock" || last?.type === "table") &&
+  next !== undefined &&
+  next.type !== "title" &&
+  next.indent > last.indent
+
+/** `lines` の後に `own` を続ける。`gap` のときか、`own` が前のコードブロックや表に読み込まれるときは、空行を挟む。 */
+const appendLines = (
+  lines: readonly TopLevelBlock[],
+  own: readonly TopLevelBlock[],
+  gap: boolean,
+): TopLevelBlock[] => {
+  const [first] = own
+  return first !== undefined && (gap || swallows(lines[lines.length - 1], first))
+    ? [...lines, lineOf(0, [], emptyAt(first.position)), ...own]
+    : [...lines, ...own]
+}
 
 /**
- * 前後のブロックの間に空行を挟むか。`separate` は段落どうしのように区切りたいところ (箇条書きの項目の中以外)。
+ * 段落どうしのように、前後のブロックの間に空行を挟んで区切るか。`separate` は箇条書きの項目の中以外。
  * 見出しの後と、箇条書きの前は挟まない。Cosense では見出しのすぐ下に本文を書き、
  * 箇条書きを前の行の続きとして字下げで書くため。
  */
 const separatedBy = (previous: RootContent, next: RootContent, separate: boolean): boolean =>
-  (swallowsDeeperLines(previous) && next.type === "list") ||
-  (separate && previous.type !== "heading" && next.type !== "list")
+  separate && previous.type !== "heading" && next.type !== "list"
 
 /** ブロックを順に行にする。`separate` のときは、ブロックの間に空行を挟む (箇条書きの項目の中では挟まない)。 */
 const blockLinesOf = (
@@ -474,11 +515,8 @@ const blockLinesOf = (
     ({ lines, previous }, block) => {
       const own = linesOf(block, indent, ctx)
       if (own.length === 0) return { lines, previous }
-      const gap =
-        previous !== null && separatedBy(previous, block, separate)
-          ? [lineOf(0, [], emptyAt(positionOf(block)))]
-          : []
-      return { lines: [...lines, ...gap, ...own], previous: block }
+      const gap = previous !== null && separatedBy(previous, block, separate)
+      return { lines: appendLines(lines, own, gap), previous: block }
     },
     { lines: [], previous: null },
   ).lines

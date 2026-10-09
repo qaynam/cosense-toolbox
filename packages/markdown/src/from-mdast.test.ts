@@ -1,5 +1,9 @@
+import { parse } from "@cosense-toolbox/parser"
 import { toCosenseText } from "@cosense-toolbox/parser/compile"
+import { tableCellNotation } from "@cosense-toolbox/parser/extensions"
+import { toHtml } from "@cosense-toolbox/parser/html"
 import { isPage } from "@cosense-toolbox/parser/schema"
+import { visit } from "@cosense-toolbox/parser/utils"
 import fc from "fast-check"
 import type { Root } from "mdast"
 import { fromMarkdown } from "mdast-util-from-markdown"
@@ -122,6 +126,18 @@ describe("箇条書き", () => {
     expect(cosenseOf("- ```js\n  x\n  ```\n  - b")).toBe("\n code:js\n  x\n\n  b")
   })
 
+  it("項目の中のコードブロックの後に、同じ深さの段落が来るときは、コードの中身にならないので空行を挟まない", () => {
+    expect(cosenseOf("- ```js\n  x\n  ```\n\n  b")).toBe("\n code:js\n  x\n b")
+  })
+
+  it("引用の中のコードブロックの後の箇条書きも、空行で区切る", () => {
+    expect(cosenseOf("> ```js\n> x\n> ```\n- a")).toBe("\ncode:js\n x\n\n a")
+  })
+
+  it("コードブロックで終わる項目の次の項目が、入れ子の箇条書きで始まるときも、空行で区切る", () => {
+    expect(cosenseOf("- ```js\n  x\n  ```\n- - b")).toBe("\n code:js\n  x\n\n  b")
+  })
+
   it("番号付きの項目がコードブロックで始まるときは、番号だけの行を前に置く", () => {
     expect(cosenseOf("1. ```js\n   x\n   ```")).toBe("\n 1.\n code:js\n  x")
   })
@@ -142,6 +158,24 @@ describe("インライン", () => {
 
   it("装飾の中の改行は、Cosense の装飾が 1 行に収まるよう空白にする", () => {
     expect(cosenseOf("**a\nb**")).toBe("\n[* a b]")
+  })
+
+  it("装飾の中のインラインコードは、Cosense では装飾の中で読まれないので、バッククォートを外した文字にする", () => {
+    expect(cosenseOf("**`a` b**")).toBe("\n[* a b]")
+  })
+
+  it("見出しの中のインラインコードも、バッククォートを外した文字にする", () => {
+    expect(cosenseOf("## `a` b")).toBe("\n[**** a b]")
+  })
+
+  it("装飾の中身の先頭の空白は、Cosense では記号との区切りとして読まれるので落とす", () => {
+    expect(bodyLineOf("**` a`**")).toMatchObject({
+      children: [{ type: "decoration", children: [{ type: "text", value: "a" }] }],
+    })
+  })
+
+  it("中身が空白だけの装飾は、空の装飾にせず落とす", () => {
+    expect(cosenseOf("**` `**")).toBe("\n")
   })
 
   it("装飾の中のリンクは残す", () => {
@@ -184,6 +218,10 @@ describe("インライン", () => {
 
   it("インラインコードはインラインコードになる", () => {
     expect(cosenseOf("`a*b`")).toBe("\n`a*b`")
+  })
+
+  it("改行を含むインラインコードは、Markdown と同じく改行を空白にして 1 行に収める", () => {
+    expect(cosenseOf("`a\nb`")).toBe("\n`a b`")
   })
 
   it("$ で囲んだ数式は [$ ] になる", () => {
@@ -343,6 +381,31 @@ describe("全域性", () => {
       fc.property(fc.string({ unit: fc.constantFrom(..."*_~`$[]()!#>-|:\\ \n\t1.ax") }), (md) => {
         expect(isPage(fromMdast(mdastOf(md)))).toBe(true)
       }),
+    )
+  })
+})
+
+describe("書き出し", () => {
+  // Cosense の記法には逃がしが無いので、文字に記法の記号があると、書き出した後で記法として読まれる。
+  // インラインコードの中のバッククォートも、コードの終わりとして読まれる。
+  it("文字とインラインコードに [ ] ` # $ > が無ければ、書き出したテキストを Cosense として読み直しても、同じ描画になる", () => {
+    const block = fc.constantFrom("# ", "## ", "> ", "- ", "1. ", "  ", "```\n", "| a |\n| - |\n")
+    const inline = fc.constantFrom("**", "*", "~~", "`", "a", "b", " ", "\n")
+    fc.assert(
+      fc.property(fc.array(fc.oneof(block, inline), { maxLength: 20 }), (units) => {
+        const page = fromMdast(mdastOf(units.join("")))
+        const written: string[] = []
+        visit(page, "text", (node) => {
+          written.push(node.value)
+        })
+        visit(page, "inlineCode", (node) => {
+          written.push(node.value)
+        })
+        fc.pre(!/[[\]`#$>]/.test(written.join("")))
+        const reread = parse(toCosenseText(page), { extensions: [tableCellNotation()] })
+        expect(toHtml(reread)).toBe(toHtml(page))
+      }),
+      { numRuns: 2000 },
     )
   })
 })
