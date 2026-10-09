@@ -12,7 +12,7 @@ export const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i
 
 /**
  * Gyazo のページ URL / 画像 URL から hash を取り出す。
- * hash の後ろは、何も無いか画像の拡張子だけ。`.mp4` のような動画の URL は画像にしない。
+ 
  */
 const GYAZO_RE =
   /^https?:\/\/(?:i\.)?gyazo\.com\/([0-9a-f]{20,})(?:\.(?:png|jpe?g|gif|webp|svg|bmp|avif))?(?:[/?#]|$)/i
