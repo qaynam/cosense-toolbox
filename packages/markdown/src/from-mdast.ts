@@ -8,6 +8,18 @@
  * Markdown の文字は Markdown のとおり文字のノードにする (`[ページ]` や `#tag` を Cosense のリンクとして読み直さない)。
  * ノードの `position` は、元になった Markdown のノードの位置を指す。
  */
+import type {
+  Decoration,
+  InlineNode,
+  LineBlock,
+  Page,
+  Point,
+  Position,
+  TableCell,
+  TitleBlock,
+  TopLevelBlock,
+} from "@cosense-toolbox/parser"
+import { toCosenseText } from "@cosense-toolbox/parser/compile"
 import { Option, pipe } from "effect"
 import type {
   Code,
@@ -24,19 +36,6 @@ import type {
   Table,
   TableCell as MdastTableCell,
 } from "mdast"
-
-import { toCosenseText } from "../compile/to-cosense-text"
-import type {
-  Decoration,
-  InlineNode,
-  LineBlock,
-  Page,
-  Point,
-  Position,
-  TableCell,
-  TitleBlock,
-  TopLevelBlock,
-} from "../types"
 
 interface Context {
   /** 参照の形のリンク (`[a][1]`) の行き先。`[1]: url` の定義から引く */

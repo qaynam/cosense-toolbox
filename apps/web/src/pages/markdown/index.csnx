@@ -1,7 +1,7 @@
 ---
 layout: ../../layouts/Doc.astro
 title: Markdown から読む
-description: fromMdast で Markdown の AST (mdast) を Cosense の AST にする。
+description: "@cosense-toolbox/markdown の fromMdast で Markdown の AST (mdast) を Cosense の AST にする。"
 toc:
   - id: overview
     text: 基本
@@ -18,14 +18,17 @@ toc:
 ---
 Markdown から読む
 
-`@cosense-toolbox/parser/markdown` の `fromMdast` は、mdast (Markdown の AST) を Cosense のページの AST にします。ChatGPT の回答や README のような Markdown を、Cosense の記法として扱えます。
+`@cosense-toolbox/markdown` の `fromMdast` は、mdast (Markdown の AST) を Cosense のページの AST にします。ChatGPT の回答や README のような Markdown を、Cosense の記法として扱えます。
+
+code:sh
+ npm install @cosense-toolbox/markdown
 
 code:ts
  import { fromMarkdown } from "mdast-util-from-markdown"
  import { gfmFromMarkdown } from "mdast-util-gfm"
  import { gfm } from "micromark-extension-gfm"
  import { toCosenseText } from "@cosense-toolbox/parser/compile"
- import { fromMdast } from "@cosense-toolbox/parser/markdown"
+ import { fromMdast } from "@cosense-toolbox/markdown"
  
  const mdast = fromMarkdown("## 予定\n\n- **会議**の資料を作る", {
    extensions: [gfm()],
@@ -34,13 +37,11 @@ code:ts
  const page = fromMdast(mdast)
  toCosenseText(page) // → "\n[**** 予定]\n [* 会議]の資料を作る"
 
-できた AST は `parse` の結果と同じ型なので、[HTML への変換] や [AST のヘルパー] にそのまま渡せます。Cosense のページに貼るテキストにするには、[独自形式への変換] の `toCosenseText` を使います。
+できた AST は `@cosense-toolbox/parser` の `parse` の結果と同じ型なので、[HTML への変換] や [AST のヘルパー] にそのまま渡せます。Cosense のページに貼るテキストにするには、[独自形式への変換] の `toCosenseText` を使います。
 
 <DocHeading level={2} id="overview" title="基本" />
 
-このパッケージは Markdown の文字列を読む部品を持ちません。Markdown を読む部品 (micromark) は大きく、Markdown を使わない人にまで入れたくないからです。文字列から読むときは、`mdast-util-from-markdown` などで作った mdast を渡します。remark を使っているアプリなら、手元の mdast をそのまま渡せます。
-
-`fromMdast` の依存は mdast の型だけです。
+Markdown との変換は、`@cosense-toolbox/parser` とは別のパッケージにしています。parser を使うだけの人に、Markdown の部品が入らないようにするためです。remark を使っているアプリなら、手元の mdast をそのまま渡せます。
 
 <DocHeading level={2} id="mapping" title="記法の対応" />
 

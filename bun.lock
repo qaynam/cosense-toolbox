@@ -127,14 +127,13 @@
         "vitest": "^2.1.9",
       },
     },
-    "packages/parser": {
-      "name": "@cosense-toolbox/parser",
+    "packages/markdown": {
+      "name": "@cosense-toolbox/markdown",
       "version": "0.1.0-beta.8",
       "dependencies": {
-        "@types/hast": "^3.0.4",
+        "@cosense-toolbox/parser": "workspace:*",
         "@types/mdast": "^4.0.4",
         "effect": "^3.22.1",
-        "hast-util-to-html": "^9.0.5",
       },
       "devDependencies": {
         "fast-check": "^3.23.1",
@@ -143,6 +142,21 @@
         "mdast-util-math": "^3.0.0",
         "micromark-extension-gfm": "^3.0.0",
         "micromark-extension-math": "^3.1.0",
+        "tsdown": "^0.22.14",
+        "typescript": "^6.0.0",
+        "vitest": "^2.1.8",
+      },
+    },
+    "packages/parser": {
+      "name": "@cosense-toolbox/parser",
+      "version": "0.1.0-beta.8",
+      "dependencies": {
+        "@types/hast": "^3.0.4",
+        "effect": "^3.22.1",
+        "hast-util-to-html": "^9.0.5",
+      },
+      "devDependencies": {
+        "fast-check": "^3.23.1",
         "tsdown": "^0.22.14",
         "typescript": "^6.0.0",
         "vitest": "^2.1.8",
@@ -329,6 +343,8 @@
     "@cosense-toolbox/cosense-x": ["@cosense-toolbox/cosense-x@workspace:packages/cosense-x"],
 
     "@cosense-toolbox/lsp": ["@cosense-toolbox/lsp@workspace:packages/lsp"],
+
+    "@cosense-toolbox/markdown": ["@cosense-toolbox/markdown@workspace:packages/markdown"],
 
     "@cosense-toolbox/parser": ["@cosense-toolbox/parser@workspace:packages/parser"],
 
