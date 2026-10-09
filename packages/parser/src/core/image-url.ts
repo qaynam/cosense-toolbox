@@ -10,10 +10,7 @@ import { Option, pipe } from "effect"
 
 export const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i
 
-/**
- * Gyazo の URL。hash の後ろは、何も無いか、画像の拡張子か、`/raw` `/max_size/1000` のようなパス。
- * `.mp4` のような動画の URL は画像にしない。
- */
+/** Gyazo の URL のうち、画像として表示するもの。 */
 const GYAZO_RE =
   /^https?:\/\/(?:i\.)?gyazo\.com\/[0-9a-f]{20,}(?:\.(?:png|jpe?g|gif|webp|svg|bmp|avif))?(?:[/?#]|$)/i
 
