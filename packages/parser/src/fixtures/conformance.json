@@ -957,6 +957,17 @@
       ]
     },
     {
+      "description": "Gyazo の URL でも .mp4 なら、[[ ]] で囲んでも画像ではなく大きい動画",
+      "input": "[[https://gyazo.com/073801537a363a1768d00486ae1c9f17.mp4]]",
+      "expected": [
+        {
+          "type": "video",
+          "src": "https://gyazo.com/073801537a363a1768d00486ae1c9f17.mp4",
+          "large": true
+        }
+      ]
+    },
+    {
       "description": "#.svg を付けた拡張子なし URL は画像",
       "input": "[https://x.dev/api/status?id=1#.svg]",
       "expected": [

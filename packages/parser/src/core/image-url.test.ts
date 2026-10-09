@@ -26,6 +26,10 @@ describe("isImageUrl", () => {
   it("Gyazo のページ URL は拡張子が無くても画像として扱う", () => {
     expect(isImageUrl("https://gyazo.com/503a911fea542532aa5aba0a88eb7b60")).toBe(true)
   })
+
+  it("Gyazo の URL でも、動画の拡張子が付いていれば画像として扱わない", () => {
+    expect(isImageUrl("https://gyazo.com/503a911fea542532aa5aba0a88eb7b60.mp4")).toBe(false)
+  })
 })
 
 describe("asImageSrc", () => {
@@ -44,5 +48,10 @@ describe("asImageSrc", () => {
     expect(asImageSrc(`https://gyazo.com/${hash}`)).toBe(`https://i.gyazo.com/${hash}.png`)
     expect(asImageSrc(`https://i.gyazo.com/${hash}`)).toBe(`https://i.gyazo.com/${hash}.png`)
     expect(asImageSrc(`https://i.gyazo.com/${hash}.png`)).toBe(`https://i.gyazo.com/${hash}.png`)
+  })
+
+  it("gyazo.com に画像の拡張子を付けた URL も、表示用の i.gyazo.com の URL にする", () => {
+    const hash = "503a911fea542532aa5aba0a88eb7b60"
+    expect(asImageSrc(`https://gyazo.com/${hash}.png`)).toBe(`https://i.gyazo.com/${hash}.png`)
   })
 })
