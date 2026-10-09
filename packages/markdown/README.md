@@ -50,6 +50,30 @@ markdownToCosenseText(markdown, {
 })
 ```
 
+## 気をつけること
+
+### 1 行目はいつもタイトル
+
+`markdownToCosenseText` の 1 行目はタイトルになる。Markdown の先頭が `#` の見出しでなければ、タイトルは空になり、出力は空行から始まる。逆に、先頭が `#` の見出しなら、その見出しはタイトルになり、本文には残らない。
+
+ページの途中に貼るときは、1 行目を除いて使う。
+
+```ts
+const body = markdownToCosenseText(markdown).split("\n").slice(1).join("\n")
+```
+
+### Markdown の文字が、貼ると Cosense の記法として読まれることがある
+
+Cosense の記法にはエスケープが無い。そのため、Markdown ではただの文字でも、書き出したテキストを貼ると、Cosense の記法として読まれることがある。AST (`parseFromMarkdown`) の中では、文字のノードのまま残る。
+
+| Markdown              | 書き出したテキスト  | Cosense での読まれかた         |
+| :-------------------- | :------------------ | :----------------------------- |
+| `issue #123 を直す`   | `issue #123 を直す` | `#123` がハッシュタグになる    |
+| `[ページ] を見る`     | `[ページ] を見る`   | `[ページ]` がリンクになる      |
+| `\$ npm i` (行の先頭) | `$ npm i`           | コマンドの行になる             |
+| `\> a` (行の先頭)     | `> a`               | 引用の行になる                 |
+| `**a]b**`             | `[* a]b]`           | 装飾が `]` で閉じ、`b]` が残る |
+
 ## mdast から読む
 
 remark などで作った mdast が手元にあるなら、`fromMdast` に渡す。記法の対応はここで決まり、`markdownToCosenseText` と `parseFromMarkdown` も中でこれを使っている。
