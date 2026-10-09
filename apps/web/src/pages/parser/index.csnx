@@ -49,7 +49,7 @@ AST の走査、リンク抽出、HTML 変換、独自形式への変換は別�
 
 <DocHeading level={2} id="choose" title="使う API を選ぶ" />
 `@cosense-toolbox/parser` は、ページ全体や1行の記法を AST に変換します。具体的な関数の使い分けは [パース] をご覧ください。
-`@cosense-toolbox/parser/utils` は AST の検索・走査・リンク抽出、`@cosense-toolbox/parser/html` は HTML / hast への変換、`@cosense-toolbox/parser/markdown` は Markdown からの読み込みを担当します。
+`@cosense-toolbox/parser/utils` は AST の検索・走査・リンク抽出、`@cosense-toolbox/parser/html` は HTML / hast への変換を担当します。Markdown から読むときは、別パッケージの [Markdown から読む] (`@cosense-toolbox/markdown`) を使います。
 `@cosense-toolbox/parser/compile` はプレーンテキストや独自形式への変換、`@cosense-toolbox/parser/extensions` はパーサーへの記法追加に使います。
 `@cosense-toolbox/parser/schema` の `isPage` は、外部から受け取った値が AST の形かどうかを検証します。
 

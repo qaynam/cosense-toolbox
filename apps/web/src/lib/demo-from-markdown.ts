@@ -1,5 +1,5 @@
+import { markdownToCosenseText, parseFromMarkdown } from "@cosense-toolbox/markdown"
 import { toHtml } from "@cosense-toolbox/parser/html"
-import { parseFromMarkdown } from "@cosense-toolbox/parser/markdown"
 import style from "@cosense-toolbox/style/style.css?raw"
 
 // ChatGPT の回答のような Markdown
@@ -32,6 +32,10 @@ useEffect(() => {
 - [ ] テストを書く
 `
 
+// Cosense のページに貼るなら、記法のテキストにする
+export const text = markdownToCosenseText(markdown)
+
+// 描画するなら、AST を toHtml に渡す
 const body = toHtml(parseFromMarkdown(markdown))
 
 export const html = `<!doctype html>

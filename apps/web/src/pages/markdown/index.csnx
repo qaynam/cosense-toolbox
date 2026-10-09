@@ -1,0 +1,103 @@
+---
+layout: ../../layouts/Doc.astro
+title: Markdown から読む
+description: "@cosense-toolbox/markdown で Markdown を Cosense の記法のテキストや AST にする。"
+toc:
+  - id: package
+    text: "@cosense-toolbox/markdown"
+    depth: 2
+  - id: mdast
+    text: fromMdast
+    depth: 2
+  - id: mapping
+    text: 記法の対応
+    depth: 2
+  - id: title
+    text: タイトル
+    depth: 2
+  - id: math
+    text: 数式
+    depth: 2
+  - id: position
+    text: 位置情報
+    depth: 2
+---
+Markdown から読む
+
+ChatGPT の回答や README のような Markdown を、Cosense のページに貼れる記法のテキストや、Cosense の AST にします。
+
+code:ts
+ import { markdownToCosenseText } from "@cosense-toolbox/markdown"
+ 
+ markdownToCosenseText("## 予定\n\n- **会議**の資料を作る")
+ // → "\n[**** 予定]\n [* 会議]の資料を作る"
+
+<DocHeading level={2} id="package" title="@cosense-toolbox/markdown" />
+
+Markdown の文字列から読むなら、`@cosense-toolbox/markdown` を使います。読み方は remark と同じです (CommonMark と GFM、`$...$` の数式)。
+
+ `markdownToCosenseText(markdown, options?)` → Cosense のページに貼れる記法のテキスト。1 行目はタイトル
+ `parseFromMarkdown(markdown, options?)` → Cosense の AST。`parse` の結果と同じ型なので、[HTML への変換] や [AST のヘルパー] にそのまま渡せます
+
+`markdownToCosenseText` には、[独自形式への変換] の `toCosenseText` と同じ `handlers` と `extensions` を渡せます。書き出しを変えたいときに使います。
+
+code:ts
+ // ### の見出しを [** ] にする
+ markdownToCosenseText(markdown, {
+   extensions: [{ decoration: (output, node) => (node.sizeLevel === 2 ? output.replace("***", "**") : output) }],
+ })
+
+Markdown との変換は、`@cosense-toolbox/parser` とは別のパッケージにしています。Markdown を読む部品 (micromark) は大きいので、parser を使うだけの人に入らないようにするためです。
+
+<DocHeading level={2} id="mdast" title="fromMdast" />
+
+`fromMdast` は、mdast (Markdown の AST) を Cosense の AST にします。`markdownToCosenseText` と `parseFromMarkdown` も中でこれを使っていて、記法の対応はここで決まります。remark を使っているアプリなら、手元の mdast をそのまま渡せます。
+
+code:ts
+ import { toCosenseText } from "@cosense-toolbox/parser/compile"
+ import { fromMdast } from "@cosense-toolbox/markdown"
+ 
+ toCosenseText(fromMdast(mdast))
+
+<DocHeading level={2} id="mapping" title="記法の対応" />
+
+ `## 見出し` → `[**** 見出し]`。`#` が 1 つ増えるごとに大きさが 1 段下がり、`#####` 以降は `[* ]`
+ 箇条書き → 字下げ。入れ子は深い字下げ
+ 番号付きの箇条書き → 番号を残した字下げ (` 1. `)
+ タスク (`- [ ]` `- [x]`) → `☐` `☑` の印を付けた字下げ
+ `**太字**` `*斜体*` `~~打ち消し~~` → `[* ]` `[/ ]` `[- ]`。ちょうど重なった装飾は `[*/ ]` のように記号をまとめます
+ インラインコード → そのまま。コードの中の改行は空白にして 1 行に収めます
+ `[ラベル](URL)` → `[ラベル URL]`。http でない URL (相対パスやアンカー) は、Cosense ではリンクにならないので文字だけ
+ 画像 → `[画像の URL]`。リンク付きの画像は `[リンク先 画像の URL]`
+ フェンス → `code:言語名`。言語名の後ろにファイル名があればファイル名、どちらも無ければ `code:text`
+ 表 → `table:table`。セルの中の装飾も読みます
+ 引用 → `>` の行
+ `$数式$` `$$数式$$` → `[$ 数式]` (下の「数式」)
+ 区切り線 → 空行
+
+Cosense の装飾は入れ子にできないので、装飾の中の装飾は記号を外します (装飾の中のリンクは残します)。装飾と見出しの中のインラインコードも、Cosense は装飾の中のバッククォートをコードとして読まないので、バッククォートを外した文字にします。
+
+ブロックの間は Cosense の書きかたに合わせます。段落どうしの間は空行にし、見出しのすぐ後と、箇条書きの前には空行を挟みません。ただし、コードブロックと表のすぐ後に、それより深い字下げの行 (箇条書きなど) が来るときは空行で区切ります。Cosense ではコードブロックと表が、後ろに続く深い字下げの行を自分の中身として読むからです。引用や項目の中で終わったコードブロックでも同じです。
+
+Markdown の文字は、Markdown のとおり文字のノードになります。`[ページ]` や `#タグ` を Cosense のリンクとして読み直すことはしません。ただし、Cosense の記法には逃がし (エスケープ) が無いので、`toCosenseText` で書き出したテキストを Cosense に貼ると、Cosense はそれをリンクやタグとして読みます。
+
+<DocHeading level={2} id="title" title="タイトル" />
+
+Markdown の先頭が `#` の見出しなら、それがページのタイトル (1 行目) になります。先頭が見出しでなければ、タイトルは空になります。2 つ目からの `#` の見出しは `[***** ]` になります。
+
+<DocHeading level={2} id="math" title="数式" />
+
+数式は CommonMark にも GFM にも無い拡張です。`@cosense-toolbox/markdown` は、広く使われている pandoc の決まりに合わせ、次のどれかに当てはまる `$...$` を数式にせず、文字のまま残します。
+ 開く `$` のすぐ後が空白
+ 閉じる `$` のすぐ前が空白
+ 閉じる `$` のすぐ後が数字
+そのため、`$x^2$` は `[$ x^2]` になり、`$5と$10` や `$5 と $10` は文字のまま残ります。`$$...$$` は値段と紛れないので、いつも数式にします。
+
+`$` を一切数式として読まないときは、`math: false` を渡します。`$` も `$$` も文字のまま残ります。
+
+code:ts
+ markdownToCosenseText("$x^2$", { math: false }) // → "\n$x^2$"
+
+<DocHeading level={2} id="position" title="位置情報" />
+
+ノードの `position` は、元になった Markdown のノードの位置を指します。段落の中の改行で分けた行のように、1 つの Markdown のノードから複数のノードを作ったときは、どれも同じ位置を持ちます。空行や箇条書きの番号のように Markdown に無いノードは、隣のノードの始まりに幅 0 で置きます。

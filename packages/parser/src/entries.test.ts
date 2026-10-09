@@ -38,11 +38,12 @@ describe("サブパスの入口", () => {
     )
   })
 
-  it("./markdown は Markdown を読む関数だけを出す", async () => {
-    expect(Object.keys(await import("./markdown"))).toEqual(["parseFromMarkdown"])
-  })
-
-  it("./compile は出力の形式を問わない土台だけを出す", async () => {
-    expect(Object.keys(await import("./compile")).sort()).toEqual(["createCompiler", "toPlainText"])
+  it("./compile は HTML 以外の出力 (変換の土台と、テキストと Cosense の記法への書き出し) を出す", async () => {
+    expect(Object.keys(await import("./compile")).sort()).toEqual([
+      "createCompiler",
+      "defaultCosenseTextHandlers",
+      "toCosenseText",
+      "toPlainText",
+    ])
   })
 })

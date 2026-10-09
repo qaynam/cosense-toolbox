@@ -7,6 +7,7 @@ import fc from "fast-check"
 import { describe, expect, it } from "vitest"
 
 import { childrenOf, rawTextOf } from "./ast"
+import { toCosenseText } from "./compile/to-cosense-text"
 import { tableCellNotation } from "./extensions"
 import type { Extension } from "./inline/types"
 import { parse, parseLine } from "./parse"
@@ -208,6 +209,27 @@ describe("Schema との整合", () => {
         const decoded = decodePage(JSON.parse(JSON.stringify(parse(source))))
         expect(Either.isRight(decoded)).toBe(true)
       }),
+    )
+  })
+})
+
+describe("書き出し (toCosenseText)", () => {
+  // Cosense の記法には逃がしが無いので、文字や URL に記法の記号があると、書き出した後で隣と組み合わさって読み方が変わる。
+  it("文字と URL に [ ] ` が無ければ、書き出したテキストを読み直すと、位置情報を除いて同じ AST になる", () => {
+    fc.assert(
+      fc.property(sourceArb, (source) => {
+        const page = parse(source)
+        const written: string[] = []
+        visit(page, "text", (node) => {
+          written.push(node.value)
+        })
+        visit(page, "externalLink", (node) => {
+          written.push(node.target)
+        })
+        fc.pre(!/[[\]`]/.test(written.join("")))
+        expect(stripPositions(parse(toCosenseText(page)))).toEqual(stripPositions(page))
+      }),
+      { numRuns: 2000 },
     )
   })
 })

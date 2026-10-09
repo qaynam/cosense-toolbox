@@ -34,8 +34,8 @@ export const DOC_GROUPS: DocGroup[] = [
       {
         href: "/parser/demo/",
         label: "パーサーの出力例",
-        description: "記法を HTML に変換した結果と、Markdown を読んだ結果を確認できます。",
-        keywords: "parser toHtml parseFromMarkdown デモ",
+        description: "記法を HTML に変換した結果を確認できます。",
+        keywords: "parser toHtml デモ",
       },
       {
         href: "/parser/parse/",
@@ -62,22 +62,24 @@ export const DOC_GROUPS: DocGroup[] = [
         keywords: "toHast toHtml handlers highlight classNames style",
       },
       {
-        href: "/parser/markdown/",
-        label: "Markdown から読む",
-        description: "parseFromMarkdown で Markdown を AST にする。",
-        keywords: "parseFromMarkdown markdown ChatGPT 貼り付け 変換",
-      },
-      {
         href: "/parser/compile/",
         label: "独自形式への変換",
-        description: "テキスト化や独自コンパイラーの作り方。",
-        keywords: "toPlainText createCompiler markdown",
+        description: "テキスト化、Cosense の記法への書き出し、独自コンパイラーの作り方。",
+        keywords: "toPlainText toCosenseText createCompiler markdown",
       },
       {
         href: "/parser/extend/",
         label: "記法の拡張",
         description: "独自の記法や AST ノードを追加します。",
         keywords: "Extension InlineConstruct BracketRule 拡張 schema",
+      },
+      {
+        href: "/markdown/",
+        label: "Markdown から読む",
+        description:
+          "Markdown を Cosense の記法のテキストや AST にする (@cosense-toolbox/markdown)。",
+        keywords:
+          "markdownToCosenseText parseFromMarkdown fromMdast mdast markdown ChatGPT 貼り付け 変換",
       },
       {
         href: "/parser/media/",
