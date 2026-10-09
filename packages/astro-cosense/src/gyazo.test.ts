@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 
 import { type GyazoVideoOptions, rehypeGyazoVideos } from "./gyazo"
 
-const HASH = "073801537a363a1768d00486ae1c9f17"
+const HASH = "0123456789abcdef0123456789abcdef"
 const OEMBED = `https://api.gyazo.com/api/oembed?url=${encodeURIComponent(`https://gyazo.com/${HASH}`)}`
 
 const oembed = (type: "photo" | "video") => () => Response.json({ version: "1.0", type })

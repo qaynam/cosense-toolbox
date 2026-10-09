@@ -108,7 +108,7 @@ const transformWithIntegration = async (
 }
 
 describe("Gyazo の動画 (gyazoVideo)", () => {
-  const hash = "073801537a363a1768d00486ae1c9f17"
+  const hash = "0123456789abcdef0123456789abcdef"
   const source = `投稿\n[https://gyazo.com/${hash}]`
 
   /** どの hash にも「動画」と答える oEmbed。呼ばれた URL を記録する。 */
