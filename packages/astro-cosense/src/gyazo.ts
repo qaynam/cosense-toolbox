@@ -25,7 +25,7 @@ export interface GyazoVideoOptions {
   readonly warn?: (message: string) => void
 }
 
-/** parser の `asImageSrc` が、拡張子の無い Gyazo の URL から作る形。 */
+/** parser の `toHast` が、拡張子の無い Gyazo の URL から作る `<img src>`。 */
 const RAW_RE = /^https:\/\/gyazo\.com\/([0-9a-f]{20,})\/raw$/i
 
 const oembedUrlOf = (hash: string): string =>
