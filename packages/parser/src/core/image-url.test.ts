@@ -42,16 +42,33 @@ describe("asImageSrc", () => {
     expect(asImageSrc("https://x.com/a.jpeg?w=100&h=50")).toBe("https://x.com/a.jpeg?w=100&h=50")
   })
 
-  it("Gyazo の URL だけは表示用の i.gyazo.com の png に変換する", () => {
+  it("ハッシュだけの Gyazo の URL は、ファイルへ転送される /raw にする", () => {
     // これは表示のための変換なので parse() は行わない。使う側が明示的に呼ぶ。
     const hash = "503a911fea542532aa5aba0a88eb7b60"
-    expect(asImageSrc(`https://gyazo.com/${hash}`)).toBe(`https://i.gyazo.com/${hash}.png`)
-    expect(asImageSrc(`https://i.gyazo.com/${hash}`)).toBe(`https://i.gyazo.com/${hash}.png`)
-    expect(asImageSrc(`https://i.gyazo.com/${hash}.png`)).toBe(`https://i.gyazo.com/${hash}.png`)
+    expect(asImageSrc(`https://gyazo.com/${hash}`)).toBe(`https://gyazo.com/${hash}/raw`)
   })
 
-  it("gyazo.com に画像の拡張子を付けた URL も、表示用の i.gyazo.com の URL にする", () => {
+  it("i.gyazo.com のハッシュだけの URL も、gyazo.com の /raw にする", () => {
     const hash = "503a911fea542532aa5aba0a88eb7b60"
-    expect(asImageSrc(`https://gyazo.com/${hash}.png`)).toBe(`https://i.gyazo.com/${hash}.png`)
+    expect(asImageSrc(`https://i.gyazo.com/${hash}`)).toBe(`https://gyazo.com/${hash}/raw`)
+  })
+
+  it("ハッシュだけの Gyazo の URL は、末尾のスラッシュやクエリが付いていても /raw にする", () => {
+    const hash = "503a911fea542532aa5aba0a88eb7b60"
+    expect(asImageSrc(`https://gyazo.com/${hash}/`)).toBe(`https://gyazo.com/${hash}/raw`)
+    expect(asImageSrc(`https://gyazo.com/${hash}?a=1`)).toBe(`https://gyazo.com/${hash}/raw`)
+  })
+
+  it("拡張子の付いた Gyazo の URL は、書かれたままにする", () => {
+    const hash = "503a911fea542532aa5aba0a88eb7b60"
+    expect(asImageSrc(`https://i.gyazo.com/${hash}.jpg`)).toBe(`https://i.gyazo.com/${hash}.jpg`)
+    expect(asImageSrc(`https://gyazo.com/${hash}.gif`)).toBe(`https://gyazo.com/${hash}.gif`)
+  })
+
+  it("/max_size のような、ファイルを指す Gyazo の URL は書かれたままにする", () => {
+    const hash = "503a911fea542532aa5aba0a88eb7b60"
+    expect(asImageSrc(`https://gyazo.com/${hash}/max_size/1000`)).toBe(
+      `https://gyazo.com/${hash}/max_size/1000`,
+    )
   })
 })

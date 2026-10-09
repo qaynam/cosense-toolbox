@@ -17,7 +17,7 @@
    YouTube や動画の URL の判定は、Cosense Web がパースの段階で行っているので記法の一部としてここで持つ。
 3. **AST はソースに書かれた文字列を保つ**。パースの過程で値を「使いやすい形」に書き換えない。
    例: `[https://gyazo.com/{hash}]` の `src` はそのページ URL のままにする。
-   `<img>` に入る形（`https://i.gyazo.com/{hash}.png`）への変換は表示のための書き換えなので、
+   `<img>` に入る形（`https://gyazo.com/{hash}/raw`）への変換は表示のための書き換えなので、
    `core/image-url.ts` の `asImageSrc` に切り出し、`html/`（既定の `toHast`）で行う。
    **どのノード型になるかの判定は構造なのでパーサーの仕事、値の書き換えは描画の仕事。**
 4. **自己完結**。ワークスペース内の他パッケージ（`@cosense/*`）を import しない。

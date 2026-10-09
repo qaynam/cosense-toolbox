@@ -16,6 +16,10 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 - **不具合の修正:** Gyazo の動画の URL (`https://gyazo.com/{hash}.mp4`) を `[[ ]]` で囲むと、大きい画像として読んでいたのを直した。
   大きい動画になる。Gyazo の URL を画像とみなすのは、拡張子が無いか、画像の拡張子が付いているときだけにした。
+- **変更:** `asImageSrc` は、ハッシュだけの Gyazo の URL (`https://gyazo.com/{hash}`) を `https://gyazo.com/{hash}/raw` にする。
+  今までは `https://i.gyazo.com/{hash}.png` を組み立てていたので、png ではないもの (Gyazo GIF の録画など) は 404 になっていた。
+  `/raw` は Gyazo がそのハッシュの本来のファイル (png / jpg / gif) へ転送してくれる。録画は動く gif として表示される。
+  拡張子や `/max_size/…` の付いた Gyazo の URL は、それ自体がファイルなので書かれたまま返す (今までは `i.gyazo.com` の png に変えていた)。
 - `isPage` を足した (`@cosense-toolbox/parser/schema`)。外から来た値が `Page` の形かを `true` / `false` で返すので、
   effect を使わずに検証できる。どこが違うかを知りたいときは、今までどおり `decodePage` (effect の `Either` を返す) を使う。
 - `toCosenseText` を足した (`@cosense-toolbox/parser/compile`)。AST を Cosense の記法のテキストに書き出す。`parse` の逆向きで、

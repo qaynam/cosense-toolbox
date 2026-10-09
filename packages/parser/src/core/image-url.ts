@@ -11,20 +11,25 @@ import { Option, pipe } from "effect"
 export const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i
 
 /**
- * Gyazo のページ URL / 画像 URL から hash を取り出す。
- * hash の後ろは、何も無いか画像の拡張子だけ。`.mp4` のような動画の URL は画像にしない。
+ * Gyazo の URL。hash の後ろは、何も無いか、画像の拡張子か、`/raw` `/max_size/1000` のようなパス。
+ * `.mp4` のような動画の URL は画像にしない。
  */
 const GYAZO_RE =
-  /^https?:\/\/(?:i\.)?gyazo\.com\/([0-9a-f]{20,})(?:\.(?:png|jpe?g|gif|webp|svg|bmp|avif))?(?:[/?#]|$)/i
+  /^https?:\/\/(?:i\.)?gyazo\.com\/[0-9a-f]{20,}(?:\.(?:png|jpe?g|gif|webp|svg|bmp|avif))?(?:[/?#]|$)/i
+
+/** hash だけの Gyazo の URL。ファイルではなく Gyazo のページを指す。 */
+const GYAZO_PAGE_RE = /^https?:\/\/(?:i\.)?gyazo\.com\/([0-9a-f]{20,})\/?(?:[?#].*)?$/i
 
 /**
- * Gyazo のページ URL は拡張子を持たないが画像として表示される。
- * `<img>` に入れるには hash から画像 URL を組み立て直す必要がある。
+ * Gyazo のページ URL は `<img>` に入れられないので、`/raw` に向ける。
+ * `/raw` は Gyazo がその hash の本来のファイル (png / jpg / gif) へ転送してくれるので、
+ * 拡張子を推測しなくてよい。拡張子やパスの付いた URL はそれ自体がファイルなので書かれたままにする。
  */
 const gyazoSrc = (url: string): Option.Option<string> =>
   pipe(
-    Option.fromNullable(url.match(GYAZO_RE)?.[1]),
-    Option.map((hash) => `https://i.gyazo.com/${hash}.png`),
+    Option.fromNullable(url.match(GYAZO_PAGE_RE)?.[1]),
+    Option.map((hash) => `https://gyazo.com/${hash}/raw`),
+    Option.orElse(() => (GYAZO_RE.test(url) ? Option.some(url) : Option.none())),
   )
 
 /**
@@ -60,7 +65,7 @@ export const isImageUrl = (url: string): boolean => Option.isSome(imageSrc(url))
 /**
  * 画像 URL なら `<img src>` に入れられる形にして返す。画像でなければ null。
  *
- * Gyazo のページ URL はここでだけ `https://i.gyazo.com/{hash}.png` に差し替わる。
+ * Gyazo のページ URL はここでだけ `https://gyazo.com/{hash}/raw` に差し替わる。
  * `parse()` はこの変換を行わない (AST はソースに書かれた文字列を保つ)。
  */
 export const asImageSrc = (url: string): string | null => Option.getOrNull(imageSrc(url))
