@@ -1,7 +1,7 @@
 ---
 layout: ../../layouts/Doc.astro
 title: Markdown から読む
-description: Markdown を Cosense の記法のテキストや AST にする。
+description: "@cosense-toolbox/markdown で Markdown を Cosense の記法のテキストや AST にする。"
 toc:
   - id: package
     text: "@cosense-toolbox/markdown"
@@ -47,15 +47,15 @@ code:ts
    extensions: [{ decoration: (output, node) => (node.sizeLevel === 2 ? output.replace("***", "**") : output) }],
  })
 
-Markdown を読む部品 (micromark) は大きいので、このパッケージだけが持ちます。`@cosense-toolbox/parser` を使うだけの人には入りません。
+Markdown との変換は、`@cosense-toolbox/parser` とは別のパッケージにしています。Markdown を読む部品 (micromark) は大きいので、parser を使うだけの人に入らないようにするためです。
 
 <DocHeading level={2} id="mdast" title="fromMdast" />
 
-`@cosense-toolbox/parser/markdown` の `fromMdast` は、mdast (Markdown の AST) を Cosense の AST にします。`@cosense-toolbox/markdown` も中でこれを使っていて、記法の対応はここで決まります。remark を使っているアプリなら、手元の mdast をそのまま渡せます。依存は mdast の型だけです。
+`fromMdast` は、mdast (Markdown の AST) を Cosense の AST にします。`markdownToCosenseText` と `parseFromMarkdown` も中でこれを使っていて、記法の対応はここで決まります。remark を使っているアプリなら、手元の mdast をそのまま渡せます。
 
 code:ts
  import { toCosenseText } from "@cosense-toolbox/parser/compile"
- import { fromMdast } from "@cosense-toolbox/parser/markdown"
+ import { fromMdast } from "@cosense-toolbox/markdown"
  
  toCosenseText(fromMdast(mdast))
 

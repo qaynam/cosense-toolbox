@@ -36,6 +36,7 @@ Cosense の記法を解析して、自分のアプリで使いたい場合は [C
 <DocHeading level={2} id="packages" title="パッケージ一覧" />
 <DocHeading level={3} id="parse-and-compile" title="記法の解析と変換" />
 [Cosense 記法パーサー] (`@cosense-toolbox/parser`) は、位置情報つき AST の生成、走査、HTML や独自形式への変換を担当します。
+[Markdown から読む] (`@cosense-toolbox/markdown`) は、Markdown を Cosense の AST にします。
 [Cosense X] (`@cosense-toolbox/cosense-x`) は、Cosense 記法のページを JSX モジュールへコンパイルします。
 [Astro 統合] (`@cosense-toolbox/astro`) は、`.csn` / `.csnx` を Astro のページと content collection で使えるようにします。
 

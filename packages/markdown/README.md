@@ -2,7 +2,7 @@
 
 Markdown を Cosense (旧 Scrapbox) のページとして読みます。ChatGPT の回答や README のような Markdown を、Cosense のページに貼れる記法のテキストや、Cosense の AST にできます。
 
-**ドキュメント → <https://cosense-toolbox.qaynam.dev/parser/markdown/>**
+**ドキュメント → <https://cosense-toolbox.qaynam.dev/markdown/>**
 
 > **beta**：公開 API や出力はまだ変わりうる。
 
@@ -50,10 +50,20 @@ markdownToCosenseText(markdown, {
 })
 ```
 
-## 依存
+## mdast から読む
 
-Markdown を読む部品 (micromark と `mdast-util-from-markdown`) は、このパッケージだけが持つ。
-記法の対応は `@cosense-toolbox/parser/markdown` の `fromMdast` が決めるので、remark などで作った mdast が手元にあるなら、このパッケージを使わずに `fromMdast` に渡せばよい。
+remark などで作った mdast が手元にあるなら、`fromMdast` に渡す。記法の対応はここで決まり、`markdownToCosenseText` と `parseFromMarkdown` も中でこれを使っている。
+
+```ts
+import { toCosenseText } from "@cosense-toolbox/parser/compile"
+import { fromMdast } from "@cosense-toolbox/markdown"
+
+toCosenseText(fromMdast(mdast))
+```
+
+## なぜ parser と別のパッケージか
+
+Markdown を読む部品 (micromark と `mdast-util-from-markdown`) は大きいので、`@cosense-toolbox/parser` を使うだけの人に入れないため。
 
 ## ライセンス
 

@@ -1,3 +1,5 @@
+import { toCosenseText } from "@cosense-toolbox/parser/compile"
+import { isPage } from "@cosense-toolbox/parser/schema"
 import fc from "fast-check"
 import type { Root } from "mdast"
 import { fromMarkdown } from "mdast-util-from-markdown"
@@ -7,10 +9,15 @@ import { gfm } from "micromark-extension-gfm"
 import { math } from "micromark-extension-math"
 import { describe, expect, it } from "vitest"
 
-import { toCosenseText } from "../compile/to-cosense-text"
-import { isPage } from "../schema"
-import { stripPositions } from "../test-helpers"
 import { fromMdast } from "./from-mdast"
+
+/** 位置情報を除いた形。構造だけを具体的な値で比べるため。 */
+const stripPositions = (value: unknown): unknown =>
+  JSON.parse(
+    JSON.stringify(value, (key: string, field: unknown) =>
+      key === "position" ? undefined : field,
+    ),
+  )
 
 const mdastOf = (markdown: string): Root =>
   fromMarkdown(markdown, {

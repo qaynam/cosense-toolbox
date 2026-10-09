@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest"
 import { markdownToCosenseText, parseFromMarkdown } from "./parse-from-markdown"
 
 // 期待値の 1 行目はタイトル。Markdown が # の見出しで始まらなければ、タイトルは空になる。
-// Markdown の記法ごとの対応は @cosense-toolbox/parser/markdown の fromMdast が決めるので、
+// Markdown の記法ごとの対応は fromMdast が決める (from-mdast.test.ts) ので、
 // ここでは文字列から読むときに足しているもの (GFM と数式の読み方、オプション) だけを確かめる。
 
 describe("parseFromMarkdown", () => {

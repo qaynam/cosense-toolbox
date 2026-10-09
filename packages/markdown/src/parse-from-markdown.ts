@@ -1,12 +1,11 @@
 /**
  * parse-from-markdown.ts — Markdown の文字列を、Cosense のページの AST と記法のテキストにする。
  *
- * Markdown を読む部品 (micromark) で mdast にし、`@cosense-toolbox/parser/markdown` の `fromMdast` で
+ * Markdown を読む部品 (micromark) で mdast にし、`fromMdast` で
  * Cosense の AST に、`toCosenseText` で記法のテキストにする。読み方は remark と同じ (CommonMark と GFM、数式)。
  */
 import type { Page } from "@cosense-toolbox/parser"
 import { type CosenseTextOptions, toCosenseText } from "@cosense-toolbox/parser/compile"
-import { fromMdast } from "@cosense-toolbox/parser/markdown"
 import type { Root } from "mdast"
 import { fromMarkdown } from "mdast-util-from-markdown"
 import { gfmFromMarkdown } from "mdast-util-gfm"
@@ -15,6 +14,7 @@ import { gfm } from "micromark-extension-gfm"
 import { math as mathSyntax } from "micromark-extension-math"
 
 import { toPandocDollarMath } from "./dollar-math"
+import { fromMdast } from "./from-mdast"
 
 export interface MarkdownOptions {
   /**

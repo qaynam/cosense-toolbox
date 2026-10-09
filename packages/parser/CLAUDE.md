@@ -28,9 +28,6 @@
    - `hast-util-to-html` と `@types/hast`：`./html` の `toHast` / `toHtml` だけが使う。
      HTML 系の出力 (HTML の文字列・JSX・rehype) を hast 1 つにまとめ、hast を文字列にする処理は
      unified の標準に任せるため (属性名の変換やエスケープを自前で持たない)
-   - `@types/mdast`：`./markdown` の `fromMdast` が受け取る mdast の型。型だけで runtime のコードは無い。
-     Markdown の文字列を読む部品 (micromark / `mdast-util-from-markdown`) はここに入れない。
-     文字列から読む近道は別パッケージ `@cosense-toolbox/markdown` が持つ
    - `parse` だけを使う人のバンドルには入らないこと (§4 の tree-shaking の確認) を保つ
      （`tsdown` / `vitest` / `typescript` / `fast-check` は devDependencies なので対象外。）
 6. **CSS をこのパッケージに置かない**。既定の見た目は `@cosense-toolbox/style`（別パッケージ）
@@ -100,11 +97,10 @@ schema.ts  → types のみ
 utils/     → types, ast のみ
 compile/   → types, ast のみ
 html/      → types, ast, core/ のみ
-markdown/  → types, compile/ のみ (装飾やセルの value を toCosenseText で作る)
 extensions/ → 型の再エクスポートと、既製の Extension
 ```
 
-- `utils/` / `compile/` / `html/` / `markdown/` は**パーサー本体（`parse.ts`、`inline/`、`block/`）を import してはいけない。**
+- `utils/` / `compile/` / `html/` は**パーサー本体（`parse.ts`、`inline/`、`block/`）を import してはいけない。**
   AST を受け取って処理するだけ。これにより `parse` だけ使う利用者のバンドルに
   compiler や visitor が入らない（§4 tree-shaking）。
 - `core/` は記法の知識を持たない（括弧の対応探索、タグ境界の判定、位置計算、URL の判定だけ）。
@@ -117,16 +113,15 @@ extensions/ → 型の再エクスポートと、既製の Extension
 
 ### レイヤーの責務
 
-| レイヤー    | 責務                                                               | やらないこと                                       |
-| ----------- | ------------------------------------------------------------------ | -------------------------------------------------- |
-| `core/`     | 文字列走査のプリミティブ、Point/Position の生成、URL の判定        | 記法の知識を持たない                               |
-| `inline/`   | 1 行の中のインライン記法 → `InlineNode[]`                          | 複数行のことを知らない                             |
-| `block/`    | 行の分類とブロック（code:/table:/title）のグルーピング             | インライン記法の中身を知らない（`inline/` に委譲） |
-| `parse.ts`  | ページ全文 → `Page`。extension の合成                              | 記法そのものを実装しない                           |
-| `compile/`  | AST → HTML 以外の形式 (ハンドラ機構と toPlainText / toCosenseText) | パースしない                                       |
-| `html/`     | AST → hast / HTML の文字列と描画の拡張。表示のための書き換えもここ | パースしない                                       |
-| `markdown/` | mdast → AST。ブロックを行に開くのもここ                            | Markdown の文字列を読まない (mdast を受け取る)     |
-| `utils/`    | AST の走査・抽出                                                   | パースしない                                       |
+| レイヤー   | 責務                                                               | やらないこと                                       |
+| ---------- | ------------------------------------------------------------------ | -------------------------------------------------- |
+| `core/`    | 文字列走査のプリミティブ、Point/Position の生成、URL の判定        | 記法の知識を持たない                               |
+| `inline/`  | 1 行の中のインライン記法 → `InlineNode[]`                          | 複数行のことを知らない                             |
+| `block/`   | 行の分類とブロック（code:/table:/title）のグルーピング             | インライン記法の中身を知らない（`inline/` に委譲） |
+| `parse.ts` | ページ全文 → `Page`。extension の合成                              | 記法そのものを実装しない                           |
+| `compile/` | AST → HTML 以外の形式 (ハンドラ機構と toPlainText / toCosenseText) | パースしない                                       |
+| `html/`    | AST → hast / HTML の文字列と描画の拡張。表示のための書き換えもここ | パースしない                                       |
+| `utils/`   | AST の走査・抽出                                                   | パースしない                                       |
 
 ---
 
@@ -168,8 +163,6 @@ src/
     to-html.ts          toHast の出力を文字列にする近道（highlight は HTML の文字列も受け付ける / style）
     code-line-numbers.ts       描画の拡張。コードブロックの行番号
     table-cell-line-breaks.ts  描画の拡張。セルの中の text ノードの文字列を <br> にする
-  markdown/             mdast を読む (./markdown サブパス)
-    from-mdast.ts       mdast を Cosense の AST にする。Cosense に移す規則はここだけに持つ
   utils/                visit / links
   fixtures/             conformance.json（記法仕様）
 ```
@@ -196,7 +189,7 @@ src/
 
 ## 4. tree-shaking ルール
 
-配布物は「`parse` だけ使う人のバンドルに `schema` も `compile` も `html` も `markdown` も入らない」状態を保つ。
+配布物は「`parse` だけ使う人のバンドルに `schema` も `compile` も `html` も入らない」状態を保つ。
 
 - `package.json` の `"sideEffects": false` を**壊さない**。すなわち:
   - モジュールのトップレベルで**関数を実行しない**（定数と関数宣言のみ）
@@ -204,7 +197,7 @@ src/
   - polyfill や prototype 拡張を書かない
 - **class を使わない。** AST は plain object（`JSON.stringify` / `JSON.parse` で往復できること）。
   worklet / postMessage / CLI の `--json` 出力がこの制約に依存している。
-- 重い層はサブパス export に分ける（`./schema` `./utils` `./extensions` `./compile` `./html` `./markdown`）。
+- 重い層はサブパス export に分ける（`./schema` `./utils` `./extensions` `./compile` `./html`）。
   メインエントリ `index.ts` からは**それらを re-export しない**（したら opt-in の意味が消える）。
 - effect は必ず named import（`import { Option } from 'effect'`）。default import / `import * as` は使わない。
 - **`import { Array } from 'effect'` は使わない。** effect の `Array` モジュールはそれだけで
@@ -224,7 +217,7 @@ src/
 - ノード型による分岐は**網羅 switch**にし、`default` で `node satisfies never` を書く。
   これにより NodeMap に型を足したとき、対応漏れがコンパイルエラーになる。
 - **公開 API のシグネチャに effect を漏らさない。** `parse` / `parseLine` / `tokenizeInline` /
-  `utils` / `compile` / `html` / `markdown` の引数・戻り値に `Option` / `Either` / `Effect` / `Schema` が
+  `utils` / `compile` / `html` の引数・戻り値に `Option` / `Either` / `Effect` / `Schema` が
   現れてはいけない。内部で使った `Option<A>` は境界で `Option.getOrNull` 等でアンラップし、
   `A | null` にする（`asImageSrc(): string | null` がその例）。
   検証コマンド（CI でも動く。`tools/public-types`）:
