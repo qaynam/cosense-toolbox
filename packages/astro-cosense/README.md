@@ -30,20 +30,20 @@ export default defineConfig({
 })
 ```
 
-| オプション            | 内容                                                                                                                                                                                                           |
-| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `components`          | すべてのページに渡すコンポーネントを default export するモジュールの、プロジェクトのルートからのパス                                                                                                           |
-| `pageUrl`             | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス                                                                                                                |
-| `tagUrl` `projectUrl` | `compile` の同名のオプションと同じ                                                                                                                                                                             |
-| `unresolvedLinks`     | サイトに無いページへのリンクの出し方。`'text'` (既定) はテキスト、`'link'` はタイトルから作った URL へのリンクにする                                                                                           |
-| `lint`                | ビルドの前にリンク切れを調べる。`{ unresolvedLinks?, frontmatter? }`。省略すると調べない。[下を参照](#リンク切れを調べる)                                                                                      |
-| `publicMedia`         | サイトに置いたファイルを `[:/images/a.png]` で画像・動画・音声として読む (parser の `publicMedia`)。パスの前に `base` が付く。`false` で無効。既定は有効                                                       |
-| `parseOptions`        | パースの設定。parser の `parse` のオプション (`extensions` など) がそのまま渡る                                                                                                                                |
-| `renderOptions`       | 描画の設定。parser の `toHast` のオプション (`extensions` `handlers` `classNames` `showPads` `iconImageUrl`) と `title` がそのまま渡る。色付けは `syntaxHighlight` で決める                                    |
-| `rehypePlugins`       | `compile` の同名のオプションと同じ                                                                                                                                                                             |
-| `syntaxHighlight`     | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け)                                                             |
-| `assets`              | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効                                                                             |
-| `gyazoVideo`          | 拡張子の無い Gyazo の URL が動画だったときの出し方。既定の `'gif'` は通信せず `/raw` の画像 (録画は動く gif)。`'video'` / `'iframe'` はビルド時に oEmbed で聞き、動画なら `<video>` / Gyazo のプレーヤーにする |
+| オプション            | 内容                                                                                                                                                                                                                    |
+| :-------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `components`          | すべてのページに渡すコンポーネントを default export するモジュールの、プロジェクトのルートからのパス                                                                                                                    |
+| `pageUrl`             | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス                                                                                                                         |
+| `tagUrl` `projectUrl` | `compile` の同名のオプションと同じ                                                                                                                                                                                      |
+| `unresolvedLinks`     | サイトに無いページへのリンクの出し方。`'text'` (既定) はテキスト、`'link'` はタイトルから作った URL へのリンクにする                                                                                                    |
+| `lint`                | ビルドの前にリンク切れを調べる。`{ unresolvedLinks?, frontmatter? }`。省略すると調べない。[下を参照](#リンク切れを調べる)                                                                                               |
+| `publicMedia`         | サイトに置いたファイルを `[:/images/a.png]` で画像・動画・音声として読む (parser の `publicMedia`)。パスの前に `base` が付く。`false` で無効。既定は有効                                                                |
+| `parseOptions`        | パースの設定。parser の `parse` のオプション (`extensions` など) がそのまま渡る                                                                                                                                         |
+| `renderOptions`       | 描画の設定。parser の `toHast` のオプション (`extensions` `handlers` `classNames` `showPads` `iconImageUrl`) と `title` がそのまま渡る。色付けは `syntaxHighlight` で決める                                             |
+| `rehypePlugins`       | `compile` の同名のオプションと同じ                                                                                                                                                                                      |
+| `syntaxHighlight`     | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け)                                                                      |
+| `assets`              | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効                                                                                      |
+| `gyazoVideo`          | 拡張子の無い Gyazo の URL が動画だったときの出し方。既定の `'gif'` は通信せず `/raw` の画像 (録画は動く gif)。`'video'` / `'embed'` はビルド時に oEmbed で聞き、動画なら `<video>` / Gyazo のプレーヤーの埋め込みにする |
 
 ## リンク切れを調べる
 

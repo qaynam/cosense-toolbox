@@ -15,9 +15,9 @@ export interface GyazoVideoOptions {
    * 動画の出し方。
    *
    * - `'video'`：`https://i.gyazo.com/{hash}.mp4` を `<video>` で出す
-   * - `'iframe'`：Gyazo のプレーヤー (`https://gyazo.com/player/{hash}`) を `<iframe>` で出す
+   * - `'embed'`：Gyazo のプレーヤー (`https://gyazo.com/player/{hash}`) を `<iframe>` で埋め込む
    */
-  readonly as: "video" | "iframe"
+  readonly as: "video" | "embed"
   /** 差し替えた要素に付ける class 名。parser の `toHast` の `classNames` と同じもの。省略したものは parser の既定 */
   readonly classNames?: { readonly video?: string | undefined; readonly embed?: string | undefined }
   readonly fetch?: typeof globalThis.fetch

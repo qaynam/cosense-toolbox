@@ -59,12 +59,12 @@ describe("rehypeGyazoVideos", () => {
     })
   })
 
-  it("as: 'iframe' なら、Gyazo のプレーヤーの <iframe> にする", async () => {
+  it("as: 'embed' なら、Gyazo のプレーヤーを埋め込む <iframe> にする", async () => {
     const { tree } = await run(
       { [OEMBED]: oembed("video") },
       [img(`https://gyazo.com/${HASH}/raw`)],
       {
-        as: "iframe",
+        as: "embed",
       },
     )
     expect(tree.children[0]).toMatchObject({

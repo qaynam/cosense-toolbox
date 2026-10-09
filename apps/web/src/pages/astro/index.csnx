@@ -90,7 +90,7 @@ Cosense Web では `[:/images/a.png]` もページへのリンクなので、Cos
 
 拡張子の無い Gyazo の URL (`[https://gyazo.com/{hash}]`) は、Gyazo がそのファイルへ転送してくれる `https://gyazo.com/{hash}/raw` の画像として出します。ビルドのときに通信しません。Gyazo GIF で録画した動画は、動く gif として表示されます。
 
-動画のプレーヤーで見せたい場合は、`gyazoVideo` を渡します。ビルドのときに Gyazo の oEmbed で画像か動画かを聞き、動画なら `'video'` は mp4 の `<video>` に、`'iframe'` は Gyazo のプレーヤーにします。`.mp4` のように拡張子の付いた URL は、書いたとおりに出します。
+動画のプレーヤーで見せたい場合は、`gyazoVideo` を渡します。ビルドのときに Gyazo の oEmbed で画像か動画かを聞き、動画なら `'video'` は mp4 の `<video>` に、`'embed'` は Gyazo のプレーヤーを埋め込みます。`.mp4` のように拡張子の付いた URL は、書いたとおりに出します。
 
 <DocHeading level={2} id="more" title="さらに詳しく" />
 

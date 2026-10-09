@@ -110,13 +110,13 @@ export interface CosenseIntegrationOptions extends AstroCompileOptions {
    *
    * - `'gif'`：通信せず、`https://gyazo.com/{hash}/raw` の画像として出す。Gyazo GIF の録画は動く gif になる
    * - `'video'`：ビルド時に Gyazo の oEmbed で動画か聞き、動画なら `https://i.gyazo.com/{hash}.mp4` を `<video>` で出す
-   * - `'iframe'`：同じく聞いて、動画なら Gyazo のプレーヤーを `<iframe>` で出す
+   * - `'embed'`：同じく聞いて、動画なら Gyazo のプレーヤーを `<iframe>` で埋め込む
    *
    * 拡張子の付いた URL (`.mp4` / `.gif` など) は、書いたとおりに出すので聞かない。
    *
    * @defaultValue `'gif'`
    */
-  readonly gyazoVideo?: "gif" | "video" | "iframe"
+  readonly gyazoVideo?: "gif" | "video" | "embed"
 }
 
 /** サイトのリンク切れを調べ、見つかったものをログに出す。 */
