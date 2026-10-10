@@ -14,6 +14,13 @@ Cosense (旧 Scrapbox) の記法で書いたページを、JSX モジュール�
 
 > **beta**：公開 API はまだ変わりうる。
 
+### 0.1.0-beta.9 の変更
+
+- `metadata.image` が本文の最初の画像を使うとき、ハッシュだけの Gyazo の URL (`https://gyazo.com/{hash}`) は
+  `https://gyazo.com/{hash}/raw` になる。今までは `https://i.gyazo.com/{hash}.png` だった。parser の `imageSrcOf` に合わせた。
+  拡張子や `/max_size/…` の付いた Gyazo の URL は、書かれたまま入る。
+- 描画される Gyazo の `<img src>` も同じく変わる (parser の `toHast` の変更)。
+
 ### 0.1.0-beta.8 の変更
 
 - `code:frontmatter.yml` のブロックを frontmatter として読むのをやめた。frontmatter はファイル先頭の YAML だけに書く。
