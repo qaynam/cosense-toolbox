@@ -14,6 +14,14 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 ### 0.1.0-beta.9 の変更
 
+- **不具合の修正:** Gyazo の動画の URL (`https://gyazo.com/{hash}.mp4`) を `[[ ]]` で囲むと、大きい画像として読んでいたのを直した。
+  大きい動画になる。Gyazo の URL を画像とみなすのは、拡張子が無いか、画像の拡張子が付いているときだけにした。
+- **変更 (名前と引数が変わる):** `asImageSrc(url)` を `imageSrcOf(node)` に替えた。画像ノードを受け取り、いつも文字列を返す。
+  `asImageSrc(node.src) ?? node.src` と書いていたところは `imageSrcOf(node)` になる。
+- **変更:** `imageSrcOf` は、ハッシュだけの Gyazo の URL (`https://gyazo.com/{hash}`) を `https://gyazo.com/{hash}/raw` にする。
+  書き換えるのはこれだけで、ほかの画像の URL は書かれたまま返す。今までは `https://i.gyazo.com/{hash}.png` を組み立てていたので、png ではないもの (Gyazo GIF の録画など) は 404 になっていた。
+  `/raw` は Gyazo がそのハッシュの本来のファイル (png / jpg / gif) へ転送してくれる。録画は動く gif として表示される。
+  拡張子や `/max_size/…` の付いた Gyazo の URL は、それ自体がファイルなので書かれたまま返す (今までは `i.gyazo.com` の png に変えていた)。
 - `isPage` を足した (`@cosense-toolbox/parser/schema`)。外から来た値が `Page` の形かを `true` / `false` で返すので、
   effect を使わずに検証できる。どこが違うかを知りたいときは、今までどおり `decodePage` (effect の `Either` を返す) を使う。
 - `toCosenseText` を足した (`@cosense-toolbox/parser/compile`)。AST を Cosense の記法のテキストに書き出す。`parse` の逆向きで、
@@ -122,7 +130,7 @@ toHtml(page) // → '<div class="page"><h1 class="title">今日のメモ</h1>…
 
 | モジュール                           | 役割                                                | API                                                                                                             |
 | :----------------------------------- | :-------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
-| `@cosense-toolbox/parser`            | テキストを AST にする                               | `parse` `parseLine` `tokenizeInline` `createParser` `asImageSrc` `asEmbedSrc` `asMapUrl` `normalizeLineEndings` |
+| `@cosense-toolbox/parser`            | テキストを AST にする                               | `parse` `parseLine` `tokenizeInline` `createParser` `imageSrcOf` `asEmbedSrc` `asMapUrl` `normalizeLineEndings` |
 | `@cosense-toolbox/parser/utils`      | ヘルパー。AST から取り出す                          | `visit` `find` `collect` `collectLinks` `firstImage` `rawTextOf`                                                |
 | `@cosense-toolbox/parser/html`       | AST を HTML 系の出力 (hast と HTML の文字列) にする | `toHast` `toHtml` `codeLineNumbers` `tableCellLineBreaks`                                                       |
 | `@cosense-toolbox/parser/compile`    | AST を HTML 以外の形式にする                        | `toPlainText` `toCosenseText` `createCompiler`                                                                  |

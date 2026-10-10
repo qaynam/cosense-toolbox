@@ -1,10 +1,10 @@
 import { mkdir, mkdtemp, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
-import { pathToFileURL } from "node:url"
+import { fileURLToPath, pathToFileURL } from "node:url"
 
 import type { AstroIntegrationLogger } from "astro"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import cosense from "./index"
 
@@ -74,5 +74,79 @@ describe("サイトに置いたメディア ([:/…])", () => {
     const logger = fakeLogger()
     await lintOnDevServer(root, logger, { publicMedia: false })
     await vi.waitFor(() => expect(logger.error).toHaveBeenCalledTimes(1))
+  })
+})
+
+/** `astro:config:setup` を走らせ、統合が足した vite プラグインで `.csn` を変換したコードを返す。 */
+const transformWithIntegration = async (
+  root: URL,
+  source: string,
+  options: Parameters<typeof cosense>[0] = {},
+): Promise<string> => {
+  const integration = cosense({ assets: false, syntaxHighlight: false, ...options })
+  const hooks = integration.hooks as Record<string, (options: object) => unknown>
+  const plugins: {
+    transform: { handler: (code: string, id: string) => Promise<{ code: string }> }
+  }[] = []
+  hooks["astro:config:setup"]?.({
+    config: { root, srcDir: new URL("src/", root), base: "/", markdown: {} },
+    addRenderer: () => {},
+    addPageExtension: () => {},
+    addContentEntryType: () => {},
+    updateConfig: (config: { vite: { plugins: typeof plugins } }) =>
+      plugins.push(...config.vite.plugins),
+    logger: fakeLogger(),
+  })
+  const [plugin] = plugins
+  const context = { warn: () => {}, environment: { name: "ssr" } }
+  const result = await plugin?.transform.handler.call(
+    context,
+    source,
+    fileURLToPath(new URL("src/content/a.csn", root)),
+  )
+  return result?.code ?? ""
+}
+
+describe("Gyazo の動画 (gyazoVideo)", () => {
+  const hash = "0123456789abcdef0123456789abcdef"
+  const source = `投稿\n[https://gyazo.com/${hash}]`
+
+  /** どの hash にも「動画」と答える oEmbed。呼ばれた URL を記録する。 */
+  const stubVideoOembed = () => {
+    const calls: string[] = []
+    vi.stubGlobal("fetch", async (input: string | URL | Request) => {
+      calls.push(String(input))
+      return Response.json({ type: "video" })
+    })
+    return calls
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("既定では oEmbed に聞かず、/raw の画像 (動画なら gif) のまま出す", async () => {
+    const calls = stubVideoOembed()
+    const root = await project({ "src/content/a.csn": source })
+    const code = await transformWithIntegration(root, source)
+    expect(calls).toEqual([])
+    expect(code).toContain(`https://gyazo.com/${hash}/raw`)
+  })
+
+  it("gyazoVideo: 'video' なら、動画と分かった Gyazo を mp4 の動画で出す", async () => {
+    stubVideoOembed()
+    const root = await project({ "src/content/a.csn": source })
+    const code = await transformWithIntegration(root, source, { gyazoVideo: "video" })
+    expect(code).toContain(`https://i.gyazo.com/${hash}.mp4`)
+  })
+
+  it("差し替えた動画にも、renderOptions の classNames を使う", async () => {
+    stubVideoOembed()
+    const root = await project({ "src/content/a.csn": source })
+    const code = await transformWithIntegration(root, source, {
+      gyazoVideo: "video",
+      renderOptions: { classNames: { video: "my-video" } },
+    })
+    expect(code).toContain("my-video")
   })
 })

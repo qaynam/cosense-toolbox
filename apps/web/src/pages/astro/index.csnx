@@ -18,6 +18,9 @@ toc:
   - id: assets
     text: Cosense の画像とファイル
     depth: 2
+  - id: gyazo
+    text: Gyazo の動画
+    depth: 2
   - id: more
     text: さらに詳しく
     depth: 2
@@ -82,6 +85,12 @@ Cosense Web では `[:/images/a.png]` もページへのリンクなので、Cos
 統合は Cosense にアップロードした画像とアイコンをビルド時に取得し、サイト内のファイルに置き換えます。Cosense の画像 URL は別オリジンのページから直接読めず、リダイレクト URL も期限付きのためです。
 
 非公開プロジェクトのファイルを取得する場合は PAT を設定します。取得した画像は生成サイトに含まれるため、公開してよいファイルだけを対象にしてください。
+
+<DocHeading level={2} id="gyazo" title="Gyazo の動画" />
+
+拡張子の無い Gyazo の URL (`[https://gyazo.com/{hash}]`) は、Gyazo がそのファイルへ転送してくれる `https://gyazo.com/{hash}/raw` の画像として出します。ビルドのときに通信しません。Gyazo GIF で録画した動画は、動く gif として表示されます。
+
+動画のプレーヤーで見せたい場合は、`gyazoVideo` を渡します。ビルドのときに Gyazo の oEmbed で画像か動画かを聞き、動画なら `'video'` は mp4 の `<video>` に、`'embed'` は Gyazo のプレーヤーを埋め込みます。`.mp4` のように拡張子の付いた URL は、書いたとおりに出します。
 
 <DocHeading level={2} id="more" title="さらに詳しく" />
 

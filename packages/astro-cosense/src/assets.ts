@@ -14,6 +14,8 @@ import { fileURLToPath } from "node:url"
 import { fetchAsset, type FetchOptions, isCosenseAssetUrl } from "@cosense-toolbox/cosense-x/fetch"
 import type { Root } from "hast"
 
+import { elementsIn, type HastLike } from "./hast"
+
 /** `globalThis` に置き場を置くときのキー (`Symbol.for` に渡す)。 */
 export const ASSET_STORE_KEY = "@cosense-toolbox/astro/assets"
 
@@ -209,31 +211,15 @@ export const createAssetStore = (options: AssetStoreOptions): AssetStore => {
   }
 }
 
-interface HastLike {
-  readonly type?: string
-  readonly tagName?: string
-  readonly properties?: Record<string, unknown>
-  readonly children?: readonly HastLike[]
-  readonly fallback?: HastLike | null
-  readonly fallbackEnd?: HastLike | null
-}
-
 /** `img` の `src` と `a` の href。書き換えられるよう、要素とプロパティ名の組で返す。 */
-const referencesIn = (node: HastLike): (readonly [Record<string, unknown>, "src" | "href"])[] => {
-  const own =
-    node.type === "element" && node.properties !== undefined
-      ? node.tagName === "img"
-        ? [[node.properties, "src"] as const]
-        : node.tagName === "a"
-          ? [[node.properties, "href"] as const]
-          : []
-      : []
-  // コンポーネントのノードは、渡されなかったときに出す元の行 (fallback) も持つ。
-  const nested = [...(node.children ?? []), node.fallback, node.fallbackEnd].filter(
-    (child): child is HastLike => child !== null && child !== undefined,
-  )
-  return [...own, ...nested.flatMap(referencesIn)]
-}
+const referencesIn = (tree: HastLike): (readonly [Record<string, unknown>, "src" | "href"])[] => [
+  ...elementsIn(tree, "img").flatMap(({ properties }) =>
+    properties === undefined ? [] : [[properties, "src"] as const],
+  ),
+  ...elementsIn(tree, "a").flatMap(({ properties }) =>
+    properties === undefined ? [] : [[properties, "href"] as const],
+  ),
+]
 
 /** `.csn` / `.csnx` の hast の中で、Cosense 上のファイルを指す URL を差し替える rehype プラグイン。 */
 export const rehypeCosenseAssets = (store: AssetStore) => () => async (tree: Root) => {

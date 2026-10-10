@@ -275,8 +275,13 @@ describe("画像", () => {
     })
   })
 
+  it("[[Gyazo の動画 URL]] は、画像ではなく large 付きの動画になる", () => {
+    const src = "https://gyazo.com/503a911fea542532aa5aba0a88eb7b60.mp4"
+    expect(first(`[[${src}]]`)).toEqual({ type: "video", src, large: true })
+  })
+
   it("Gyazo のページ URL は画像になるが src は書かれたまま", () => {
-    // 表示用 URL への変換 (i.gyazo.com/....png) はパーサーの仕事ではない。
+    // 表示用 URL への変換 (gyazo.com/.../raw) はパーサーの仕事ではない。
     // AST はソースに書かれた文字列を保ち、変換は asImageSrc / レンダラー側で行う。
     const hash = "503a911fea542532aa5aba0a88eb7b60"
     expect(first(`[https://gyazo.com/${hash}]`)).toEqual({

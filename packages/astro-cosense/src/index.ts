@@ -23,6 +23,7 @@ import type {
 import { Array as Arr, Effect, pipe } from "effect"
 
 import { ASSET_STORE_KEY, type AssetStore, createAssetStore, rehypeCosenseAssets } from "./assets"
+import { rehypeGyazoVideos } from "./gyazo"
 import {
   astroShikiHighlighter,
   type CodeHighlighter,
@@ -104,6 +105,18 @@ export interface CosenseIntegrationOptions extends AstroCompileOptions {
    * @defaultValue `true`
    */
   readonly publicMedia?: boolean
+  /**
+   * 拡張子の無い Gyazo の URL (`[https://gyazo.com/{hash}]`) が動画だったときの出し方。
+   *
+   * - `'gif'`：通信せず、`https://gyazo.com/{hash}/raw` の画像として出す。Gyazo GIF の録画は動く gif になる
+   * - `'video'`：ビルド時に Gyazo の oEmbed で動画か聞き、動画なら `https://i.gyazo.com/{hash}.mp4` を `<video>` で出す
+   * - `'embed'`：同じく聞いて、動画なら Gyazo のプレーヤーを `<iframe>` で埋め込む
+   *
+   * 拡張子の付いた URL (`.mp4` / `.gif` など) は、書いたとおりに出すので聞かない。
+   *
+   * @defaultValue `'gif'`
+   */
+  readonly gyazoVideo?: "gif" | "video" | "embed"
 }
 
 /** サイトのリンク切れを調べ、見つかったものをログに出す。 */
@@ -192,6 +205,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
     syntaxHighlight = "astro",
     lint,
     publicMedia: readsPublicMedia = true,
+    gyazoVideo = "gif",
     ...siteCompileOptions
   } = options
   /**
@@ -242,6 +256,22 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
             : syntaxHighlight === "astro"
               ? astroShikiHighlighter(config.markdown)
               : customHighlighter(syntaxHighlight)
+        const rehypePlugins = [
+          ...(compileOptions.rehypePlugins ?? []),
+          ...(gyazoVideo === "gif"
+            ? []
+            : [
+                rehypeGyazoVideos({
+                  as: gyazoVideo,
+                  ...(compileOptions.renderOptions?.classNames === undefined
+                    ? {}
+                    : { classNames: compileOptions.renderOptions.classNames }),
+                  warn: (message) => logger.warn(message),
+                }),
+              ]),
+          // 利用者のプラグインが足した画像も差し替えられるよう、最後に当てる。
+          ...(assets === undefined ? [] : [rehypeCosenseAssets(assets)]),
+        ]
         // toHtml などで自分で描画するページが、virtual:cosense-x/assets から使う。
         Object.assign(globalThis, { [Symbol.for(ASSET_STORE_KEY)]: assets })
         const site = createSiteCache(
@@ -282,17 +312,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
               vitePluginCosense({
                 root: config.root,
                 site,
-                compile:
-                  assets === undefined
-                    ? compileOptions
-                    : {
-                        ...compileOptions,
-                        // 利用者のプラグインが足した画像も差し替えられるよう、最後に当てる。
-                        rehypePlugins: [
-                          ...(compileOptions.rehypePlugins ?? []),
-                          rehypeCosenseAssets(assets),
-                        ],
-                      },
+                compile: { ...compileOptions, rehypePlugins },
                 assets,
                 highlighter,
                 components:

@@ -16,7 +16,7 @@ toc:
     text: createParser
     depth: 2
   - id: image-src
-    text: asImageSrc
+    text: imageSrcOf
     depth: 2
   - id: embed-src
     text: asEmbedSrc
@@ -64,9 +64,9 @@ code:ts
 
 同じ拡張を何度も使う場合は `createParser(options?)` で設定済みのパーサーを作れます。以降は `parse` や `parseLine` を呼ぶたびに `extensions` を渡す必要がありません。
 
-<DocHeading level={2} id="image-src" title="asImageSrc" />
+<DocHeading level={2} id="image-src" title="imageSrcOf" />
 
-`asImageSrc(url)` は、画像として表示できる URL に変換します。Gyazo のページ URL は画像 URL に直し、画像でない URL は `null` を返します。AST 内の URL 自体は変更しません。
+`imageSrcOf(node)` は、画像ノードを `<img src>` に入れる URL を返します。ほとんどは書かれた URL のままです。ハッシュだけの Gyazo の URL (`https://gyazo.com/{hash}`) は Gyazo のページの HTML を返すので、Gyazo が本来のファイルへ転送してくれる `https://gyazo.com/{hash}/raw` に直します。AST 内の URL 自体は変更しません。
 
 <DocHeading level={2} id="embed-src" title="asEmbedSrc" />
 

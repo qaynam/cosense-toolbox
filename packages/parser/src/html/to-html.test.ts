@@ -191,12 +191,12 @@ describe("ブロック", () => {
 })
 
 describe("画像", () => {
-  it("Gyazo のページ URL は描画のときだけ表示用 URL に直す", () => {
+  it("Gyazo のページ URL は描画のときだけ /raw に直す", () => {
     const hash = "503a911fea542532aa5aba0a88eb7b60"
     const source = `[https://gyazo.com/${hash}]`
     // AST 側は書かれたままで、変換されるのは HTML の src だけ。
     expect(parseLine(source).children[0]).toMatchObject({ src: `https://gyazo.com/${hash}` })
-    expect(line(source)).toBe(`<img class="image" src="https://i.gyazo.com/${hash}.png" alt="">`)
+    expect(line(source)).toBe(`<img class="image" src="https://gyazo.com/${hash}/raw" alt="">`)
   })
 
   it("リンク付き画像は a で包む", () => {
