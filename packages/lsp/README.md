@@ -73,11 +73,14 @@ csn-lsp check src/content src/pages
 
 ### 0.1.0-beta.9 の変更
 
-- **移行:** 公開の関数が effect の型を返さなくなった。今までの `Option` は値か `null`、`Effect` は `Promise` になる。
+- **破壊的変更:** 公開の関数が effect の型を返さなくなった。今までの `Option` は値か `null`、`Effect` は `Promise` になる。
   - `linkAt` / `detectCompletion` / `detectCompletionInDocument` / `definitionOf` / `frontmatterEnd` / `fenceOf` は `null` を返す
     (`Option.isNone(x)` は `x === null` に、`Option.getOrUndefined(x)` は `x ?? undefined` に書き換える)
   - `mediaFilesIn` / `checkSite` / `runCheck` は `Promise` を返す (`Effect.runPromise(x)` は `x` を `await` するだけでよい)
   - `TokenNames` は `TOKEN_NAMES` (`["lsp", "cosense"]`) になった。型の `TokenNames` は今までどおり
+  - `csn-lsp` のコマンドと、エディタのプラグインには影響しない
+
+### モジュール
 
 - `@cosense-toolbox/lsp/tokens`: `computeTokens` / `encodeTokens` / `legendOf` など
   - `notations` で装飾の記号に名前を付け、その名前のトークンとして送れる (`[! 注意]` の `!` に `warning` など)。

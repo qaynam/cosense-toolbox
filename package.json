@@ -22,7 +22,8 @@
     "format:check:root": "prettier --check --ignore-unknown \"*\" .github .vscode apps/zed-cosense examples",
     "release:version": "bun tools/release/src/version.ts",
     "release:publish": "bun tools/release/src/publish.ts",
-    "release:check": "bun tools/release/src/check.ts"
+    "release:check": "bun tools/release/src/check.ts",
+    "release:notes": "bun tools/release/src/notes.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

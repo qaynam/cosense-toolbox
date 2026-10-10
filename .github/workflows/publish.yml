@@ -1,7 +1,7 @@
 name: publish
 
 # packages/ のパッケージは、すべて同じバージョンで一緒に公開する。
-#   1. bun run release:version <バージョン> でバージョンを揃えてコミットする
+#   1. bun run release:version <バージョン> でバージョンを揃え、変えたパッケージの README に「### <バージョン> の変更」を書いてコミットする
 #   2. v<バージョン> のタグ (例: v0.1.0-beta.2) を push すると、ここで全部を公開し、GitHub のリリースを作る
 # 手で動かすときは、既定で公開せずに中身だけ確かめる。
 on:
@@ -60,10 +60,12 @@ jobs:
           fi
 
       # npm に出せたときだけ作る。手で作ると、公開に失敗したバージョンのリリースが残る。
+      # ノートは、各パッケージの README の「### <バージョン> の変更」を上に置き、その下に GitHub が作る PR の一覧を続ける。
       - name: GitHub のリリースを作る
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          bun tools/release/src/notes.ts "${GITHUB_REF_NAME#v}" > "$RUNNER_TEMP/notes.md"
           previous=$(git describe --tags --abbrev=0 --match 'v*' "${GITHUB_REF_NAME}^" 2>/dev/null || true)
-          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes ${previous:+--notes-start-tag "$previous"}
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" --generate-notes ${previous:+--notes-start-tag "$previous"}

@@ -29,6 +29,8 @@ export interface Workspace {
   readonly dir: string
   readonly manifest: Manifest
   readonly hasLicense: boolean
+  /** README.md の中身。無ければ空 */
+  readonly readme: string
 }
 
 const SCOPE = "@cosense-toolbox/"
@@ -194,6 +196,51 @@ export const withLockVersion = (lock: string, dir: string, version: string): str
     `$1"${version}"`,
   )
 
+/** `### 0.1.0-beta.9 の変更` のバージョン */
+const CHANGES_HEADING = /^###\s+(\S+)\s+の変更/
+
+/** 節を終える見出し。`### <バージョン> の変更` と同じ深さか、それより浅いもの。 */
+const SECTION_END = /^#{1,3}\s/
+
+/**
+ * README の `### <バージョン> の変更` の節の中身。リリースノートに、パッケージごとの変更として載せる。
+ * 節は次の同じ深さか浅い見出しの前で終わる。コードブロックの中の `#` は見出しとみなさない。
+ * 見出しが無いか、中身が空なら None。
+ */
+export const changesOf = (readme: string, version: string): Option.Option<string> => {
+  const lines = readme.split("\n")
+  return pipe(
+    Arr.findFirstIndex(lines, (line) => CHANGES_HEADING.exec(line)?.[1] === version),
+    Option.map((start) => {
+      const body = Arr.drop(lines, start + 1)
+      // insideFence[i]: i 行目がコードブロックの中か (その行より前のフェンスの数で決まる)
+      const insideFence = Arr.scan(body, false, (inside, line) =>
+        /^\s*```/.test(line) ? !inside : inside,
+      )
+      const end = Arr.findFirstIndex(
+        body,
+        (line, index) => !(insideFence[index] ?? false) && SECTION_END.test(line),
+      )
+      return Arr.take(
+        body,
+        Option.getOrElse(end, () => body.length),
+      )
+        .join("\n")
+        .trim()
+    }),
+    Option.filter((changes) => changes !== ""),
+  )
+}
+
+/**
+ * GitHub のリリースノートの、自動で作る PR の一覧の上に置く部分。
+ * README に `version` の変更を書いたパッケージだけを、渡された順に、パッケージ名の見出しを付けて並べる。
+ */
+export const releaseNotesOf = (workspaces: ReadonlyArray<Workspace>, version: string): string =>
+  Arr.filterMap(workspaces, ({ manifest, readme }) =>
+    Option.map(changesOf(readme, version), (changes) => `## ${manifest.name}\n\n${changes}\n`),
+  ).join("\n")
+
 const RELEASE_BRANCH = /^release\/v(.+)$/
 
 /** `release/v0.1.0-beta.9` のバージョン。リリースのブランチでなければ None。 */
@@ -246,6 +293,14 @@ const npmProblems = (
         }),
       )
 
+/** リリースノートに載せる変更が、どのパッケージの README にも無い。 */
+const notesProblems = (workspaces: ReadonlyArray<Workspace>, version: string) =>
+  releaseNotesOf(publishable(workspaces), version) === ""
+    ? [
+        `どのパッケージの README にも「### ${version} の変更」が無い (リリースノートに載せる変更を書く)`,
+      ]
+    : []
+
 /**
  * リリースの PR を、マージする前に止める理由。
  *
@@ -257,6 +312,7 @@ const npmProblems = (
  * - そのバージョンが npm にもうあるか、npm の一番新しいバージョンより古い
  * - 前のリリースの後にマージした PR が、リリースに入っていない (main に届かなかった)。
  *   前のリリースの PR は後のリリースが置き換えるので数えない
+ * - リリースノートに載せる変更 (README の `### <バージョン> の変更`) が、どのパッケージにも無い
  */
 export const releasePullRequestProblems = ({
   base,
@@ -273,7 +329,7 @@ export const releasePullRequestProblems = ({
       onNone: () => [`リリースのブランチの名前は release/v<バージョン> にする (今は ${branch})`],
       onSome: (version) =>
         Arr.every(published, (each) => each === version)
-          ? npmProblems(version, npmVersions, order)
+          ? [...npmProblems(version, npmVersions, order), ...notesProblems(workspaces, version)]
           : [
               `ブランチのバージョン ${version} と、パッケージのバージョン ${published.join(", ")} が違う`,
             ],

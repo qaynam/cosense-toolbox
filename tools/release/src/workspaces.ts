@@ -21,7 +21,18 @@ const readWorkspace = (root: string, dir: string) =>
     Effect.tryPromise(() => readFile(join(root, dir, "package.json"), "utf8")),
     Effect.map((text): Manifest => JSON.parse(text) as Manifest),
     Effect.zip(exists(join(root, dir, "LICENSE"))),
-    Effect.map(([manifest, hasLicense]): Workspace => ({ dir, manifest, hasLicense })),
+    Effect.zip(
+      pipe(
+        Effect.tryPromise(() => readFile(join(root, dir, "README.md"), "utf8")),
+        Effect.orElseSucceed(() => ""),
+      ),
+    ),
+    Effect.map(([[manifest, hasLicense], readme]): Workspace => ({
+      dir,
+      manifest,
+      hasLicense,
+      readme,
+    })),
     Effect.option,
   )
 
