@@ -19,17 +19,25 @@ const repo = async (files: Record<string, string>): Promise<string> => {
 }
 
 describe("readWorkspaces", () => {
-  it("packages/ の下のパッケージを、場所と LICENSE の有無と一緒に読む", async () => {
+  it("packages/ の下のパッケージを、場所と LICENSE の有無と README と一緒に読む。README が無ければ空", async () => {
     const root = await repo({
       "packages/parser/package.json": '{ "name": "@cosense-toolbox/parser", "version": "1.0.0" }',
       "packages/parser/LICENSE": "MIT",
+      "packages/parser/README.md": "# parser",
       "packages/style/package.json": '{ "name": "@cosense-toolbox/style", "version": "1.0.0" }',
       "packages/notes.md": "パッケージではない",
     })
     const found = await Effect.runPromise(readWorkspaces(root))
-    expect(found.map(({ dir, manifest, hasLicense }) => [dir, manifest.name, hasLicense])).toEqual([
-      ["packages/parser", "@cosense-toolbox/parser", true],
-      ["packages/style", "@cosense-toolbox/style", false],
+    expect(
+      found.map(({ dir, manifest, hasLicense, readme }) => [
+        dir,
+        manifest.name,
+        hasLicense,
+        readme,
+      ]),
+    ).toEqual([
+      ["packages/parser", "@cosense-toolbox/parser", true, "# parser"],
+      ["packages/style", "@cosense-toolbox/style", false, ""],
     ])
   })
 })
