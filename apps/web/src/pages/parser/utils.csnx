@@ -58,7 +58,7 @@ visitor が `"skip"` を返すと、そのノードの子をたどりません�
 
 <DocHeading level={2} id="image" title="firstImage" />
 
-`firstImage(tree)` は最初に見つかった画像ノードを返します。画像がなければ `null` です。`src` はソースの URL のままなので、`<img>` に渡す前に <DocLink href="/parser/parse/#image-src" label="asImageSrc" /> を使ってください。
+`firstImage(tree)` は最初に見つかった画像ノードを返します。画像がなければ `null` です。`src` はソースの URL のままなので、`<img>` に渡す前に <DocLink href="/parser/parse/#image-src" label="imageSrcOf" /> を使ってください。
 
 <DocHeading level={2} id="raw-text" title="rawTextOf" />
 

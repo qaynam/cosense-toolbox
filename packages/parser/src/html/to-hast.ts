@@ -12,7 +12,7 @@ import { Match, Option, pipe } from "effect"
 import type { Element, ElementContent, Properties, Root, Text } from "hast"
 
 import { childrenOf } from "../ast"
-import { asImageSrc } from "../core/image-url"
+import { imageSrcOf } from "../core/image-url"
 import { asMapUrl } from "../core/map-url"
 import { asEmbedSrc } from "../core/media-url"
 import type {
@@ -665,7 +665,7 @@ export const defaultHastHandlers = {
   image: (node, ctx) => {
     // Gyazo のページ URL のように、書かれたままでは <img> に入らない URL をここで直す。
     // AST はソースの文字列を保つ約束なので、表示用への変換は描画側の責任になる。
-    const src = Option.getOrUndefined(nonEmpty(safeSrc(asImageSrc(node.src) ?? node.src)))
+    const src = Option.getOrUndefined(nonEmpty(safeSrc(imageSrcOf(node))))
     const img = element(
       "img",
       withClass(ctx.options.classNames.image, {

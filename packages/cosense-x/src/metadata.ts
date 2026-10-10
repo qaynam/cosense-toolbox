@@ -2,7 +2,7 @@
  * metadata.ts — ページから一覧や `<head>` に使う情報を集める。
  * frontmatter に同じ項目があれば、そちらを使う。
  */
-import { asImageSrc, type Page, type TopLevelBlock } from "@cosense-toolbox/parser"
+import { imageSrcOf, type Page, type TopLevelBlock } from "@cosense-toolbox/parser"
 import { toPlainText } from "@cosense-toolbox/parser/compile"
 import { collect, firstImage } from "@cosense-toolbox/parser/utils"
 import { Option, pipe } from "effect"
@@ -103,9 +103,7 @@ export const collectMetadata = (
   )
   const image = pipe(
     stringOf(frontmatter.image),
-    Option.orElse(() =>
-      Option.map(Option.fromNullable(firstImage(page)), (node) => asImageSrc(node.src) ?? node.src),
-    ),
+    Option.orElse(() => Option.map(Option.fromNullable(firstImage(page)), imageSrcOf)),
     Option.getOrNull,
   )
   return {

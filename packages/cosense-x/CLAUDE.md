@@ -16,7 +16,7 @@
    - `compile` は async なので、境目で投げた例外は reject になる。
    - `./fetch` は通信の境目なので、HTTP の失敗は Promise の reject で返す。
 2. **無いかもしれない値は、内部では `Option`**。公開 API の境目で `Option.getOrNull` などで
-   `null` / `undefined` にする（parser の `asImageSrc` と同じ）。内部版は `componentTagOf` のように
+   `null` / `undefined` にする（parser の `asEmbedSrc` と同じ）。内部版は `componentTagOf` のように
    `〜Of` と名付け、公開版（`parseComponentTag`）と並べる。
 3. **種類で分かれるものは `_tag` を付けたユニオンにし、`Match.tag` と `Match.exhaustive` で分ける**
    （行の役割 `BlockRole`、行の途中のタグ `Tag`、リンクの解決結果 `LinkResolution`）。

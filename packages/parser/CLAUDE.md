@@ -18,7 +18,7 @@
 3. **AST はソースに書かれた文字列を保つ**。パースの過程で値を「使いやすい形」に書き換えない。
    例: `[https://gyazo.com/{hash}]` の `src` はそのページ URL のままにする。
    `<img>` に入る形（`https://gyazo.com/{hash}/raw`）への変換は表示のための書き換えなので、
-   `core/image-url.ts` の `asImageSrc` に切り出し、`html/`（既定の `toHast`）で行う。
+   `core/image-url.ts` の `imageSrcOf` に切り出し、`html/`（既定の `toHast`）で行う。
    **どのノード型になるかの判定は構造なのでパーサーの仕事、値の書き換えは描画の仕事。**
 4. **自己完結**。ワークスペース内の他パッケージ（`@cosense/*`）を import しない。
    `tsconfig.json` も `extends` せず内容を直接持つ。ディレクトリを別リポにコピーしただけで
@@ -60,7 +60,7 @@
 - **内部関数（`bracket-rules/*` の個別 rule、`core/scan.ts` 等）に直接テストを書かない。**
   これらはリファクタで統廃合される可能性があり、テストが実装詳細に癒着すると壊れやすくなる。
   個別 rule の挙動は「その記法を含む入力テキストをパースした結果」として検証する。
-  例外: `asImageSrc` のような**単体で公開 API になっている純関数**は直接テストしてよい。
+  例外: `imageSrcOf` のような**単体で公開 API になっている純関数**は直接テストしてよい。
 
 ### 壊れにくく書くための規律
 
@@ -138,7 +138,7 @@ src/
   core/
     position.ts         Origin と Point/Position の生成
     scan.ts             括弧の対応探索・タグ境界判定・行頭空白
-    image-url.ts        isImageUrl（構造の判定）/ asImageSrc（表示用の変換）
+    image-url.ts        isImageUrl（構造の判定）/ imageSrcOf（表示用の変換）
     media-url.ts        動画・音声・埋め込みの判定 / asEmbedSrc（埋め込みのプレーヤーの URL）
     map-url.ts          asMapUrl（地図のノードの Google マップの URL）
   inline/
@@ -219,7 +219,7 @@ src/
 - **公開 API のシグネチャに effect を漏らさない。** `parse` / `parseLine` / `tokenizeInline` /
   `utils` / `compile` / `html` の引数・戻り値に `Option` / `Either` / `Effect` / `Schema` が
   現れてはいけない。内部で使った `Option<A>` は境界で `Option.getOrNull` 等でアンラップし、
-  `A | null` にする（`asImageSrc(): string | null` がその例）。
+  `A | null` にする（`asEmbedSrc(): string | null` がその例）。
   検証コマンド（CI でも動く。`tools/public-types`）:
 
   ```sh
