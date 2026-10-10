@@ -1,6 +1,6 @@
 {
   "name": "@cosense-toolbox/markdown",
-  "version": "0.1.0-beta.8",
+  "version": "0.1.0-beta.9",
   "description": "Read Markdown (CommonMark, GFM and $math$) as a Cosense page: get the AST, or the Cosense notation text to paste.",
   "license": "MIT",
   "type": "module",
