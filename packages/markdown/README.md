@@ -6,6 +6,11 @@ Markdown を Cosense (旧 Scrapbox) のページとして読みます。ChatGPT 
 
 > **beta**：公開 API や出力はまだ変わりうる。
 
+### 0.1.0-beta.9 の変更
+
+- 最初のバージョン。Markdown の文字列を Cosense の AST (`parseFromMarkdown`) や記法のテキスト (`markdownToCosenseText`) に、
+  Markdown の AST (mdast) を Cosense の AST (`fromMdast`) にする。
+
 ## インストール
 
 ```sh

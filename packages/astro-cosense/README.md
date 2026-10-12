@@ -7,6 +7,12 @@ Cosense (旧 Scrapbox) の記法で書いた `.csn` / `.csnx` を、Astro のペ
 
 > **beta**：公開 API はまだ変わりうる。
 
+### 0.1.0-beta.9 の変更
+
+- `gyazoVideo` オプションを足した。拡張子の無い Gyazo の URL が動画だったときに、`"video"` なら `<video>`、`"embed"` なら Gyazo のプレーヤーで出す。
+  既定の `"gif"` は通信せず、今までどおり画像として出す (Gyazo GIF の録画は動く gif になる)。
+- 描画される Gyazo の `<img src>` と `metadata.image` が `https://gyazo.com/{hash}/raw` になる (parser と cosense-x の変更)。
+
 動く例は [`examples/astro-blog`](../../examples/astro-blog) にある。
 
 ## 設定

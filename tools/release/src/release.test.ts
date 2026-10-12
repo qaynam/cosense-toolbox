@@ -2,6 +2,7 @@ import { Option } from "effect"
 import { describe, expect, it } from "vitest"
 
 import {
+  changesOf,
   distTagFor,
   isStable,
   isVersion,
@@ -11,6 +12,7 @@ import {
   problemsOf,
   publishable,
   publishOrder,
+  releaseNotesOf,
   releasePullRequestProblems,
   versionOfBranch,
   withLockVersion,
@@ -40,7 +42,7 @@ const ready = (dir: string, overrides: Overrides = {}): Workspace => {
   const present = Object.fromEntries(
     Object.entries(manifest).filter(([, value]) => value !== undefined),
   ) as unknown as Manifest
-  return { dir, hasLicense: true, manifest: present }
+  return { dir, hasLicense: true, manifest: present, readme: "" }
 }
 
 describe("publishable", () => {
@@ -288,7 +290,10 @@ describe("releasePullRequestProblems", () => {
   const ok = {
     base: "main",
     branch: "release/v0.1.0-beta.2",
-    workspaces: [ready("packages/parser"), ready("packages/lsp")],
+    workspaces: [
+      { ...ready("packages/parser"), readme: "### 0.1.0-beta.2 の変更\n\n- 直した" },
+      ready("packages/lsp"),
+    ],
     merged: [merged(1, true)],
     npmVersions: ["0.1.0-beta.0", "0.1.0-beta.1"],
     order,
@@ -332,5 +337,104 @@ describe("releasePullRequestProblems", () => {
   it("前のリリースの PR は、後のリリースが置き換えるので数えない", () => {
     const old = merged(50, false, "release/v0.1.0-beta.1")
     expect(releasePullRequestProblems({ ...ok, merged: [old] })).toEqual([])
+  })
+
+  it("どのパッケージの README にもそのバージョンの変更が無ければ止める", () => {
+    const silent = [ready("packages/parser"), ready("packages/lsp")]
+    expect(releasePullRequestProblems({ ...ok, workspaces: silent })).toEqual([
+      "どのパッケージの README にも「### 0.1.0-beta.2 の変更」が無い (リリースノートに載せる変更を書く)",
+    ])
+  })
+
+  it("公開しないパッケージの README の変更は数えない", () => {
+    const internal = {
+      ...ready("packages/internal", { private: true }),
+      readme: "### 0.1.0-beta.2 の変更\n\n- 中だけ",
+    }
+    expect(
+      releasePullRequestProblems({ ...ok, workspaces: [ready("packages/parser"), internal] }),
+    ).toEqual([
+      "どのパッケージの README にも「### 0.1.0-beta.2 の変更」が無い (リリースノートに載せる変更を書く)",
+    ])
+  })
+})
+
+describe("changesOf", () => {
+  const readme = [
+    "# @cosense-toolbox/parser",
+    "",
+    "### 0.1.0-beta.10 の変更",
+    "",
+    "- 新しいほう",
+    "",
+    "### 0.1.0-beta.1 の変更",
+    "",
+    "- **破壊的変更:** 名前を変えた",
+    "",
+    "#### 移行",
+    "",
+    "```sh",
+    "# コメント",
+    "```",
+    "",
+    "## 使い方",
+    "",
+    "本文",
+  ].join("\n")
+
+  it("そのバージョンの見出しから、次の同じ深さか浅い見出しの前までを返す", () => {
+    expect(changesOf(readme, "0.1.0-beta.10")).toEqual(Option.some("- 新しいほう"))
+  })
+
+  it("中の深い見出しと、コードの中の # は節の終わりにしない", () => {
+    expect(changesOf(readme, "0.1.0-beta.1")).toEqual(
+      Option.some(
+        ["- **破壊的変更:** 名前を変えた", "", "#### 移行", "", "```sh", "# コメント", "```"].join(
+          "\n",
+        ),
+      ),
+    )
+  })
+
+  it("バージョンは全体で比べる。0.1.0-beta.1 の見出しは 0.1.0-beta.10 に当たらない", () => {
+    expect(changesOf("### 0.1.0-beta.10 の変更\n\n- 新しいほう", "0.1.0-beta.1")).toEqual(
+      Option.none(),
+    )
+  })
+
+  it("見出しが無いか、中身が空なら None", () => {
+    expect(changesOf(readme, "0.1.0-beta.9")).toEqual(Option.none())
+    expect(changesOf("### 0.1.0-beta.9 の変更\n\n## 使い方", "0.1.0-beta.9")).toEqual(Option.none())
+  })
+})
+
+describe("releaseNotesOf", () => {
+  const withReadme = (dir: string, readme: string): Workspace => ({ ...ready(dir), readme })
+
+  it("変更を書いたパッケージだけを、渡された順に、パッケージ名の見出しを付けて並べる", () => {
+    const notes = releaseNotesOf(
+      [
+        withReadme("packages/parser", "### 0.1.0-beta.2 の変更\n\n- parser を直した"),
+        withReadme("packages/style", "# style"),
+        withReadme("packages/lsp", "### 0.1.0-beta.2 の変更\n\n- lsp を直した"),
+      ],
+      "0.1.0-beta.2",
+    )
+    expect(notes).toBe(
+      [
+        "## @cosense-toolbox/parser",
+        "",
+        "- parser を直した",
+        "",
+        "## @cosense-toolbox/lsp",
+        "",
+        "- lsp を直した",
+        "",
+      ].join("\n"),
+    )
+  })
+
+  it("どのパッケージにも変更が無ければ空", () => {
+    expect(releaseNotesOf([withReadme("packages/style", "# style")], "0.1.0-beta.2")).toBe("")
   })
 })
