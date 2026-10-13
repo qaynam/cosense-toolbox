@@ -1,4 +1,5 @@
 import type { MergeConflict } from "./merge"
+import type { PageDetail } from "./types"
 
 /**
  * Cosense の API から使える応答が返らなかった。2xx 以外の status、辿らないリダイレクト、
@@ -39,14 +40,21 @@ export class PageConflictError extends Error {
   readonly conflicts: readonly MergeConflict[]
   /** 今のページに自分の書き換えを合わせたもの。コンフリクトした行は自分の文を残している */
   readonly merged: readonly string[]
+  /**
+   * 合わせた先の今のページ (`commitId` と id 付きの行)。コンフリクトを自分で解いたら、
+   * これを `updatePage` の `base` にして書き直す
+   */
+  readonly latest: PageDetail
 
   constructor(fields: {
     readonly conflicts: readonly MergeConflict[]
     readonly merged: readonly string[]
+    readonly latest: PageDetail
   }) {
     super(`Someone else changed ${fields.conflicts.length} of the same lines`)
     this.name = "PageConflictError"
     this.conflicts = fields.conflicts
     this.merged = fields.merged
+    this.latest = fields.latest
   }
 }

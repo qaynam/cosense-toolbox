@@ -42,7 +42,11 @@ interface Operations {
 
 /** 1 回書いてみた結果。書けなかったときは、断られたエラーがあれば持つ。 */
 type Attempt =
-  | { readonly written: true; readonly commitId: string }
+  | {
+      readonly written: true
+      readonly commitId: string
+      readonly titleChanged?: { readonly from: string; readonly to: string }
+    }
   | { readonly written: false; readonly refusal: Option.Option<CosenseApiError> }
 
 /** 読み取りと書き込みの関数から `updatePage` を作る。 */
@@ -70,6 +74,7 @@ export const updatePageWith =
             ? Effect.map(operations.submitEdit(project, preview.previewId), (submit): Attempt => ({
                 written: true,
                 commitId: submit.commitId,
+                ...(submit.titleChanged === undefined ? {} : { titleChanged: submit.titleChanged }),
               }))
             : Effect.succeed<Attempt>({ written: false, refusal: Option.none() }),
         ),
@@ -88,7 +93,7 @@ export const updatePageWith =
     > => {
       const { merged, conflicts } = mergeThreeWay(base.lines, lines, latest.lines)
       if (conflicts.length > 0 && whenConflict === "error") {
-        return Effect.fail(new PageConflictError({ conflicts, merged }))
+        return Effect.fail(new PageConflictError({ conflicts, merged, latest }))
       }
       // 合わせた結果には、自分が消した行をほかの人が書き換えたとき、ほかの人の文が残っている。
       // 上書きするなら、それも消す。
@@ -109,7 +114,12 @@ export const updatePageWith =
     ): Effect.Effect<UpdatePageResult, CosenseApiError | PageConflictError, HttpClient> =>
       Effect.flatMap(tryWrite(current, text), (result) => {
         if (result.written) {
-          return Effect.succeed({ commitId: result.commitId, lines: text, overwritten })
+          return Effect.succeed({
+            commitId: result.commitId,
+            lines: text,
+            overwritten,
+            ...(result.titleChanged === undefined ? {} : { titleChanged: result.titleChanged }),
+          })
         }
         if (count + 1 >= MAX_ATTEMPTS) {
           return Effect.fail(
