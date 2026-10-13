@@ -2,6 +2,8 @@
  * API の応答の型。応答はゆるく読む (schemas.ts): 知らない項目は捨て、無い項目は空の値
  * (`""` や `0`、`[]`) にする。日時はどれも Unix 時間の秒。
  */
+import type { BaseLine } from "./changes"
+import type { MergeConflict } from "./merge"
 
 /** Cosense Web の一覧で保存した絞り込み。`{ type: "icon", value: "taro" }` など。 */
 export interface PageFilter {
@@ -253,4 +255,22 @@ export interface SubmitResponse {
   readonly page: { readonly title: string } | null
   readonly titleChanged?: { readonly from: string; readonly to: string }
   readonly pageDeleted?: { readonly title: string }
+}
+
+/** `updatePage` に渡す、読んだときのページ。`getPage` の結果をそのまま渡せる。 */
+export interface PageToUpdate {
+  readonly id: string
+  /** ページを読み直すのに使う。名前を変えられていても、今のページを引く */
+  readonly title: string
+  readonly commitId: string
+  readonly lines: readonly BaseLine[]
+}
+
+export interface UpdatePageResult {
+  /** 書いた後のコミット。何も変えなかったら、読んだときのまま */
+  readonly commitId: string
+  /** 書いた後のページの行の文。ほかの人の書き換えを合わせたもの */
+  readonly lines: readonly string[]
+  /** 自分の文で上書きしたコンフリクト (`onConflict: "overwrite"` のとき)。無ければ空 */
+  readonly overwritten: readonly MergeConflict[]
 }

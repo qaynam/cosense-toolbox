@@ -1,6 +1,7 @@
 /**
  * `@cosense-toolbox/api`。中は effect で書いているが、ここで渡すものは素の型にする。
- * 時間のかかるものは `Promise`、無いものは `null` で返し、失敗は `CosenseApiError` で reject する。
+ * 時間のかかるものは `Promise`、無いものは `null` で返し、失敗は `CosenseApiError` で reject する
+ * (`updatePage` のコンフリクトだけは `PageConflictError`)。
  * effect の型のまま使いたい人は `@cosense-toolbox/api/effect` を使う。
  */
 import { Cause, Effect, Exit, Layer, Option } from "effect"
@@ -8,13 +9,14 @@ import { Cause, Effect, Exit, Layer, Option } from "effect"
 import { createCosenseApi as createCosenseApiEffect } from "../api"
 import type { CosenseApiError } from "../errors"
 import { HttpClient, httpClientOf } from "../http-client"
-import type { CosenseApiConfig, ListPagesOptions } from "../options"
+import type { CosenseApiConfig, ListPagesOptions, UpdatePageOptions } from "../options"
 import type {
   Me,
   PageDetail,
   PageSnapshot,
   PageSnapshotEntry,
   PageSummary,
+  PageToUpdate,
   PreviewEditBody,
   PreviewResponse,
   ProjectDetail,
@@ -24,6 +26,7 @@ import type {
   SearchResult,
   SubmitResponse,
   TitleEntry,
+  UpdatePageResult,
   VectorResult,
 } from "../types"
 
@@ -37,8 +40,9 @@ export {
   type EditSegment,
   type KeptSegment,
 } from "../changes"
-export { CosenseApiError } from "../errors"
-export type { ListPagesOptions } from "../options"
+export { CosenseApiError, PageConflictError } from "../errors"
+export { type MergeConflict, type MergeResult, mergeThreeWay } from "../merge"
+export type { ListPagesOptions, UpdatePageOptions } from "../options"
 export type * from "../types"
 
 export interface CosenseApiOptions extends CosenseApiConfig {
@@ -46,7 +50,7 @@ export interface CosenseApiOptions extends CosenseApiConfig {
   readonly fetch?: typeof globalThis.fetch
 }
 
-/** {@link createCosenseApi} が返すもの。失敗はどれも `CosenseApiError` で reject する。 */
+/** {@link createCosenseApi} が返すもの。失敗は `CosenseApiError` で reject する (`updatePage` のコンフリクトは除く)。 */
 export interface CosenseApi {
   readonly me: () => Promise<Me>
   readonly projects: () => Promise<readonly ProjectSummary[]>
@@ -109,13 +113,27 @@ export interface CosenseApi {
   ) => Promise<{ readonly message: string }>
   /** ページを開いたことを記録する (未読でなくなる)。記録できなくても reject しない。 */
   readonly markAccessed: (project: string, pageId: string) => Promise<void>
+  /**
+   * 読んだときのページ (`base`) を、`lines` の文にする。行の差分を作り、用意して書くまでをまとめて行う。
+   *
+   * 読んでから書くまでにほかの人が書き換えていたら、今のページを読み直して 3-way merge する。
+   * 違う行の書き換えは合わせて書き、同じ行の書き換え (コンフリクト) は `onConflict` に従う。
+   * 既定では何も書かずに `PageConflictError` で reject する。書き換えが続いたら、3 回試して諦める
+   * (`CosenseApiError`、`code: "NotFastForward"`)。
+   */
+  readonly updatePage: (
+    project: string,
+    base: PageToUpdate,
+    lines: readonly string[],
+    options?: UpdatePageOptions,
+  ) => Promise<UpdatePageResult>
 }
 
 /**
  * 失敗を、effect が包んだもの (`FiberFailure`) ではなく `CosenseApiError` そのもので reject する。
  * `catch` した人が `instanceof CosenseApiError` や `status` で見分けられるように。
  */
-const runOrReject = <A>(effect: Effect.Effect<A, CosenseApiError>): Promise<A> =>
+const runOrReject = <A, E>(effect: Effect.Effect<A, E>): Promise<A> =>
   Effect.runPromiseExit(effect).then((exit) =>
     Exit.isSuccess(exit) ? exit.value : Promise.reject(Cause.squash(exit.cause)),
   )
@@ -135,7 +153,7 @@ export const createCosenseApi = (options: CosenseApiOptions = {}): CosenseApi =>
     HttpClient,
     httpClientOf((input, init) => (options.fetch ?? globalThis.fetch)(input, init)),
   )
-  const run = <A>(effect: Effect.Effect<A, CosenseApiError, HttpClient>): Promise<A> =>
+  const run = <A, E>(effect: Effect.Effect<A, E, HttpClient>): Promise<A> =>
     runOrReject(Effect.provide(effect, layer))
   const orNull = <A>(
     effect: Effect.Effect<Option.Option<A>, CosenseApiError, HttpClient>,
@@ -161,5 +179,7 @@ export const createCosenseApi = (options: CosenseApiOptions = {}): CosenseApi =>
     submitEdit: (project, previewId) => run(api.submitEdit(project, previewId)),
     replaceLinks: (project, from, to) => run(api.replaceLinks(project, from, to)),
     markAccessed: (project, pageId) => run(api.markAccessed(project, pageId)),
+    updatePage: (project, base, lines, options) =>
+      run(api.updatePage(project, base, lines, options)),
   }
 }

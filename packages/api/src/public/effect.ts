@@ -15,7 +15,7 @@ export {
   type EditSegment,
   type KeptSegment,
 } from "../changes"
-export { CosenseApiError } from "../errors"
+export { CosenseApiError, PageConflictError } from "../errors"
 export {
   HttpClient,
   HttpClientError,
@@ -23,5 +23,6 @@ export {
   httpClientOf,
   type HttpClientShape,
 } from "../http-client"
-export type { CosenseApiConfig, ListPagesOptions } from "../options"
+export { type MergeConflict, type MergeResult, mergeThreeWay } from "../merge"
+export type { CosenseApiConfig, ListPagesOptions, UpdatePageOptions } from "../options"
 export type * from "../types"

@@ -1,3 +1,5 @@
+import type { MergeConflict } from "./merge"
+
 /**
  * Cosense の API から使える応答が返らなかった。2xx 以外の status、辿らないリダイレクト、
  * 2xx だが形の合わない本文のどれか。
@@ -24,5 +26,27 @@ export class CosenseApiError extends Error {
     this.name = "CosenseApiError"
     this.status = fields.status
     this.code = fields.code
+  }
+}
+
+/**
+ * `updatePage` で、読んでから書くまでにほかの人が同じ行を書き換えていた。何も書いていない。
+ * `onConflict: "error"` (既定) のときだけ起きる。
+ */
+export class PageConflictError extends Error {
+  readonly _tag = "PageConflictError"
+  /** 両方が変えた行 */
+  readonly conflicts: readonly MergeConflict[]
+  /** 今のページに自分の書き換えを合わせたもの。コンフリクトした行は自分の文を残している */
+  readonly merged: readonly string[]
+
+  constructor(fields: {
+    readonly conflicts: readonly MergeConflict[]
+    readonly merged: readonly string[]
+  }) {
+    super(`Someone else changed ${fields.conflicts.length} of the same lines`)
+    this.name = "PageConflictError"
+    this.conflicts = fields.conflicts
+    this.merged = fields.merged
   }
 }

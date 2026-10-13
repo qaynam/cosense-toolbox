@@ -21,3 +21,16 @@ export interface ListPagesOptions {
   readonly filterType?: string
   readonly filterValue?: string
 }
+
+export interface UpdatePageOptions {
+  /**
+   * 読んでから書くまでに、ほかの人が同じ行を書き換えていたとき (コンフリクト) にどうするか。
+   * 違う行の書き換えは、どちらでも合わせて書く。
+   *
+   * - `"error"`: 何も書かずに `PageConflictError` で止める
+   * - `"overwrite"`: 自分の文で上書きする。自分が消した行は、ほかの人が書き換えていても消す
+   *
+   * @defaultValue `"error"`
+   */
+  readonly onConflict?: "error" | "overwrite"
+}

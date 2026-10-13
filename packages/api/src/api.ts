@@ -1,8 +1,13 @@
 import { Effect, Option, pipe, Schema } from "effect"
 
-import { CosenseApiError } from "./errors"
+import { CosenseApiError, type PageConflictError } from "./errors"
 import { HttpClient } from "./http-client"
-import { type CosenseApiConfig, DEFAULT_ORIGIN, type ListPagesOptions } from "./options"
+import {
+  type CosenseApiConfig,
+  DEFAULT_ORIGIN,
+  type ListPagesOptions,
+  type UpdatePageOptions,
+} from "./options"
 import {
   Links1HopResponseSchema,
   Links2HopResponseSchema,
@@ -28,6 +33,7 @@ import type {
   PageSnapshot,
   PageSnapshotEntry,
   PageSummary,
+  PageToUpdate,
   PreviewEditBody,
   PreviewResponse,
   ProjectDetail,
@@ -37,8 +43,10 @@ import type {
   SearchResult,
   SubmitResponse,
   TitleEntry,
+  UpdatePageResult,
   VectorResult,
 } from "./types"
+import { updatePageWith } from "./update-page"
 
 /** `R` は要求を送る `HttpClient`。`E` は `CosenseApiError`。 */
 type Call<A> = Effect.Effect<A, CosenseApiError, HttpClient>
@@ -102,6 +110,19 @@ export interface CosenseApi {
   ) => Call<{ readonly message: string }>
   /** ページを開いたことを記録する (未読でなくなる)。記録できなくても失敗しない。 */
   readonly markAccessed: (project: string, pageId: string) => Effect.Effect<void, never, HttpClient>
+  /**
+   * 読んだときのページ (`base`) を、`lines` の文にする。行の差分を作り、用意して書くまでをまとめて行う。
+   *
+   * 読んでから書くまでにほかの人が書き換えていたら、今のページを読み直して 3-way merge する。
+   * 違う行の書き換えは合わせて書き、同じ行の書き換え (コンフリクト) は `onConflict` に従う。
+   * 既定では何も書かずに `PageConflictError` で失敗する。書き換えが続いたら、3 回試して諦める。
+   */
+  readonly updatePage: (
+    project: string,
+    base: PageToUpdate,
+    lines: readonly string[],
+    options?: UpdatePageOptions,
+  ) => Effect.Effect<UpdatePageResult, CosenseApiError | PageConflictError, HttpClient>
 }
 
 // タイトルをパスに入れる形。日本語や空白は読める形のまま (空白は `_`) にし、
@@ -392,7 +413,7 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
     )
   }
 
-  return {
+  const operations = {
     me: () => get("/api/users/me", MeSchema),
 
     projects: () =>
@@ -556,5 +577,7 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
         Effect.orElse(() => Effect.void),
       )
     },
-  }
+  } satisfies Omit<CosenseApi, "updatePage">
+
+  return { ...operations, updatePage: updatePageWith(operations) }
 }
