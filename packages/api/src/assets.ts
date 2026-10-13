@@ -4,7 +4,7 @@
  */
 import { type CosenseApiOptions, DEFAULT_ORIGIN } from "./options"
 
-/** Cosense 上のファイルの URL か。 */
+/** `origin` にアップロードしたファイル (`/files/…`) か、アイコン (`/api/pages/…/icon`) の URL か。 */
 export const isCosenseAssetUrl = (
   url: string,
   options: Pick<CosenseApiOptions, "origin"> = {},

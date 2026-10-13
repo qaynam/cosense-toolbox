@@ -111,13 +111,6 @@ export interface CosenseApi {
   /** ページを開いたことを記録する (未読でなくなる)。記録できなくても失敗しない。 */
   readonly markAccessed: (project: string, pageId: string) => Effect.Effect<void, never, HttpClient>
   /**
-   * 読んだときのページ (`base`) を、`lines` の文にする。行の差分を作り、用意して書くまでをまとめて行う。
-   *
-   * 読んでから書くまでにほかの人が書き換えていたら、今のページを読み直して 3-way merge する。
-   * 違う行の書き換えは合わせて書き、同じ行の書き換え (コンフリクト) は `whenConflict` に従う。
-   * 既定では何も書かずに `PageConflictError` で失敗する。書き換えが続いたら、3 回試して諦める。
-   */
-  /**
    * Cosense 上のファイル (アップロードした `/files/…` やアイコン) の中身を取ってくる。
    *
    * これらは `Cross-Origin-Resource-Policy: same-origin` を返すので別のサイトの `<img>` からは読めず、
@@ -126,6 +119,13 @@ export interface CosenseApi {
    * PAT は `origin` への要求にだけ付け、リダイレクト先には送らない。
    */
   readonly fetchAsset: (url: string) => Call<FetchedAsset>
+  /**
+   * 読んだときのページ (`base`) を、`lines` の文にする。行の差分を作り、用意して書くまでをまとめて行う。
+   *
+   * 読んでから書くまでにほかの人が書き換えていたら、今のページを読み直して 3-way merge する。
+   * 違う行の書き換えは合わせて書き、同じ行の書き換え (コンフリクト) は `whenConflict` に従う。
+   * 既定では何も書かずに `PageConflictError` で失敗する。書き換えが続いたら、3 回試して諦める。
+   */
   readonly updatePage: (
     project: string,
     base: PageToUpdate,
