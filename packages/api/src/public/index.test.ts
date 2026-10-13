@@ -41,7 +41,7 @@ describe("createCosenseApi (Promise)", () => {
     })
     const failure = await api.me().catch((error: unknown) => error)
     expect(failure).toBeInstanceOf(CosenseApiError)
-    expect(failure).toMatchObject({ status: 403, code: "SomeError" })
+    expect(failure).toMatchObject({ status: 403, code: "SomeError", kind: "forbidden" })
   })
 
   it("fetch を渡さなければ、呼んだときの globalThis.fetch で送る", async () => {

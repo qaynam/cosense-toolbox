@@ -44,7 +44,12 @@ export {
   type EditSegment,
   type KeptSegment,
 } from "../changes"
-export { CosenseApiError, PageConflictError, PageExistsError } from "../errors"
+export {
+  CosenseApiError,
+  type CosenseApiErrorKind,
+  PageConflictError,
+  PageExistsError,
+} from "../errors"
 export { type MergeConflict, type MergeResult, mergeThreeWay } from "../merge"
 export type {
   CosenseApiConfig,
@@ -135,7 +140,7 @@ export interface CosenseApi {
    * 読んでから書くまでにほかの人が書き換えていたら、今のページを読み直して 3-way merge する。
    * 違う行の書き換えは合わせて書き、同じ行の書き換え (コンフリクト) は `whenConflict` に従う。
    * 既定では何も書かずに `PageConflictError` で reject する。書き換えが続いたら、3 回試して諦める
-   * (`CosenseApiError`、`code: "NotFastForward"`)。
+   * (`CosenseApiError`、`kind: "notFastForward"`)。
    */
   readonly updatePage: (
     project: string,

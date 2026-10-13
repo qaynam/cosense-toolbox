@@ -267,3 +267,13 @@ export const SubmitResponseSchema = Schema.Struct({
 export const ReplaceLinksResponseSchema = Schema.Struct({
   message: optionalString,
 })
+
+// 2xx 以外の応答の本文。`{"error": "NotFastForward"}` の形と、
+// `{"name": "NotLoggedInError", "message": "..."}` の形がある。
+export const ErrorBodySchema = Schema.parseJson(
+  Schema.Struct({
+    error: Schema.optional(Schema.String),
+    name: Schema.optional(Schema.String),
+    message: Schema.optional(Schema.String),
+  }),
+)

@@ -2,31 +2,89 @@ import type { MergeConflict } from "./merge"
 import type { PageDetail } from "./types"
 
 /**
+ * {@link CosenseApiError} の種類。
+ *
+ * - `"unauthorized"`: 401。PAT が無いか、違う
+ * - `"forbidden"`: 403。プロジェクトのメンバーでないなど、権限が無い
+ * - `"notFound"`: 404。ページやプロジェクトが無い。用意した書き換えの期限 (5 分) が切れたときも
+ * - `"tooLarge"`: 1 回の要求の本文が大きすぎる。scrapbox.io は 100 KiB を超えると断る
+ * - `"notFastForward"`: 409 `NotFastForward`。書く前に、ほかの人がページを書き換えた
+ * - `"duplicateTitle"`: 409 `DuplicateTitle`。新しいページを用意してから書くまでに、同じタイトルのページができた
+ * - `"invalidChanges"`: 422。もう無い行を指しているなど、変更を受け付けられない
+ * - `"rateLimited"`: 429。要求が多すぎる
+ * - `"serverError"`: 5xx
+ * - `"network"`: 応答が来なかった (DNS や接続の失敗)
+ * - `"decode"`: 2xx だが、本文を読めなかったか、形が合わなかった
+ * - `"unknown"`: どれでもない。`status` と `code` で見分ける
+ */
+export type CosenseApiErrorKind =
+  | "unauthorized"
+  | "forbidden"
+  | "notFound"
+  | "tooLarge"
+  | "notFastForward"
+  | "duplicateTitle"
+  | "invalidChanges"
+  | "rateLimited"
+  | "serverError"
+  | "network"
+  | "decode"
+  | "unknown"
+
+const KIND_BY_CODE: ReadonlyMap<string, CosenseApiErrorKind> = new Map([
+  ["DecodeError", "decode"],
+  ["NotFastForward", "notFastForward"],
+  ["DuplicateTitle", "duplicateTitle"],
+])
+
+const KIND_BY_STATUS: ReadonlyMap<number, CosenseApiErrorKind> = new Map([
+  [0, "network"],
+  [401, "unauthorized"],
+  [403, "forbidden"],
+  [404, "notFound"],
+  [413, "tooLarge"],
+  [422, "invalidChanges"],
+  [429, "rateLimited"],
+])
+
+const kindOf = (status: number, code: string | undefined): CosenseApiErrorKind =>
+  (code === undefined ? undefined : KIND_BY_CODE.get(code)) ??
+  KIND_BY_STATUS.get(status) ??
+  (status >= 500 ? "serverError" : "unknown")
+
+/**
  * Cosense の API から使える応答が返らなかった。2xx 以外の status、辿らないリダイレクト、
- * 2xx だが形の合わない本文のどれか。
+ * 2xx だが形の合わない本文のどれか。何が起きたかは `kind` で見分ける。
  *
  * effect の型を使わない素の `Error` にしている。Promise の入口ではこれで reject し、effect の入口では
  * これで失敗する (`_tag` があるので `Effect.catchTag("CosenseApiError", …)` で拾える)。
  */
 export class CosenseApiError extends Error {
   readonly _tag = "CosenseApiError"
+  readonly kind: CosenseApiErrorKind
   /** 受け取った HTTP の status。応答が来なかった (DNS や接続の失敗) ときは `0` */
   readonly status: number
   /**
-   * 応答の本文 `{"error": "..."}` の値 (`"NotFastForward"` や `"DuplicateTitle"` など)。
+   * 応答の本文の `error` か、それが無ければ `name` の値 (`"NotFastForward"` や `"NotLoggedInError"` など)。
    * 2xx だが本文を読めなかったときは `"DecodeError"`。どちらでもなければ無い
    */
   readonly code: string | undefined
 
+  /**
+   * @param fields - `kind` を省くと、`status` と `code` から決める。本文の文でしか分からない
+   * 種類のときに渡す。
+   */
   constructor(fields: {
     readonly status: number
     readonly code?: string
+    readonly kind?: CosenseApiErrorKind
     readonly message: string
   }) {
     super(fields.message)
     this.name = "CosenseApiError"
     this.status = fields.status
     this.code = fields.code
+    this.kind = fields.kind ?? kindOf(fields.status, fields.code)
   }
 }
 
