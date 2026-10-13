@@ -1,7 +1,7 @@
 import { defineConfig } from "tsdown"
 
 export default defineConfig({
-  // 入口は src/public/ に置く。index は素の型と Promise で、effect は effect の型のまま出す。
+  // index は素の型と Promise で出し、effect は effect の型のまま出す。
   entry: {
     index: "src/public/index.ts",
     effect: "src/public/effect.ts",
