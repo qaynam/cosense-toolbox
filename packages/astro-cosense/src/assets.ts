@@ -11,7 +11,7 @@ import { copyFile, mkdir, readdir, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { fetchAsset, type FetchOptions, isCosenseAssetUrl } from "@cosense-toolbox/cosense-x/fetch"
+import { type CosenseApiOptions, createCosenseApi, isCosenseAssetUrl } from "@cosense-toolbox/api"
 import type { Root } from "hast"
 
 import { elementsIn, type HastLike } from "./hast"
@@ -28,7 +28,7 @@ export interface AssetStoreOptions {
   /** サイトの中で、置いたファイルを配信するパス。`/` で終わる */
   readonly publicPath: string
   /** PAT などの取得のオプション */
-  readonly fetchOptions?: FetchOptions
+  readonly fetchOptions?: CosenseApiOptions
   /**
    * リンク (`<a href>`) した Cosense のファイル (zip や PDF など) の扱い。画像 (`<img>`) は常に取ってくる。
    *
@@ -124,6 +124,7 @@ const ATTRIBUTE_RE = /(\s(src|href)=")([^"]*)(")/g
 
 export const createAssetStore = (options: AssetStoreOptions): AssetStore => {
   const fetchOptions = options.fetchOptions ?? {}
+  const api = createCosenseApi(fetchOptions)
   const isAsset = (url: string) => isCosenseAssetUrl(url, fetchOptions)
   // 同じファイルを何度も取りに行かないよう、URL ごとに取得の Promise を覚えておく。
   const downloads = new Map<string, Promise<string>>()
@@ -147,7 +148,7 @@ export const createAssetStore = (options: AssetStoreOptions): AssetStore => {
     try {
       const cached = isImmutable(url) ? await cachedFileOf(base) : undefined
       if (cached !== undefined) return publicUrlOf(cached)
-      const asset = await fetchAsset(url, fetchOptions)
+      const asset = await api.fetchAsset(url)
       const file = `${base}${extensionOf(url, asset.contentType)}`
       await mkdir(options.cacheDir, { recursive: true })
       await writeFile(join(options.cacheDir, file), asset.data)

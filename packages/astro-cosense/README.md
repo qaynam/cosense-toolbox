@@ -7,6 +7,13 @@ Cosense (旧 Scrapbox) の記法で書いた `.csn` / `.csnx` を、Astro のペ
 
 > **beta**：公開 API はまだ変わりうる。
 
+### 0.1.0-beta.10 の変更
+
+- Cosense のファイルを取るのに、`@cosense-toolbox/cosense-x/fetch` ではなく `@cosense-toolbox/api` を使うようになった。
+  統合のオプション (`assets.pat` など) は変わらない。
+- 自分で描画するページの例を、`@cosense-toolbox/api` の `createCosenseApi().getPageText` と `cosenseIconUrl` に書き換えた
+  (`@cosense-toolbox/cosense-x/fetch` を消したため)。
+
 ### 0.1.0-beta.9 の変更
 
 - `gyazoVideo` オプションを足した。拡張子の無い Gyazo の URL が動画だったときに、`"video"` なら `<video>`、`"embed"` なら Gyazo のプレーヤーで出す。
@@ -118,17 +125,18 @@ cosense({
 ```
 
 `toHtml` などで自分で描画するページは、`virtual:cosense-x/assets` の `localizeCosenseAssets` に HTML を通す。
-アイコンの URL は `cosenseIconUrl` で作る。
+ページの取得とアイコンの URL には [`@cosense-toolbox/api`](../api) を使う (`npm install @cosense-toolbox/api`)。
 
 ```astro
 ---
-import { cosenseIconUrl, fetchPageText } from "@cosense-toolbox/cosense-x/fetch"
+import { cosenseIconUrl, createCosenseApi } from "@cosense-toolbox/api"
 import { parse } from "@cosense-toolbox/parser"
 import { toHtml } from "@cosense-toolbox/parser/html"
 import { localizeCosenseAssets } from "virtual:cosense-x/assets"
 
 const project = "help-jp"
-const text = await fetchPageText(project, "ブラケティング")
+const text = await createCosenseApi().getPageText(project, "ブラケティング")
+if (text === null) throw new Error("ページが無い")
 const html = await localizeCosenseAssets(
   toHtml(parse(text), { iconImageUrl: (icon) => cosenseIconUrl(project, icon.user) }),
 )

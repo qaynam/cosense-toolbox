@@ -86,10 +86,10 @@ code:ts
  
  graph.backlinks["posts/shared.csn"]
 
-Cosense からページ本文や画像を取得する API は `@cosense-toolbox/cosense-x/fetch` にあります。非公開プロジェクトでは PAT が必要です。取得した非公開コンテンツを公開サイトへ含めないよう注意してください。
+Cosense からページ本文や画像を取得する API は `@cosense-toolbox/api` にあります ([api パッケージの README https://github.com/qaynam/cosense-toolbox/blob/main/packages/api/README.md])。非公開プロジェクトでは PAT が必要です。取得した非公開コンテンツを公開サイトへ含めないよう注意してください。
 
 <DocHeading level={2} id="packages" title="次に読む" />
 
 Astro で `.csn` / `.csnx` をページや記事として使うには [Astro 統合] をご覧ください。
 
-すべてのオプション・サブパス・fetch API の詳しい説明は [cosense-x の README https://github.com/qaynam/cosense-toolbox/blob/main/packages/cosense-x/README.md] にあります。
+すべてのオプションとサブパスの詳しい説明は [cosense-x の README https://github.com/qaynam/cosense-toolbox/blob/main/packages/cosense-x/README.md] にあります。

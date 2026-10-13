@@ -36,6 +36,7 @@
     "format:check": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore"
   },
   "dependencies": {
+    "@cosense-toolbox/api": "workspace:*",
     "@cosense-toolbox/cosense-x": "workspace:*",
     "@cosense-toolbox/lsp": "workspace:*",
     "@cosense-toolbox/parser": "workspace:*",

@@ -1,0 +1,76 @@
+import type { MergeConflict } from "./merge"
+import type { PageDetail } from "./types"
+
+/**
+ * Cosense の API から使える応答が返らなかった。2xx 以外の status、辿らないリダイレクト、
+ * 2xx だが形の合わない本文のどれか。
+ *
+ * effect の型を使わない素の `Error` にしている。Promise の入口ではこれで reject し、effect の入口では
+ * これで失敗する (`_tag` があるので `Effect.catchTag("CosenseApiError", …)` で拾える)。
+ */
+export class CosenseApiError extends Error {
+  readonly _tag = "CosenseApiError"
+  /** 受け取った HTTP の status。応答が来なかった (DNS や接続の失敗) ときは `0` */
+  readonly status: number
+  /**
+   * 応答の本文 `{"error": "..."}` の値 (`"NotFastForward"` や `"DuplicateTitle"` など)。
+   * 2xx だが本文を読めなかったときは `"DecodeError"`。どちらでもなければ無い
+   */
+  readonly code: string | undefined
+
+  constructor(fields: {
+    readonly status: number
+    readonly code?: string
+    readonly message: string
+  }) {
+    super(fields.message)
+    this.name = "CosenseApiError"
+    this.status = fields.status
+    this.code = fields.code
+  }
+}
+
+/**
+ * `updatePage` で、読んでから書くまでにほかの人が同じ行を書き換えていた。何も書いていない。
+ * `whenConflict: "error"` (既定) のときだけ起きる。
+ */
+export class PageConflictError extends Error {
+  readonly _tag = "PageConflictError"
+  /** 両方が変えた行 */
+  readonly conflicts: readonly MergeConflict[]
+  /** 今のページに自分の書き換えを合わせたもの。コンフリクトした行は自分の文を残している */
+  readonly merged: readonly string[]
+  /**
+   * 合わせた先の今のページ (`commitId` と id 付きの行)。コンフリクトを自分で解いたら、
+   * これを `updatePage` の `base` にして書き直す
+   */
+  readonly latest: PageDetail
+
+  constructor(fields: {
+    readonly conflicts: readonly MergeConflict[]
+    readonly merged: readonly string[]
+    readonly latest: PageDetail
+  }) {
+    super(`Someone else changed ${fields.conflicts.length} of the same lines`)
+    this.name = "PageConflictError"
+    this.conflicts = fields.conflicts
+    this.merged = fields.merged
+    this.latest = fields.latest
+  }
+}
+
+/**
+ * `createPage` で、同じタイトルのページがもうあった。何も書いていない。
+ * Cosense と同じく、大文字と小文字、空白と `_` の違いは同じタイトルとして扱う。
+ */
+export class PageExistsError extends Error {
+  readonly _tag = "PageExistsError"
+  /** もうあるページ。書き足すなら、これを `updatePage` の `base` にする */
+  readonly page: PageDetail
+
+  constructor(fields: { readonly page: PageDetail }) {
+    super(`A page titled "${fields.page.title}" already exists`)
+    this.name = "PageExistsError"
+    this.page = fields.page
+  }
+}
