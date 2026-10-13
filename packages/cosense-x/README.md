@@ -14,6 +14,15 @@ Cosense (旧 Scrapbox) の記法で書いたページを、JSX モジュール�
 
 > **beta**：公開 API はまだ変わりうる。
 
+### 0.1.0-beta.10 の変更
+
+- **破壊的変更:** `@cosense-toolbox/cosense-x/fetch` を消した。Cosense の API を呼ぶものは `@cosense-toolbox/api` にまとめた。
+  - `fetchAsset` / `isCosenseAssetUrl` / `cosenseIconUrl` は、import 先を `@cosense-toolbox/api` に変えるだけでよい。
+    `fetchAsset` の失敗は、`status` 付きの `CosenseApiError` になった
+  - `fetchPageText(project, title, { pat })` は `createCosenseApi({ pat }).getPageText(project, title)` になる。無いページは、エラーではなく `null` を返す
+  - `fetchPage(project, title)` は `createCosenseApi().getPage(project, title)` になる。本文は `lines` の各行の `text` をつなぐ。
+    `created` / `updated` は ISO 8601 の文字列ではなく Unix 時間の秒
+
 ### 0.1.0-beta.9 の変更
 
 - `metadata.image` が本文の最初の画像を使うとき、ハッシュだけの Gyazo の URL (`https://gyazo.com/{hash}`) は
@@ -162,40 +171,12 @@ graph.twoHop["posts/react.csn"]
 - 結果はただのオブジェクトなので、JSON にして持ち回れる
 - このサブパスは JS の生成 (unified 系) を import しない。一覧ページやサイトマップを作るだけなら、これだけで済む
 
-## Cosense からの取得 (`./fetch`)
-
-ページを 1 枚取ってくる。非公開プロジェクトは `pat` に Personal Access Token を渡す。
-
-```ts
-import { fetchPage, fetchPageText } from "@cosense-toolbox/cosense-x/fetch"
-
-const text = await fetchPageText("help-jp", "ブラケティング") // 本文そのまま
-const page = await fetchPage("help-jp", "ブラケティング") // { title, text, created, updated }
-const secret = await fetchPageText("my-private", "メモ", { pat: process.env.COSENSE_PAT })
-```
-
-Cosense 上の画像やファイル (`https://scrapbox.io/files/…` とアイコン) も取ってこられる。
-
-```ts
-import { cosenseIconUrl, fetchAsset, isCosenseAssetUrl } from "@cosense-toolbox/cosense-x/fetch"
-
-cosenseIconUrl("help-jp", "cosense") // → https://scrapbox.io/api/pages/help-jp/cosense/icon
-isCosenseAssetUrl("https://scrapbox.io/files/xxx.png") // → true
-const { data, contentType } = await fetchAsset("https://scrapbox.io/files/xxx.png", { pat })
-```
-
-- これらのファイルは `Cross-Origin-Resource-Policy: same-origin` を返すので、別のサイトの `<img>` からは読めない
-- リダイレクト先の URL は期限付き (`/files/` は 5 分) なので、解決した URL を埋め込んでもすぐ表示されなくなる
-- そのため静的なサイトでは、中身を取ってきてサイトの中に置く。Astro 統合はこれを自動で行う
-- `fetchAsset` はリダイレクトを自分で辿り、PAT は Cosense への要求にだけ付ける。リダイレクト先の Google Cloud Storage や Gyazo には送らない
-
 ## API
 
 | モジュール                         | API                                                                                                                                                                                               |
 | :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `@cosense-toolbox/cosense-x`       | `compile` `toHast` `readPage` `createIndex` `createLinkResolver` `parseComponentTag` `parseClosingTag` `findInlineComponents` `splitFrontmatter` `collectMetadata` `normalizeTitle` `titleToSlug` |
 | `@cosense-toolbox/cosense-x/graph` | `scanPages` `buildGraph` `readPage` `createIndex` `normalizeTitle` `titleToSlug`                                                                                                                  |
-| `@cosense-toolbox/cosense-x/fetch` | `fetchPage` `fetchPageText` `fetchAsset` `isCosenseAssetUrl` `cosenseIconUrl`                                                                                                                     |
 
 `compile` の主なオプション:
 

@@ -12,6 +12,11 @@ export interface CosenseApiConfig {
   readonly pat?: string
 }
 
+export interface CosenseApiOptions extends CosenseApiConfig {
+  /** 要求を送る fetch。テストや、キャッシュを挟みたいときに渡す。 @defaultValue 呼んだときの `globalThis.fetch` */
+  readonly fetch?: typeof globalThis.fetch
+}
+
 export interface ListPagesOptions {
   readonly skip?: number
   readonly limit?: number

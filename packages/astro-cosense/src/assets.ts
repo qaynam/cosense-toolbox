@@ -11,7 +11,7 @@ import { copyFile, mkdir, readdir, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { fetchAsset, type FetchOptions, isCosenseAssetUrl } from "@cosense-toolbox/cosense-x/fetch"
+import { type CosenseApiOptions, fetchAsset, isCosenseAssetUrl } from "@cosense-toolbox/api"
 import type { Root } from "hast"
 
 import { elementsIn, type HastLike } from "./hast"
@@ -28,7 +28,7 @@ export interface AssetStoreOptions {
   /** サイトの中で、置いたファイルを配信するパス。`/` で終わる */
   readonly publicPath: string
   /** PAT などの取得のオプション */
-  readonly fetchOptions?: FetchOptions
+  readonly fetchOptions?: CosenseApiOptions
   /**
    * リンク (`<a href>`) した Cosense のファイル (zip や PDF など) の扱い。画像 (`<img>`) は常に取ってくる。
    *

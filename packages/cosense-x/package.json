@@ -19,10 +19,6 @@
       "types": "./dist/graph.d.mts",
       "default": "./dist/graph.mjs"
     },
-    "./fetch": {
-      "types": "./dist/fetch.d.mts",
-      "default": "./dist/fetch.mjs"
-    },
     "./package.json": "./package.json"
   },
   "files": [

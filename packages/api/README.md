@@ -1,6 +1,6 @@
 # @cosense-toolbox/api
 
-Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を読み、検索し、関連ページや履歴を辿れます。ページを行の差分で書き換えることもできます。
+Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を読み、検索し、関連ページや履歴を辿れます。ページを行の差分で書き換えたり、Cosense 上の画像やファイルを取ってきたりもできます。
 
 > **beta**：公開 API はまだ変わりうる。
 
@@ -8,6 +8,7 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 
 - 最初のバージョン。`createCosenseApi` で、ページ・本文・検索・関連ページ・「AI 用にエクスポート」・履歴などを読み、
   `computeChanges` で作った行の差分でページを書き換える (`previewEdit` / `submitEdit`)。
+- `@cosense-toolbox/cosense-x/fetch` にあった `fetchAsset` / `isCosenseAssetUrl` / `cosenseIconUrl` は、ここに移した。
 
 ## インストール
 
@@ -102,6 +103,22 @@ if (page === null) {
 - 足す行の id は `createLineId` で作る (小文字の 16 進数 24 文字)。`computeChanges` の 3 つめの引数で差し替えられる。
 - `pagePreview.commitId` を確かめずに送ると、読んでから書くまでにほかの人が書いた行を、`_update` が上書きすることがある。
 - 失敗は `CosenseApiError` の `code` で見分ける。ほかの人が先に書き換えたら `"NotFastForward"`、同じタイトルのページがあれば `"DuplicateTitle"`。
+
+## Cosense 上のファイル
+
+Cosense にアップロードしたファイル (`https://scrapbox.io/files/…`) とアイコン (`/api/pages/…/icon`) を扱う。
+
+```ts
+import { cosenseIconUrl, fetchAsset, isCosenseAssetUrl } from "@cosense-toolbox/api"
+
+cosenseIconUrl("help-jp", "cosense") // → https://scrapbox.io/api/pages/help-jp/cosense/icon
+isCosenseAssetUrl("https://scrapbox.io/files/xxx.png") // → true
+const { data, contentType } = await fetchAsset("https://scrapbox.io/files/xxx.png", { pat })
+```
+
+- これらのファイルは `Cross-Origin-Resource-Policy: same-origin` を返すので、別のサイトの `<img>` からは読めない。
+- リダイレクト先の URL は期限付き (`/files/` は 5 分) なので、解決した URL を埋め込んでもすぐ表示されなくなる。静的なサイトでは中身を取ってきてサイトの中に置く ([`@cosense-toolbox/astro`](../astro-cosense) はこれを自動で行う)。
+- `fetchAsset` はリダイレクトを 5 回まで自分で辿り、PAT は Cosense (`origin`) への要求にだけ付ける。リダイレクト先の Google Cloud Storage や Gyazo には送らない。取れなければ `CosenseApiError` で reject する。
 
 ## 気をつけること
 

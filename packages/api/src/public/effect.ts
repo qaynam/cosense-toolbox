@@ -5,6 +5,7 @@
  * `httpClientOf(fetch)` で作ったものを渡す。失敗は `CosenseApiError` (`_tag: "CosenseApiError"`)。
  */
 export { type CosenseApi, createCosenseApi } from "../api"
+export { cosenseIconUrl, fetchAsset, type FetchedAsset, isCosenseAssetUrl } from "../assets"
 export {
   alignLines,
   type BaseLine,
@@ -23,5 +24,5 @@ export {
   httpClientOf,
   type HttpClientShape,
 } from "../http-client"
-export type { CosenseApiConfig, ListPagesOptions } from "../options"
+export type { CosenseApiConfig, CosenseApiOptions, ListPagesOptions } from "../options"
 export type * from "../types"

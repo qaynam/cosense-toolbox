@@ -1,54 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { cosenseIconUrl, fetchAsset, fetchPage, fetchPageText, isCosenseAssetUrl } from "./fetch"
-
-const TEXT = "タイトル\n本文\n 二行目"
-
-/** 呼ばれた URL を記録し、決まった応答を返す fetch。 */
-const fakeFetch = (response: () => Response) => {
-  const calls: string[] = []
-  const fetch = (async (input: string | URL | Request) => {
-    calls.push(String(input))
-    return response()
-  }) as typeof globalThis.fetch
-  return { calls, fetch }
-}
-
-describe("fetchPageText", () => {
-  it("/text の本文をそのまま返し、プロジェクト名とタイトルを URL エンコードする", async () => {
-    const { calls, fetch } = fakeFetch(() => new Response(TEXT))
-    expect(await fetchPageText("my project", "a/b c", { fetch })).toBe(TEXT)
-    expect(calls).toEqual(["https://scrapbox.io/api/pages/my%20project/a%2Fb%20c/text"])
-  })
-
-  it("2xx 以外ならステータスを含めてエラーにする", async () => {
-    const { fetch } = fakeFetch(() => new Response("not found", { status: 404 }))
-    await expect(fetchPageText("p", "t", { fetch })).rejects.toThrow(/404/)
-  })
-})
-
-describe("fetchPage", () => {
-  it("JSON の lines をつないだ本文が /text と一致し、日時を ISO 8601 にする", async () => {
-    const body = {
-      title: "タイトル",
-      created: 1_700_000_000,
-      updated: 1_700_000_060,
-      lines: TEXT.split("\n").map((text) => ({ text })),
-    }
-    const { calls, fetch } = fakeFetch(() => Response.json(body))
-    expect(await fetchPage("p", "タイトル", { fetch })).toEqual({
-      title: "タイトル",
-      text: TEXT,
-      created: "2023-11-14T22:13:20.000Z",
-      updated: "2023-11-14T22:14:20.000Z",
-    })
-    expect(calls).toEqual(["https://scrapbox.io/api/pages/p/%E3%82%BF%E3%82%A4%E3%83%88%E3%83%AB"])
-  })
-})
+import { cosenseIconUrl, fetchAsset, isCosenseAssetUrl } from "./assets"
+import { CosenseApiError } from "./errors"
 
 describe("isCosenseAssetUrl", () => {
   it("Cosense にアップロードしたファイルとアイコンの API は Cosense 上のファイル", () => {
-    expect(isCosenseAssetUrl("https://scrapbox.io/files/665f0b8c962ee6001c15c172.png")).toBe(true)
+    expect(isCosenseAssetUrl("https://scrapbox.io/files/0123456789abcdef01234567.png")).toBe(true)
     expect(isCosenseAssetUrl("https://scrapbox.io/api/pages/help-jp/cosense/icon")).toBe(true)
   })
 
@@ -56,6 +13,18 @@ describe("isCosenseAssetUrl", () => {
     expect(isCosenseAssetUrl("https://scrapbox.io/help-jp/page")).toBe(false)
     expect(isCosenseAssetUrl("https://gyazo.com/abc/max_size/1000")).toBe(false)
     expect(isCosenseAssetUrl("/files/abc.png")).toBe(false)
+  })
+
+  it("アイコン以外の API (ページの JSON など) は対象にしない", () => {
+    expect(isCosenseAssetUrl("https://scrapbox.io/api/pages/help-jp/page")).toBe(false)
+  })
+
+  it("origin を渡すと、その origin のファイルを対象にする", () => {
+    expect(
+      isCosenseAssetUrl("https://cosense.example/files/abc.png", {
+        origin: "https://cosense.example",
+      }),
+    ).toBe(true)
   })
 })
 
@@ -109,9 +78,9 @@ describe("fetchAsset", () => {
       [FILE]: () => new Response(null, { status: 302, headers: { location: SIGNED } }),
       [SIGNED]: () => new Response("x", { headers: { "content-type": "image/png" } }),
     })
-    await fetchAsset(FILE, { fetch, pat: "secret" })
+    await fetchAsset(FILE, { fetch, pat: "dummy-secret-pat" })
     expect(calls.map(({ url, pat }) => [url, pat])).toEqual([
-      [FILE, "secret"],
+      [FILE, "dummy-secret-pat"],
       [SIGNED, null],
     ])
     // fetch に任せると独自ヘッダを付けたまま別のオリジンへ辿るので、自分で辿る。
@@ -129,13 +98,19 @@ describe("fetchAsset", () => {
     ).toBe("image/png")
   })
 
-  it("2xx 以外や、リダイレクトが続きすぎるときはエラーにする", async () => {
-    const { fetch } = routes({
+  it("2xx 以外なら、その status の CosenseApiError で reject する", async () => {
+    const failure = await fetchAsset("https://scrapbox.io/files/none.png", routes({})).catch(
+      (error: unknown) => error,
+    )
+    expect(failure).toBeInstanceOf(CosenseApiError)
+    expect(failure).toMatchObject({ status: 404 })
+  })
+
+  it("リダイレクトが 5 回を超えたら、辿るのをやめて reject する", async () => {
+    const { calls, fetch } = routes({
       [FILE]: () => new Response(null, { status: 302, headers: { location: FILE } }),
     })
-    await expect(fetchAsset(FILE, { fetch })).rejects.toThrow(/リダイレクト/)
-    await expect(fetchAsset("https://scrapbox.io/files/none.png", routes({}))).rejects.toThrow(
-      /404/,
-    )
+    await expect(fetchAsset(FILE, { fetch })).rejects.toBeInstanceOf(CosenseApiError)
+    expect(calls).toHaveLength(6)
   })
 })

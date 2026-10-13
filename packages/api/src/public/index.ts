@@ -8,7 +8,7 @@ import { Cause, Effect, Exit, Layer, Option } from "effect"
 import { createCosenseApi as createCosenseApiEffect } from "../api"
 import type { CosenseApiError } from "../errors"
 import { HttpClient, httpClientOf } from "../http-client"
-import type { CosenseApiConfig, ListPagesOptions } from "../options"
+import type { CosenseApiOptions, ListPagesOptions } from "../options"
 import type {
   Me,
   PageDetail,
@@ -27,6 +27,7 @@ import type {
   VectorResult,
 } from "../types"
 
+export { cosenseIconUrl, fetchAsset, type FetchedAsset, isCosenseAssetUrl } from "../assets"
 export {
   alignLines,
   type BaseLine,
@@ -38,13 +39,8 @@ export {
   type KeptSegment,
 } from "../changes"
 export { CosenseApiError } from "../errors"
-export type { ListPagesOptions } from "../options"
+export type { CosenseApiConfig, CosenseApiOptions, ListPagesOptions } from "../options"
 export type * from "../types"
-
-export interface CosenseApiOptions extends CosenseApiConfig {
-  /** 要求を送る fetch。テストや、キャッシュを挟みたいときに渡す。 @defaultValue 呼んだときの `globalThis.fetch` */
-  readonly fetch?: typeof globalThis.fetch
-}
 
 /** {@link createCosenseApi} が返すもの。失敗はどれも `CosenseApiError` で reject する。 */
 export interface CosenseApi {

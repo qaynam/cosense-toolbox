@@ -76,6 +76,7 @@
       "name": "@cosense-toolbox/astro",
       "version": "0.1.0-beta.9",
       "dependencies": {
+        "@cosense-toolbox/api": "workspace:*",
         "@cosense-toolbox/cosense-x": "workspace:*",
         "@cosense-toolbox/lsp": "workspace:*",
         "@cosense-toolbox/parser": "workspace:*",
