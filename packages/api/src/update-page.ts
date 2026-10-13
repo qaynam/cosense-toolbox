@@ -40,14 +40,32 @@ interface Operations {
   ) => Effect.Effect<SubmitResponse, CosenseApiError, HttpClient>
 }
 
+type TitleChange = NonNullable<SubmitResponse["titleChanged"]>
+
 /** 1 回書いてみた結果。書けなかったときは、断られたエラーがあれば持つ。 */
 type Attempt =
   | {
       readonly written: true
       readonly commitId: string
-      readonly titleChanged?: { readonly from: string; readonly to: string }
+      readonly titleChanged?: TitleChange
     }
   | { readonly written: false; readonly refusal: Option.Option<CosenseApiError> }
+
+/**
+ * 書いた後のページの行の文。同じタイトルのページがあると、Cosense はタイトルを変えて (後ろに
+ * 番号を付けて) 書くので、1 行目は送った文ではなく、変えた後のタイトルにする。番号を付けることは
+ * Cosense の CLI の説明 (`cosense submitEdit --help`) による。
+ */
+const asWritten = (
+  text: readonly string[],
+  titleChanged: TitleChange | undefined,
+): readonly string[] =>
+  pipe(
+    Option.fromNullable(titleChanged),
+    Option.map((changed) => changed.to),
+    Option.filter((title) => title !== ""),
+    Option.match({ onNone: () => text, onSome: (title) => [title, ...text.slice(1)] }),
+  )
 
 /** 読み取りと書き込みの関数から `updatePage` を作る。 */
 export const updatePageWith =
@@ -116,7 +134,7 @@ export const updatePageWith =
         if (result.written) {
           return Effect.succeed({
             commitId: result.commitId,
-            lines: text,
+            lines: asWritten(text, result.titleChanged),
             overwritten,
             ...(result.titleChanged === undefined ? {} : { titleChanged: result.titleChanged }),
           })
