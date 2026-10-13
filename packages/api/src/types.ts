@@ -279,4 +279,6 @@ export interface UpdatePageResult {
   readonly lines: readonly string[]
   /** 自分の文で上書きしたコンフリクト (`whenConflict: "overwrite"` のとき)。無ければ空 */
   readonly overwritten: readonly MergeConflict[]
+  /** 同じタイトルのページがあって、Cosense がタイトルに番号を付けたとき */
+  readonly titleChanged?: { readonly from: string; readonly to: string }
 }

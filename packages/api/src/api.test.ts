@@ -669,6 +669,55 @@ describe("updatePage", () => {
     expect(steps()).toEqual(["preview", "page"])
   })
 
+  it("PageConflictError には、合わせた先の今のページ (commitId と行の id) を入れる", async () => {
+    const { layer } = server({ preview: [previewOn("c1")], page: [theirsOnAlpha()] })
+    const failure = await runFailure(
+      api.updatePage("myproject", BASE, ["Title", "ours", "beta"]),
+      layer,
+    )
+    expect(failure).toMatchObject({
+      latest: {
+        commitId: "c1",
+        lines: [
+          { id: "l1", text: "Title" },
+          { id: "l2", text: "theirs" },
+          { id: "l3", text: "beta" },
+        ],
+      },
+    })
+  })
+
+  it("PageConflictError の latest を元にすれば、自分で解いた文で書き直せる", async () => {
+    const { layer, previewBodies } = server({
+      preview: [previewOn("c1"), previewOn("c1")],
+      page: [theirsOnAlpha()],
+      submit: [json({ commitId: "c2" })],
+    })
+    const failure = await runFailure(
+      api.updatePage("myproject", BASE, ["Title", "ours", "beta"]),
+      layer,
+    )
+    if (!(failure instanceof PageConflictError)) throw failure
+    const result = await run(
+      api.updatePage("myproject", failure.latest, ["Title", "ours and theirs", "beta"]),
+      layer,
+    )
+    expect(result.commitId).toBe("c2")
+    expect(previewBodies()[1]).toEqual({
+      pageId: "page1",
+      changes: [{ _update: "l2", lines: { text: "ours and theirs" } }],
+    })
+  })
+
+  it("同じタイトルのページがあって番号が付いたら、titleChanged で知らせる", async () => {
+    const { layer } = server({
+      preview: [previewOn("c0")],
+      submit: [json({ commitId: "c1", titleChanged: { from: "Other", to: "Other (2)" } })],
+    })
+    const result = await run(api.updatePage("myproject", BASE, ["Other", "alpha", "beta"]), layer)
+    expect(result.titleChanged).toEqual({ from: "Other", to: "Other (2)" })
+  })
+
   it('whenConflict: "overwrite" なら、同じ行は自分の文で上書きする', async () => {
     const { layer, previewBodies } = server({
       preview: [previewOn("c1"), previewOn("c1")],

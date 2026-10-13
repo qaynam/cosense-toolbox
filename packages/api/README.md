@@ -104,13 +104,28 @@ try {
 
 - **違う行の書き換え:** 両方とも入れて書く。
 - **同じ行の書き換え (コンフリクト):** `whenConflict` に従う。
-  - `"error"` (既定): 何も書かずに `PageConflictError` で止める。`conflicts` に両方の文、`merged` に自分の文を残して合わせた結果が入る。
+  - `"error"` (既定): 何も書かずに `PageConflictError` で止める。`conflicts` に両方の文、`merged` に自分の文を残して合わせた結果、`latest` に合わせた先の今のページ (`commitId` と id 付きの行) が入る。
   - `"overwrite"`: 自分の文で上書きする。自分が消した行は、ほかの人が書き換えていても消す。上書きした行は、結果の `overwritten` に入る。
 - 書き換えが続いて書けなければ、3 回試して諦める (`CosenseApiError`、`code: "NotFastForward"`)。
 
 ```ts
 await api.updatePage("project", page, lines, { whenConflict: "overwrite" })
 ```
+
+コンフリクトを自分で解くなら、`PageConflictError` を受けて解いた文を作り、`latest` を元にもう一度 `updatePage` を呼ぶ。
+
+```ts
+try {
+  await api.updatePage("project", page, lines)
+} catch (error) {
+  if (!(error instanceof PageConflictError)) throw error
+  const resolved = [...error.merged] // conflicts を見て、行ごとに自分の文かほかの人の文かを選ぶ
+  for (const { line, theirs } of error.conflicts) if (theirs !== null) resolved[line] = theirs
+  await api.updatePage("project", error.latest, resolved)
+}
+```
+
+同じタイトルのページがあって Cosense がタイトルに番号を付けたときは、結果の `titleChanged` (`{ from, to }`) で分かる。
 
 ### 自分で差分を作って書く
 
