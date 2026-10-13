@@ -49,7 +49,6 @@ import type {
 } from "./types"
 import { updatePageWith } from "./update-page"
 
-/** `R` は要求を送る `HttpClient`。`E` は `CosenseApiError`。 */
 type Call<A> = Effect.Effect<A, CosenseApiError, HttpClient>
 
 /** {@link createCosenseApi} が返すもの。 */
@@ -211,7 +210,7 @@ const notFoundAsNone = <A>(effect: Call<A>): Call<Option.Option<A>> =>
     ),
   )
 
-/** API を呼ぶ関数をまとめて作る。どれも、要求を送る `HttpClient` を要る。 */
+/** API を呼ぶ関数をまとめて作る。どれも、要求を送る `HttpClient` が要る。 */
 export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
   const origin = config.origin ?? DEFAULT_ORIGIN
 
@@ -583,7 +582,7 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
         decode(ReplaceLinksResponseSchema),
       ),
 
-    // 記録は付け足しなので、できなくてもページを読むことは止めない。POST を断られたら GET で記録する。
+    // 未読かどうかの記録で、できなくても困ることはないので失敗にしない。POST を断られたら GET で記録する。
     markAccessed: (project, pageId) => {
       const path = `/api/pages/${project}/${encodeURIComponent(pageId)}/accessed`
       return pipe(

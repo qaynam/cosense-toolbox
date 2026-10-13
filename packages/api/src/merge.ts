@@ -22,9 +22,7 @@ export interface MergeResult {
  * 自分の書き換えと、そのあいだにほかの人がした書き換えを合わせる (3-way merge)。
  *
  * `base` は自分が読んだときのページの行、`ours` は自分が書き換えた後の文、`theirs` は今のページの行。
- * 自分の側は、書き換えの変更と同じ差分 (`buildSegments`) で元の行に対応させる。ほかの人の側は
- * 差分を取らなくてよい。行は `base` と同じ id を持つので、`theirs` に無い id はほかの人が消した行、
- * `base` に無い id はほかの人が足した行。
+ * `base` と `theirs` は行の id で突き合わせるので、どちらも `getPage` で読んだ id 付きの行を渡す。
  *
  * **自分が書いた文は落とさない。** 両方が違う文にした行は自分の文を残してコンフリクトとして知らせ、
  * 自分が書き換えた行をほかの人が消していたら、書き戻す。ただ 1 つ、自分が消した行をほかの人が
@@ -40,7 +38,9 @@ export const mergeThreeWay = (
   const baseOrder = new Map(base.map((line, index) => [line.id, index]))
   const survives = new Set(theirs.map((line) => line.id))
 
-  // 自分が元の行それぞれに何をしたかと、足した行をどこに入れるか。
+  // 自分が元の行それぞれに何をしたかと、足した行をどこに入れるか。書き換えの変更と同じ差分
+  // (`buildSegments`) で元の行に対応させる。ほかの人の側は差分を取らない。行の id で、`theirs` に
+  // 無い id はほかの人が消した行、`base` に無い id はほかの人が足した行と分かる。
   type Local = { readonly kind: "update" | "delete"; readonly text: string }
   const local = new Map<string, Local>()
   const insertsByAnchor = new Map<string, string[]>()

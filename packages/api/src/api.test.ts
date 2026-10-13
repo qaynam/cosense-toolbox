@@ -504,7 +504,7 @@ describe("書き込み", () => {
     })
   })
 
-  it("submitEdit() は、同じタイトルのページがあること (409 DuplicateTitle) を code で知らせる", async () => {
+  it("submitEdit() は、用意してから書くまでに同じタイトルのページができたこと (409 DuplicateTitle) を code で知らせる", async () => {
     const { layer } = testHttpClient(() => json({ error: "DuplicateTitle" }, 409))
     expect(await runFailure(api.submitEdit("myproject", "pv1"), layer)).toMatchObject({
       status: 409,
@@ -709,13 +709,46 @@ describe("updatePage", () => {
     })
   })
 
-  it("同じタイトルのページがあって番号が付いたら、titleChanged で知らせる", async () => {
+  it("1 行目を変えてタイトルが変わったら、titleChanged で知らせる", async () => {
     const { layer } = server({
       preview: [previewOn("c0")],
-      submit: [json({ commitId: "c1", titleChanged: { from: "Other", to: "Other (2)" } })],
+      submit: [
+        json({
+          commitId: "c1",
+          page: { title: "New title" },
+          titleChanged: { from: "Title", to: "New title" },
+        }),
+      ],
+    })
+    const result = await run(
+      api.updatePage("myproject", BASE, ["New title", "alpha", "beta"]),
+      layer,
+    )
+    expect(result.titleChanged).toEqual({ from: "Title", to: "New title" })
+  })
+
+  it("同じタイトルのページがあって Cosense がタイトルを変えて書いたら、結果の 1 行目もそのタイトルにする", async () => {
+    const { layer } = server({
+      preview: [previewOn("c0")],
+      submit: [
+        json({
+          commitId: "c1",
+          page: { title: "Other_1" },
+          titleChanged: { from: "Title", to: "Other_1" },
+        }),
+      ],
     })
     const result = await run(api.updatePage("myproject", BASE, ["Other", "alpha", "beta"]), layer)
-    expect(result.titleChanged).toEqual({ from: "Other", to: "Other (2)" })
+    expect(result.lines).toEqual(["Other_1", "alpha", "beta"])
+  })
+
+  it("titleChanged に変えた後のタイトルが無ければ、結果の 1 行目は送った文のままにする", async () => {
+    const { layer } = server({
+      preview: [previewOn("c0")],
+      submit: [json({ commitId: "c1", titleChanged: { from: "Title" } })],
+    })
+    const result = await run(api.updatePage("myproject", BASE, ["Other", "alpha", "beta"]), layer)
+    expect(result.lines).toEqual(["Other", "alpha", "beta"])
   })
 
   it('whenConflict: "overwrite" なら、同じ行は自分の文で上書きする', async () => {

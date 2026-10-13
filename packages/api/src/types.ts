@@ -258,7 +258,9 @@ export interface PreviewResponse {
 
 export interface SubmitResponse {
   readonly commitId: string
+  /** 書いたページ。同じタイトルのページがあると、`title` は Cosense が後ろに番号を付けたもの */
   readonly page: { readonly title: string } | null
+  /** 1 行目を変えて、ページの名前が変わったとき */
   readonly titleChanged?: { readonly from: string; readonly to: string }
   readonly pageDeleted?: { readonly title: string }
 }
@@ -275,10 +277,16 @@ export interface PageToUpdate {
 export interface UpdatePageResult {
   /** 書いた後のコミット。何も変えなかったら、読んだときのまま */
   readonly commitId: string
-  /** 書いた後のページの行の文。ほかの人の書き換えを合わせたもの */
+  /**
+   * 書いた後のページの行の文。ほかの人の書き換えを合わせたもの。Cosense がタイトルを変えて
+   * 書いたときは、1 行目もそのタイトルになる
+   */
   readonly lines: readonly string[]
   /** 自分の文で上書きしたコンフリクト (`whenConflict: "overwrite"` のとき)。無ければ空 */
   readonly overwritten: readonly MergeConflict[]
-  /** 同じタイトルのページがあって、Cosense がタイトルに番号を付けたとき */
+  /**
+   * 1 行目を変えて、ページの名前が変わったとき。同じタイトルのページがあると、`to` は Cosense が
+   * 後ろに番号を付けたタイトルになる。ほかのページの `[from]` へのリンクは書き換えない
+   */
   readonly titleChanged?: { readonly from: string; readonly to: string }
 }

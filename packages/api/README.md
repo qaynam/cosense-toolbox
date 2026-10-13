@@ -125,7 +125,19 @@ try {
 }
 ```
 
-同じタイトルのページがあって Cosense がタイトルに番号を付けたときは、結果の `titleChanged` (`{ from, to }`) で分かる。
+### タイトルを変える
+
+1 行目を変えると、ページの名前が変わる。変わったことは、結果の `titleChanged` (`{ from, to }`) で分かる。
+
+- 同じタイトルのページがもうあると、Cosense は断らずに、後ろに番号を付けたタイトルで書く。そのときは `titleChanged.to` と結果の `lines` の 1 行目が、番号の付いたタイトルになる。
+- ほかのページにある `[from]` へのリンクは書き換えない。Cosense Web はタイトルを変えたときにリンクも書き換えるかを聞く。書き換えるなら `replaceLinks` を呼ぶ。
+
+```ts
+const result = await api.updatePage("project", page, lines)
+if (result.titleChanged) {
+  await api.replaceLinks("project", result.titleChanged.from, result.titleChanged.to)
+}
+```
 
 ### 自分で差分を作って書く
 
@@ -144,7 +156,8 @@ await api.submitEdit("project", preview.previewId)
 - 変えていない行は送らない。書き換えた行は同じ id のまま文だけ変え (`_update`)、消した行は `_delete`、足した行は新しい id で `_insert` にする。
 - 足す行の id は `createLineId` で作る (小文字の 16 進数 24 文字)。`computeChanges` の 3 つめの引数で差し替えられる。
 - 既存のページに書くときは、`pagePreview.commitId` が読んだときの `commitId` と同じかを確かめてから `submitEdit` する。確かめずに送ると、読んでから書くまでにほかの人が書いた行を `_update` が上書きすることがある。
-- 失敗は `CosenseApiError` の `code` で見分ける。ほかの人が先に書き換えたら `"NotFastForward"`、同じタイトルのページがあれば `"DuplicateTitle"`。
+- 新しいページを用意するときに同じタイトルのページがもうあると、Cosense は断らずに、後ろに番号を付けたタイトルで作る。作ったタイトルは `submitEdit` の結果の `page.title` で分かる。
+- 失敗は `CosenseApiError` の `code` で見分ける。ほかの人が先に書き換えたら `"NotFastForward"`、新しいページを用意してから書くまでのあいだに同じタイトルのページができたら `"DuplicateTitle"`。
 
 ## Cosense 上のファイル
 
