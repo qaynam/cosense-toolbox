@@ -1,7 +1,8 @@
 /**
  * `@cosense-toolbox/api`。中は effect で書いているが、ここで渡すものは素の型にする。
  * 時間のかかるものは `Promise`、無いものは `null` で返し、失敗は `CosenseApiError` で reject する
- * (`updatePage` のコンフリクトだけは `PageConflictError`)。
+ * (`updatePage` のコンフリクトは `PageConflictError`、`createPage` で同じタイトルのページがあれば
+ * `PageExistsError`)。
  * effect の型のまま使いたい人は `@cosense-toolbox/api/effect` を使う。
  */
 import { Cause, Effect, Exit, Layer, Option } from "effect"
@@ -11,6 +12,7 @@ import type { CosenseApiError } from "../errors"
 import { HttpClient, httpClientOf } from "../http-client"
 import type { CosenseApiOptions, ListPagesOptions, UpdatePageOptions } from "../options"
 import type {
+  CreatePageResult,
   FetchedAsset,
   Me,
   PageDetail,
@@ -42,7 +44,7 @@ export {
   type EditSegment,
   type KeptSegment,
 } from "../changes"
-export { CosenseApiError, PageConflictError } from "../errors"
+export { CosenseApiError, PageConflictError, PageExistsError } from "../errors"
 export { type MergeConflict, type MergeResult, mergeThreeWay } from "../merge"
 export type {
   CosenseApiConfig,
@@ -52,7 +54,10 @@ export type {
 } from "../options"
 export type * from "../types"
 
-/** {@link createCosenseApi} が返すもの。失敗は `CosenseApiError` で reject する (`updatePage` のコンフリクトは除く)。 */
+/**
+ * {@link createCosenseApi} が返すもの。失敗は `CosenseApiError` で reject する (`updatePage` と
+ * `createPage` の、それぞれの説明にあるものは除く)。
+ */
 export interface CosenseApi {
   readonly me: () => Promise<Me>
   readonly projects: () => Promise<readonly ProjectSummary[]>
@@ -138,6 +143,18 @@ export interface CosenseApi {
     lines: readonly string[],
     options?: UpdatePageOptions,
   ) => Promise<UpdatePageResult>
+  /**
+   * 1 行目をタイトルにして、`lines` の文で新しいページを作る。
+   *
+   * 同じタイトルのページがもうあれば、何も書かずに `PageExistsError` で reject する。Cosense と同じく、
+   * 大文字と小文字、空白と `_` の違いは同じタイトルとして扱う。名前を変えたページの古いタイトルは、
+   * もうあるものとしない。
+   *
+   * Cosense は同じタイトルを断らず、後ろに番号を付けて作る。そのため先に確かめるが、確かめてから
+   * 作るまでのあいだにほかの人が同じタイトルで作ると、番号の付いたタイトルで作ることがある
+   * (結果の `title`)。
+   */
+  readonly createPage: (project: string, lines: readonly string[]) => Promise<CreatePageResult>
 }
 
 /**
@@ -193,5 +210,6 @@ export const createCosenseApi = (options: CosenseApiOptions = {}): CosenseApi =>
     fetchAsset: (url) => run(api.fetchAsset(url)),
     updatePage: (project, base, lines, options) =>
       run(api.updatePage(project, base, lines, options)),
+    createPage: (project, lines) => run(api.createPage(project, lines)),
   }
 }

@@ -9,6 +9,7 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 - 最初のバージョン。`createCosenseApi` で、ページ・本文・検索・関連ページ・「AI 用にエクスポート」・履歴などを読み、
   `updatePage` でページを書き換える。読んでから書くまでにほかの人が書き換えていたら 3-way merge し、
   同じ行のコンフリクトは既定では `PageConflictError` で止める (`whenConflict: "overwrite"` で上書き)。
+- `createPage` で新しいページを作る。同じタイトルのページがもうあれば、作らずに `PageExistsError` で止める。
 - `@cosense-toolbox/cosense-x/fetch` にあった `isCosenseAssetUrl` / `cosenseIconUrl` はここに移し、`fetchAsset` は `createCosenseApi` が返すものに入れた (`api.fetchAsset(url)`)。
 
 ## インストール
@@ -70,6 +71,7 @@ try {
 | `pageSnapshots(project, pageId)`             | ページの履歴。新しい順に、最新の 100 件まで                                                      |
 | `pageSnapshot(project, pageId, snapshotId)`  | 履歴のある時点のページ                                                                           |
 | `updatePage(project, base, lines, options?)` | 読んだときのページ `base` を `lines` の文にする。ほかの人の書き換えは合わせる                    |
+| `createPage(project, lines)`                 | 1 行目をタイトルにして新しいページを作る。同じタイトルのページがあれば作らない                   |
 | `previewEdit(project, body)`                 | ページの書き換えを用意する (まだ書き換えない)                                                    |
 | `submitEdit(project, previewId)`             | 用意した書き換えをページに書く                                                                   |
 | `replaceLinks(project, from, to)`            | プロジェクトの中の `from` へのリンクを、すべて `to` へのリンクにする                             |
@@ -125,6 +127,31 @@ try {
 }
 ```
 
+### 新しいページを作る
+
+`createPage` に、1 行目がタイトルの文を渡す。
+
+```ts
+import { createCosenseApi, PageExistsError } from "@cosense-toolbox/api"
+
+const api = createCosenseApi({ pat: process.env.COSENSE_PAT })
+try {
+  const { title } = await api.createPage("project", ["title", "本文"])
+} catch (error) {
+  if (error instanceof PageExistsError) {
+    // 同じタイトルのページがもうあった。何も書いていない。書き足すなら error.page を base にする
+    await api.updatePage("project", error.page, [
+      ...error.page.lines.map((line) => line.text),
+      "本文",
+    ])
+  }
+}
+```
+
+- 同じタイトルかは、Cosense と同じく大文字と小文字、空白と `_` を区別せずに比べる。名前を変えたページの古いタイトルは、もうあるものとしない。
+- Cosense 自体は同じタイトルを断らず、後ろに番号を付けて作る。`createPage` は先に確かめるが、確かめてから作るまでのあいだにほかの人が同じタイトルで作ると、番号の付いたタイトルで作ることがある。作ったタイトルは結果の `title` で分かる。
+- 続けて書き換えるときは、`getPage` で読んでから `updatePage` に渡す (行の id と `commitId` が要るため)。
+
 ### タイトルを変える
 
 1 行目を変えると、ページの名前が変わる。変わったことは、結果の `titleChanged` (`{ from, to }`) で分かる。
@@ -141,7 +168,7 @@ if (result.titleChanged) {
 
 ### 自分で差分を作って書く
 
-新しいページを作るときや、用意した書き換えを見てから書きたいときは、`computeChanges` で作った差分を `previewEdit` に渡し、`submitEdit` で書く。
+用意した書き換えを見てから書きたいときや、同じタイトルのページがあっても番号を付けて作りたいときは、`computeChanges` で作った差分を `previewEdit` に渡し、`submitEdit` で書く。
 
 ```ts
 import { computeChanges, createCosenseApi } from "@cosense-toolbox/api"

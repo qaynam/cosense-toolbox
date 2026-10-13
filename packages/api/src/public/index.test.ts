@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { CosenseApiError, createCosenseApi, PageConflictError } from "./index"
+import { CosenseApiError, createCosenseApi, PageConflictError, PageExistsError } from "./index"
 
 const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } })
@@ -93,6 +93,19 @@ describe("updatePage (Promise)", () => {
     await expect(
       createCosenseApi({ fetch }).updatePage("myproject", base, ["Title", "ours"]),
     ).rejects.toBeInstanceOf(PageConflictError)
+  })
+})
+
+describe("createPage (Promise)", () => {
+  it("同じタイトルのページがあれば、PageExistsError で reject する", async () => {
+    const api = createCosenseApi({
+      fetch: respond(() =>
+        json({ id: "page9", title: "Title", commitId: "c5", persistent: true, lines: [] }),
+      ),
+    })
+    await expect(api.createPage("myproject", ["Title", "本文"])).rejects.toBeInstanceOf(
+      PageExistsError,
+    )
   })
 })
 

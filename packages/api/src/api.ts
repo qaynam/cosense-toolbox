@@ -1,6 +1,7 @@
 import { Effect, Option, pipe, Schema } from "effect"
 
-import { CosenseApiError, type PageConflictError } from "./errors"
+import { createPageWith } from "./create-page"
+import { CosenseApiError, type PageConflictError, type PageExistsError } from "./errors"
 import { HttpClient } from "./http-client"
 import {
   type CosenseApiConfig,
@@ -28,6 +29,7 @@ import {
   TitleEntryEnvelopeSchema,
 } from "./schemas"
 import type {
+  CreatePageResult,
   FetchedAsset,
   Me,
   PageDetail,
@@ -132,6 +134,21 @@ export interface CosenseApi {
     lines: readonly string[],
     options?: UpdatePageOptions,
   ) => Effect.Effect<UpdatePageResult, CosenseApiError | PageConflictError, HttpClient>
+  /**
+   * 1 行目をタイトルにして、`lines` の文で新しいページを作る。
+   *
+   * 同じタイトルのページがもうあれば、何も書かずに `PageExistsError` で失敗する。Cosense と同じく、
+   * 大文字と小文字、空白と `_` の違いは同じタイトルとして扱う。名前を変えたページの古いタイトルは、
+   * もうあるものとしない。
+   *
+   * Cosense は同じタイトルを断らず、後ろに番号を付けて作る。そのため先に確かめるが、確かめてから
+   * 作るまでのあいだにほかの人が同じタイトルで作ると、番号の付いたタイトルで作ることがある
+   * (結果の `title`)。
+   */
+  readonly createPage: (
+    project: string,
+    lines: readonly string[],
+  ) => Effect.Effect<CreatePageResult, CosenseApiError | PageExistsError, HttpClient>
 }
 
 // タイトルをパスに入れる形。日本語や空白は読める形のまま (空白は `_`) にし、
@@ -640,7 +657,11 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
         })
       return follow(url, 0)
     },
-  } satisfies Omit<CosenseApi, "updatePage">
+  } satisfies Omit<CosenseApi, "updatePage" | "createPage">
 
-  return { ...operations, updatePage: updatePageWith(operations) }
+  return {
+    ...operations,
+    updatePage: updatePageWith(operations),
+    createPage: createPageWith(operations),
+  }
 }

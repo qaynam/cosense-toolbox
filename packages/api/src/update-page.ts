@@ -5,14 +5,8 @@ import { CosenseApiError, PageConflictError } from "./errors"
 import type { HttpClient } from "./http-client"
 import { type MergeConflict, mergeThreeWay } from "./merge"
 import type { UpdatePageOptions } from "./options"
-import type {
-  PageDetail,
-  PageToUpdate,
-  PreviewEditBody,
-  PreviewResponse,
-  SubmitResponse,
-  UpdatePageResult,
-} from "./types"
+import type { PageOperations } from "./page-operations"
+import type { PageDetail, PageToUpdate, SubmitResponse, UpdatePageResult } from "./types"
 
 /** 書くのを何回まで試すか。ほかの人の書き換えが続いても止まるように。 */
 const MAX_ATTEMPTS = 3
@@ -24,21 +18,6 @@ const MAX_ATTEMPTS = 3
  */
 const isStale = (error: CosenseApiError): boolean =>
   error.status === 422 || error.status === 500 || error.code === "NotFastForward"
-
-interface Operations {
-  readonly getPage: (
-    project: string,
-    title: string,
-  ) => Effect.Effect<Option.Option<PageDetail>, CosenseApiError, HttpClient>
-  readonly previewEdit: (
-    project: string,
-    body: PreviewEditBody,
-  ) => Effect.Effect<PreviewResponse, CosenseApiError, HttpClient>
-  readonly submitEdit: (
-    project: string,
-    previewId: string,
-  ) => Effect.Effect<SubmitResponse, CosenseApiError, HttpClient>
-}
 
 type TitleChange = NonNullable<SubmitResponse["titleChanged"]>
 
@@ -69,7 +48,7 @@ const asWritten = (
 
 /** 読み取りと書き込みの関数から `updatePage` を作る。 */
 export const updatePageWith =
-  (operations: Operations) =>
+  (operations: PageOperations) =>
   (
     project: string,
     base: PageToUpdate,

@@ -290,3 +290,13 @@ export interface UpdatePageResult {
    */
   readonly titleChanged?: { readonly from: string; readonly to: string }
 }
+
+/** `createPage` で作ったページ。 */
+export interface CreatePageResult {
+  readonly commitId: string
+  /**
+   * 作ったページのタイトル。確かめてから作るまでのあいだに、ほかの人が同じタイトルのページを
+   * 作っていると、Cosense が後ろに番号を付けたタイトルになる
+   */
+  readonly title: string
+}

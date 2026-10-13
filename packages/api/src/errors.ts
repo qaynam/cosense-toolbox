@@ -58,3 +58,19 @@ export class PageConflictError extends Error {
     this.latest = fields.latest
   }
 }
+
+/**
+ * `createPage` で、同じタイトルのページがもうあった。何も書いていない。
+ * Cosense と同じく、大文字と小文字、空白と `_` の違いは同じタイトルとして扱う。
+ */
+export class PageExistsError extends Error {
+  readonly _tag = "PageExistsError"
+  /** もうあるページ。書き足すなら、これを `updatePage` の `base` にする */
+  readonly page: PageDetail
+
+  constructor(fields: { readonly page: PageDetail }) {
+    super(`A page titled "${fields.page.title}" already exists`)
+    this.name = "PageExistsError"
+    this.page = fields.page
+  }
+}

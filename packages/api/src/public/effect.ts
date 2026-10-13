@@ -16,7 +16,7 @@ export {
   type EditSegment,
   type KeptSegment,
 } from "../changes"
-export { CosenseApiError, PageConflictError } from "../errors"
+export { CosenseApiError, PageConflictError, PageExistsError } from "../errors"
 export {
   HttpClient,
   HttpClientError,

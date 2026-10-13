@@ -2,7 +2,7 @@ import { Effect, Either, Layer, Option } from "effect"
 import { describe, expect, it } from "vitest"
 
 import { createCosenseApi } from "./api"
-import { PageConflictError } from "./errors"
+import { PageConflictError, PageExistsError } from "./errors"
 import { HttpClient, HttpClientError } from "./http-client"
 
 const PAT = "dummy-secret-pat"
@@ -546,6 +546,32 @@ describe("markAccessed", () => {
   })
 })
 
+/** preview / submit / ページの取得に、それぞれ順に答える。呼ばれた順と本文を記録する。 */
+const server = (responses: {
+  readonly preview?: Response[]
+  readonly submit?: Response[]
+  readonly page?: Response[]
+}) => {
+  const queues = {
+    preview: [...(responses.preview ?? [])],
+    submit: [...(responses.submit ?? [])],
+    page: [...(responses.page ?? [])],
+  }
+  const client = testHttpClient((url) => {
+    const key = url.endsWith("/preview") ? "preview" : url.endsWith("/submit") ? "submit" : "page"
+    return queues[key].shift() ?? new Response("unexpected", { status: 599 })
+  })
+  const steps = () =>
+    client.calls.map((call) =>
+      call.url.endsWith("/preview") ? "preview" : call.url.endsWith("/submit") ? "submit" : "page",
+    )
+  const previewBodies = () =>
+    client.calls
+      .filter((call) => call.url.endsWith("/preview"))
+      .map((call) => JSON.parse(String(call.init.body)) as unknown)
+  return { ...client, steps, previewBodies }
+}
+
 describe("updatePage", () => {
   const BASE = {
     id: "page1",
@@ -564,36 +590,6 @@ describe("updatePage", () => {
 
   const previewOn = (commitId: string) =>
     json({ previewId: `preview-${commitId}`, expireAt: "later", pagePreview: { commitId } })
-
-  /** preview / submit / ページの取得に、それぞれ順に答える。呼ばれた順と本文を記録する。 */
-  const server = (responses: {
-    readonly preview?: Response[]
-    readonly submit?: Response[]
-    readonly page?: Response[]
-  }) => {
-    const queues = {
-      preview: [...(responses.preview ?? [])],
-      submit: [...(responses.submit ?? [])],
-      page: [...(responses.page ?? [])],
-    }
-    const client = testHttpClient((url) => {
-      const key = url.endsWith("/preview") ? "preview" : url.endsWith("/submit") ? "submit" : "page"
-      return queues[key].shift() ?? new Response("unexpected", { status: 599 })
-    })
-    const steps = () =>
-      client.calls.map((call) =>
-        call.url.endsWith("/preview")
-          ? "preview"
-          : call.url.endsWith("/submit")
-            ? "submit"
-            : "page",
-      )
-    const previewBodies = () =>
-      client.calls
-        .filter((call) => call.url.endsWith("/preview"))
-        .map((call) => JSON.parse(String(call.init.body)) as unknown)
-    return { ...client, steps, previewBodies }
-  }
 
   it("何も変えていなければ、何も送らない", async () => {
     const { layer, calls } = server({})
@@ -849,6 +845,128 @@ describe("updatePage", () => {
     )
     expect(failure).toMatchObject({ status: 409, code: "NotFastForward" })
     expect(steps().filter((step) => step === "preview")).toHaveLength(3)
+  })
+})
+
+describe("createPage", () => {
+  const notFound = () => json({ error: "NotFound" }, 404)
+
+  /** もうあるページ (getPage の応答)。 */
+  const existing = (title: string) =>
+    json({
+      id: "page9",
+      title,
+      commitId: "c5",
+      persistent: true,
+      lines: [{ id: "l1", text: title }],
+    })
+
+  const preview = () => json({ previewId: "p1", expireAt: "later", pagePreview: null })
+
+  it("無いタイトルなら、pageId を付けずに用意して書き、作ったタイトルを返す", async () => {
+    const { layer, steps, previewBodies } = server({
+      page: [notFound()],
+      preview: [preview()],
+      submit: [json({ commitId: "c1", page: { title: "New page" } })],
+    })
+    const result = await run(api.createPage("myproject", ["New page", "本文"]), layer)
+    expect(result).toEqual({ commitId: "c1", title: "New page" })
+    expect(steps()).toEqual(["page", "preview", "submit"])
+    expect(previewBodies()).toEqual([
+      {
+        changes: [
+          { _insert: "_end", lines: { id: expect.any(String), text: "New page" } },
+          { _insert: "_end", lines: { id: expect.any(String), text: "本文" } },
+        ],
+      },
+    ])
+  })
+
+  it("同じタイトルのページがあれば、何も書かずに PageExistsError で止め、そのページを渡す", async () => {
+    const { layer, steps } = server({ page: [existing("New page")] })
+    const failure = await runFailure(api.createPage("myproject", ["New page", "本文"]), layer)
+    expect(failure).toBeInstanceOf(PageExistsError)
+    expect(failure).toMatchObject({ page: { id: "page9", commitId: "c5" } })
+    expect(steps()).toEqual(["page"])
+  })
+
+  it("大文字と小文字、空白と _ だけが違うタイトルも、同じページとして止める", async () => {
+    const { layer } = server({ page: [existing("New page")] })
+    const failure = await runFailure(api.createPage("myproject", ["new_PAGE", "本文"]), layer)
+    expect(failure).toBeInstanceOf(PageExistsError)
+  })
+
+  it("名前を変えたページの古いタイトルなら、そのページとは別に作る", async () => {
+    const { layer, steps } = server({
+      page: [existing("Renamed")],
+      preview: [preview()],
+      submit: [json({ commitId: "c1", page: { title: "Old name" } })],
+    })
+    const result = await run(api.createPage("myproject", ["Old name", "本文"]), layer)
+    expect(result.title).toBe("Old name")
+    expect(steps()).toEqual(["page", "preview", "submit"])
+  })
+
+  it("Cosense がタイトルに番号を付けて作ったら、そのタイトルを返す", async () => {
+    const { layer } = server({
+      page: [notFound()],
+      preview: [preview()],
+      submit: [json({ commitId: "c1", page: { title: "New page_1" } })],
+    })
+    const result = await run(api.createPage("myproject", ["New page", "本文"]), layer)
+    expect(result.title).toBe("New page_1")
+  })
+
+  it("書いた結果にタイトルが無ければ、1 行目をタイトルとして返す", async () => {
+    const { layer } = server({
+      page: [notFound()],
+      preview: [preview()],
+      submit: [json({ commitId: "c1" })],
+    })
+    const result = await run(api.createPage("myproject", ["New page", "本文"]), layer)
+    expect(result.title).toBe("New page")
+  })
+
+  it("書いた結果の page にタイトルが無くても、1 行目をタイトルとして返す", async () => {
+    const { layer } = server({
+      page: [notFound()],
+      preview: [preview()],
+      submit: [json({ commitId: "c1", page: {} })],
+    })
+    const result = await run(api.createPage("myproject", ["New page", "本文"]), layer)
+    expect(result.title).toBe("New page")
+  })
+
+  it("用意してから書くまでに、ほかの人が同じタイトルで作ったら (409 DuplicateTitle)、PageExistsError で止める", async () => {
+    const { layer, steps } = server({
+      page: [notFound(), existing("New page")],
+      preview: [preview()],
+      submit: [json({ error: "DuplicateTitle" }, 409)],
+    })
+    const failure = await runFailure(api.createPage("myproject", ["New page", "本文"]), layer)
+    expect(failure).toBeInstanceOf(PageExistsError)
+    expect(steps()).toEqual(["page", "preview", "submit", "page"])
+  })
+
+  it("409 DuplicateTitle の後に読み直しても同じタイトルのページが無ければ、そのエラーで止める", async () => {
+    const { layer } = server({
+      page: [notFound(), notFound()],
+      preview: [preview()],
+      submit: [json({ error: "DuplicateTitle" }, 409)],
+    })
+    const failure = await runFailure(api.createPage("myproject", ["New page", "本文"]), layer)
+    expect(failure).toMatchObject({ status: 409, code: "DuplicateTitle" })
+  })
+
+  it("ほかの理由で断られたら、読み直さずにそのエラーで止める", async () => {
+    const { layer, steps } = server({
+      page: [notFound()],
+      preview: [preview()],
+      submit: [json({ error: "Forbidden" }, 403)],
+    })
+    const failure = await runFailure(api.createPage("myproject", ["New page", "本文"]), layer)
+    expect(failure).toMatchObject({ status: 403 })
+    expect(steps()).toEqual(["page", "preview", "submit"])
   })
 })
 
