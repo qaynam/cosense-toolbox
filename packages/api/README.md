@@ -9,7 +9,7 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 - 最初のバージョン。`createCosenseApi` で、ページ・本文・検索・関連ページ・「AI 用にエクスポート」・履歴などを読み、
   `updatePage` でページを書き換える。読んでから書くまでにほかの人が書き換えていたら 3-way merge し、
   同じ行のコンフリクトは既定では `PageConflictError` で止める (`onConflict: "overwrite"` で上書き)。
-- `@cosense-toolbox/cosense-x/fetch` にあった `fetchAsset` / `isCosenseAssetUrl` / `cosenseIconUrl` は、ここに移した。
+- `@cosense-toolbox/cosense-x/fetch` にあった `isCosenseAssetUrl` / `cosenseIconUrl` はここに移し、`fetchAsset` は `createCosenseApi` が返すものに入れた (`api.fetchAsset(url)`)。
 
 ## インストール
 
@@ -53,27 +53,28 @@ try {
 
 ## 呼べるもの
 
-| 関数                                         | 返すもの                                                                      |
-| :------------------------------------------- | :---------------------------------------------------------------------------- |
-| `me()`                                       | 自分 (PAT の持ち主)                                                           |
-| `projects()`                                 | 自分の入っているプロジェクト                                                  |
-| `projectDetail(project)`                     | プロジェクトの設定 (画像やファイルの送り先など)                               |
-| `projectUsers(project)`                      | ページを書いた人として出てくる人全員 (今のメンバーと、抜けたメンバー)         |
-| `listPages(project, options?)`               | ページの一覧と件数。`sort` / `limit` / `skip` と、保存した絞り込みを渡せる    |
-| `getPage(project, title)`                    | ページの中身 (行ごとの id や書いた人を含む)。無ければ `null`                  |
-| `getPageText(project, title)`                | ページの本文のテキスト。無ければ `null`                                       |
-| `relatedPages(project, title)`               | 関連ページ (1 hop と 2 hop)                                                   |
-| `exportForAi(project, title, hop, search?)`  | 「AI 用にエクスポート」のテキスト。ページと `hop` 以内のリンク先              |
-| `searchFullText(project, query)`             | 本文の全文検索。pageRank の順に 100 件まで                                    |
-| `searchVector(project, query)`               | タイトルのベクトル検索。使えないプロジェクトでは空の結果                      |
-| `searchTitles(project)`                      | すべてのページのタイトルと、そこから出ているリンク                            |
-| `pageSnapshots(project, pageId)`             | ページの履歴。新しい順に、最新の 100 件まで                                   |
-| `pageSnapshot(project, pageId, snapshotId)`  | 履歴のある時点のページ                                                        |
-| `updatePage(project, base, lines, options?)` | 読んだときのページ `base` を `lines` の文にする。ほかの人の書き換えは合わせる |
-| `previewEdit(project, body)`                 | ページの書き換えを用意する (まだ書き換えない)                                 |
-| `submitEdit(project, previewId)`             | 用意した書き換えをページに書く                                                |
-| `replaceLinks(project, from, to)`            | プロジェクトの中の `from` へのリンクを、すべて `to` へのリンクにする          |
-| `markAccessed(project, pageId)`              | ページを開いたことを記録する (未読でなくなる)。記録できなくても reject しない |
+| 関数                                         | 返すもの                                                                                         |
+| :------------------------------------------- | :----------------------------------------------------------------------------------------------- |
+| `me()`                                       | 自分 (PAT の持ち主)                                                                              |
+| `projects()`                                 | 自分の入っているプロジェクト                                                                     |
+| `projectDetail(project)`                     | プロジェクトの設定 (画像やファイルの送り先など)                                                  |
+| `projectUsers(project)`                      | ページを書いた人として出てくる人全員 (今のメンバーと、抜けたメンバー)                            |
+| `listPages(project, options?)`               | ページの一覧と件数。`sort` / `limit` / `skip` と、保存した絞り込みを渡せる                       |
+| `getPage(project, title)`                    | ページの中身 (行ごとの id や書いた人を含む)。無ければ `null`                                     |
+| `getPageText(project, title)`                | ページの本文のテキスト。無ければ `null`                                                          |
+| `relatedPages(project, title)`               | 関連ページ (1 hop と 2 hop)                                                                      |
+| `exportForAi(project, title, hop, search?)`  | 「AI 用にエクスポート」のテキスト。ページと `hop` 以内のリンク先                                 |
+| `searchFullText(project, query)`             | 本文の全文検索。pageRank の順に 100 件まで                                                       |
+| `searchVector(project, query)`               | タイトルのベクトル検索。使えないプロジェクトでは空の結果                                         |
+| `searchTitles(project)`                      | すべてのページのタイトルと、そこから出ているリンク                                               |
+| `pageSnapshots(project, pageId)`             | ページの履歴。新しい順に、最新の 100 件まで                                                      |
+| `pageSnapshot(project, pageId, snapshotId)`  | 履歴のある時点のページ                                                                           |
+| `updatePage(project, base, lines, options?)` | 読んだときのページ `base` を `lines` の文にする。ほかの人の書き換えは合わせる                    |
+| `previewEdit(project, body)`                 | ページの書き換えを用意する (まだ書き換えない)                                                    |
+| `submitEdit(project, previewId)`             | 用意した書き換えをページに書く                                                                   |
+| `replaceLinks(project, from, to)`            | プロジェクトの中の `from` へのリンクを、すべて `to` へのリンクにする                             |
+| `markAccessed(project, pageId)`              | ページを開いたことを記録する (未読でなくなる)。記録できなくても reject しない                    |
+| `fetchAsset(url)`                            | Cosense 上のファイル (`/files/…` やアイコン) の中身と Content-Type。下の「Cosense 上のファイル」 |
 
 日時はどれも Unix 時間の秒。応答はゆるく読み、無い項目は空の値 (`""` や `0`、`[]`) にする。
 
@@ -135,16 +136,18 @@ await api.submitEdit("project", preview.previewId)
 Cosense にアップロードしたファイル (`https://scrapbox.io/files/…`) とアイコン (`/api/pages/…/icon`) を扱う。
 
 ```ts
-import { cosenseIconUrl, fetchAsset, isCosenseAssetUrl } from "@cosense-toolbox/api"
+import { cosenseIconUrl, createCosenseApi, isCosenseAssetUrl } from "@cosense-toolbox/api"
 
 cosenseIconUrl("help-jp", "cosense") // → https://scrapbox.io/api/pages/help-jp/cosense/icon
 isCosenseAssetUrl("https://scrapbox.io/files/xxx.png") // → true
-const { data, contentType } = await fetchAsset("https://scrapbox.io/files/xxx.png", { pat })
+const api = createCosenseApi({ pat: process.env.COSENSE_PAT })
+const { data, contentType } = await api.fetchAsset("https://scrapbox.io/files/xxx.png")
 ```
 
 - これらのファイルは `Cross-Origin-Resource-Policy: same-origin` を返すので、別のサイトの `<img>` からは読めない。
 - リダイレクト先の URL は期限付き (`/files/` は 5 分) なので、解決した URL を埋め込んでもすぐ表示されなくなる。静的なサイトでは中身を取ってきてサイトの中に置く ([`@cosense-toolbox/astro`](../astro-cosense) はこれを自動で行う)。
-- `fetchAsset` はリダイレクトを 5 回まで自分で辿り、PAT は Cosense (`origin`) への要求にだけ付ける。リダイレクト先の Google Cloud Storage や Gyazo には送らない。取れなければ `CosenseApiError` で reject する。
+- URL を作る・見分けるだけの `cosenseIconUrl` と `isCosenseAssetUrl` は通信しないので、`createCosenseApi` を作らずに使える。
+- `api.fetchAsset` はリダイレクトを 5 回まで自分で辿り、PAT は Cosense (`origin`) への要求にだけ付ける。リダイレクト先の Google Cloud Storage や Gyazo には送らない。取れなければ `CosenseApiError` で reject する。
 
 ## 気をつけること
 

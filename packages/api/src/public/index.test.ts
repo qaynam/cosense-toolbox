@@ -95,3 +95,19 @@ describe("updatePage (Promise)", () => {
     ).rejects.toBeInstanceOf(PageConflictError)
   })
 })
+
+describe("fetchAsset (Promise)", () => {
+  it("createCosenseApi に渡した pat と fetch で、ファイルを取る", async () => {
+    const fetch = vi.fn(
+      respond(() => new Response("x", { headers: { "content-type": "image/png" } })),
+    )
+    const asset = await createCosenseApi({ fetch, pat: "dummy-secret-pat" }).fetchAsset(
+      "https://scrapbox.io/files/abc.png",
+    )
+    expect(asset.contentType).toBe("image/png")
+    expect(fetch).toHaveBeenCalledWith(
+      "https://scrapbox.io/files/abc.png",
+      expect.objectContaining({ headers: { "x-personal-access-token": "dummy-secret-pat" } }),
+    )
+  })
+})

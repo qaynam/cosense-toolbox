@@ -28,6 +28,7 @@ import {
   TitleEntryEnvelopeSchema,
 } from "./schemas"
 import type {
+  FetchedAsset,
   Me,
   PageDetail,
   PageSnapshot,
@@ -117,6 +118,15 @@ export interface CosenseApi {
    * 違う行の書き換えは合わせて書き、同じ行の書き換え (コンフリクト) は `onConflict` に従う。
    * 既定では何も書かずに `PageConflictError` で失敗する。書き換えが続いたら、3 回試して諦める。
    */
+  /**
+   * Cosense 上のファイル (アップロードした `/files/…` やアイコン) の中身を取ってくる。
+   *
+   * これらは `Cross-Origin-Resource-Policy: same-origin` を返すので別のサイトの `<img>` からは読めず、
+   * リダイレクト先の URL も期限付き (`/files/` は 5 分) なので、静的なサイトには中身を置く必要がある。
+   * ファイルは別の場所 (Google Cloud Storage や Gyazo) へリダイレクトされるので、5 回まで辿る。
+   * PAT は `origin` への要求にだけ付け、リダイレクト先には送らない。
+   */
+  readonly fetchAsset: (url: string) => Call<FetchedAsset>
   readonly updatePage: (
     project: string,
     base: PageToUpdate,
@@ -146,6 +156,8 @@ const TITLES_PER_PAGE = 10_000
 const MAX_TITLE_PAGES = 20
 /** 同じ origin へのリダイレクトを何回まで辿るか */
 const MAX_REDIRECTS = 3
+/** ファイルを取るときに、リダイレクトを何回まで辿るか */
+const MAX_ASSET_REDIRECTS = 5
 
 const isRedirect = (status: number): boolean => status >= 300 && status < 400
 
@@ -256,7 +268,11 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
       return response
     })
 
-  const bodyOf = <A>(response: Response, as: "json" | "text", body: () => Promise<A>): Call<A> =>
+  const bodyOf = <A>(
+    response: Response,
+    as: "json" | "text" | "bytes",
+    body: () => Promise<A>,
+  ): Call<A> =>
     Effect.tryPromise({
       try: body,
       catch: (cause) =>
@@ -576,6 +592,54 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
         Effect.asVoid,
         Effect.orElse(() => Effect.void),
       )
+    },
+
+    // リダイレクトは fetch に任せず自分で辿る。任せると、PAT を付けたまま別のオリジンへ送ってしまう。
+    // ほかの API と違ってファイルは別のオリジンへ転送されるので、そこへも辿るが、PAT は付けない。
+    fetchAsset: (url) => {
+      const follow = (current: string, redirects: number): Call<FetchedAsset> =>
+        Effect.gen(function* () {
+          const client = yield* HttpClient
+          const response = yield* pipe(
+            client.fetch(current, {
+              redirect: "manual",
+              headers: new URL(current).origin === new URL(origin).origin ? headersFor(false) : {},
+            }),
+            Effect.mapError(
+              (error) =>
+                new CosenseApiError({
+                  status: 0,
+                  message: `Request failed: ${String(error.cause)}`,
+                }),
+            ),
+          )
+          const location = response.headers.get("location")
+          if (isRedirect(response.status) && location !== null) {
+            if (redirects >= MAX_ASSET_REDIRECTS) {
+              return yield* Effect.fail(
+                new CosenseApiError({
+                  status: response.status,
+                  message: `Too many redirects (more than ${MAX_ASSET_REDIRECTS}): ${url}`,
+                }),
+              )
+            }
+            return yield* follow(new URL(location, current).href, redirects + 1)
+          }
+          if (!response.ok) {
+            return yield* Effect.fail(
+              new CosenseApiError({
+                status: response.status,
+                message: `HTTP ${response.status} ${response.statusText}: ${url}`.trim(),
+              }),
+            )
+          }
+          const data = yield* bodyOf(response, "bytes", () => response.arrayBuffer())
+          return {
+            data: new Uint8Array(data),
+            contentType: response.headers.get("content-type") ?? "",
+          }
+        })
+      return follow(url, 0)
     },
   } satisfies Omit<CosenseApi, "updatePage">
 

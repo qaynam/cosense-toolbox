@@ -769,3 +769,69 @@ describe("updatePage", () => {
     expect(steps().filter((step) => step === "preview")).toHaveLength(3)
   })
 })
+
+describe("fetchAsset", () => {
+  const FILE = "https://scrapbox.io/files/abc.png"
+  const SIGNED = "https://storage.googleapis.com/bucket/abc?X-Goog-Expires=300"
+
+  /** URL ごとに応答を決める。表に無い URL は 404。 */
+  const routes = (table: Record<string, () => Response>) =>
+    testHttpClient((url) => table[url]?.() ?? new Response("not found", { status: 404 }))
+
+  it("リダイレクトを辿って、中身と Content-Type を返す", async () => {
+    const { layer } = routes({
+      [FILE]: () => new Response(null, { status: 302, headers: { location: SIGNED } }),
+      [SIGNED]: () =>
+        new Response(new Uint8Array([1, 2, 3]), { headers: { "content-type": "image/png" } }),
+    })
+    const asset = await run(api.fetchAsset(FILE), layer)
+    expect([...asset.data]).toEqual([1, 2, 3])
+    expect(asset.contentType).toBe("image/png")
+  })
+
+  it("PAT は origin にだけ送り、リダイレクト先には送らない", async () => {
+    const { layer, calls } = routes({
+      [FILE]: () => new Response(null, { status: 302, headers: { location: SIGNED } }),
+      [SIGNED]: () => new Response("x", { headers: { "content-type": "image/png" } }),
+    })
+    await run(api.fetchAsset(FILE), layer)
+    expect(calls.map((call) => [call.url, headersOf(call)["x-personal-access-token"]])).toEqual([
+      [FILE, PAT],
+      [SIGNED, undefined],
+    ])
+  })
+
+  it("リダイレクトは fetch に任せず (redirect: manual)、自分で辿る", async () => {
+    const { layer, calls } = routes({
+      [FILE]: () => new Response(null, { status: 302, headers: { location: SIGNED } }),
+      [SIGNED]: () => new Response("x"),
+    })
+    await run(api.fetchAsset(FILE), layer)
+    expect(calls.map((call) => call.init.redirect)).toEqual(["manual", "manual"])
+  })
+
+  it("相対パスのリダイレクト先も辿る", async () => {
+    const { layer } = routes({
+      "https://scrapbox.io/api/pages/p/u/icon": () =>
+        new Response(null, { status: 302, headers: { location: "/files/abc.png" } }),
+      [FILE]: () => new Response("x", { headers: { "content-type": "image/png" } }),
+    })
+    const asset = await run(api.fetchAsset("https://scrapbox.io/api/pages/p/u/icon"), layer)
+    expect(asset.contentType).toBe("image/png")
+  })
+
+  it("2xx 以外なら、その status で失敗する", async () => {
+    const { layer } = routes({})
+    expect(
+      await runFailure(api.fetchAsset("https://scrapbox.io/files/none.png"), layer),
+    ).toMatchObject({ status: 404 })
+  })
+
+  it("リダイレクトが 5 回を超えたら、辿るのをやめて失敗する", async () => {
+    const { layer, calls } = routes({
+      [FILE]: () => new Response(null, { status: 302, headers: { location: FILE } }),
+    })
+    expect(await runFailure(api.fetchAsset(FILE), layer)).toMatchObject({ status: 302 })
+    expect(calls).toHaveLength(6)
+  })
+})

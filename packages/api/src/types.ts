@@ -173,6 +173,12 @@ export interface TitleEntry {
   readonly links: readonly string[]
 }
 
+export interface FetchedAsset {
+  readonly data: Uint8Array
+  /** `Content-Type` ヘッダの値。無ければ空文字 */
+  readonly contentType: string
+}
+
 /** ページ履歴の 1 件。 */
 export interface PageSnapshotEntry {
   readonly id: string

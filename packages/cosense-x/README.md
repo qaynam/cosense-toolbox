@@ -17,8 +17,8 @@ Cosense (旧 Scrapbox) の記法で書いたページを、JSX モジュール�
 ### 0.1.0-beta.10 の変更
 
 - **破壊的変更:** `@cosense-toolbox/cosense-x/fetch` を消した。Cosense の API を呼ぶものは `@cosense-toolbox/api` にまとめた。
-  - `fetchAsset` / `isCosenseAssetUrl` / `cosenseIconUrl` は、import 先を `@cosense-toolbox/api` に変えるだけでよい。
-    `fetchAsset` の失敗は、`status` 付きの `CosenseApiError` になった
+  - `isCosenseAssetUrl` / `cosenseIconUrl` は、import 先を `@cosense-toolbox/api` に変えるだけでよい
+  - `fetchAsset(url, { pat })` は `createCosenseApi({ pat }).fetchAsset(url)` になる。失敗は、`status` 付きの `CosenseApiError` になった
   - `fetchPageText(project, title, { pat })` は `createCosenseApi({ pat }).getPageText(project, title)` になる。無いページは、エラーではなく `null` を返す
   - `fetchPage(project, title)` は `createCosenseApi().getPage(project, title)` になる。本文は `lines` の各行の `text` をつなぐ。
     `created` / `updated` は ISO 8601 の文字列ではなく Unix 時間の秒

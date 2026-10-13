@@ -11,6 +11,7 @@ import type { CosenseApiError } from "../errors"
 import { HttpClient, httpClientOf } from "../http-client"
 import type { CosenseApiOptions, ListPagesOptions, UpdatePageOptions } from "../options"
 import type {
+  FetchedAsset,
   Me,
   PageDetail,
   PageSnapshot,
@@ -30,7 +31,7 @@ import type {
   VectorResult,
 } from "../types"
 
-export { cosenseIconUrl, fetchAsset, type FetchedAsset, isCosenseAssetUrl } from "../assets"
+export { cosenseIconUrl, isCosenseAssetUrl } from "../assets"
 export {
   alignLines,
   type BaseLine,
@@ -122,6 +123,15 @@ export interface CosenseApi {
    * 既定では何も書かずに `PageConflictError` で reject する。書き換えが続いたら、3 回試して諦める
    * (`CosenseApiError`、`code: "NotFastForward"`)。
    */
+  /**
+   * Cosense 上のファイル (アップロードした `/files/…` やアイコン) の中身を取ってくる。
+   *
+   * これらは `Cross-Origin-Resource-Policy: same-origin` を返すので別のサイトの `<img>` からは読めず、
+   * リダイレクト先の URL も期限付き (`/files/` は 5 分) なので、静的なサイトには中身を置く必要がある。
+   * ファイルは別の場所 (Google Cloud Storage や Gyazo) へリダイレクトされるので、5 回まで辿る。
+   * PAT は `origin` への要求にだけ付け、リダイレクト先には送らない。
+   */
+  readonly fetchAsset: (url: string) => Promise<FetchedAsset>
   readonly updatePage: (
     project: string,
     base: PageToUpdate,
@@ -180,6 +190,7 @@ export const createCosenseApi = (options: CosenseApiOptions = {}): CosenseApi =>
     submitEdit: (project, previewId) => run(api.submitEdit(project, previewId)),
     replaceLinks: (project, from, to) => run(api.replaceLinks(project, from, to)),
     markAccessed: (project, pageId) => run(api.markAccessed(project, pageId)),
+    fetchAsset: (url) => run(api.fetchAsset(url)),
     updatePage: (project, base, lines, options) =>
       run(api.updatePage(project, base, lines, options)),
   }
