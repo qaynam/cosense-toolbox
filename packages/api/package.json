@@ -1,0 +1,75 @@
+{
+  "name": "@cosense-toolbox/api",
+  "version": "0.1.0-beta.9",
+  "description": "Call the Cosense API: read pages, search, follow links and history, and edit pages with a line diff.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./effect": {
+      "import": {
+        "types": "./dist/effect.d.mts",
+        "default": "./dist/effect.mjs"
+      },
+      "require": {
+        "types": "./dist/effect.d.cts",
+        "default": "./dist/effect.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "check:public-types": "bun ../../tools/public-types/src/check.ts --allow effect",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "bun run build",
+    "lint": "eslint .",
+    "format:check": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore"
+  },
+  "dependencies": {
+    "effect": "^3.22.1"
+  },
+  "devDependencies": {
+    "tsdown": "^0.22.14",
+    "typescript": "^6.0.0",
+    "vitest": "^2.1.8"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": [
+    "cosense",
+    "scrapbox",
+    "api",
+    "client"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qaynam/cosense-toolbox.git",
+    "directory": "packages/api"
+  }
+}
