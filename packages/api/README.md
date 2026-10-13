@@ -1,12 +1,13 @@
 # @cosense-toolbox/api
 
-Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を読み、検索し、関連ページや履歴を辿れます。
+Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を読み、検索し、関連ページや履歴を辿れます。ページを行の差分で書き換えることもできます。
 
 > **beta**：公開 API はまだ変わりうる。
 
 ### 0.1.0-beta.10 の変更
 
-- 最初のバージョン。`createCosenseApi` で、ページ・本文・検索・関連ページ・「AI 用にエクスポート」・履歴などを読む。
+- 最初のバージョン。`createCosenseApi` で、ページ・本文・検索・関連ページ・「AI 用にエクスポート」・履歴などを読み、
+  `computeChanges` で作った行の差分でページを書き換える (`previewEdit` / `submitEdit`)。
 
 ## インストール
 
@@ -50,24 +51,57 @@ try {
 
 ## 呼べるもの
 
-| 関数                                        | 返すもの                                                                   |
-| :------------------------------------------ | :------------------------------------------------------------------------- |
-| `me()`                                      | 自分 (PAT の持ち主)                                                        |
-| `projects()`                                | 自分の入っているプロジェクト                                               |
-| `projectDetail(project)`                    | プロジェクトの設定 (画像やファイルの送り先など)                            |
-| `projectUsers(project)`                     | ページを書いた人として出てくる人全員 (今のメンバーと、抜けたメンバー)      |
-| `listPages(project, options?)`              | ページの一覧と件数。`sort` / `limit` / `skip` と、保存した絞り込みを渡せる |
-| `getPage(project, title)`                   | ページの中身 (行ごとの id や書いた人を含む)。無ければ `null`               |
-| `getPageText(project, title)`               | ページの本文のテキスト。無ければ `null`                                    |
-| `relatedPages(project, title)`              | 関連ページ (1 hop と 2 hop)                                                |
-| `exportForAi(project, title, hop, search?)` | 「AI 用にエクスポート」のテキスト。ページと `hop` 以内のリンク先           |
-| `searchFullText(project, query)`            | 本文の全文検索。pageRank の順に 100 件まで                                 |
-| `searchVector(project, query)`              | タイトルのベクトル検索。使えないプロジェクトでは空の結果                   |
-| `searchTitles(project)`                     | すべてのページのタイトルと、そこから出ているリンク                         |
-| `pageSnapshots(project, pageId)`            | ページの履歴。新しい順に、最新の 100 件まで                                |
-| `pageSnapshot(project, pageId, snapshotId)` | 履歴のある時点のページ                                                     |
+| 関数                                        | 返すもの                                                                      |
+| :------------------------------------------ | :---------------------------------------------------------------------------- |
+| `me()`                                      | 自分 (PAT の持ち主)                                                           |
+| `projects()`                                | 自分の入っているプロジェクト                                                  |
+| `projectDetail(project)`                    | プロジェクトの設定 (画像やファイルの送り先など)                               |
+| `projectUsers(project)`                     | ページを書いた人として出てくる人全員 (今のメンバーと、抜けたメンバー)         |
+| `listPages(project, options?)`              | ページの一覧と件数。`sort` / `limit` / `skip` と、保存した絞り込みを渡せる    |
+| `getPage(project, title)`                   | ページの中身 (行ごとの id や書いた人を含む)。無ければ `null`                  |
+| `getPageText(project, title)`               | ページの本文のテキスト。無ければ `null`                                       |
+| `relatedPages(project, title)`              | 関連ページ (1 hop と 2 hop)                                                   |
+| `exportForAi(project, title, hop, search?)` | 「AI 用にエクスポート」のテキスト。ページと `hop` 以内のリンク先              |
+| `searchFullText(project, query)`            | 本文の全文検索。pageRank の順に 100 件まで                                    |
+| `searchVector(project, query)`              | タイトルのベクトル検索。使えないプロジェクトでは空の結果                      |
+| `searchTitles(project)`                     | すべてのページのタイトルと、そこから出ているリンク                            |
+| `pageSnapshots(project, pageId)`            | ページの履歴。新しい順に、最新の 100 件まで                                   |
+| `pageSnapshot(project, pageId, snapshotId)` | 履歴のある時点のページ                                                        |
+| `previewEdit(project, body)`                | ページの書き換えを用意する (まだ書き換えない)                                 |
+| `submitEdit(project, previewId)`            | 用意した書き換えをページに書く                                                |
+| `replaceLinks(project, from, to)`           | プロジェクトの中の `from` へのリンクを、すべて `to` へのリンクにする          |
+| `markAccessed(project, pageId)`             | ページを開いたことを記録する (未読でなくなる)。記録できなくても reject しない |
 
 日時はどれも Unix 時間の秒。応答はゆるく読み、無い項目は空の値 (`""` や `0`、`[]`) にする。
+
+## ページを書き換える
+
+書き換えは 2 段階で、`previewEdit` で用意してから `submitEdit` で書く。変更は行の id で指すので、今のページの行と書き換えた後の文から `computeChanges` で作る。
+
+```ts
+import { computeChanges, createCosenseApi } from "@cosense-toolbox/api"
+
+const api = createCosenseApi({ pat: process.env.COSENSE_PAT })
+const page = await api.getPage("project", "title")
+const next = ["title", "書き換えた 1 行目", "足した行"]
+
+if (page === null) {
+  // 新しいページ。pageId を渡さず、1 行目がタイトルになる
+  const preview = await api.previewEdit("project", { changes: computeChanges([], next) })
+  await api.submitEdit("project", preview.previewId)
+} else {
+  const changes = computeChanges(page.lines, next)
+  const preview = await api.previewEdit("project", { pageId: page.id, changes })
+  // 読んでから書くまでに、ほかの人が書き換えていないか
+  if (preview.pagePreview?.commitId !== page.commitId) throw new Error("ページが変わった")
+  await api.submitEdit("project", preview.previewId)
+}
+```
+
+- 変えていない行は送らない。書き換えた行は同じ id のまま文だけ変え (`_update`)、消した行は `_delete`、足した行は新しい id で `_insert` にする。
+- 足す行の id は `createLineId` で作る (小文字の 16 進数 24 文字)。`computeChanges` の 3 つめの引数で差し替えられる。
+- `pagePreview.commitId` を確かめずに送ると、読んでから書くまでにほかの人が書いた行を、`_update` が上書きすることがある。
+- 失敗は `CosenseApiError` の `code` で見分ける。ほかの人が先に書き換えたら `"NotFastForward"`、同じタイトルのページがあれば `"DuplicateTitle"`。
 
 ## 気をつけること
 

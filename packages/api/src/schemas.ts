@@ -238,3 +238,32 @@ export const TitleEntryArraySchema = Schema.Array(TitleEntrySchema)
 export const TitleEntryEnvelopeSchema = Schema.Struct({
   pages: Schema.optionalWith(Schema.Array(TitleEntrySchema), { default: () => [] }),
 })
+
+const PagePreviewSchema = Schema.Struct({
+  title: Schema.optionalWith(Schema.String, { exact: true }),
+  commitId: Schema.optionalWith(Schema.String, { exact: true }),
+  persistent: Schema.optionalWith(Schema.Boolean, { exact: true }),
+  lines: Schema.optionalWith(Schema.Array(PageDetailLineSchema), { exact: true }),
+})
+
+export const PreviewResponseSchema = Schema.Struct({
+  pageDelete: Schema.optionalWith(Schema.Boolean, { default: () => false }),
+  previewId: optionalString,
+  expireAt: optionalString,
+  pagePreview: Schema.optionalWith(Schema.NullOr(PagePreviewSchema), { default: () => null }),
+})
+
+export const SubmitResponseSchema = Schema.Struct({
+  pageDeleted: Schema.optionalWith(Schema.Struct({ title: optionalString }), { exact: true }),
+  commitId: optionalString,
+  page: Schema.optionalWith(Schema.NullOr(Schema.Struct({ title: optionalString })), {
+    default: () => null,
+  }),
+  titleChanged: Schema.optionalWith(Schema.Struct({ from: optionalString, to: optionalString }), {
+    exact: true,
+  }),
+})
+
+export const ReplaceLinksResponseSchema = Schema.Struct({
+  message: optionalString,
+})

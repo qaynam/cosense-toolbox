@@ -11,11 +11,14 @@ import {
   PageSnapshotResponseSchema,
   PageSnapshotsResponseSchema,
   PageV2ResponseSchema,
+  PreviewResponseSchema,
   ProjectDetailSchema,
   ProjectsResponseSchema,
   ProjectUsersResponseSchema,
+  ReplaceLinksResponseSchema,
   SearchFullTextResponseSchema,
   SearchVectorResponseSchema,
+  SubmitResponseSchema,
   TitleEntryArraySchema,
   TitleEntryEnvelopeSchema,
 } from "./schemas"
@@ -25,11 +28,14 @@ import type {
   PageSnapshot,
   PageSnapshotEntry,
   PageSummary,
+  PreviewEditBody,
+  PreviewResponse,
   ProjectDetail,
   ProjectSummary,
   ProjectUsers,
   RelatedPages,
   SearchResult,
+  SubmitResponse,
   TitleEntry,
   VectorResult,
 } from "./types"
@@ -77,6 +83,25 @@ export interface CosenseApi {
   /** ページの履歴。新しい順で、Cosense が返す最新の 100 件まで。 */
   readonly pageSnapshots: (project: string, pageId: string) => Call<readonly PageSnapshotEntry[]>
   readonly pageSnapshot: (project: string, pageId: string, snapshotId: string) => Call<PageSnapshot>
+  /**
+   * ページの書き換えを用意する。まだ書き換えない。`pagePreview.commitId` が手元の `commitId` と
+   * 違えば、そのあいだにほかの人が書き換えている (そのまま送ると、その人の行を上書きする)。
+   */
+  readonly previewEdit: (project: string, body: PreviewEditBody) => Call<PreviewResponse>
+  /** 用意した書き換え (`previewId`) をページに書く。 */
+  readonly submitEdit: (project: string, previewId: string) => Call<SubmitResponse>
+  /**
+   * プロジェクトの中の `[from]` と `#from`、`[from.icon]` を、すべて `to` を指すように書き換える。
+   * ページ自体のタイトルは変えない。大文字と小文字、空白と `_` の違いは区別しない。別のプロジェクトへの
+   * リンク (`[/p/from]`) は書き換えない。500 が返ったら書き換え残しがあるが、同じ呼び出しをやり直してよい。
+   */
+  readonly replaceLinks: (
+    project: string,
+    from: string,
+    to: string,
+  ) => Call<{ readonly message: string }>
+  /** ページを開いたことを記録する (未読でなくなる)。記録できなくても失敗しない。 */
+  readonly markAccessed: (project: string, pageId: string) => Effect.Effect<void, never, HttpClient>
 }
 
 // タイトルをパスに入れる形。日本語や空白は読める形のまま (空白は `_`) にし、
@@ -499,5 +524,37 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
         ),
         (data) => data.snapshot,
       ),
+
+    previewEdit: (project, body) =>
+      Effect.flatMap(
+        request(`/api/pages/v2/${project}/page-edit-for-ai/preview`, { method: "POST", body }),
+        decode(PreviewResponseSchema),
+      ),
+
+    submitEdit: (project, previewId) =>
+      Effect.flatMap(
+        request(`/api/pages/v2/${project}/page-edit-for-ai/submit`, {
+          method: "POST",
+          body: { previewId },
+        }),
+        decode(SubmitResponseSchema),
+      ),
+
+    replaceLinks: (project, from, to) =>
+      Effect.flatMap(
+        request(`/api/pages/${project}/replace/links`, { method: "POST", body: { from, to } }),
+        decode(ReplaceLinksResponseSchema),
+      ),
+
+    // 記録は付け足しなので、できなくてもページを読むことは止めない。POST を断られたら GET で記録する。
+    markAccessed: (project, pageId) => {
+      const path = `/api/pages/${project}/${encodeURIComponent(pageId)}/accessed`
+      return pipe(
+        request(path, { method: "POST", body: {} }),
+        Effect.orElse(() => request(path)),
+        Effect.asVoid,
+        Effect.orElse(() => Effect.void),
+      )
+    },
   }
 }

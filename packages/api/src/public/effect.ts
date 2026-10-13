@@ -5,6 +5,16 @@
  * `httpClientOf(fetch)` で作ったものを渡す。失敗は `CosenseApiError` (`_tag: "CosenseApiError"`)。
  */
 export { type CosenseApi, createCosenseApi } from "../api"
+export {
+  alignLines,
+  type BaseLine,
+  buildSegments,
+  type ChangedSegment,
+  computeChanges,
+  createLineId,
+  type EditSegment,
+  type KeptSegment,
+} from "../changes"
 export { CosenseApiError } from "../errors"
 export {
   HttpClient,

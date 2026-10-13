@@ -195,3 +195,62 @@ export interface PageSnapshot {
   readonly created: number
   readonly lines: readonly SnapshotLine[]
 }
+
+// ここから下は、ページを書き換える API (`previewEdit` / `submitEdit`) に渡すものと返るもの。
+
+export interface RawInsertChange {
+  /** 前に入れる行の id。末尾に足すときは `"_end"` */
+  readonly _insert: string
+  readonly lines: { readonly id: string; readonly text: string }
+}
+
+export interface RawUpdateChange {
+  /** 書き換える行の id */
+  readonly _update: string
+  readonly lines: { readonly text: string }
+}
+
+export interface RawDeleteChange {
+  /** 消す行の id */
+  readonly _delete: string
+}
+
+export type RawChange = RawInsertChange | RawUpdateChange | RawDeleteChange
+
+/** ページ全体を消す。行の変更と一緒には渡さず、これだけを渡す。 */
+export interface RawPageDelete {
+  readonly deleted: true
+}
+
+export interface PreviewEditBody {
+  /** 書き換えるページの id。無ければ新しいページを作る (1 行目がタイトル) */
+  readonly pageId?: string
+  readonly changes: readonly RawChange[] | readonly [RawPageDelete]
+}
+
+export interface PagePreview {
+  readonly title?: string
+  /**
+   * preview を作ったときにページが指していたコミット。変更を作ったときのコミットではない。
+   * 要求には元のコミットを書かないので、変更が古いページから作られたかは、これと手元の `commitId`
+   * を比べて知るしかない。違うのに送ると、`_update` が、そのあいだにほかの人が書いた行を上書きする。
+   */
+  readonly commitId?: string
+  readonly persistent?: boolean
+  readonly lines?: readonly PageDetailLine[]
+}
+
+export interface PreviewResponse {
+  readonly previewId: string
+  readonly expireAt: string
+  readonly pagePreview: PagePreview | null
+  /** ページを消す preview として受け付けたときだけ `true` */
+  readonly pageDelete?: boolean
+}
+
+export interface SubmitResponse {
+  readonly commitId: string
+  readonly page: { readonly title: string } | null
+  readonly titleChanged?: { readonly from: string; readonly to: string }
+  readonly pageDeleted?: { readonly title: string }
+}

@@ -15,15 +15,28 @@ import type {
   PageSnapshot,
   PageSnapshotEntry,
   PageSummary,
+  PreviewEditBody,
+  PreviewResponse,
   ProjectDetail,
   ProjectSummary,
   ProjectUsers,
   RelatedPages,
   SearchResult,
+  SubmitResponse,
   TitleEntry,
   VectorResult,
 } from "../types"
 
+export {
+  alignLines,
+  type BaseLine,
+  buildSegments,
+  type ChangedSegment,
+  computeChanges,
+  createLineId,
+  type EditSegment,
+  type KeptSegment,
+} from "../changes"
 export { CosenseApiError } from "../errors"
 export type { ListPagesOptions } from "../options"
 export type * from "../types"
@@ -77,6 +90,25 @@ export interface CosenseApi {
     pageId: string,
     snapshotId: string,
   ) => Promise<PageSnapshot>
+  /**
+   * ページの書き換えを用意する。まだ書き換えない。`pagePreview.commitId` が手元の `commitId` と
+   * 違えば、そのあいだにほかの人が書き換えている (そのまま送ると、その人の行を上書きする)。
+   */
+  readonly previewEdit: (project: string, body: PreviewEditBody) => Promise<PreviewResponse>
+  /** 用意した書き換え (`previewId`) をページに書く。 */
+  readonly submitEdit: (project: string, previewId: string) => Promise<SubmitResponse>
+  /**
+   * プロジェクトの中の `[from]` と `#from`、`[from.icon]` を、すべて `to` を指すように書き換える。
+   * ページ自体のタイトルは変えない。大文字と小文字、空白と `_` の違いは区別しない。別のプロジェクトへの
+   * リンク (`[/p/from]`) は書き換えない。500 が返ったら書き換え残しがあるが、同じ呼び出しをやり直してよい。
+   */
+  readonly replaceLinks: (
+    project: string,
+    from: string,
+    to: string,
+  ) => Promise<{ readonly message: string }>
+  /** ページを開いたことを記録する (未読でなくなる)。記録できなくても reject しない。 */
+  readonly markAccessed: (project: string, pageId: string) => Promise<void>
 }
 
 /**
@@ -125,5 +157,9 @@ export const createCosenseApi = (options: CosenseApiOptions = {}): CosenseApi =>
     pageSnapshots: (project, pageId) => run(api.pageSnapshots(project, pageId)),
     pageSnapshot: (project, pageId, snapshotId) =>
       run(api.pageSnapshot(project, pageId, snapshotId)),
+    previewEdit: (project, body) => run(api.previewEdit(project, body)),
+    submitEdit: (project, previewId) => run(api.submitEdit(project, previewId)),
+    replaceLinks: (project, from, to) => run(api.replaceLinks(project, from, to)),
+    markAccessed: (project, pageId) => run(api.markAccessed(project, pageId)),
   }
 }

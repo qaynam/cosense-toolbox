@@ -467,3 +467,81 @@ describe("リダイレクト", () => {
     expect(calls).toHaveLength(4)
   })
 })
+
+describe("書き込み", () => {
+  it("previewEdit() と submitEdit() は、JSON を POST する", async () => {
+    const { layer, calls } = testHttpClient((url) =>
+      url.endsWith("/preview")
+        ? json({ previewId: "pv1", expireAt: "later", pagePreview: null })
+        : json({ commitId: "c1", page: { title: "My Page" } }),
+    )
+    const preview = await run(
+      api.previewEdit("myproject", { changes: [{ _delete: "line1" }] }),
+      layer,
+    )
+    const submit = await run(api.submitEdit("myproject", preview.previewId), layer)
+    expect(submit.commitId).toBe("c1")
+    expect(calls.map((call) => [call.url, call.init.method, call.init.body])).toEqual([
+      [
+        "https://scrapbox.io/api/pages/v2/myproject/page-edit-for-ai/preview",
+        "POST",
+        JSON.stringify({ changes: [{ _delete: "line1" }] }),
+      ],
+      [
+        "https://scrapbox.io/api/pages/v2/myproject/page-edit-for-ai/submit",
+        "POST",
+        JSON.stringify({ previewId: "pv1" }),
+      ],
+    ])
+    expect(headersOf(calls[0])["Content-Type"]).toBe("application/json")
+  })
+
+  it("previewEdit() は、ほかの人が先に書き換えたこと (409 NotFastForward) を code で知らせる", async () => {
+    const { layer } = testHttpClient(() => json({ error: "NotFastForward", latest: null }, 409))
+    expect(await runFailure(api.previewEdit("myproject", { changes: [] }), layer)).toMatchObject({
+      status: 409,
+      code: "NotFastForward",
+    })
+  })
+
+  it("submitEdit() は、同じタイトルのページがあること (409 DuplicateTitle) を code で知らせる", async () => {
+    const { layer } = testHttpClient(() => json({ error: "DuplicateTitle" }, 409))
+    expect(await runFailure(api.submitEdit("myproject", "pv1"), layer)).toMatchObject({
+      status: 409,
+      code: "DuplicateTitle",
+    })
+  })
+
+  it("replaceLinks() は、from と to をプロジェクトの置き換えに POST する", async () => {
+    const { layer, calls } = testHttpClient(() =>
+      json({ message: "3 pages have been successfully updated!" }),
+    )
+    const result = await run(api.replaceLinks("myproject", "old title", "new title"), layer)
+    expect(result).toEqual({ message: "3 pages have been successfully updated!" })
+    expect(calls[0]?.url).toBe("https://scrapbox.io/api/pages/myproject/replace/links")
+    expect(calls[0]?.init.body).toBe(JSON.stringify({ from: "old title", to: "new title" }))
+  })
+})
+
+describe("markAccessed", () => {
+  it("開いたことを POST で記録する", async () => {
+    const { layer, calls } = testHttpClient(() => json({}))
+    await run(api.markAccessed("myproject", "page1"), layer)
+    expect(calls.map((call) => [call.url, call.init.method])).toEqual([
+      ["https://scrapbox.io/api/pages/myproject/page1/accessed", "POST"],
+    ])
+  })
+
+  it("POST を断られたら GET で記録する", async () => {
+    const { layer, calls } = testHttpClient((_url, init) =>
+      init.method === "POST" ? json({}, 405) : json({}),
+    )
+    await run(api.markAccessed("myproject", "page1"), layer)
+    expect(calls.map((call) => call.init.method)).toEqual(["POST", "GET"])
+  })
+
+  it("記録できなくても失敗しない", async () => {
+    const { layer } = testHttpClient(() => json({}, 404))
+    expect(await run(api.markAccessed("myproject", "page1"), layer)).toBeUndefined()
+  })
+})

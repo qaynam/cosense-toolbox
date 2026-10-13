@@ -52,3 +52,18 @@ describe("createCosenseApi (Promise)", () => {
     expect(fetch).toHaveBeenCalledWith("https://scrapbox.io/api/users/me", expect.anything())
   })
 })
+
+describe("書き込み (Promise)", () => {
+  it("previewEdit() の失敗は、code 付きの CosenseApiError で reject する", async () => {
+    const api = createCosenseApi({ fetch: respond(() => json({ error: "NotFastForward" }, 409)) })
+    await expect(api.previewEdit("myproject", { changes: [] })).rejects.toMatchObject({
+      status: 409,
+      code: "NotFastForward",
+    })
+  })
+
+  it("markAccessed() は、記録できなくても resolve する", async () => {
+    const api = createCosenseApi({ fetch: respond(() => json({}, 500)) })
+    await expect(api.markAccessed("myproject", "page1")).resolves.toBeUndefined()
+  })
+})
