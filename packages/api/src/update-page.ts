@@ -78,7 +78,8 @@ export const updatePageWith =
   ): Effect.Effect<UpdatePageResult, CosenseApiError | PageConflictError, HttpClient> => {
     const whenConflict = options.whenConflict ?? "error"
 
-    // current のページを text にする。ページが current から動いていたら、書かずに written: false を返す。
+    // current のページを text にする。ページが current から動いていたら (preview のコミットが違うか、
+    // 動いたせいで断られたら)、書かずに written: false を返す。
     const tryWrite = (
       current: PageToUpdate,
       text: readonly string[],

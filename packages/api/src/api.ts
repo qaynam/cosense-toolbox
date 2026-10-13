@@ -566,7 +566,7 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
         decode(ReplaceLinksResponseSchema),
       ),
 
-    // 記録は付け足しなので、できなくてもページを読むことは止めない。POST を断られたら GET で記録する。
+    // 未読かどうかの記録で、できなくても困ることはないので失敗にしない。POST を断られたら GET で記録する。
     markAccessed: (project, pageId) => {
       const path = `/api/pages/${project}/${encodeURIComponent(pageId)}/accessed`
       return pipe(

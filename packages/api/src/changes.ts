@@ -80,11 +80,11 @@ export interface ChangedSegment {
 export type EditSegment = KeptSegment | ChangedSegment
 
 /**
- * `base` を `next` にする変更を、元の行の順に並べたもの。
+ * `base` を `next` にする変更を、元の行の順に並べたもの。行の対応は {@link computeChanges} が
+ * 作る変更と同じになる。
  *
- * 新しい文のどこが元のどの行に当たるかは、ここで決める。変更を作るとき (`computeChanges`) も、
- * ほかの人の変更と合わせるときも、これを使えば判断が食い違わない。LCS で同じ長さの道が
- * いくつもあるときは、いつも元の側を先に進める (削除を先にする) ので、結果は決まっている。
+ * LCS で同じ長さの道がいくつもあるときは、いつも元の側を先に進める (削除を先にする) ので、
+ * 同じ `base` と `next` からは、いつも同じ結果になる。
  */
 export const buildSegments = (
   base: readonly BaseLine[],
@@ -165,7 +165,7 @@ export const createLineId = (): string =>
 /**
  * `base` (今の行) を `next` (書き換えた後の行の文) にする変更。`previewEdit` の `changes` に渡す。
  *
- * @param newLineId - 足す行の id を作る関数。 @defaultValue {@link createLineId}
+ * @param newLineId - 足す行の id を作る関数。省略すると {@link createLineId}。
  */
 export const computeChanges = (
   base: readonly BaseLine[],
