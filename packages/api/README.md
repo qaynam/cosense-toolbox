@@ -8,7 +8,7 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 
 - 最初のバージョン。`createCosenseApi` で、ページ・本文・検索・関連ページ・「AI 用にエクスポート」・履歴などを読み、
   `updatePage` でページを書き換える。読んでから書くまでにほかの人が書き換えていたら 3-way merge し、
-  同じ行のコンフリクトは既定では `PageConflictError` で止める (`onConflict: "overwrite"` で上書き)。
+  同じ行のコンフリクトは既定では `PageConflictError` で止める (`whenConflict: "overwrite"` で上書き)。
 - `@cosense-toolbox/cosense-x/fetch` にあった `isCosenseAssetUrl` / `cosenseIconUrl` はここに移し、`fetchAsset` は `createCosenseApi` が返すものに入れた (`api.fetchAsset(url)`)。
 
 ## インストール
@@ -103,13 +103,13 @@ try {
 読んでから書くまでにほかの人がページを書き換えていたら、今のページを読み直して 3-way merge する。
 
 - **違う行の書き換え:** 両方とも入れて書く。
-- **同じ行の書き換え (コンフリクト):** `onConflict` に従う。
+- **同じ行の書き換え (コンフリクト):** `whenConflict` に従う。
   - `"error"` (既定): 何も書かずに `PageConflictError` で止める。`conflicts` に両方の文、`merged` に自分の文を残して合わせた結果が入る。
   - `"overwrite"`: 自分の文で上書きする。自分が消した行は、ほかの人が書き換えていても消す。上書きした行は、結果の `overwritten` に入る。
 - 書き換えが続いて書けなければ、3 回試して諦める (`CosenseApiError`、`code: "NotFastForward"`)。
 
 ```ts
-await api.updatePage("project", page, lines, { onConflict: "overwrite" })
+await api.updatePage("project", page, lines, { whenConflict: "overwrite" })
 ```
 
 ### 自分で差分を作って書く

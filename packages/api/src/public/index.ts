@@ -119,7 +119,7 @@ export interface CosenseApi {
    * 読んだときのページ (`base`) を、`lines` の文にする。行の差分を作り、用意して書くまでをまとめて行う。
    *
    * 読んでから書くまでにほかの人が書き換えていたら、今のページを読み直して 3-way merge する。
-   * 違う行の書き換えは合わせて書き、同じ行の書き換え (コンフリクト) は `onConflict` に従う。
+   * 違う行の書き換えは合わせて書き、同じ行の書き換え (コンフリクト) は `whenConflict` に従う。
    * 既定では何も書かずに `PageConflictError` で reject する。書き換えが続いたら、3 回試して諦める
    * (`CosenseApiError`、`code: "NotFastForward"`)。
    */

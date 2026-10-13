@@ -54,7 +54,7 @@ export const updatePageWith =
     lines: readonly string[],
     options: UpdatePageOptions = {},
   ): Effect.Effect<UpdatePageResult, CosenseApiError | PageConflictError, HttpClient> => {
-    const onConflict = options.onConflict ?? "error"
+    const whenConflict = options.whenConflict ?? "error"
 
     // current のページを text にする。ページが current から動いていたら、書かずに written: false を返す。
     const tryWrite = (
@@ -87,7 +87,7 @@ export const updatePageWith =
       PageConflictError
     > => {
       const { merged, conflicts } = mergeThreeWay(base.lines, lines, latest.lines)
-      if (conflicts.length > 0 && onConflict === "error") {
+      if (conflicts.length > 0 && whenConflict === "error") {
         return Effect.fail(new PageConflictError({ conflicts, merged }))
       }
       // 合わせた結果には、自分が消した行をほかの人が書き換えたとき、ほかの人の文が残っている。

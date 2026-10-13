@@ -31,7 +31,7 @@ export class CosenseApiError extends Error {
 
 /**
  * `updatePage` で、読んでから書くまでにほかの人が同じ行を書き換えていた。何も書いていない。
- * `onConflict: "error"` (既定) のときだけ起きる。
+ * `whenConflict: "error"` (既定) のときだけ起きる。
  */
 export class PageConflictError extends Error {
   readonly _tag = "PageConflictError"

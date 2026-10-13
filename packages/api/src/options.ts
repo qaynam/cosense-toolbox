@@ -37,5 +37,5 @@ export interface UpdatePageOptions {
    *
    * @defaultValue `"error"`
    */
-  readonly onConflict?: "error" | "overwrite"
+  readonly whenConflict?: "error" | "overwrite"
 }
