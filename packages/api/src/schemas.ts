@@ -4,7 +4,7 @@
  * `optionalWith({ exact: true })` にする。
  *
  * types.ts の型と合っているかは、ここで `Schema.Schema<A, I>` と書いて確かめずに、使う場所
- * (api.ts の `CosenseApiShape` の戻り値) で確かめる。`default` と `exact` で、元の値の型に
+ * (api.ts の `CosenseApi` の戻り値) で確かめる。`default` と `exact` で、元の値の型に
  * `undefined` を含むかが項目ごとに違うので、元の形を 1 つの型で書けないため。
  */
 import { Schema } from "effect"

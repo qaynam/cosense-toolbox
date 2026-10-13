@@ -2,7 +2,7 @@
  * Cosense の API から使える応答が返らなかった。2xx 以外の status、辿らないリダイレクト、
  * 2xx だが形の合わない本文のどれか。
  *
- * effect の型を使わない素の `Error` にしている。Promise の入口ではこれを投げ、effect の入口では
+ * effect の型を使わない素の `Error` にしている。Promise の入口ではこれで reject し、effect の入口では
  * これで失敗する (`_tag` があるので `Effect.catchTag("CosenseApiError", …)` で拾える)。
  */
 export class CosenseApiError extends Error {

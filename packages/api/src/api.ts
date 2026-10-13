@@ -34,7 +34,6 @@ import type {
   VectorResult,
 } from "./types"
 
-/** `R` は要求を送る `HttpClient`。`E` は `CosenseApiError`。 */
 type Call<A> = Effect.Effect<A, CosenseApiError, HttpClient>
 
 /** {@link createCosenseApi} が返すもの。 */
@@ -153,7 +152,7 @@ const notFoundAsNone = <A>(effect: Call<A>): Call<Option.Option<A>> =>
     ),
   )
 
-/** API を呼ぶ関数をまとめて作る。どれも、要求を送る `HttpClient` を要る。 */
+/** API を呼ぶ関数をまとめて作る。どれも、要求を送る `HttpClient` が要る。 */
 export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
   const origin = config.origin ?? DEFAULT_ORIGIN
 
