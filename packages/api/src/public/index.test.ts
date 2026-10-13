@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { CosenseApiError, createCosenseApi } from "./index"
+import { CosenseApiError, createCosenseApi, PageConflictError } from "./index"
 
 const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } })
@@ -65,5 +65,33 @@ describe("書き込み (Promise)", () => {
   it("markAccessed() は、記録できなくても resolve する", async () => {
     const api = createCosenseApi({ fetch: respond(() => json({}, 500)) })
     await expect(api.markAccessed("myproject", "page1")).resolves.toBeUndefined()
+  })
+})
+
+describe("updatePage (Promise)", () => {
+  it("同じ行のコンフリクトは、PageConflictError で reject する", async () => {
+    const fetch = (async (input: string | URL | Request) =>
+      String(input).endsWith("/preview")
+        ? json({ previewId: "p", pagePreview: { commitId: "c1" } })
+        : json({
+            id: "page1",
+            commitId: "c1",
+            lines: [
+              { id: "l1", text: "Title" },
+              { id: "l2", text: "theirs" },
+            ],
+          })) as typeof globalThis.fetch
+    const base = {
+      id: "page1",
+      title: "Title",
+      commitId: "c0",
+      lines: [
+        { id: "l1", text: "Title" },
+        { id: "l2", text: "alpha" },
+      ],
+    }
+    await expect(
+      createCosenseApi({ fetch }).updatePage("myproject", base, ["Title", "ours"]),
+    ).rejects.toBeInstanceOf(PageConflictError)
   })
 })

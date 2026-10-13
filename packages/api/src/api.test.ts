@@ -2,7 +2,7 @@ import { Effect, Either, Layer, Option } from "effect"
 import { describe, expect, it } from "vitest"
 
 import { createCosenseApi } from "./api"
-import type { CosenseApiError } from "./errors"
+import { PageConflictError } from "./errors"
 import { HttpClient, HttpClientError } from "./http-client"
 
 const PAT = "dummy-secret-pat"
@@ -32,15 +32,15 @@ const testHttpClient = (
 const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } })
 
-const run = <A>(
-  effect: Effect.Effect<A, CosenseApiError, HttpClient>,
+const run = <A, E>(
+  effect: Effect.Effect<A, E, HttpClient>,
   layer: Layer.Layer<HttpClient>,
 ): Promise<A> => Effect.runPromise(Effect.provide(effect, layer))
 
-const runFailure = <A>(
-  effect: Effect.Effect<A, CosenseApiError, HttpClient>,
+const runFailure = <A, E>(
+  effect: Effect.Effect<A, E, HttpClient>,
   layer: Layer.Layer<HttpClient>,
-): Promise<CosenseApiError> => Effect.runPromise(Effect.flip(Effect.provide(effect, layer)))
+): Promise<E> => Effect.runPromise(Effect.flip(Effect.provide(effect, layer)))
 
 const headersOf = (call: Call | undefined): Record<string, string> =>
   call?.init.headers as Record<string, string>
@@ -543,5 +543,229 @@ describe("markAccessed", () => {
   it("記録できなくても失敗しない", async () => {
     const { layer } = testHttpClient(() => json({}, 404))
     expect(await run(api.markAccessed("myproject", "page1"), layer)).toBeUndefined()
+  })
+})
+
+describe("updatePage", () => {
+  const BASE = {
+    id: "page1",
+    title: "Title",
+    commitId: "c0",
+    lines: [
+      { id: "l1", text: "Title" },
+      { id: "l2", text: "alpha" },
+      { id: "l3", text: "beta" },
+    ],
+  }
+
+  /** 今のページ (getPage の応答)。 */
+  const latest = (commitId: string, lines: { id: string; text: string }[]) =>
+    json({ id: "page1", title: "Title", commitId, persistent: true, lines })
+
+  const previewOn = (commitId: string) =>
+    json({ previewId: `preview-${commitId}`, expireAt: "later", pagePreview: { commitId } })
+
+  /** preview / submit / ページの取得に、それぞれ順に答える。呼ばれた順と本文を記録する。 */
+  const server = (responses: {
+    readonly preview?: Response[]
+    readonly submit?: Response[]
+    readonly page?: Response[]
+  }) => {
+    const queues = {
+      preview: [...(responses.preview ?? [])],
+      submit: [...(responses.submit ?? [])],
+      page: [...(responses.page ?? [])],
+    }
+    const client = testHttpClient((url) => {
+      const key = url.endsWith("/preview") ? "preview" : url.endsWith("/submit") ? "submit" : "page"
+      return queues[key].shift() ?? new Response("unexpected", { status: 599 })
+    })
+    const steps = () =>
+      client.calls.map((call) =>
+        call.url.endsWith("/preview")
+          ? "preview"
+          : call.url.endsWith("/submit")
+            ? "submit"
+            : "page",
+      )
+    const previewBodies = () =>
+      client.calls
+        .filter((call) => call.url.endsWith("/preview"))
+        .map((call) => JSON.parse(String(call.init.body)) as unknown)
+    return { ...client, steps, previewBodies }
+  }
+
+  it("何も変えていなければ、何も送らない", async () => {
+    const { layer, calls } = server({})
+    const result = await run(api.updatePage("myproject", BASE, ["Title", "alpha", "beta"]), layer)
+    expect(result).toEqual({ commitId: "c0", lines: ["Title", "alpha", "beta"], overwritten: [] })
+    expect(calls).toHaveLength(0)
+  })
+
+  it("読んだときのままのページには、そのまま書く", async () => {
+    const { layer, steps, previewBodies } = server({
+      preview: [previewOn("c0")],
+      submit: [json({ commitId: "c1" })],
+    })
+    const result = await run(api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]), layer)
+    expect(result.commitId).toBe("c1")
+    expect(steps()).toEqual(["preview", "submit"])
+    expect(previewBodies()).toEqual([
+      { pageId: "page1", changes: [{ _update: "l2", lines: { text: "ALPHA" } }] },
+    ])
+  })
+
+  it("ほかの人が別の行を書き換えていたら、合わせて書く", async () => {
+    const { layer, steps, previewBodies } = server({
+      preview: [previewOn("c1"), previewOn("c1")],
+      page: [
+        latest("c1", [
+          { id: "l1", text: "Title" },
+          { id: "l2", text: "alpha" },
+          { id: "l3", text: "BETA" },
+        ]),
+      ],
+      submit: [json({ commitId: "c2" })],
+    })
+    const result = await run(api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]), layer)
+    expect(result).toEqual({ commitId: "c2", lines: ["Title", "ALPHA", "BETA"], overwritten: [] })
+    expect(steps()).toEqual(["preview", "page", "preview", "submit"])
+    expect(previewBodies()[1]).toEqual({
+      pageId: "page1",
+      changes: [{ _update: "l2", lines: { text: "ALPHA" } }],
+    })
+  })
+
+  it("読み直すときは、読んだときのタイトルで引く (名前を変えられていても今のページが返る)", async () => {
+    const { layer, calls } = server({
+      preview: [previewOn("c1"), previewOn("c1")],
+      page: [latest("c1", BASE.lines)],
+      submit: [json({ commitId: "c2" })],
+    })
+    await run(api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]), layer)
+    expect(calls.map((call) => call.url)).toContain(
+      "https://scrapbox.io/api/pages/v2/myproject/Title/?followRename=true",
+    )
+  })
+
+  const theirsOnAlpha = () =>
+    latest("c1", [
+      { id: "l1", text: "Title" },
+      { id: "l2", text: "theirs" },
+      { id: "l3", text: "beta" },
+    ])
+
+  it("ほかの人が同じ行を書き換えていたら、既定では何も書かずに PageConflictError で止める", async () => {
+    const { layer, steps } = server({ preview: [previewOn("c1")], page: [theirsOnAlpha()] })
+    const failure = await Effect.runPromise(
+      Effect.flip(
+        Effect.provide(api.updatePage("myproject", BASE, ["Title", "ours", "beta"]), layer),
+      ),
+    )
+    expect(failure).toBeInstanceOf(PageConflictError)
+    expect(failure).toMatchObject({
+      conflicts: [{ line: 1, ours: "ours", theirs: "theirs", base: "alpha" }],
+    })
+    expect(steps()).toEqual(["preview", "page"])
+  })
+
+  it('onConflict: "overwrite" なら、同じ行は自分の文で上書きする', async () => {
+    const { layer, previewBodies } = server({
+      preview: [previewOn("c1"), previewOn("c1")],
+      page: [theirsOnAlpha()],
+      submit: [json({ commitId: "c2" })],
+    })
+    const result = await run(
+      api.updatePage("myproject", BASE, ["Title", "ours", "beta"], { onConflict: "overwrite" }),
+      layer,
+    )
+    expect(result).toEqual({
+      commitId: "c2",
+      lines: ["Title", "ours", "beta"],
+      overwritten: [{ line: 1, ours: "ours", theirs: "theirs", base: "alpha" }],
+    })
+    expect(previewBodies()[1]).toMatchObject({
+      changes: [{ _update: "l2", lines: { text: "ours" } }],
+    })
+  })
+
+  it('onConflict: "overwrite" なら、自分が消した行は、ほかの人が書き換えていても消す', async () => {
+    const { layer, previewBodies } = server({
+      preview: [previewOn("c1"), previewOn("c1")],
+      page: [theirsOnAlpha()],
+      submit: [json({ commitId: "c2" })],
+    })
+    const result = await run(
+      api.updatePage("myproject", BASE, ["Title", "beta"], { onConflict: "overwrite" }),
+      layer,
+    )
+    expect(result.lines).toEqual(["Title", "beta"])
+    expect(previewBodies()[1]).toMatchObject({ changes: [{ _delete: "l2" }] })
+  })
+
+  it("もう無い行を指して断られたら (422)、今のページに合わせて書き直す", async () => {
+    const { layer, steps } = server({
+      preview: [json({}, 422), previewOn("c1")],
+      page: [
+        latest("c1", [
+          { id: "l1", text: "Title" },
+          { id: "l2", text: "alpha" },
+        ]),
+      ],
+      submit: [json({ commitId: "c2" })],
+    })
+    const result = await run(api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]), layer)
+    expect(result.lines).toEqual(["Title", "ALPHA"])
+    expect(steps()).toEqual(["preview", "page", "preview", "submit"])
+  })
+
+  it("書く直前にほかの人が書いて断られたら (409 NotFastForward)、読み直して合わせる", async () => {
+    const { layer, steps } = server({
+      preview: [previewOn("c0"), previewOn("c1")],
+      submit: [json({ error: "NotFastForward" }, 409), json({ commitId: "c2" })],
+      page: [
+        latest("c1", [
+          { id: "l1", text: "Title" },
+          { id: "l2", text: "alpha" },
+          { id: "l3", text: "BETA" },
+        ]),
+      ],
+    })
+    const result = await run(api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]), layer)
+    expect(result).toMatchObject({ commitId: "c2", lines: ["Title", "ALPHA", "BETA"] })
+    expect(steps()).toEqual(["preview", "submit", "page", "preview", "submit"])
+  })
+
+  it("ページが動いていないのに断られたら、そのエラーで失敗する", async () => {
+    const { layer } = server({
+      preview: [json({}, 422)],
+      page: [latest("c0", BASE.lines)],
+    })
+    expect(
+      await runFailure(api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]), layer),
+    ).toMatchObject({ status: 422 })
+  })
+
+  it("ページが消えていたら、404 で失敗する", async () => {
+    const { layer } = server({
+      preview: [previewOn("c1")],
+      page: [new Response("not found", { status: 404 })],
+    })
+    expect(
+      await runFailure(api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]), layer),
+    ).toMatchObject({ status: 404 })
+  })
+
+  it("ほかの人の書き換えが続いたら、3 回書こうとして諦める (409 NotFastForward)", async () => {
+    const { layer, steps } = server({
+      preview: [previewOn("c1"), previewOn("c2"), previewOn("c3")],
+      page: [latest("c1", BASE.lines), latest("c2", BASE.lines), latest("c3", BASE.lines)],
+    })
+    const failure = await runFailure(
+      api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]),
+      layer,
+    )
+    expect(failure).toMatchObject({ status: 409, code: "NotFastForward" })
+    expect(steps().filter((step) => step === "preview")).toHaveLength(3)
   })
 })
