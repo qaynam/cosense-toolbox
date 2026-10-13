@@ -669,14 +669,14 @@ describe("updatePage", () => {
     expect(steps()).toEqual(["preview", "page"])
   })
 
-  it('onConflict: "overwrite" なら、同じ行は自分の文で上書きする', async () => {
+  it('whenConflict: "overwrite" なら、同じ行は自分の文で上書きする', async () => {
     const { layer, previewBodies } = server({
       preview: [previewOn("c1"), previewOn("c1")],
       page: [theirsOnAlpha()],
       submit: [json({ commitId: "c2" })],
     })
     const result = await run(
-      api.updatePage("myproject", BASE, ["Title", "ours", "beta"], { onConflict: "overwrite" }),
+      api.updatePage("myproject", BASE, ["Title", "ours", "beta"], { whenConflict: "overwrite" }),
       layer,
     )
     expect(result).toEqual({
@@ -689,14 +689,14 @@ describe("updatePage", () => {
     })
   })
 
-  it('onConflict: "overwrite" なら、自分が消した行は、ほかの人が書き換えていても消す', async () => {
+  it('whenConflict: "overwrite" なら、自分が消した行は、ほかの人が書き換えていても消す', async () => {
     const { layer, previewBodies } = server({
       preview: [previewOn("c1"), previewOn("c1")],
       page: [theirsOnAlpha()],
       submit: [json({ commitId: "c2" })],
     })
     const result = await run(
-      api.updatePage("myproject", BASE, ["Title", "beta"], { onConflict: "overwrite" }),
+      api.updatePage("myproject", BASE, ["Title", "beta"], { whenConflict: "overwrite" }),
       layer,
     )
     expect(result.lines).toEqual(["Title", "beta"])

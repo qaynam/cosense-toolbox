@@ -271,6 +271,6 @@ export interface UpdatePageResult {
   readonly commitId: string
   /** 書いた後のページの行の文。ほかの人の書き換えを合わせたもの */
   readonly lines: readonly string[]
-  /** 自分の文で上書きしたコンフリクト (`onConflict: "overwrite"` のとき)。無ければ空 */
+  /** 自分の文で上書きしたコンフリクト (`whenConflict: "overwrite"` のとき)。無ければ空 */
   readonly overwritten: readonly MergeConflict[]
 }
