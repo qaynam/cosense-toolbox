@@ -49,6 +49,7 @@ export const ProjectDetailSchema = Schema.Struct({
   uploadImageTo: optionalString,
   uploadFileTo: optionalString,
   gyazoTeamsName: optionalNullableString,
+  infobox: optionalBoolean,
 })
 
 const UserRefSchema = Schema.Struct({
@@ -80,6 +81,39 @@ const PageDetailLineSchema = Schema.Struct({
   updated: optionalNumber,
   userId: optionalString,
 })
+
+// 値は AI が書くので、文字列でない値が混ざっても読めるようにする。Cosense Web は文字列の値しか出さない。
+const InfoboxValuesSchema = Schema.transform(
+  Schema.Record({ key: Schema.String, value: Schema.Unknown }),
+  Schema.Record({ key: Schema.String, value: Schema.String }),
+  {
+    strict: true,
+    decode: (values) =>
+      Object.fromEntries(
+        Object.entries(values).map(([name, value]) => [
+          name,
+          typeof value === "string" ? value : "",
+        ]),
+      ),
+    encode: (values) => values,
+  },
+)
+
+const InfoboxResultSchema = Schema.Struct({
+  title: optionalString,
+  infobox: Schema.optionalWith(InfoboxValuesSchema, { default: () => ({}) }),
+  hallucination: optionalBoolean,
+  truncated: optionalBoolean,
+  error: Schema.optionalWith(Schema.Struct({ code: optionalString }), { exact: true }),
+})
+
+const infoboxFields = {
+  infoboxDefinition: optionalStrings,
+  infoboxResult: Schema.optionalWith(Schema.Array(InfoboxResultSchema), { default: () => [] }),
+  infoboxDisableLinks: optionalStrings,
+}
+
+export const InfoboxSchema = Schema.Struct(infoboxFields)
 
 const PageSnapshotEntrySchema = Schema.Struct({
   id: optionalString,
@@ -121,6 +155,7 @@ const RelatedPageSchema = Schema.Struct({
   relation: Schema.optionalWith(Schema.Literal("outgoing", "incoming", "bidirectional"), {
     exact: true,
   }),
+  ...infoboxFields,
 })
 
 const SearchResultPageSchema = Schema.Struct({
@@ -184,6 +219,7 @@ export const PageV2ResponseSchema = Schema.Struct({
   user: Schema.optionalWith(Schema.NullOr(UserRefSchema), { exact: true }),
   lastUpdateUser: Schema.optionalWith(Schema.NullOr(UserRefSchema), { exact: true }),
   users: Schema.optionalWith(Schema.Array(UserRefSchema), { default: () => [] }),
+  ...infoboxFields,
 })
 
 // ページの本文は、書いた人を id でしか持たない。名前などはここから引く。

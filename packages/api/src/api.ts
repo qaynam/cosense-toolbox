@@ -11,6 +11,7 @@ import {
 } from "./options"
 import {
   ErrorBodySchema,
+  InfoboxSchema,
   Links1HopResponseSchema,
   Links2HopResponseSchema,
   ListPagesResponseSchema,
@@ -32,6 +33,7 @@ import {
 import type {
   CreatePageResult,
   FetchedAsset,
+  Infobox,
   Me,
   PageDetail,
   PageSnapshot,
@@ -75,6 +77,8 @@ export interface CosenseApi {
   readonly getPageText: (project: string, title: string) => Call<Option.Option<string>>
   /** 関連ページ。1 hop と 2 hop を並べて取り、それぞれ続きのページも辿る。 */
   readonly relatedPages: (project: string, title: string) => Call<RelatedPages>
+  /** ページの Infobox だけを読む。`getPage` の結果にも同じものが入っている。 */
+  readonly getInfobox: (project: string, pageId: string) => Call<Infobox>
   /**
    * Cosense の「AI 用にエクスポート」(Smart Context)。ページと、`hop` 以内のリンク先を 1 つの
    * テキストにする。`search` は、関連ページの欄と同じようにリンク先を絞る。
@@ -530,6 +534,9 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
                 pin: data.pin,
                 pageRank: data.pageRank,
                 snapshotCount: data.snapshotCount,
+                infoboxDefinition: data.infoboxDefinition,
+                infoboxResult: data.infoboxResult,
+                infoboxDisableLinks: data.infoboxDisableLinks,
                 ...(data.user ? { user: data.user } : {}),
                 ...(data.users.length > 0 ? { users: data.users } : {}),
                 ...(data.lastUpdateUser ? { lastUpdateUser: data.lastUpdateUser } : {}),
@@ -544,6 +551,9 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
       notFoundAsNone(requestText(`/api/pages/${project}/${encodeTitleForUrl(title)}/text`)),
 
     relatedPages,
+
+    getInfobox: (project, pageId) =>
+      get(`/api/pages/${project}/${encodeURIComponent(pageId)}/infobox`, InfoboxSchema),
 
     exportForAi: (project, title, hop, search) => {
       // タイトルはクエリに入るので、encodeTitleForUrl (パス用) ではなく普通にエンコードする。
