@@ -61,11 +61,17 @@ jobs:
 
       # npm に出せたときだけ作る。手で作ると、公開に失敗したバージョンのリリースが残る。
       # ノートは、各パッケージの README の「### <バージョン> の変更」を上に置き、その下に GitHub が作る PR の一覧を続ける。
+      # 同じタグのリリースがもうあれば (画面から先に作った、やり直す前の実行が作った)、作らずに知らせるだけにする。
+      # gh release create はそのとき失敗するので、公開は済んでいるのにワークフローが落ちてしまう。
       - name: GitHub のリリースを作る
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            echo "::warning::$GITHUB_REF_NAME のリリースはもうあるので、作らない (ノートも書き換えない)"
+            exit 0
+          fi
           bun tools/release/src/notes.ts "${GITHUB_REF_NAME#v}" > "$RUNNER_TEMP/notes.md"
           previous=$(git describe --tags --abbrev=0 --match 'v*' "${GITHUB_REF_NAME}^" 2>/dev/null || true)
           gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" --generate-notes ${previous:+--notes-start-tag "$previous"}

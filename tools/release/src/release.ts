@@ -157,6 +157,23 @@ export const distTagFor = (
     return /^[A-Za-z][0-9A-Za-z-]*$/.test(identifier) ? identifier : "next"
   })
 
+/**
+ * npm の、バージョンごとの情報の URL。
+ *
+ * `npm view` が読むパッケージ全体の情報は CDN に 5 分残る (`cache-control: max-age=300`) ので、
+ * 手で公開した直後に訊くと、まだ無いと答えることがある。バージョンごとの URL はキャッシュされない
+ * (`cf-cache-status: DYNAMIC`) ので、公開した直後でも正しく答える。
+ */
+export const versionUrl = (registry: string, name: string, version: string): string =>
+  `${registry}/${name.replace("/", "%2f")}/${version}`
+
+/**
+ * {@link versionUrl} の応答の status から、そのバージョンが npm にあるか。200 ならある、404 なら無い。
+ * ほかの status では分からないので `none` (公開してよいか決められない)。
+ */
+export const publishedFromStatus = (status: number): Option.Option<boolean> =>
+  status === 200 ? Option.some(true) : status === 404 ? Option.some(false) : Option.none()
+
 /** semver のバージョン (pre-release と build metadata も含む)。先頭の `v` は付けない。 */
 export const isVersion = (version: string): boolean =>
   /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(version)
