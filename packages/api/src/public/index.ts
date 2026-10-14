@@ -15,6 +15,7 @@ import type {
   CreatePageResult,
   FetchedAsset,
   Infobox,
+  LiterateDatabase,
   Me,
   PageDetail,
   PageSnapshot,
@@ -86,6 +87,11 @@ export interface CosenseApi {
   readonly relatedPages: (project: string, title: string) => Promise<RelatedPages>
   /** ページの Infobox だけを読む。`getPage` の結果にも同じものが入っている。 */
   readonly getInfobox: (project: string, pageId: string) => Promise<Infobox>
+  /**
+   * 定義ページの表 (文芸的データベース)。Cosense Web が定義ページの下に出す表と、同じ行と列を返す。
+   * 名前を変えたページは、古いタイトルでも今のページの表を返す。ページが無いか、定義ページでなければ `null`。
+   */
+  readonly literateDatabase: (project: string, title: string) => Promise<LiterateDatabase | null>
   /**
    * Cosense の「AI 用にエクスポート」(Smart Context)。ページと、`hop` 以内のリンク先を 1 つの
    * テキストにする。`search` は、関連ページの欄と同じようにリンク先を絞る。
@@ -231,6 +237,7 @@ export const createCosenseApi = (options: CosenseApiOptions = {}): CosenseApi =>
     getPageText: (project, title) => orNull(api.getPageText(project, title)),
     relatedPages: (project, title) => run(api.relatedPages(project, title)),
     getInfobox: (project, pageId) => run(api.getInfobox(project, pageId)),
+    literateDatabase: (project, title) => orNull(api.literateDatabase(project, title)),
     exportForAi: (project, title, hop, search) => run(api.exportForAi(project, title, hop, search)),
     searchFullText: (project, query) => run(api.searchFullText(project, query)),
     searchVector: (project, query) => run(api.searchVector(project, query)),

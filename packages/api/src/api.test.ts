@@ -381,6 +381,121 @@ describe("getInfobox", () => {
   })
 })
 
+describe("literateDatabase", () => {
+  const definition = {
+    id: "def",
+    title: "Recipe",
+    persistent: true,
+    infoboxDefinition: ["Ingredients", "Category\tAnswer one of: soup, salad", "ExcludeTitleLine"],
+  }
+  const linkingPage = (title: string, extra: object = {}) => ({
+    id: title,
+    title,
+    titleLc: title.toLowerCase().replace(/ /g, "_"),
+    linksLc: ["recipe"],
+    ...extra,
+  })
+  /** 定義ページと、その 1 hop を返す fetch。 */
+  const respondWith =
+    (page: object, links1hop: object[]) =>
+    (url: string): Response =>
+      url.includes("/links1hop") ? json({ links1hop }) : json(page)
+
+  it("列は定義の表の行の最初のセルで、ExcludeTitleLine の行は除く", async () => {
+    const { layer } = testHttpClient(respondWith(definition, []))
+    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    expect(Option.getOrThrow(table).fields).toEqual(["Ingredients", "Category"])
+  })
+
+  it("行は、定義ページにリンクしているページと、そこから抜き出した値", async () => {
+    const { layer } = testHttpClient(
+      respondWith(definition, [
+        linkingPage("Tomato Soup", {
+          infoboxResult: [{ title: "Recipe", infobox: { Category: "soup" } }],
+        }),
+      ]),
+    )
+    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    expect(Option.getOrThrow(table).rows.map((row) => [row.page.title, row.infobox])).toEqual([
+      ["Tomato Soup", { Category: "soup" }],
+    ])
+  })
+
+  it("定義ページからリンクしているだけのページは、行にしない", async () => {
+    const { layer } = testHttpClient(
+      respondWith(definition, [linkingPage("Kitchen", { linksLc: ["cooking"] })]),
+    )
+    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    expect(Option.getOrThrow(table).rows).toEqual([])
+  })
+
+  it("抜き出しを止めたページは、行にしない", async () => {
+    const { layer } = testHttpClient(
+      respondWith(definition, [linkingPage("Food Log", { infoboxDisableLinks: ["recipe"] })]),
+    )
+    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    expect(Option.getOrThrow(table).rows).toEqual([])
+  })
+
+  it("値は、大文字と小文字、空白と _ を区別せずに定義ページのタイトルが合う結果から取る", async () => {
+    const { layer } = testHttpClient(
+      respondWith({ ...definition, title: "Weekly Recipe" }, [
+        linkingPage("Tomato Soup", {
+          linksLc: ["weekly_recipe"],
+          infoboxResult: [
+            { title: "Food Log", infobox: { Category: "lunch" } },
+            { title: "weekly_recipe", infobox: { Category: "soup" } },
+          ],
+        }),
+      ]),
+    )
+    const table = await run(api.literateDatabase("myproject", "Weekly Recipe"), layer)
+    expect(Option.getOrThrow(table).rows[0]?.infobox).toEqual({ Category: "soup" })
+  })
+
+  it("まだ抜き出していないページの値は空", async () => {
+    const { layer } = testHttpClient(respondWith(definition, [linkingPage("Tomato Soup")]))
+    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    expect(Option.getOrThrow(table).rows[0]?.infobox).toEqual({})
+  })
+
+  it("1 hop は、名前を変えた後の今のタイトルで、続きのページも辿って取る", async () => {
+    const { layer, calls } = testHttpClient((url) => {
+      if (url.endsWith("/links1hop")) {
+        return json({
+          links1hop: [linkingPage("Tomato Soup")],
+          pagination: { hasNext: true, nextId: "next" },
+        })
+      }
+      if (url.includes("/links1hop?")) return json({ links1hop: [linkingPage("Green Salad")] })
+      return json(definition)
+    })
+    const table = await run(api.literateDatabase("myproject", "Old Recipe"), layer)
+    expect(Option.getOrThrow(table).rows.map((row) => row.page.title)).toEqual([
+      "Tomato Soup",
+      "Green Salad",
+    ])
+    expect(calls.map((call) => call.url)).toEqual([
+      "https://scrapbox.io/api/pages/v2/myproject/Old_Recipe/?followRename=true",
+      "https://scrapbox.io/api/pages/v2/myproject/Recipe/links1hop",
+      "https://scrapbox.io/api/pages/v2/myproject/Recipe/links1hop?nextId=next",
+    ])
+  })
+
+  it("定義ページでなければ none で、1 hop を取らない", async () => {
+    const { layer, calls } = testHttpClient(
+      respondWith({ ...definition, infoboxDefinition: [] }, []),
+    )
+    expect(await run(api.literateDatabase("myproject", "Recipe"), layer)).toEqual(Option.none())
+    expect(calls).toHaveLength(1)
+  })
+
+  it("ページが無ければ none", async () => {
+    const { layer } = testHttpClient(() => new Response("not found", { status: 404 }))
+    expect(await run(api.literateDatabase("myproject", "Missing"), layer)).toEqual(Option.none())
+  })
+})
+
 describe("Infobox の抜き出し", () => {
   const infobox = {
     infoboxDefinition: [],

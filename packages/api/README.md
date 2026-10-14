@@ -8,6 +8,7 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 
 - Infobox を読めるようにした。`getPage` と `relatedPages` の結果に、Infobox の定義と本文から抜き出した値 (`infoboxDefinition` / `infoboxResult` / `infoboxDisableLinks`) を入れ、ページの Infobox だけを読む `getInfobox` を足した。`projectDetail` の結果には、Infobox を使うプロジェクトか (`infobox`) を入れた。
 - ページの Infobox の抜き出しを止める `disableInfoboxExtraction` と戻す `enableInfoboxExtraction`、抜き出し直すよう頼む `updateInfoboxResult` を足した。
+- 定義ページの表 (文芸的データベース) を返す `literateDatabase` を足した。
 
 ### 0.1.0-beta.10 の変更
 
@@ -90,6 +91,7 @@ try {
 | `getPageText(project, title)`                                | ページの本文のテキスト。無ければ `null`                                                          |
 | `relatedPages(project, title)`                               | 関連ページ (1 hop と 2 hop)                                                                      |
 | `getInfobox(project, pageId)`                                | ページの Infobox。`getPage` の結果にも入っている。下の「Infobox」                                |
+| `literateDatabase(project, title)`                           | 定義ページの表 (文芸的データベース)。定義ページでなければ `null`                                 |
 | `exportForAi(project, title, hop, search?)`                  | 「AI 用にエクスポート」のテキスト。ページと `hop` 以内のリンク先                                 |
 | `searchFullText(project, query)`                             | 本文の全文検索。pageRank の順に 100 件まで                                                       |
 | `searchVector(project, query)`                               | タイトルのベクトル検索。使えないプロジェクトでは空の結果                                         |
@@ -236,6 +238,23 @@ for (const { title, infobox } of page?.infoboxResult ?? []) {
 - `hallucination` は、Cosense が値を AI の作り話と判定したとき、`truncated` は、ページが長すぎて終わりのほうから抜き出せなかったときに `true`。Cosense Web はどちらでも値を出す。
 - 定義の表で、最初のセルが `ExcludeTitleLine` の行は項目ではなく、タイトルの行から抜き出さないという設定。
 - 2 hop の関連ページには、抜き出した値 (`infoboxResult`) が入っていない。
+
+### 定義ページの表 (文芸的データベース)
+
+Cosense Web が定義ページの下に出す表を、同じ行と列で返す。行は、定義ページにリンクしていて抜き出しを止めていないページで、列は定義の表の項目。
+
+```ts
+const table = await api.literateDatabase("project", "Recipe") // 定義ページでなければ null
+for (const { page, infobox } of table?.rows ?? []) {
+  console.log(
+    page.title,
+    table?.fields.map((field) => infobox[field] ?? ""),
+  )
+}
+```
+
+- 並びは関連ページ (1 hop) の応答のまま。並べ替えは使う側で行う。
+- まだ抜き出していないページも行に入り、値は空。
 
 ### 抜き出しを止める・抜き出し直す
 
