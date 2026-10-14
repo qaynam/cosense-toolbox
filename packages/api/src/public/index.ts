@@ -129,6 +129,32 @@ export interface CosenseApi {
   /** ページを開いたことを記録する (未読でなくなる)。記録できなくても reject しない。 */
   readonly markAccessed: (project: string, pageId: string) => Promise<void>
   /**
+   * このページで、定義ページ `definitionTitle` の項目を抜き出すのを止める (Cosense Web の
+   * 「disable extraction」)。定義ページへのリンクはそのままで、定義ページの表 (文芸的データベース) から
+   * このページが外れる。止めた後の、このページの Infobox を返す。
+   */
+  readonly disableInfoboxExtraction: (
+    project: string,
+    pageId: string,
+    definitionTitle: string,
+  ) => Promise<Infobox>
+  /**
+   * 止めた抜き出しを戻す。戻した後の、このページの Infobox を返す。Cosense Web は、戻した後に
+   * `updateInfoboxResult` で抜き出し直す。
+   */
+  readonly enableInfoboxExtraction: (
+    project: string,
+    pageId: string,
+    definitionTitle: string,
+  ) => Promise<Infobox>
+  /**
+   * このページの本文から Infobox を抜き出し直すよう、Cosense に頼む。抜き出した値は `getInfobox` で読む。
+   *
+   * Cosense Web は、定義ページの表を書き換えると、関連ページ (1 hop) のそれぞれにこれを頼む。
+   * `updatePage` で定義ページの表を書き換えたときは、要るなら自分で頼む。
+   */
+  readonly updateInfoboxResult: (project: string, pageId: string) => Promise<void>
+  /**
    * Cosense 上のファイル (アップロードした `/files/…` やアイコン) の中身を取ってくる。
    *
    * これらは `Cross-Origin-Resource-Policy: same-origin` を返すので別のサイトの `<img>` からは読めず、
@@ -216,6 +242,11 @@ export const createCosenseApi = (options: CosenseApiOptions = {}): CosenseApi =>
     submitEdit: (project, previewId) => run(api.submitEdit(project, previewId)),
     replaceLinks: (project, from, to) => run(api.replaceLinks(project, from, to)),
     markAccessed: (project, pageId) => run(api.markAccessed(project, pageId)),
+    disableInfoboxExtraction: (project, pageId, definitionTitle) =>
+      run(api.disableInfoboxExtraction(project, pageId, definitionTitle)),
+    enableInfoboxExtraction: (project, pageId, definitionTitle) =>
+      run(api.enableInfoboxExtraction(project, pageId, definitionTitle)),
+    updateInfoboxResult: (project, pageId) => run(api.updateInfoboxResult(project, pageId)),
     fetchAsset: (url) => run(api.fetchAsset(url)),
     updatePage: (project, base, lines, options) =>
       run(api.updatePage(project, base, lines, options)),

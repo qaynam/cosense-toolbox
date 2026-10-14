@@ -381,6 +381,61 @@ describe("getInfobox", () => {
   })
 })
 
+describe("Infobox の抜き出し", () => {
+  const infobox = {
+    infoboxDefinition: [],
+    infoboxResult: [{ title: "Recipe", infobox: { Category: "soup" } }],
+    infoboxDisableLinks: ["recipe"],
+  }
+
+  it("disableInfoboxExtraction() は、定義ページのタイトルを止めるものに足し、止めた後の Infobox を返す", async () => {
+    const { layer, calls } = testHttpClient(() => json(infobox))
+    const result = await run(api.disableInfoboxExtraction("myproject", "page1", "Recipe"), layer)
+    expect(result.infoboxDisableLinks).toEqual(["recipe"])
+    expect(calls.map((call) => [call.url, call.init.method, call.init.body])).toEqual([
+      [
+        "https://scrapbox.io/api/pages/myproject/page1/infobox/disable-links",
+        "POST",
+        JSON.stringify({ title: "Recipe", action: "add" }),
+      ],
+    ])
+  })
+
+  it("enableInfoboxExtraction() は、定義ページのタイトルを止めるものから除き、戻した後の Infobox を返す", async () => {
+    const { layer, calls } = testHttpClient(() => json({ ...infobox, infoboxDisableLinks: [] }))
+    const result = await run(api.enableInfoboxExtraction("myproject", "page1", "Recipe"), layer)
+    expect(result.infoboxDisableLinks).toEqual([])
+    expect(calls.map((call) => [call.url, call.init.method, call.init.body])).toEqual([
+      [
+        "https://scrapbox.io/api/pages/myproject/page1/infobox/disable-links",
+        "POST",
+        JSON.stringify({ title: "Recipe", action: "remove" }),
+      ],
+    ])
+  })
+
+  it("updateInfoboxResult() は、抜き出し直すよう POST で頼む", async () => {
+    const { layer, calls } = testHttpClient(() => json({}))
+    await run(api.updateInfoboxResult("myproject", "page1"), layer)
+    expect(calls.map((call) => [call.url, call.init.method])).toEqual([
+      ["https://scrapbox.io/api/pages/myproject/page1/infobox/update-result", "POST"],
+    ])
+  })
+
+  it("updateInfoboxResult() は、応答の本文が JSON でなくても成功する", async () => {
+    const { layer } = testHttpClient(() => new Response("OK"))
+    expect(await run(api.updateInfoboxResult("myproject", "page1"), layer)).toBeUndefined()
+  })
+
+  it("updateInfoboxResult() は、断られたらそのエラーで失敗する", async () => {
+    const { layer } = testHttpClient(() => json({ error: "Forbidden" }, 403))
+    expect(await runFailure(api.updateInfoboxResult("myproject", "page1"), layer)).toMatchObject({
+      status: 403,
+      kind: "forbidden",
+    })
+  })
+})
+
 describe("exportForAi", () => {
   it("指定した hop の書き出しをテキストのまま返す", async () => {
     const { layer, calls } = testHttpClient(

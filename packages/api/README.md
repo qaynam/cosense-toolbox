@@ -7,6 +7,7 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 ### 0.1.0-beta.11 の変更
 
 - Infobox を読めるようにした。`getPage` と `relatedPages` の結果に、Infobox の定義と本文から抜き出した値 (`infoboxDefinition` / `infoboxResult` / `infoboxDisableLinks`) を入れ、ページの Infobox だけを読む `getInfobox` を足した。`projectDetail` の結果には、Infobox を使うプロジェクトか (`infobox`) を入れた。
+- ページの Infobox の抜き出しを止める `disableInfoboxExtraction` と戻す `enableInfoboxExtraction`、抜き出し直すよう頼む `updateInfoboxResult` を足した。
 
 ### 0.1.0-beta.10 の変更
 
@@ -78,30 +79,33 @@ try {
 
 ## 呼べるもの
 
-| 関数                                         | 返すもの                                                                                         |
-| :------------------------------------------- | :----------------------------------------------------------------------------------------------- |
-| `me()`                                       | 自分 (PAT の持ち主)                                                                              |
-| `projects()`                                 | 自分の入っているプロジェクト                                                                     |
-| `projectDetail(project)`                     | プロジェクトの設定 (画像やファイルの送り先など)                                                  |
-| `projectUsers(project)`                      | ページを書いた人として出てくる人全員 (今のメンバーと、抜けたメンバー)                            |
-| `listPages(project, options?)`               | ページの一覧と件数。`sort` / `limit` / `skip` と、保存した絞り込みを渡せる                       |
-| `getPage(project, title)`                    | ページの中身 (行ごとの id や書いた人を含む)。無ければ `null`                                     |
-| `getPageText(project, title)`                | ページの本文のテキスト。無ければ `null`                                                          |
-| `relatedPages(project, title)`               | 関連ページ (1 hop と 2 hop)                                                                      |
-| `getInfobox(project, pageId)`                | ページの Infobox。`getPage` の結果にも入っている。下の「Infobox」                                |
-| `exportForAi(project, title, hop, search?)`  | 「AI 用にエクスポート」のテキスト。ページと `hop` 以内のリンク先                                 |
-| `searchFullText(project, query)`             | 本文の全文検索。pageRank の順に 100 件まで                                                       |
-| `searchVector(project, query)`               | タイトルのベクトル検索。使えないプロジェクトでは空の結果                                         |
-| `searchTitles(project)`                      | すべてのページのタイトルと、そこから出ているリンク                                               |
-| `pageSnapshots(project, pageId)`             | ページの履歴。新しい順に、最新の 100 件まで                                                      |
-| `pageSnapshot(project, pageId, snapshotId)`  | 履歴のある時点のページ                                                                           |
-| `updatePage(project, base, lines, options?)` | 読んだときのページ `base` を `lines` の文にする。ほかの人の書き換えは合わせる                    |
-| `createPage(project, lines)`                 | 1 行目をタイトルにして新しいページを作る。同じタイトルのページがあれば作らない                   |
-| `previewEdit(project, body)`                 | ページの書き換えを用意する (まだ書き換えない)                                                    |
-| `submitEdit(project, previewId)`             | 用意した書き換えをページに書く                                                                   |
-| `replaceLinks(project, from, to)`            | プロジェクトの中の `from` へのリンクを、すべて `to` へのリンクにする                             |
-| `markAccessed(project, pageId)`              | ページを開いたことを記録する (未読でなくなる)。記録できなくても reject しない                    |
-| `fetchAsset(url)`                            | Cosense 上のファイル (`/files/…` やアイコン) の中身と Content-Type。下の「Cosense 上のファイル」 |
+| 関数                                                         | 返すもの                                                                                         |
+| :----------------------------------------------------------- | :----------------------------------------------------------------------------------------------- |
+| `me()`                                                       | 自分 (PAT の持ち主)                                                                              |
+| `projects()`                                                 | 自分の入っているプロジェクト                                                                     |
+| `projectDetail(project)`                                     | プロジェクトの設定 (画像やファイルの送り先など)                                                  |
+| `projectUsers(project)`                                      | ページを書いた人として出てくる人全員 (今のメンバーと、抜けたメンバー)                            |
+| `listPages(project, options?)`                               | ページの一覧と件数。`sort` / `limit` / `skip` と、保存した絞り込みを渡せる                       |
+| `getPage(project, title)`                                    | ページの中身 (行ごとの id や書いた人を含む)。無ければ `null`                                     |
+| `getPageText(project, title)`                                | ページの本文のテキスト。無ければ `null`                                                          |
+| `relatedPages(project, title)`                               | 関連ページ (1 hop と 2 hop)                                                                      |
+| `getInfobox(project, pageId)`                                | ページの Infobox。`getPage` の結果にも入っている。下の「Infobox」                                |
+| `exportForAi(project, title, hop, search?)`                  | 「AI 用にエクスポート」のテキスト。ページと `hop` 以内のリンク先                                 |
+| `searchFullText(project, query)`                             | 本文の全文検索。pageRank の順に 100 件まで                                                       |
+| `searchVector(project, query)`                               | タイトルのベクトル検索。使えないプロジェクトでは空の結果                                         |
+| `searchTitles(project)`                                      | すべてのページのタイトルと、そこから出ているリンク                                               |
+| `pageSnapshots(project, pageId)`                             | ページの履歴。新しい順に、最新の 100 件まで                                                      |
+| `pageSnapshot(project, pageId, snapshotId)`                  | 履歴のある時点のページ                                                                           |
+| `updatePage(project, base, lines, options?)`                 | 読んだときのページ `base` を `lines` の文にする。ほかの人の書き換えは合わせる                    |
+| `createPage(project, lines)`                                 | 1 行目をタイトルにして新しいページを作る。同じタイトルのページがあれば作らない                   |
+| `previewEdit(project, body)`                                 | ページの書き換えを用意する (まだ書き換えない)                                                    |
+| `submitEdit(project, previewId)`                             | 用意した書き換えをページに書く                                                                   |
+| `replaceLinks(project, from, to)`                            | プロジェクトの中の `from` へのリンクを、すべて `to` へのリンクにする                             |
+| `markAccessed(project, pageId)`                              | ページを開いたことを記録する (未読でなくなる)。記録できなくても reject しない                    |
+| `disableInfoboxExtraction(project, pageId, definitionTitle)` | このページで、定義ページ `definitionTitle` の項目を抜き出すのを止める。止めた後の Infobox        |
+| `enableInfoboxExtraction(project, pageId, definitionTitle)`  | 止めた抜き出しを戻す。戻した後の Infobox                                                         |
+| `updateInfoboxResult(project, pageId)`                       | このページの Infobox を抜き出し直すよう頼む                                                      |
+| `fetchAsset(url)`                                            | Cosense 上のファイル (`/files/…` やアイコン) の中身と Content-Type。下の「Cosense 上のファイル」 |
 
 日時はどれも Unix 時間の秒。応答はゆるく読み、無い項目は空の値 (`""` や `0`、`[]`) にする。
 
@@ -232,6 +236,23 @@ for (const { title, infobox } of page?.infoboxResult ?? []) {
 - `hallucination` は、Cosense が値を AI の作り話と判定したとき、`truncated` は、ページが長すぎて終わりのほうから抜き出せなかったときに `true`。Cosense Web はどちらでも値を出す。
 - 定義の表で、最初のセルが `ExcludeTitleLine` の行は項目ではなく、タイトルの行から抜き出さないという設定。
 - 2 hop の関連ページには、抜き出した値 (`infoboxResult`) が入っていない。
+
+### 抜き出しを止める・抜き出し直す
+
+定義ページにリンクしたいが、その項目に沿って書いたページではないときは、そのページでの抜き出しを止める (Cosense Web の「disable extraction」)。リンクはそのままで、定義ページの表 (文芸的データベース) からそのページが外れる。
+
+```ts
+const page = await api.getPage("project", "Tomato soup")
+if (page) {
+  await api.disableInfoboxExtraction("project", page.id, "Recipe") // 止める
+  await api.enableInfoboxExtraction("project", page.id, "Recipe") // 戻す
+  await api.updateInfoboxResult("project", page.id) // 抜き出し直す
+  const { infoboxResult } = await api.getInfobox("project", page.id)
+}
+```
+
+- 止める・戻すは、その後のページの Infobox を返す。Cosense Web は、戻した後に `updateInfoboxResult` で抜き出し直す。
+- Cosense Web は、定義ページの表を書き換えると、関連ページ (1 hop) のそれぞれに `updateInfoboxResult` を頼む。`updatePage` で定義ページの表を書き換えたときは、要るなら自分で頼む。
 
 ## Cosense 上のファイル
 
