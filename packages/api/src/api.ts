@@ -3,6 +3,7 @@ import { Effect, Option, pipe, Schema } from "effect"
 import { createPageWith } from "./create-page"
 import { CosenseApiError, type PageConflictError, type PageExistsError } from "./errors"
 import { HttpClient } from "./http-client"
+import { literateDatabaseOf } from "./literate-database"
 import {
   type CosenseApiConfig,
   DEFAULT_ORIGIN,
@@ -34,6 +35,7 @@ import type {
   CreatePageResult,
   FetchedAsset,
   Infobox,
+  LiterateDatabase,
   Me,
   PageDetail,
   PageSnapshot,
@@ -45,6 +47,7 @@ import type {
   ProjectDetail,
   ProjectSummary,
   ProjectUsers,
+  RelatedPage,
   RelatedPages,
   SearchResult,
   SubmitResponse,
@@ -79,6 +82,14 @@ export interface CosenseApi {
   readonly relatedPages: (project: string, title: string) => Call<RelatedPages>
   /** ページの Infobox だけを読む。`getPage` の結果にも同じものが入っている。 */
   readonly getInfobox: (project: string, pageId: string) => Call<Infobox>
+  /**
+   * 定義ページの表 (文芸的データベース)。Cosense Web が定義ページの下に出す表と、同じ行と列を返す。
+   * 名前を変えたページは、古いタイトルでも今のページの表を返す。ページが無いか、定義ページでなければ `none`。
+   */
+  readonly literateDatabase: (
+    project: string,
+    title: string,
+  ) => Call<Option.Option<LiterateDatabase>>
   /**
    * Cosense の「AI 用にエクスポート」(Smart Context)。ページと、`hop` 以内のリンク先を 1 つの
    * テキストにする。`search` は、関連ページの欄と同じようにリンク先を絞る。
@@ -382,56 +393,65 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
   const get = <A, I>(path: string, schema: Schema.Schema<A, I>): Call<A> =>
     Effect.flatMap(request(path), decode(schema))
 
-  const relatedPages: CosenseApi["relatedPages"] = (project, title) => {
-    const base = `/api/pages/v2/${project}/${encodeTitleForUrl(title)}`
-    // 1 つの hop のページを、続きが無くなるか RELATED_LIMIT に届くまで順に取る。
-    // 最初の要求にはクエリを付けない (サーバーは最初のページを返す)。
-    const allOf = <
-      A extends { readonly pagination: { hasNext: boolean; nextId: string | null } },
-      I,
-    >(
-      hop: "links1hop" | "links2hop",
-      schema: Schema.Schema<A, I>,
-      count: (response: A) => number,
-    ): Call<A[]> =>
-      pipe(
-        Effect.iterate(
-          { responses: [] as A[], nextId: Option.none<string>(), total: 0, done: false },
-          {
-            while: (state) => !state.done,
-            body: (state) =>
-              Effect.map(
-                get(
-                  Option.match(state.nextId, {
-                    onNone: () => `${base}/${hop}`,
-                    onSome: (nextId) => `${base}/${hop}?nextId=${encodeURIComponent(nextId)}`,
-                  }),
-                  schema,
-                ),
-                (response) => {
-                  const total = state.total + count(response)
-                  const nextId = Option.fromNullable(response.pagination.nextId)
-                  return {
-                    responses: [...state.responses, response],
-                    nextId,
-                    total,
-                    done:
-                      !response.pagination.hasNext ||
-                      Option.isNone(nextId) ||
-                      total >= RELATED_LIMIT,
-                  }
-                },
-              ),
-          },
-        ),
-        Effect.map((state) => state.responses),
-      )
+  const relatedBaseOf = (project: string, title: string): string =>
+    `/api/pages/v2/${project}/${encodeTitleForUrl(title)}`
 
+  // 1 つの hop のページを、続きが無くなるか RELATED_LIMIT に届くまで順に取る。
+  // 最初の要求にはクエリを付けない (サーバーは最初のページを返す)。
+  const allOf = <A extends { readonly pagination: { hasNext: boolean; nextId: string | null } }, I>(
+    base: string,
+    hop: "links1hop" | "links2hop",
+    schema: Schema.Schema<A, I>,
+    count: (response: A) => number,
+  ): Call<A[]> =>
+    pipe(
+      Effect.iterate(
+        { responses: [] as A[], nextId: Option.none<string>(), total: 0, done: false },
+        {
+          while: (state) => !state.done,
+          body: (state) =>
+            Effect.map(
+              get(
+                Option.match(state.nextId, {
+                  onNone: () => `${base}/${hop}`,
+                  onSome: (nextId) => `${base}/${hop}?nextId=${encodeURIComponent(nextId)}`,
+                }),
+                schema,
+              ),
+              (response) => {
+                const total = state.total + count(response)
+                const nextId = Option.fromNullable(response.pagination.nextId)
+                return {
+                  responses: [...state.responses, response],
+                  nextId,
+                  total,
+                  done:
+                    !response.pagination.hasNext || Option.isNone(nextId) || total >= RELATED_LIMIT,
+                }
+              },
+            ),
+        },
+      ),
+      Effect.map((state) => state.responses),
+    )
+
+  const relatedPages: CosenseApi["relatedPages"] = (project, title) => {
+    const base = relatedBaseOf(project, title)
     return Effect.map(
       Effect.all(
         [
-          allOf("links1hop", Links1HopResponseSchema, (response) => response.links1hop.length),
-          allOf("links2hop", Links2HopResponseSchema, (response) => response.links2hop.length),
+          allOf(
+            base,
+            "links1hop",
+            Links1HopResponseSchema,
+            (response) => response.links1hop.length,
+          ),
+          allOf(
+            base,
+            "links2hop",
+            Links2HopResponseSchema,
+            (response) => response.links2hop.length,
+          ),
         ],
         { concurrency: "unbounded" },
       ),
@@ -450,6 +470,17 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
       },
     )
   }
+
+  const links1hopOf = (project: string, title: string): Call<RelatedPage[]> =>
+    Effect.map(
+      allOf(
+        relatedBaseOf(project, title),
+        "links1hop",
+        Links1HopResponseSchema,
+        (response) => response.links1hop.length,
+      ),
+      (responses) => responses.flatMap((response) => response.links1hop),
+    )
 
   // 抜き出しを止めた定義ページの一覧 (`infoboxDisableLinks`) に、足す (`"add"`) と止まり、除く (`"remove"`) と戻る。
   const setInfoboxExtraction = (
@@ -746,11 +777,28 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
         })
       return follow(url, 0)
     },
-  } satisfies Omit<CosenseApi, "updatePage" | "createPage">
+  } satisfies Omit<CosenseApi, "updatePage" | "createPage" | "literateDatabase">
+
+  // Cosense Web と同じく、定義ページの今のタイトルで 1 hop を取り、リンクしているかを見る。
+  const literateDatabase: CosenseApi["literateDatabase"] = (project, title) =>
+    Effect.flatMap(operations.getPage(project, title), (found) =>
+      pipe(
+        found,
+        Option.filter((page) => page.infoboxDefinition.length > 0),
+        Option.match({
+          onNone: () => Effect.succeed(Option.none<LiterateDatabase>()),
+          onSome: (page) =>
+            Effect.map(links1hopOf(project, page.title), (links1hop) =>
+              Option.some(literateDatabaseOf(page, links1hop)),
+            ),
+        }),
+      ),
+    )
 
   return {
     ...operations,
     updatePage: updatePageWith(operations),
     createPage: createPageWith(operations),
+    literateDatabase,
   }
 }

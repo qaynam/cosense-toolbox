@@ -163,6 +163,22 @@ export interface RelatedPage extends Infobox {
   readonly relation?: "outgoing" | "incoming" | "bidirectional"
 }
 
+/** 定義ページの表 (文芸的データベース) の 1 行。 */
+export interface LiterateDatabaseRow {
+  /** 定義ページにリンクしているページ */
+  readonly page: RelatedPage
+  /** 項目の名前と、そのページから抜き出した値。まだ抜き出していなければ空 */
+  readonly infobox: Readonly<Record<string, string>>
+}
+
+/** 定義ページの表 (文芸的データベース)。Cosense Web が定義ページの下に出す表と、同じ行と列。 */
+export interface LiterateDatabase {
+  /** 列にする項目の名前。定義の表の行の、タブで区切った最初のセル。設定の行 (`ExcludeTitleLine`) は除く */
+  readonly fields: readonly string[]
+  /** 定義ページにリンクしていて、抜き出しを止めていないページ。並びは関連ページ (1 hop) の応答のまま */
+  readonly rows: readonly LiterateDatabaseRow[]
+}
+
 export interface RelatedPages {
   readonly links1hop: readonly RelatedPage[]
   /** `links1hop` にあるページは除く (Cosense Web と同じ) */
