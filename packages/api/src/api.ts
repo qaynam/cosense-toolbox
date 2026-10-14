@@ -118,6 +118,32 @@ export interface CosenseApi {
   /** ページを開いたことを記録する (未読でなくなる)。記録できなくても失敗しない。 */
   readonly markAccessed: (project: string, pageId: string) => Effect.Effect<void, never, HttpClient>
   /**
+   * このページで、定義ページ `definitionTitle` の項目を抜き出すのを止める (Cosense Web の
+   * 「disable extraction」)。定義ページへのリンクはそのままで、定義ページの表 (文芸的データベース) から
+   * このページが外れる。止めた後の、このページの Infobox を返す。
+   */
+  readonly disableInfoboxExtraction: (
+    project: string,
+    pageId: string,
+    definitionTitle: string,
+  ) => Call<Infobox>
+  /**
+   * 止めた抜き出しを戻す。戻した後の、このページの Infobox を返す。Cosense Web は、戻した後に
+   * `updateInfoboxResult` で抜き出し直す。
+   */
+  readonly enableInfoboxExtraction: (
+    project: string,
+    pageId: string,
+    definitionTitle: string,
+  ) => Call<Infobox>
+  /**
+   * このページの本文から Infobox を抜き出し直すよう、Cosense に頼む。抜き出した値は `getInfobox` で読む。
+   *
+   * Cosense Web は、定義ページの表を書き換えると、関連ページ (1 hop) のそれぞれにこれを頼む。
+   * `updatePage` で定義ページの表を書き換えたときは、要るなら自分で頼む。
+   */
+  readonly updateInfoboxResult: (project: string, pageId: string) => Call<void>
+  /**
    * Cosense 上のファイル (アップロードした `/files/…` やアイコン) の中身を取ってくる。
    *
    * これらは `Cross-Origin-Resource-Policy: same-origin` を返すので別のサイトの `<img>` からは読めず、
@@ -425,6 +451,21 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
     )
   }
 
+  // 抜き出しを止めた定義ページの一覧 (`infoboxDisableLinks`) に、足す (`"add"`) と止まり、除く (`"remove"`) と戻る。
+  const setInfoboxExtraction = (
+    project: string,
+    pageId: string,
+    definitionTitle: string,
+    action: "add" | "remove",
+  ): Call<Infobox> =>
+    Effect.flatMap(
+      request(`/api/pages/${project}/${encodeURIComponent(pageId)}/infobox/disable-links`, {
+        method: "POST",
+        body: { title: definitionTitle, action },
+      }),
+      decode(InfoboxSchema),
+    )
+
   // 1 回に TITLES_PER_PAGE 件までしか返らず、続きの位置を `x-following-id` で知らせる。
   // 大きいプロジェクトでは最初の回だけで止めると、ほとんどのページを無いものとして扱ってしまう。
   const searchTitles: CosenseApi["searchTitles"] = (project) => {
@@ -641,6 +682,22 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
         Effect.orElse(() => Effect.void),
       )
     },
+
+    disableInfoboxExtraction: (project, pageId, definitionTitle) =>
+      setInfoboxExtraction(project, pageId, definitionTitle, "add"),
+
+    enableInfoboxExtraction: (project, pageId, definitionTitle) =>
+      setInfoboxExtraction(project, pageId, definitionTitle, "remove"),
+
+    // 応答の本文は読み捨てる。Cosense Web も使わず、抜き出した値は読み直して知る。
+    updateInfoboxResult: (project, pageId) =>
+      pipe(
+        requestRaw(`/api/pages/${project}/${encodeURIComponent(pageId)}/infobox/update-result`, {
+          method: "POST",
+        }),
+        Effect.flatMap((response) => bodyOf(response, "text", () => response.text())),
+        Effect.asVoid,
+      ),
 
     // リダイレクトは fetch に任せず自分で辿る。任せると、PAT を付けたまま別のオリジンへ送ってしまう。
     // ほかの API と違ってファイルは別のオリジンへ転送されるので、そこへも辿るが、PAT は付けない。
