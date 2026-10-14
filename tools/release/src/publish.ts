@@ -28,7 +28,9 @@ import {
   mismatchedPins,
   problemsOf,
   publishable,
+  publishedFromStatus,
   publishOrder,
+  versionUrl,
   type Workspace,
 } from "./release"
 import { readWorkspaces } from "./workspaces"
@@ -50,15 +52,16 @@ const REGISTRY = "https://registry.npmjs.org"
 const run = <A>(label: string, command: () => Promise<A>): Effect.Effect<A, Error> =>
   Effect.tryPromise({ try: command, catch: (cause) => new Error(`${label}: ${String(cause)}`) })
 
-/** npm にこのバージョンがもうあるか。 */
-const isPublished = ({ manifest }: Workspace) =>
+/** npm にこのバージョンがもうあるか。分からなければ、公開せずに止める。 */
+const isPublished = ({ manifest: { name, version } }: Workspace) =>
   pipe(
-    run("npm view", () =>
-      $`npm view ${`${manifest.name}@${manifest.version}`} version --registry ${REGISTRY}`
-        .quiet()
-        .nothrow(),
+    run(`${name}@${version} を npm に訊く`, () => fetch(versionUrl(REGISTRY, name, version))),
+    Effect.flatMap((response) =>
+      Effect.mapError(
+        publishedFromStatus(response.status),
+        () => new Error(`${name}@${version} が npm にあるか分からない (HTTP ${response.status})`),
+      ),
     ),
-    Effect.map((result) => result.exitCode === 0 && result.stdout.toString().trim() !== ""),
   )
 
 /**

@@ -11,10 +11,12 @@ import {
   mismatchedPins,
   problemsOf,
   publishable,
+  publishedFromStatus,
   publishOrder,
   releaseNotesOf,
   releasePullRequestProblems,
   versionOfBranch,
+  versionUrl,
   withLockVersion,
   withVersion,
   type Workspace,
@@ -436,5 +438,28 @@ describe("releaseNotesOf", () => {
 
   it("どのパッケージにも変更が無ければ空", () => {
     expect(releaseNotesOf([withReadme("packages/style", "# style")], "0.1.0-beta.2")).toBe("")
+  })
+})
+
+describe("versionUrl", () => {
+  it("スコープ付きの名前の / を %2f にし、後ろにバージョンを付ける", () => {
+    expect(versionUrl("https://registry.npmjs.org", "@cosense-toolbox/api", "0.1.0-beta.10")).toBe(
+      "https://registry.npmjs.org/@cosense-toolbox%2fapi/0.1.0-beta.10",
+    )
+  })
+})
+
+describe("publishedFromStatus", () => {
+  it("200 なら、そのバージョンはもうある", () => {
+    expect(publishedFromStatus(200)).toEqual(Option.some(true))
+  })
+
+  it("404 なら、そのバージョンはまだ無い", () => {
+    expect(publishedFromStatus(404)).toEqual(Option.some(false))
+  })
+
+  it("ほかの status では、あるかどうか分からない", () => {
+    expect(publishedFromStatus(500)).toEqual(Option.none())
+    expect(publishedFromStatus(401)).toEqual(Option.none())
   })
 })
