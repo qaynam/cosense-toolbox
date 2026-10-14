@@ -401,19 +401,85 @@ describe("失敗", () => {
     expect(await runFailure(api.me(), layer)).toMatchObject({ status: 403, code: "SomeError" })
   })
 
-  it("返ってきた JSON が読めなければ code は DecodeError", async () => {
-    const { layer } = testHttpClient(() => new Response("not json"))
-    expect(await runFailure(api.me(), layer)).toMatchObject({ status: 200, code: "DecodeError" })
+  it("本文に error が無ければ、name を code に入れる", async () => {
+    const { layer } = testHttpClient(() =>
+      json({ name: "NotLoggedInError", message: "You are not logged in yet." }, 401),
+    )
+    expect(await runFailure(api.me(), layer)).toMatchObject({ code: "NotLoggedInError" })
   })
 
-  it("通信できなければ status は 0", async () => {
+  it("本文に error と name の両方があれば、error を code に入れる", async () => {
+    const { layer } = testHttpClient(() =>
+      json({ error: "NotFastForward", name: "ConflictError" }, 409),
+    )
+    expect(await runFailure(api.me(), layer)).toMatchObject({ code: "NotFastForward" })
+  })
+
+  it("本文の message を、エラーの文に入れる", async () => {
+    const { layer } = testHttpClient(() =>
+      json({ name: "NotLoggedInError", message: "You are not logged in yet." }, 401),
+    )
+    const failure = await runFailure(api.me(), layer)
+    expect(failure.message).toContain("You are not logged in yet.")
+  })
+
+  it("本文が JSON でなければ、その文をエラーの文に入れる", async () => {
+    const { layer } = testHttpClient(
+      () => new Response("request entity too large", { status: 400 }),
+    )
+    const failure = await runFailure(api.me(), layer)
+    expect(failure.message).toContain("request entity too large")
+  })
+
+  it("本文が HTML なら、エラーの文に入れない", async () => {
+    const { layer } = testHttpClient(
+      () => new Response("<!DOCTYPE html><html><body>Bad Gateway</body></html>", { status: 502 }),
+    )
+    const failure = await runFailure(api.me(), layer)
+    expect(failure.message).not.toContain("<")
+  })
+
+  it.each([
+    [401, { name: "NotLoggedInError" }, "unauthorized"],
+    [403, { name: "NotMemberError" }, "forbidden"],
+    [404, { name: "NotFoundError" }, "notFound"],
+    [409, { error: "NotFastForward" }, "notFastForward"],
+    [409, { error: "DuplicateTitle" }, "duplicateTitle"],
+    [413, {}, "tooLarge"],
+    [422, {}, "invalidChanges"],
+    [429, {}, "rateLimited"],
+    [500, {}, "serverError"],
+    [503, {}, "serverError"],
+    [400, { error: "SomeError" }, "unknown"],
+  ])("status %i、本文 %j なら kind は %s", async (status, body, kind) => {
+    const { layer } = testHttpClient(() => json(body, status))
+    expect(await runFailure(api.me(), layer)).toMatchObject({ kind })
+  })
+
+  it("本文が大きすぎて断られたら (400 request entity too large)、kind は tooLarge", async () => {
+    const { layer } = testHttpClient(
+      () => new Response("request entity too large", { status: 400 }),
+    )
+    expect(await runFailure(api.me(), layer)).toMatchObject({ status: 400, kind: "tooLarge" })
+  })
+
+  it("返ってきた JSON が読めなければ、code は DecodeError、kind は decode", async () => {
+    const { layer } = testHttpClient(() => new Response("not json"))
+    expect(await runFailure(api.me(), layer)).toMatchObject({
+      status: 200,
+      code: "DecodeError",
+      kind: "decode",
+    })
+  })
+
+  it("通信できなければ、status は 0、kind は network", async () => {
     const layer = Layer.succeed(
       HttpClient,
       HttpClient.of({
         fetch: () => Effect.fail(new HttpClientError({ cause: new Error("offline") })),
       }),
     )
-    expect(await runFailure(api.me(), layer)).toMatchObject({ status: 0 })
+    expect(await runFailure(api.me(), layer)).toMatchObject({ status: 0, kind: "network" })
   })
 
   it("エラーの文に PAT を出さない", async () => {
@@ -843,7 +909,7 @@ describe("updatePage", () => {
       api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]),
       layer,
     )
-    expect(failure).toMatchObject({ status: 409, code: "NotFastForward" })
+    expect(failure).toMatchObject({ status: 409, code: "NotFastForward", kind: "notFastForward" })
     expect(steps().filter((step) => step === "preview")).toHaveLength(3)
   })
 })

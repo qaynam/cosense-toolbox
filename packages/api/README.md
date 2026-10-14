@@ -10,6 +10,7 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
   `updatePage` でページを書き換える。読んでから書くまでにほかの人が書き換えていたら 3-way merge し、
   同じ行のコンフリクトは既定では `PageConflictError` で止める (`whenConflict: "overwrite"` で上書き)。
 - `createPage` で新しいページを作る。同じタイトルのページがもうあれば、作らずに `PageExistsError` で止める。
+- 失敗は `CosenseApiError` の `kind` で見分ける (`"unauthorized"`、`"tooLarge"` など)。
 - `@cosense-toolbox/cosense-x/fetch` にあった `isCosenseAssetUrl` / `cosenseIconUrl` はここに移し、`fetchAsset` は `createCosenseApi` が返すものに入れた (`api.fetchAsset(url)`)。
 
 ## インストール
@@ -32,7 +33,7 @@ const { pages } = await api.searchFullText("project", "検索する言葉")
 
 - 公開プロジェクトは、`pat` を渡さなくても読める。
 - 無いもの (無いページなど) は `null` で返す。
-- 失敗は `CosenseApiError` で reject する。`status` に HTTP の status (応答が来なかったら `0`)、`code` に応答の `{"error": "..."}` の値が入る。
+- 失敗は `CosenseApiError` で reject する。何が起きたかは `kind` で見分ける。
 
 ```ts
 import { CosenseApiError } from "@cosense-toolbox/api"
@@ -40,9 +41,28 @@ import { CosenseApiError } from "@cosense-toolbox/api"
 try {
   await api.me()
 } catch (error) {
-  if (error instanceof CosenseApiError) console.error(error.status, error.code)
+  if (!(error instanceof CosenseApiError)) throw error
+  if (error.kind === "unauthorized") console.error("PAT が無いか、違う")
+  else console.error(error.kind, error.status, error.code, error.message)
 }
 ```
+
+| `kind`             | いつ                                                                          |
+| :----------------- | :---------------------------------------------------------------------------- |
+| `"unauthorized"`   | 401。PAT が無いか、違う                                                       |
+| `"forbidden"`      | 403。プロジェクトのメンバーでないなど、権限が無い                             |
+| `"notFound"`       | 404。ページやプロジェクトが無い。用意した書き換えの期限 (5 分) が切れたときも |
+| `"tooLarge"`       | 1 回の要求の本文が大きすぎる (下の「1 回に送れるのは 100 KiB まで」)          |
+| `"notFastForward"` | 409。書く前に、ほかの人がページを書き換えた                                   |
+| `"duplicateTitle"` | 409。新しいページを用意してから書くまでに、同じタイトルのページができた       |
+| `"invalidChanges"` | 422。もう無い行を指しているなど、変更を受け付けられない                       |
+| `"rateLimited"`    | 429。要求が多すぎる                                                           |
+| `"serverError"`    | 5xx                                                                           |
+| `"network"`        | 応答が来なかった (DNS や接続の失敗)                                           |
+| `"decode"`         | 2xx だが、本文を読めなかったか、形が合わなかった                              |
+| `"unknown"`        | どれでもない                                                                  |
+
+`status` には HTTP の status (応答が来なかったら `0`)、`code` には応答の本文の `error` か `name` の値 (`"NotFastForward"` や `"NotLoggedInError"` など) が入る。`message` には、Cosense が返した説明も入る。
 
 ## オプション
 
@@ -108,7 +128,7 @@ try {
 - **同じ行の書き換え (コンフリクト):** `whenConflict` に従う。
   - `"error"` (既定): 何も書かずに `PageConflictError` で止める。`conflicts` に両方の文、`merged` に自分の文を残して合わせた結果、`latest` に合わせた先の今のページ (`commitId` と id 付きの行) が入る。
   - `"overwrite"`: 自分の文で上書きする。自分が消した行は、ほかの人が書き換えていても消す。上書きした行は、結果の `overwritten` に入る。
-- 書き換えが続いて書けなければ、3 回試して諦める (`CosenseApiError`、`code: "NotFastForward"`)。
+- 書き換えが続いて書けなければ、3 回試して諦める (`CosenseApiError`、`kind: "notFastForward"`)。
 
 ```ts
 await api.updatePage("project", page, lines, { whenConflict: "overwrite" })
@@ -184,7 +204,7 @@ await api.submitEdit("project", preview.previewId)
 - 足す行の id は `createLineId` で作る (小文字の 16 進数 24 文字)。`computeChanges` の 3 つめの引数で差し替えられる。
 - 既存のページに書くときは、`pagePreview.commitId` が読んだときの `commitId` と同じかを確かめてから `submitEdit` する。確かめずに送ると、読んでから書くまでにほかの人が書いた行を `_update` が上書きすることがある。
 - 新しいページを用意するときに同じタイトルのページがもうあると、Cosense は断らずに、後ろに番号を付けたタイトルで作る。作ったタイトルは `submitEdit` の結果の `page.title` で分かる。
-- 失敗は `CosenseApiError` の `code` で見分ける。ほかの人が先に書き換えたら `"NotFastForward"`、新しいページを用意してから書くまでのあいだに同じタイトルのページができたら `"DuplicateTitle"`。
+- 失敗は `CosenseApiError` の `kind` で見分ける。ほかの人が先に書き換えたら `"notFastForward"`、新しいページを用意してから書くまでのあいだに同じタイトルのページができたら `"duplicateTitle"`。
 
 ## Cosense 上のファイル
 
@@ -209,6 +229,13 @@ const { data, contentType } = await api.fetchAsset("https://scrapbox.io/files/xx
 ### PAT は `origin` にだけ送る
 
 リダイレクトは fetch に任せず、自分で辿る。同じ `origin` へのリダイレクト (名前を変えたページなど) は PAT を付けたまま 3 回まで辿り、別の origin へのリダイレクトは辿らずに失敗する。PAT を付けたまま別のサイトへ送らないため。
+
+### 1 回に送れるのは 100 KiB まで
+
+scrapbox.io は、要求の本文が 100 KiB (102,400 バイト) を超えると断る (`kind: "tooLarge"`)。
+
+- 書き換えでは、変わった行ごとに行の id と文を JSON で送る。1 行ごとに 65 バイトほど上乗せされ、日本語は 1 文字 3 バイトなので、長い行の多いページでは 700 行ほどで超えることがある。
+- `updatePage` と `createPage` は、変更を分けずに 1 回で送る。大きすぎて断られたら、何も書いていない。
 
 ### `searchTitles` は何度も要求することがある
 

@@ -10,6 +10,7 @@ import {
   type UpdatePageOptions,
 } from "./options"
 import {
+  ErrorBodySchema,
   Links1HopResponseSchema,
   Links2HopResponseSchema,
   ListPagesResponseSchema,
@@ -177,16 +178,35 @@ const MAX_ASSET_REDIRECTS = 5
 
 const isRedirect = (status: number): boolean => status >= 300 && status < 400
 
-/** 本文の `{"error": "..."}` の値。JSON でないか、その形でなければ無い。 */
-const errorCodeOf = (body: string): string | undefined => {
-  try {
-    const parsed: unknown = JSON.parse(body)
-    if (typeof parsed === "object" && parsed !== null && "error" in parsed) {
-      return typeof parsed.error === "string" ? parsed.error : undefined
-    }
-  } catch {}
-  return undefined
-}
+/** エラーの文に入れる、本文の文の長さの上限 */
+const DETAIL_LIMIT = 200
+
+/**
+ * 本文が 100 KiB を超えると、scrapbox.io は 413 ではなく 400 で、本文に `request entity too large`
+ * とだけ返す (scrapbox.io で測った)。
+ */
+const TOO_LARGE_BODY = /request entity too large/i
+
+/**
+ * 2xx 以外の応答の本文から、`code` と、エラーの文に足す説明を読む。JSON でない本文は、そのまま
+ * 説明にする。HTML のエラーページは長いだけで読めないので、説明にしない。
+ */
+const errorBodyOf = (
+  body: string,
+): { readonly code: string | undefined; readonly detail: string | undefined } =>
+  pipe(
+    Schema.decodeUnknownOption(ErrorBodySchema)(body),
+    Option.match({
+      onSome: (parsed) => ({ code: parsed.error ?? parsed.name, detail: parsed.message }),
+      onNone: () => {
+        const text = body.trim()
+        return {
+          code: undefined,
+          detail: text === "" || text.startsWith("<") ? undefined : text.slice(0, DETAIL_LIMIT),
+        }
+      },
+    }),
+  )
 
 /**
  * `location` を辿るときのパス。`origin` の外なら辿らない。
@@ -272,12 +292,14 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
           Effect.tryPromise(() => response.text()),
           () => "",
         )
-        const code = errorCodeOf(body)
+        const { code, detail } = errorBodyOf(body)
+        const summary = `HTTP ${response.status} ${response.statusText}`.trim()
         return yield* Effect.fail(
           new CosenseApiError({
             status: response.status,
-            message: `HTTP ${response.status} ${response.statusText}`.trim(),
+            message: detail === undefined ? summary : `${summary}: ${detail}`,
             ...(code === undefined ? {} : { code }),
+            ...(TOO_LARGE_BODY.test(body) ? { kind: "tooLarge" as const } : {}),
           }),
         )
       }
