@@ -99,6 +99,11 @@ describe("読み取り", () => {
     expect(calls[0]?.url).toBe("https://scrapbox.io/api/projects/myproject")
   })
 
+  it("projectDetail() は、Infobox を使うプロジェクトかを返す", async () => {
+    const { layer } = testHttpClient(() => json({ id: "p1", name: "myproject", infobox: true }))
+    expect(await run(api.projectDetail("myproject"), layer)).toMatchObject({ infobox: true })
+  })
+
   it("projectUsers() は、今のメンバーと抜けたメンバーを合わせて返す", async () => {
     const { layer } = testHttpClient(() =>
       json({
@@ -168,11 +173,73 @@ describe("getPage", () => {
         pin: 0,
         pageRank: 0,
         snapshotCount: 0,
+        infoboxDefinition: [],
+        infoboxResult: [],
+        infoboxDisableLinks: [],
       }),
     )
     expect(calls[0]?.url).toBe(
       "https://scrapbox.io/api/pages/v2/myproject/My_Page/?followRename=true",
     )
+  })
+
+  it("Infobox の定義と、本文から抜き出した値と、抜き出しを止めた定義ページを返す", async () => {
+    const { layer } = testHttpClient(() =>
+      json({
+        id: "page1",
+        title: "Tomato Soup",
+        persistent: true,
+        infoboxDefinition: ["Ingredients", "Category\tAnswer one of: soup, salad"],
+        infoboxResult: [
+          {
+            title: "Recipe",
+            infobox: { Ingredients: "tomato\nonion", Category: "soup" },
+            hallucination: false,
+            truncated: true,
+            error: { code: "context_length_exceeded" },
+          },
+        ],
+        infoboxDisableLinks: ["food_log"],
+      }),
+    )
+    const page = await run(api.getPage("myproject", "Tomato Soup"), layer)
+    expect(Option.getOrThrow(page)).toMatchObject({
+      infoboxDefinition: ["Ingredients", "Category\tAnswer one of: soup, salad"],
+      infoboxResult: [
+        {
+          title: "Recipe",
+          infobox: { Ingredients: "tomato\nonion", Category: "soup" },
+          hallucination: false,
+          truncated: true,
+          error: { code: "context_length_exceeded" },
+        },
+      ],
+      infoboxDisableLinks: ["food_log"],
+    })
+  })
+
+  it("抜き出した結果の無い項目は空の値にし、文字列でない値は空文字にする", async () => {
+    const { layer } = testHttpClient(() =>
+      json({
+        id: "page1",
+        title: "Tomato Soup",
+        persistent: true,
+        infoboxResult: [
+          { infobox: { Servings: 2, Tags: ["a"], Note: null, Category: "soup" } },
+          { title: "Food log" },
+        ],
+      }),
+    )
+    const page = await run(api.getPage("myproject", "Tomato Soup"), layer)
+    expect(Option.getOrThrow(page).infoboxResult).toEqual([
+      {
+        title: "",
+        infobox: { Servings: "", Tags: "", Note: "", Category: "soup" },
+        hallucination: false,
+        truncated: false,
+      },
+      { title: "Food log", infobox: {}, hallucination: false, truncated: false },
+    ])
   })
 
   it("タイトルの空白は _ にし、/ は %2F にし、日本語はそのまま送る", async () => {
@@ -263,6 +330,54 @@ describe("relatedPages", () => {
     expect(calls.map((call) => call.url)).toContain(
       "https://scrapbox.io/api/pages/v2/myproject/My_Page/links2hop?nextId=cursor%201",
     )
+  })
+
+  it("関連ページの Infobox も返す", async () => {
+    const { layer } = testHttpClient((url) =>
+      url.endsWith("/links1hop")
+        ? json({
+            links1hop: [
+              {
+                id: "a",
+                title: "Tomato Soup",
+                infoboxResult: [{ title: "Recipe", infobox: { Category: "soup" } }],
+                infoboxDisableLinks: ["food_log"],
+              },
+            ],
+          })
+        : json({ links2hop: [{ id: "b", title: "Recipe", infoboxDefinition: ["Category"] }] }),
+    )
+    const result = await run(api.relatedPages("myproject", "My Page"), layer)
+    expect(result.links1hop[0]).toMatchObject({
+      infoboxDefinition: [],
+      infoboxResult: [{ title: "Recipe", infobox: { Category: "soup" } }],
+      infoboxDisableLinks: ["food_log"],
+    })
+    expect(result.links2hop[0]).toMatchObject({
+      infoboxDefinition: ["Category"],
+      infoboxResult: [],
+      infoboxDisableLinks: [],
+    })
+  })
+})
+
+describe("getInfobox", () => {
+  it("ページの Infobox だけを、ページの id で読む", async () => {
+    const { layer, calls } = testHttpClient(() =>
+      json({
+        infoboxDefinition: [],
+        infoboxResult: [{ title: "Recipe", infobox: { Category: "soup" }, hallucination: true }],
+        infoboxDisableLinks: ["food_log"],
+      }),
+    )
+    expect(await run(api.getInfobox("myproject", "page1"), layer)).toEqual({
+      infoboxDefinition: [],
+      infoboxResult: [
+        { title: "Recipe", infobox: { Category: "soup" }, hallucination: true, truncated: false },
+      ],
+      infoboxDisableLinks: ["food_log"],
+    })
+    expect(calls[0]?.url).toBe("https://scrapbox.io/api/pages/myproject/page1/infobox")
   })
 })
 

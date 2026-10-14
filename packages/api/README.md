@@ -4,6 +4,10 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 
 > **beta**：公開 API はまだ変わりうる。
 
+### 0.1.0-beta.11 の変更
+
+- Infobox を読めるようにした。`getPage` と `relatedPages` の結果に、Infobox の定義と本文から抜き出した値 (`infoboxDefinition` / `infoboxResult` / `infoboxDisableLinks`) を入れ、ページの Infobox だけを読む `getInfobox` を足した。`projectDetail` の結果には、Infobox を使うプロジェクトか (`infobox`) を入れた。
+
 ### 0.1.0-beta.10 の変更
 
 - 最初のバージョン。`createCosenseApi` で、ページ・本文・検索・関連ページ・「AI 用にエクスポート」・履歴などを読み、
@@ -84,6 +88,7 @@ try {
 | `getPage(project, title)`                    | ページの中身 (行ごとの id や書いた人を含む)。無ければ `null`                                     |
 | `getPageText(project, title)`                | ページの本文のテキスト。無ければ `null`                                                          |
 | `relatedPages(project, title)`               | 関連ページ (1 hop と 2 hop)                                                                      |
+| `getInfobox(project, pageId)`                | ページの Infobox。`getPage` の結果にも入っている。下の「Infobox」                                |
 | `exportForAi(project, title, hop, search?)`  | 「AI 用にエクスポート」のテキスト。ページと `hop` 以内のリンク先                                 |
 | `searchFullText(project, query)`             | 本文の全文検索。pageRank の順に 100 件まで                                                       |
 | `searchVector(project, query)`               | タイトルのベクトル検索。使えないプロジェクトでは空の結果                                         |
@@ -205,6 +210,28 @@ await api.submitEdit("project", preview.previewId)
 - 既存のページに書くときは、`pagePreview.commitId` が読んだときの `commitId` と同じかを確かめてから `submitEdit` する。確かめずに送ると、読んでから書くまでにほかの人が書いた行を `_update` が上書きすることがある。
 - 新しいページを用意するときに同じタイトルのページがもうあると、Cosense は断らずに、後ろに番号を付けたタイトルで作る。作ったタイトルは `submitEdit` の結果の `page.title` で分かる。
 - 失敗は `CosenseApiError` の `kind` で見分ける。ほかの人が先に書き換えたら `"notFastForward"`、新しいページを用意してから書くまでのあいだに同じタイトルのページができたら `"duplicateTitle"`。
+
+## Infobox
+
+定義ページ (本文に `table:infobox` か `table:cosense` の表があるページ) にリンクしたページから、Cosense がその表の項目を AI で抜き出す。`getPage` と `relatedPages` の結果に、次の 3 つが入っている。
+
+| 項目                  | 中身                                                                                                        |
+| :-------------------- | :---------------------------------------------------------------------------------------------------------- |
+| `infoboxDefinition`   | 定義ページなら、表の行の文。タブで区切った最初のセルが項目の名前で、残りは抜き出すときの指示                |
+| `infoboxResult`       | 本文から抜き出した値。リンクしている定義ページごとに、そのタイトル (`title`) と `{ 項目の名前: 値 }` を持つ |
+| `infoboxDisableLinks` | このページで抜き出すのを止めた定義ページ。タイトルを小文字にし、空白を `_` にしたもの                       |
+
+```ts
+const page = await api.getPage("project", "Tomato soup")
+for (const { title, infobox } of page?.infoboxResult ?? []) {
+  console.log(title, infobox) // 定義ページのタイトルと、{ 項目の名前: 抜き出した値 }
+}
+```
+
+- 値は Cosense の記法のままで、改行を含むことがある。Cosense Web と同じく、文字列でない値は空文字にする。
+- `hallucination` は、Cosense が値を AI の作り話と判定したとき、`truncated` は、ページが長すぎて終わりのほうから抜き出せなかったときに `true`。Cosense Web はどちらでも値を出す。
+- 定義の表で、最初のセルが `ExcludeTitleLine` の行は項目ではなく、タイトルの行から抜き出さないという設定。
+- 2 hop の関連ページには、抜き出した値 (`infoboxResult`) が入っていない。
 
 ## Cosense 上のファイル
 

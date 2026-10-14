@@ -14,6 +14,7 @@ import type { CosenseApiOptions, ListPagesOptions, UpdatePageOptions } from "../
 import type {
   CreatePageResult,
   FetchedAsset,
+  Infobox,
   Me,
   PageDetail,
   PageSnapshot,
@@ -83,6 +84,8 @@ export interface CosenseApi {
   readonly getPageText: (project: string, title: string) => Promise<string | null>
   /** 関連ページ。1 hop と 2 hop を並べて取り、それぞれ続きのページも辿る。 */
   readonly relatedPages: (project: string, title: string) => Promise<RelatedPages>
+  /** ページの Infobox だけを読む。`getPage` の結果にも同じものが入っている。 */
+  readonly getInfobox: (project: string, pageId: string) => Promise<Infobox>
   /**
    * Cosense の「AI 用にエクスポート」(Smart Context)。ページと、`hop` 以内のリンク先を 1 つの
    * テキストにする。`search` は、関連ページの欄と同じようにリンク先を絞る。
@@ -201,6 +204,7 @@ export const createCosenseApi = (options: CosenseApiOptions = {}): CosenseApi =>
     getPage: (project, title) => orNull(api.getPage(project, title)),
     getPageText: (project, title) => orNull(api.getPageText(project, title)),
     relatedPages: (project, title) => run(api.relatedPages(project, title)),
+    getInfobox: (project, pageId) => run(api.getInfobox(project, pageId)),
     exportForAi: (project, title, hop, search) => run(api.exportForAi(project, title, hop, search)),
     searchFullText: (project, query) => run(api.searchFullText(project, query)),
     searchVector: (project, query) => run(api.searchVector(project, query)),
