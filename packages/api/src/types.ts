@@ -40,6 +40,8 @@ export interface ProjectDetail {
   readonly uploadFileTo: string
   /** 画像を送る Gyazo Teams の名前。Teams でなければ `null` */
   readonly gyazoTeamsName: string | null
+  /** Infobox を使うプロジェクトか (プロジェクトの設定) */
+  readonly infobox: boolean
 }
 
 export interface UserRef {
@@ -82,8 +84,44 @@ export interface PageDetailLine {
   readonly userId: string
 }
 
+/**
+ * Infobox が、1 つの定義ページの項目をページの本文から抜き出した結果。抜き出しは Cosense が AI で行う。
+ */
+export interface InfoboxResult {
+  /** 定義ページのタイトル */
+  readonly title: string
+  /**
+   * 項目の名前と、抜き出した値。値は Cosense の記法のままで、改行を含むことがある。
+   * Cosense Web と同じく、文字列でない値は空文字にする
+   */
+  readonly infobox: Readonly<Record<string, string>>
+  /** 抜き出した値を、Cosense が AI の作り話と判定した。Cosense Web はそれでも出す */
+  readonly hallucination: boolean
+  /** ページが長すぎて、終わりのほうからは抜き出せなかった */
+  readonly truncated: boolean
+  /** 抜き出せなかった。`code` は、ページが長すぎるときの `"context_length_exceeded"` など */
+  readonly error?: { readonly code: string }
+}
+
+/**
+ * ページの Infobox。定義ページ (本文に `table:infobox` か `table:cosense` の表があるページ) にリンクした
+ * ページから、Cosense がその表の項目を抜き出す。
+ */
+export interface Infobox {
+  /**
+   * このページが定義ページなら、その表の行の文 (前後の空白を除いたもの)。タブで区切った最初のセルが
+   * 項目の名前で、残りは抜き出すときの指示。最初のセルが `ExcludeTitleLine` の行は項目ではなく、
+   * タイトルの行から抜き出さないという設定。定義ページでなければ空
+   */
+  readonly infoboxDefinition: readonly string[]
+  /** このページの本文から抜き出した値。リンクしている定義ページごとに 1 つ */
+  readonly infoboxResult: readonly InfoboxResult[]
+  /** このページで抜き出すのを止めた定義ページ。タイトルを小文字にし、空白を `_` にしたもの */
+  readonly infoboxDisableLinks: readonly string[]
+}
+
 /** ページの中身。まだ書かれていないページは、この形にせず無いものとして返す。 */
-export interface PageDetail {
+export interface PageDetail extends Infobox {
   readonly id: string
   readonly title: string
   readonly commitId: string
@@ -108,7 +146,8 @@ export interface PageDetail {
   readonly users?: readonly UserRef[]
 }
 
-export interface RelatedPage {
+/** 関連ページ。2 hop のページには、抜き出した値 (`infoboxResult`) が入っていない (空)。 */
+export interface RelatedPage extends Infobox {
   readonly id: string
   readonly title: string
   readonly titleLc: string
@@ -122,6 +161,22 @@ export interface RelatedPage {
   /** 誰かが最後に開いた日時 */
   readonly accessed: number
   readonly relation?: "outgoing" | "incoming" | "bidirectional"
+}
+
+/** 定義ページの表 (文芸的データベース) の 1 行。 */
+export interface LiterateDatabaseRow {
+  /** 定義ページにリンクしているページ */
+  readonly page: RelatedPage
+  /** 項目の名前と、そのページから抜き出した値。まだ抜き出していなければ空 */
+  readonly infobox: Readonly<Record<string, string>>
+}
+
+/** 定義ページの表 (文芸的データベース)。Cosense Web が定義ページの下に出す表と、同じ行と列。 */
+export interface LiterateDatabase {
+  /** 列にする項目の名前。定義の表の行の、タブで区切った最初のセル。設定の行 (`ExcludeTitleLine`) は除く */
+  readonly fields: readonly string[]
+  /** 定義ページにリンクしていて、抜き出しを止めていないページ。並びは関連ページ (1 hop) の応答のまま */
+  readonly rows: readonly LiterateDatabaseRow[]
 }
 
 export interface RelatedPages {

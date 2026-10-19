@@ -14,6 +14,8 @@ import type { CosenseApiOptions, ListPagesOptions, UpdatePageOptions } from "../
 import type {
   CreatePageResult,
   FetchedAsset,
+  Infobox,
+  LiterateDatabase,
   Me,
   PageDetail,
   PageSnapshot,
@@ -83,6 +85,13 @@ export interface CosenseApi {
   readonly getPageText: (project: string, title: string) => Promise<string | null>
   /** 関連ページ。1 hop と 2 hop を並べて取り、それぞれ続きのページも辿る。 */
   readonly relatedPages: (project: string, title: string) => Promise<RelatedPages>
+  /** ページの Infobox だけを読む。`getPage` の結果にも同じものが入っている。 */
+  readonly getInfobox: (project: string, pageId: string) => Promise<Infobox>
+  /**
+   * 定義ページの表 (文芸的データベース)。Cosense Web が定義ページの下に出す表と、同じ行と列を返す。
+   * 名前を変えたページは、古いタイトルでも今のページの表を返す。ページが無いか、定義ページでなければ `null`。
+   */
+  readonly literateDatabase: (project: string, title: string) => Promise<LiterateDatabase | null>
   /**
    * Cosense の「AI 用にエクスポート」(Smart Context)。ページと、`hop` 以内のリンク先を 1 つの
    * テキストにする。`search` は、関連ページの欄と同じようにリンク先を絞る。
@@ -125,6 +134,32 @@ export interface CosenseApi {
   ) => Promise<{ readonly message: string }>
   /** ページを開いたことを記録する (未読でなくなる)。記録できなくても reject しない。 */
   readonly markAccessed: (project: string, pageId: string) => Promise<void>
+  /**
+   * このページで、定義ページ `definitionTitle` の項目を抜き出すのを止める (Cosense Web の
+   * 「disable extraction」)。定義ページへのリンクはそのままで、定義ページの表 (文芸的データベース) から
+   * このページが外れる。止めた後の、このページの Infobox を返す。
+   */
+  readonly disableInfoboxExtraction: (
+    project: string,
+    pageId: string,
+    definitionTitle: string,
+  ) => Promise<Infobox>
+  /**
+   * 止めた抜き出しを戻す。戻した後の、このページの Infobox を返す。Cosense Web は、戻した後に
+   * `updateInfoboxResult` で抜き出し直す。
+   */
+  readonly enableInfoboxExtraction: (
+    project: string,
+    pageId: string,
+    definitionTitle: string,
+  ) => Promise<Infobox>
+  /**
+   * このページの本文から Infobox を抜き出し直すよう、Cosense に頼む。抜き出した値は `getInfobox` で読む。
+   *
+   * Cosense Web は、定義ページの表を書き換えると、関連ページ (1 hop) のそれぞれにこれを頼む。
+   * `updatePage` で定義ページの表を書き換えたときは、要るなら自分で頼む。
+   */
+  readonly updateInfoboxResult: (project: string, pageId: string) => Promise<void>
   /**
    * Cosense 上のファイル (アップロードした `/files/…` やアイコン) の中身を取ってくる。
    *
@@ -201,6 +236,8 @@ export const createCosenseApi = (options: CosenseApiOptions = {}): CosenseApi =>
     getPage: (project, title) => orNull(api.getPage(project, title)),
     getPageText: (project, title) => orNull(api.getPageText(project, title)),
     relatedPages: (project, title) => run(api.relatedPages(project, title)),
+    getInfobox: (project, pageId) => run(api.getInfobox(project, pageId)),
+    literateDatabase: (project, title) => orNull(api.literateDatabase(project, title)),
     exportForAi: (project, title, hop, search) => run(api.exportForAi(project, title, hop, search)),
     searchFullText: (project, query) => run(api.searchFullText(project, query)),
     searchVector: (project, query) => run(api.searchVector(project, query)),
@@ -212,6 +249,11 @@ export const createCosenseApi = (options: CosenseApiOptions = {}): CosenseApi =>
     submitEdit: (project, previewId) => run(api.submitEdit(project, previewId)),
     replaceLinks: (project, from, to) => run(api.replaceLinks(project, from, to)),
     markAccessed: (project, pageId) => run(api.markAccessed(project, pageId)),
+    disableInfoboxExtraction: (project, pageId, definitionTitle) =>
+      run(api.disableInfoboxExtraction(project, pageId, definitionTitle)),
+    enableInfoboxExtraction: (project, pageId, definitionTitle) =>
+      run(api.enableInfoboxExtraction(project, pageId, definitionTitle)),
+    updateInfoboxResult: (project, pageId) => run(api.updateInfoboxResult(project, pageId)),
     fetchAsset: (url) => run(api.fetchAsset(url)),
     updatePage: (project, base, lines, options) =>
       run(api.updatePage(project, base, lines, options)),

@@ -99,6 +99,11 @@ describe("読み取り", () => {
     expect(calls[0]?.url).toBe("https://scrapbox.io/api/projects/myproject")
   })
 
+  it("projectDetail() は、Infobox を使うプロジェクトかを返す", async () => {
+    const { layer } = testHttpClient(() => json({ id: "p1", name: "myproject", infobox: true }))
+    expect(await run(api.projectDetail("myproject"), layer)).toMatchObject({ infobox: true })
+  })
+
   it("projectUsers() は、今のメンバーと抜けたメンバーを合わせて返す", async () => {
     const { layer } = testHttpClient(() =>
       json({
@@ -168,11 +173,73 @@ describe("getPage", () => {
         pin: 0,
         pageRank: 0,
         snapshotCount: 0,
+        infoboxDefinition: [],
+        infoboxResult: [],
+        infoboxDisableLinks: [],
       }),
     )
     expect(calls[0]?.url).toBe(
       "https://scrapbox.io/api/pages/v2/myproject/My_Page/?followRename=true",
     )
+  })
+
+  it("Infobox の定義と、本文から抜き出した値と、抜き出しを止めた定義ページを返す", async () => {
+    const { layer } = testHttpClient(() =>
+      json({
+        id: "page1",
+        title: "Tomato Soup",
+        persistent: true,
+        infoboxDefinition: ["Ingredients", "Category\tAnswer one of: soup, salad"],
+        infoboxResult: [
+          {
+            title: "Recipe",
+            infobox: { Ingredients: "tomato\nonion", Category: "soup" },
+            hallucination: false,
+            truncated: true,
+            error: { code: "context_length_exceeded" },
+          },
+        ],
+        infoboxDisableLinks: ["food_log"],
+      }),
+    )
+    const page = await run(api.getPage("myproject", "Tomato Soup"), layer)
+    expect(Option.getOrThrow(page)).toMatchObject({
+      infoboxDefinition: ["Ingredients", "Category\tAnswer one of: soup, salad"],
+      infoboxResult: [
+        {
+          title: "Recipe",
+          infobox: { Ingredients: "tomato\nonion", Category: "soup" },
+          hallucination: false,
+          truncated: true,
+          error: { code: "context_length_exceeded" },
+        },
+      ],
+      infoboxDisableLinks: ["food_log"],
+    })
+  })
+
+  it("抜き出した結果の無い項目は空の値にし、文字列でない値は空文字にする", async () => {
+    const { layer } = testHttpClient(() =>
+      json({
+        id: "page1",
+        title: "Tomato Soup",
+        persistent: true,
+        infoboxResult: [
+          { infobox: { Servings: 2, Tags: ["a"], Note: null, Category: "soup" } },
+          { title: "Food log" },
+        ],
+      }),
+    )
+    const page = await run(api.getPage("myproject", "Tomato Soup"), layer)
+    expect(Option.getOrThrow(page).infoboxResult).toEqual([
+      {
+        title: "",
+        infobox: { Servings: "", Tags: "", Note: "", Category: "soup" },
+        hallucination: false,
+        truncated: false,
+      },
+      { title: "Food log", infobox: {}, hallucination: false, truncated: false },
+    ])
   })
 
   it("タイトルの空白は _ にし、/ は %2F にし、日本語はそのまま送る", async () => {
@@ -263,6 +330,224 @@ describe("relatedPages", () => {
     expect(calls.map((call) => call.url)).toContain(
       "https://scrapbox.io/api/pages/v2/myproject/My_Page/links2hop?nextId=cursor%201",
     )
+  })
+
+  it("関連ページの Infobox も返す", async () => {
+    const { layer } = testHttpClient((url) =>
+      url.endsWith("/links1hop")
+        ? json({
+            links1hop: [
+              {
+                id: "a",
+                title: "Tomato Soup",
+                infoboxResult: [{ title: "Recipe", infobox: { Category: "soup" } }],
+                infoboxDisableLinks: ["food_log"],
+              },
+            ],
+          })
+        : json({ links2hop: [{ id: "b", title: "Recipe", infoboxDefinition: ["Category"] }] }),
+    )
+    const result = await run(api.relatedPages("myproject", "My Page"), layer)
+    expect(result.links1hop[0]).toMatchObject({
+      infoboxDefinition: [],
+      infoboxResult: [{ title: "Recipe", infobox: { Category: "soup" } }],
+      infoboxDisableLinks: ["food_log"],
+    })
+    expect(result.links2hop[0]).toMatchObject({
+      infoboxDefinition: ["Category"],
+      infoboxResult: [],
+      infoboxDisableLinks: [],
+    })
+  })
+})
+
+describe("getInfobox", () => {
+  it("ページの Infobox だけを、ページの id で読む", async () => {
+    const { layer, calls } = testHttpClient(() =>
+      json({
+        infoboxDefinition: [],
+        infoboxResult: [{ title: "Recipe", infobox: { Category: "soup" }, hallucination: true }],
+        infoboxDisableLinks: ["food_log"],
+      }),
+    )
+    expect(await run(api.getInfobox("myproject", "page1"), layer)).toEqual({
+      infoboxDefinition: [],
+      infoboxResult: [
+        { title: "Recipe", infobox: { Category: "soup" }, hallucination: true, truncated: false },
+      ],
+      infoboxDisableLinks: ["food_log"],
+    })
+    expect(calls[0]?.url).toBe("https://scrapbox.io/api/pages/myproject/page1/infobox")
+  })
+})
+
+describe("literateDatabase", () => {
+  const definition = {
+    id: "def",
+    title: "Recipe",
+    persistent: true,
+    infoboxDefinition: ["Ingredients", "Category\tAnswer one of: soup, salad", "ExcludeTitleLine"],
+  }
+  const linkingPage = (title: string, extra: object = {}) => ({
+    id: title,
+    title,
+    titleLc: title.toLowerCase().replace(/ /g, "_"),
+    linksLc: ["recipe"],
+    ...extra,
+  })
+  /** 定義ページと、その 1 hop を返す fetch。 */
+  const respondWith =
+    (page: object, links1hop: object[]) =>
+    (url: string): Response =>
+      url.includes("/links1hop") ? json({ links1hop }) : json(page)
+
+  it("列は定義の表の行の最初のセルで、ExcludeTitleLine の行は除く", async () => {
+    const { layer } = testHttpClient(respondWith(definition, []))
+    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    expect(Option.getOrThrow(table).fields).toEqual(["Ingredients", "Category"])
+  })
+
+  it("行は、定義ページにリンクしているページと、そこから抜き出した値", async () => {
+    const { layer } = testHttpClient(
+      respondWith(definition, [
+        linkingPage("Tomato Soup", {
+          infoboxResult: [{ title: "Recipe", infobox: { Category: "soup" } }],
+        }),
+      ]),
+    )
+    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    expect(Option.getOrThrow(table).rows.map((row) => [row.page.title, row.infobox])).toEqual([
+      ["Tomato Soup", { Category: "soup" }],
+    ])
+  })
+
+  it("定義ページからリンクしているだけのページは、行にしない", async () => {
+    const { layer } = testHttpClient(
+      respondWith(definition, [linkingPage("Kitchen", { linksLc: ["cooking"] })]),
+    )
+    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    expect(Option.getOrThrow(table).rows).toEqual([])
+  })
+
+  it("抜き出しを止めたページは、行にしない", async () => {
+    const { layer } = testHttpClient(
+      respondWith(definition, [linkingPage("Food Log", { infoboxDisableLinks: ["recipe"] })]),
+    )
+    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    expect(Option.getOrThrow(table).rows).toEqual([])
+  })
+
+  it("値は、大文字と小文字、空白と _ を区別せずに定義ページのタイトルが合う結果から取る", async () => {
+    const { layer } = testHttpClient(
+      respondWith({ ...definition, title: "Weekly Recipe" }, [
+        linkingPage("Tomato Soup", {
+          linksLc: ["weekly_recipe"],
+          infoboxResult: [
+            { title: "Food Log", infobox: { Category: "lunch" } },
+            { title: "weekly_recipe", infobox: { Category: "soup" } },
+          ],
+        }),
+      ]),
+    )
+    const table = await run(api.literateDatabase("myproject", "Weekly Recipe"), layer)
+    expect(Option.getOrThrow(table).rows[0]?.infobox).toEqual({ Category: "soup" })
+  })
+
+  it("まだ抜き出していないページの値は空", async () => {
+    const { layer } = testHttpClient(respondWith(definition, [linkingPage("Tomato Soup")]))
+    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    expect(Option.getOrThrow(table).rows[0]?.infobox).toEqual({})
+  })
+
+  it("1 hop は、名前を変えた後の今のタイトルで、続きのページも辿って取る", async () => {
+    const { layer, calls } = testHttpClient((url) => {
+      if (url.endsWith("/links1hop")) {
+        return json({
+          links1hop: [linkingPage("Tomato Soup")],
+          pagination: { hasNext: true, nextId: "next" },
+        })
+      }
+      if (url.includes("/links1hop?")) return json({ links1hop: [linkingPage("Green Salad")] })
+      return json(definition)
+    })
+    const table = await run(api.literateDatabase("myproject", "Old Recipe"), layer)
+    expect(Option.getOrThrow(table).rows.map((row) => row.page.title)).toEqual([
+      "Tomato Soup",
+      "Green Salad",
+    ])
+    expect(calls.map((call) => call.url)).toEqual([
+      "https://scrapbox.io/api/pages/v2/myproject/Old_Recipe/?followRename=true",
+      "https://scrapbox.io/api/pages/v2/myproject/Recipe/links1hop",
+      "https://scrapbox.io/api/pages/v2/myproject/Recipe/links1hop?nextId=next",
+    ])
+  })
+
+  it("定義ページでなければ none で、1 hop を取らない", async () => {
+    const { layer, calls } = testHttpClient(
+      respondWith({ ...definition, infoboxDefinition: [] }, []),
+    )
+    expect(await run(api.literateDatabase("myproject", "Recipe"), layer)).toEqual(Option.none())
+    expect(calls).toHaveLength(1)
+  })
+
+  it("ページが無ければ none", async () => {
+    const { layer } = testHttpClient(() => new Response("not found", { status: 404 }))
+    expect(await run(api.literateDatabase("myproject", "Missing"), layer)).toEqual(Option.none())
+  })
+})
+
+describe("Infobox の抜き出し", () => {
+  const infobox = {
+    infoboxDefinition: [],
+    infoboxResult: [{ title: "Recipe", infobox: { Category: "soup" } }],
+    infoboxDisableLinks: ["recipe"],
+  }
+
+  it("disableInfoboxExtraction() は、定義ページのタイトルを止めるものに足し、止めた後の Infobox を返す", async () => {
+    const { layer, calls } = testHttpClient(() => json(infobox))
+    const result = await run(api.disableInfoboxExtraction("myproject", "page1", "Recipe"), layer)
+    expect(result.infoboxDisableLinks).toEqual(["recipe"])
+    expect(calls.map((call) => [call.url, call.init.method, call.init.body])).toEqual([
+      [
+        "https://scrapbox.io/api/pages/myproject/page1/infobox/disable-links",
+        "POST",
+        JSON.stringify({ title: "Recipe", action: "add" }),
+      ],
+    ])
+  })
+
+  it("enableInfoboxExtraction() は、定義ページのタイトルを止めるものから除き、戻した後の Infobox を返す", async () => {
+    const { layer, calls } = testHttpClient(() => json({ ...infobox, infoboxDisableLinks: [] }))
+    const result = await run(api.enableInfoboxExtraction("myproject", "page1", "Recipe"), layer)
+    expect(result.infoboxDisableLinks).toEqual([])
+    expect(calls.map((call) => [call.url, call.init.method, call.init.body])).toEqual([
+      [
+        "https://scrapbox.io/api/pages/myproject/page1/infobox/disable-links",
+        "POST",
+        JSON.stringify({ title: "Recipe", action: "remove" }),
+      ],
+    ])
+  })
+
+  it("updateInfoboxResult() は、抜き出し直すよう POST で頼む", async () => {
+    const { layer, calls } = testHttpClient(() => json({}))
+    await run(api.updateInfoboxResult("myproject", "page1"), layer)
+    expect(calls.map((call) => [call.url, call.init.method])).toEqual([
+      ["https://scrapbox.io/api/pages/myproject/page1/infobox/update-result", "POST"],
+    ])
+  })
+
+  it("updateInfoboxResult() は、応答の本文が JSON でなくても成功する", async () => {
+    const { layer } = testHttpClient(() => new Response("OK"))
+    expect(await run(api.updateInfoboxResult("myproject", "page1"), layer)).toBeUndefined()
+  })
+
+  it("updateInfoboxResult() は、断られたらそのエラーで失敗する", async () => {
+    const { layer } = testHttpClient(() => json({ error: "Forbidden" }, 403))
+    expect(await runFailure(api.updateInfoboxResult("myproject", "page1"), layer)).toMatchObject({
+      status: 403,
+      kind: "forbidden",
+    })
   })
 })
 

@@ -4,10 +4,8 @@ import { computeChanges } from "./changes"
 import { type CosenseApiError, PageExistsError } from "./errors"
 import type { HttpClient } from "./http-client"
 import type { PageOperations } from "./page-operations"
+import { toTitleLc } from "./title"
 import type { CreatePageResult } from "./types"
-
-/** Cosense は、大文字と小文字、空白と `_` だけが違うタイトルを、同じページのものとして扱う。 */
-const titleKey = (title: string): string => title.toLowerCase().replace(/ /g, "_")
 
 /** 読み取りと書き込みの関数から `createPage` を作る。 */
 export const createPageWith =
@@ -27,7 +25,7 @@ export const createPageWith =
         (found): Effect.Effect<A, E | PageExistsError, HttpClient> =>
           pipe(
             found,
-            Option.filter((page) => titleKey(page.title) === titleKey(title)),
+            Option.filter((page) => toTitleLc(page.title) === toTitleLc(title)),
             Option.match({
               onSome: (page) => Effect.fail(new PageExistsError({ page })),
               onNone: () => otherwise,
