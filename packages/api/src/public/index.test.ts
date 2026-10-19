@@ -123,4 +123,11 @@ describe("fetchAsset (Promise)", () => {
       expect.objectContaining({ headers: { "x-personal-access-token": "dummy-secret-pat" } }),
     )
   })
+
+  it("URL として読めない文字列は、CosenseApiError で reject する", async () => {
+    const api = createCosenseApi({ fetch: respond(() => new Response("x")) })
+    const failure = await api.fetchAsset("not a url").catch((error: unknown) => error)
+    expect(failure).toBeInstanceOf(CosenseApiError)
+    expect(failure).toMatchObject({ kind: "invalidUrl" })
+  })
 })
