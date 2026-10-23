@@ -67,14 +67,14 @@ const escapeClassChar = (char: string): string => (/[A-Za-z0-9_-]/.test(char) ? 
 
 /**
  * `cosense-deco-[|]:` の `[...]` に書いた記号の装飾。`toHtml` は装飾を
- * `<span class="decoration deco-|">` のように記号ごとの class で出すので、それを選ぶ。
+ * `<span class="csn-decoration deco-|">` のように記号ごとの class で出すので、それを選ぶ。
  * 記号を並べると (`[-/]`)、それらをすべて持つ装飾に当たる。
  *
  * Tailwind は `[...]` の中の `_` を空白に変える。下線の記号 `_` は `[\_]` と書く (Tailwind の決まり)。
  */
 const decorationOf = (markers: string, className: string): string => {
   const classes = [...new Set(markers)].map((marker) => `.deco-${escapeClassChar(marker)}`).join("")
-  return `& :is(:where(.decoration${classes})${outside(className)})`
+  return `& :is(:where(.csn-decoration${classes})${outside(className)})`
 }
 
 /** Tailwind の型を公開する型定義に書き出せるよう、型を明示する。 */

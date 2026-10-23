@@ -15,7 +15,7 @@ import { compareSpecificity, selectorSpecificity, type Specificity } from "./spe
 export type Declarations = Readonly<Record<string, string | readonly string[]>>
 
 export interface StyleSelector {
-  /** `.page` を除いたセレクタ。`.line[data-indent]` など */
+  /** `.csn-page` を除いたセレクタ。`.csn-line[data-indent]` など */
   readonly body: string
   /** 末尾の擬似要素。`::before` など。無ければ空文字 */
   readonly pseudo: string
@@ -28,16 +28,16 @@ export interface StyleRule {
 }
 
 export interface CosenseStyles {
-  /** `.page` 自身に当てる宣言 */
+  /** `.csn-page` 自身に当てる宣言 */
   readonly root: Declarations
   /**
-   * `.page` の中の要素に当てるルール。元の詳細度の低い順で、同じ詳細度なら style.css に書かれた順。
+   * `.csn-page` の中の要素に当てるルール。元の詳細度の低い順で、同じ詳細度なら style.css に書かれた順。
    * プラグインはどのルールも同じ詳細度にするので、この順が勝ち負けを決める。
    */
   readonly rules: readonly StyleRule[]
 }
 
-const ROOT = ".page"
+const ROOT = ".csn-page"
 
 /** style.css がプラグインに変換できない書き方をしている。 */
 export interface ExtractError {
@@ -69,8 +69,8 @@ const declarationsOf = (rule: Rule): Either.Either<Declarations, ExtractError> =
 }
 
 /**
- * `.page .line[data-indent]::before` を `{ body: '.line[data-indent]', pseudo: '::before' }` にする。
- * `.page` だけなら body は空文字。
+ * `.csn-page .csn-line[data-indent]::before` を `{ body: '.csn-line[data-indent]', pseudo: '::before' }` にする。
+ * `.csn-page` だけなら body は空文字。
  */
 const splitSelector = (
   selector: selectorParser.Selector,
@@ -82,7 +82,7 @@ const splitSelector = (
     return fail(`${text} が ${ROOT} の下にない`)
   }
   if (nodes.length === 1) return Either.right({ body: "", pseudo: "" })
-  // `.page .x` のように子孫として書いたものだけを受け付ける。`.page:hover` や `.page > .x` は
+  // `.csn-page .x` のように子孫として書いたものだけを受け付ける。`.csn-page:hover` や `.csn-page > .x` は
   // プラグインの class を付けた要素との関係が変わってしまうので、変換せずに止める。
   if (combinator?.type !== "combinator" || combinator.value.trim() !== "") {
     return fail(`${text} は「${ROOT} の子孫」として書かれていない`)
@@ -99,7 +99,7 @@ interface RankedRule extends StyleRule {
   readonly specificity: Specificity
 }
 
-/** トップレベルのルールひとつ。`.page` 自身へのルールか、その中の要素へのルールか。 */
+/** トップレベルのルールひとつ。`.csn-page` 自身へのルールか、その中の要素へのルールか。 */
 type TopLevelRule =
   | { readonly _tag: "root"; readonly declarations: Declarations }
   | { readonly _tag: "rules"; readonly rules: readonly RankedRule[] }

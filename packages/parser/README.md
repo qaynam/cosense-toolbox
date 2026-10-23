@@ -15,6 +15,13 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 ### 1.0.0 の変更
 
+- **破壊的変更:** `toHtml` / `toHast` が出す既定の class 名に、すべて `csn-` を付けた (下の表)。
+  今までの `.link` / `.table` / `.title` / `.image` / `.icon` のような接頭辞の無い名前は、DaisyUI・Bootstrap・Bulma などの
+  CSS フレームワークがページ全体に当てる class と同じ名前で、フレームワークの見た目が出力に混ざっていたため。
+  装飾の記号ごとの `deco-*` は Cosense Web の class 名に合わせたものなので変えていない。`data-*` 属性も変わらない。
+  - **移行:** `@cosense-toolbox/style` と `@cosense-toolbox/tailwind` も 1.0.0 で新しい名前に合わせたので、parser と同時に上げる。
+    自分の CSS やテストで既定の class 名を書いていたところは、表のとおりに書き換える (`.page .line` → `.csn-page .csn-line`)。
+    今までの名前のまま出したいときは、`classNames` に表の「今まで」の名前を渡す。
 - `@cosense-toolbox/parser/html` から、hast の要素を組み立てる `h` ([hastscript](https://github.com/syntax-tree/hastscript) の `h`) と、
   hast の型 `Element` / `ElementContent` / `Root` を出すようにした。`handlers` や `extensions` が返す hast を、
   `{ type: "element", tagName, properties: { className: […] }, children }` と手で書かずに `h("kbd", { className: "key" }, node.value)` と書ける。
@@ -24,6 +31,41 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
   `parse` や `./compile` だけを使うバンドルには入らない。
 - **不具合の修正:** 字下げして書いた表 (`table:名前`) の `<table>` に、行と同じく `data-indent` を付けるようにした (深さが 0 なら付けない)。
   今までは字下げの深さが出力から消え、表だけがページの左端に寄っていた。`@cosense-toolbox/style` は、同じ深さの行の本文と同じ位置に表を置く。
+
+既定の class 名の、今までと 1.0.0 の対応:
+
+| `classNames` のキー | 今まで               | 1.0.0                        |
+| :------------------ | :------------------- | :--------------------------- |
+| `page`              | `page`               | `csn-page`                   |
+| `title`             | `title`              | `csn-title`                  |
+| `line`              | `line`               | `csn-line`                   |
+| `quote`             | `quote`              | `csn-quote`                  |
+| `monospace`         | `monospace`          | `csn-monospace`              |
+| `commandPrefix`     | `prefix`             | `csn-command-prefix`         |
+| `commandSpace`      | `space`              | `csn-command-space`          |
+| `command`           | `command`            | `csn-command`                |
+| `codeBlock`         | `code-block`         | `csn-code-block`             |
+| `codeStart`         | `code-start`         | `csn-code-start`             |
+| `codeFilename`      | `code-block-start`   | `csn-code-filename`          |
+| `codeBody`          | `code-body`          | `csn-code-body`              |
+| `codeHighlight`     | `highlight`          | `csn-code-highlight`         |
+| `table`             | `table`              | `csn-table`                  |
+| `indentMark`        | `indent-mark`        | `csn-indent-mark`            |
+| `pad`               | `pad`                | `csn-pad`                    |
+| `dot`               | `dot`                | `csn-dot`                    |
+| `internalLink`      | `link`               | `csn-link`                   |
+| `externalLink`      | `link link-external` | `csn-link csn-link-external` |
+| `projectLink`       | `link link-project`  | `csn-link csn-link-project`  |
+| `hashtag`           | `hashtag`            | `csn-hashtag`                |
+| `inlineCode`        | `code`               | `csn-code`                   |
+| `image`             | `image`              | `csn-image`                  |
+| `video`             | `video`              | `csn-video`                  |
+| `audio`             | `audio`              | `csn-audio`                  |
+| `embed`             | `embed`              | `csn-embed`                  |
+| `location`          | `link link-location` | `csn-link csn-link-location` |
+| `icon`              | `icon`               | `csn-icon`                   |
+| `formula`           | `formula`            | `csn-formula`                |
+| `decoration`        | `decoration`         | `csn-decoration`             |
 
 ### 0.1.0-beta.9 の変更
 
@@ -134,7 +176,7 @@ const page = parse(`今日のメモ
 #あとで読む`)
 
 collectLinks(page) // → ['プロジェクトA', 'あとで読む']
-toHtml(page) // → '<div class="page"><h1 class="title">今日のメモ</h1>…'
+toHtml(page) // → '<div class="csn-page"><h1 class="csn-title">今日のメモ</h1>…'
 ```
 
 ## API

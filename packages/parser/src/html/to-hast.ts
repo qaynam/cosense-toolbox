@@ -121,38 +121,42 @@ export interface HtmlClassNames {
   readonly decoration?: string
 }
 
-/** 既定の class 名。接頭辞を持たないため、利用側の CSS と名前がぶつかりうる。 */
+/**
+ * 既定の class 名。どれも `csn-` で始まる。
+ * CSS フレームワークがページ全体に当てる `.link` / `.table` / `.title` などの class に、出力が巻き込まれないようにするため。
+ * 装飾の記号ごとの `deco-*` は Cosense Web の class 名に合わせたものなので、ここには含めず接頭辞も付けない。
+ */
 export const defaultClassNames: HtmlClassNames = {
-  page: "page",
-  title: "title",
-  line: "line",
-  quote: "quote",
-  monospace: "monospace",
-  commandPrefix: "prefix",
-  commandSpace: "space",
-  command: "command",
-  codeBlock: "code-block",
-  codeStart: "code-start",
-  codeFilename: "code-block-start",
-  codeBody: "code-body",
-  codeHighlight: "highlight",
-  table: "table",
-  indentMark: "indent-mark",
-  pad: "pad",
-  dot: "dot",
-  internalLink: "link",
-  externalLink: "link link-external",
-  projectLink: "link link-project",
-  hashtag: "hashtag",
-  inlineCode: "code",
-  image: "image",
-  video: "video",
-  audio: "audio",
-  embed: "embed",
-  location: "link link-location",
-  icon: "icon",
-  formula: "formula",
-  decoration: "decoration",
+  page: "csn-page",
+  title: "csn-title",
+  line: "csn-line",
+  quote: "csn-quote",
+  monospace: "csn-monospace",
+  commandPrefix: "csn-command-prefix",
+  commandSpace: "csn-command-space",
+  command: "csn-command",
+  codeBlock: "csn-code-block",
+  codeStart: "csn-code-start",
+  codeFilename: "csn-code-filename",
+  codeBody: "csn-code-body",
+  codeHighlight: "csn-code-highlight",
+  table: "csn-table",
+  indentMark: "csn-indent-mark",
+  pad: "csn-pad",
+  dot: "csn-dot",
+  internalLink: "csn-link",
+  externalLink: "csn-link csn-link-external",
+  projectLink: "csn-link csn-link-project",
+  hashtag: "csn-hashtag",
+  inlineCode: "csn-code",
+  image: "csn-image",
+  video: "csn-video",
+  audio: "csn-audio",
+  embed: "csn-embed",
+  location: "csn-link csn-link-location",
+  icon: "csn-icon",
+  formula: "csn-formula",
+  decoration: "csn-decoration",
 }
 
 /**
@@ -176,7 +180,7 @@ export type HastContent = ElementContent | RawNode
  *
  * shiki の `codeToHast` のように `pre > code` を返したときは、code の中身を使い、
  * pre の class と style (テーマの背景色や文字色) をコードブロックの code に移す。
- * 行の要素 (`div.line`) の中に置くので、pre そのものは出さない。
+ * 行の要素 (`div.csn-line`) の中に置くので、pre そのものは出さない。
  */
 export type HastHighlighter = (code: string, language: string) => Root | HastContent[] | null
 

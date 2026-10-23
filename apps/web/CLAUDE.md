@@ -64,7 +64,7 @@ Cosenseの色をポチポチ変えて、疑似Cosense画面で即プレビュー
 - アイコンの SVG は Iconify API の **JSON** から組み立てる（`.svg` を直接取るとブラウザの拡張に止められることがあり、別オリジンの画像は canvas から書き出せなくなるため）
 - フォントは `BADGE_FONTS` の日本語と英語の数種類だけで、どれも Google Fonts から読む（OS のフォントに頼らないので、Windows と macOS で同じ見た目になる）。英語のフォントに無い字はゴシック (Noto Sans JP) で描く
 - canvas に描くのは `src/lib/badge-canvas.ts`。斜体は字体に頼らず座標を傾けて描く（日本語の字体は斜体を持たないことが多い）
-- プレビューは `@cosense-toolbox/style` の `.page img.icon` で、Cosense の行の中と同じ大きさ・位置に出す
+- プレビューは `@cosense-toolbox/style` の `.csn-page img.csn-icon` で、Cosense の行の中と同じ大きさ・位置に出す
 
 ## ディレクトリ構成
 

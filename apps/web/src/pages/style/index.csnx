@@ -29,14 +29,14 @@ code:sh
 code:ts
  import "@cosense-toolbox/style"
 
-CSS を読み込むと、`.page` 以下のタイトル、インデント、コード、表、リンクなどにスタイルが適用されます。
+CSS を読み込むと、`.csn-page` 以下のタイトル、インデント、コード、表、リンクなどにスタイルが適用されます。
 
 <DocHeading level={2} id="scope" title="適用範囲" />
 
-`toHtml(page)` の出力には `.page` のルート要素があるため、そのままスタイルが当たります。`parseLine` など1行だけを描画するときは、自分で `.page` の要素に包んでください。
+`toHtml(page)` の出力には `.csn-page` のルート要素があるため、そのままスタイルが当たります。`parseLine` など1行だけを描画するときは、自分で `.csn-page` の要素に包んでください。
 
 code:html
- <div class="page">
+ <div class="csn-page">
    <!-- toHtml(parseLine("[* 強調]")) の出力 -->
  </div>
 
@@ -57,7 +57,7 @@ Cosense のテーマ変数 (`--page-bg` など) が使える環境では、そ�
 
 <DocHeading level={2} id="details" title="スタイルの注意点" />
 
-すべてのルールは `.page` 以下に限定されています。ただし、表示対象のページ自身が `.page` クラスを使う場合は名前が衝突するため、iframe や Shadow DOM で分離するか、パーサーの `classNames` オプションでクラス名を変えてください。
+パーサーの既定のクラス名はどれも `csn-` で始まるため、DaisyUI や Bootstrap などの CSS フレームワークが使う `.link`、`.table`、`.title` といったクラスとは衝突しません。すべてのルールも `.csn-page` 以下に限定されています。ただし、表示するページの CSS が `a` や `table` などの要素名で当てるスタイルは出力にも当たります。完全に切り離したい場合は、出力を iframe や Shadow DOM に入れてください。
 
 コードブロックに行番号を付けるには、パーサーの `codeLineNumbers()` 描画拡張と組み合わせます。詳しくは [HTML への変換] をご覧ください。
 
