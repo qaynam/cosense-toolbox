@@ -2,7 +2,7 @@ import { Effect, Either, Layer, Option } from "effect"
 import { describe, expect, it } from "vitest"
 
 import { createCosenseApi } from "./api"
-import { PageConflictError, PageExistsError } from "./errors"
+import { CosenseApiError, PageConflictError, PageExistsError } from "./errors"
 import { HttpClient, HttpClientError } from "./http-client"
 
 const PAT = "dummy-secret-pat"
@@ -645,17 +645,43 @@ describe("searchTitles はプロジェクト全体を辿る", () => {
     expect(calls).toHaveLength(1)
   })
 
+  it("ちょうど 10000 件でも、x-following-id が無ければ終わる", async () => {
+    const { layer, calls } = testHttpClient(() => titlePage(10000, null))
+    const titles = await run(api.searchTitles("exact"), layer)
+    expect(titles).toHaveLength(10000)
+    expect(calls).toHaveLength(1)
+  })
+
   it("10000 件に届かなければ、x-following-id があっても終わりとみなす", async () => {
     const { layer, calls } = testHttpClient(() => titlePage(12, "next"))
     await run(api.searchTitles("small"), layer)
     expect(calls).toHaveLength(1)
   })
 
-  it("続きがあると言い続けるサーバーでも、20 回で止まる", async () => {
+  it("件数で切らずに、20 万件を超えても最後まで取る", async () => {
+    let call = 0
+    const { layer } = testHttpClient(() => {
+      call++
+      return call <= 21 ? titlePage(10000, `p${call}`) : titlePage(7, null)
+    })
+    const titles = await run(api.searchTitles("huge"), layer)
+    expect(titles).toHaveLength(210007)
+  })
+
+  it("同じ x-following-id を返し続けるサーバーでは、途中までを返さずに失敗する", async () => {
     const { layer, calls } = testHttpClient(() => titlePage(10000, "again"))
-    const titles = await run(api.searchTitles("endless"), layer)
-    expect(calls).toHaveLength(20)
-    expect(titles).toHaveLength(200000)
+    const failure = await runFailure(api.searchTitles("endless"), layer)
+    expect(failure).toBeInstanceOf(CosenseApiError)
+    expect(failure).toMatchObject({ status: 200 })
+    expect(calls).toHaveLength(2)
+  })
+
+  it("x-following-id が前に辿った位置に戻っても、途中までを返さずに失敗する", async () => {
+    const cursors = ["a", "b", "a"]
+    let call = 0
+    const { layer, calls } = testHttpClient(() => titlePage(10000, cursors[call++] ?? null))
+    expect(await runFailure(api.searchTitles("cycle"), layer)).toBeInstanceOf(CosenseApiError)
+    expect(calls).toHaveLength(3)
   })
 })
 

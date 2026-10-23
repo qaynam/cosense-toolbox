@@ -106,7 +106,12 @@ export interface CosenseApi {
   readonly searchFullText: (project: string, query: string) => Promise<SearchResult>
   /** タイトルのベクトル検索。使えないプロジェクトでは、失敗にせず空の結果を返す。 */
   readonly searchVector: (project: string, query: string) => Promise<VectorResult>
-  /** プロジェクトのすべてのページのタイトルと、そこから出ているリンク。 */
+  /**
+   * プロジェクトのすべてのページのタイトルと、そこから出ているリンク。
+   *
+   * 1 回に 1 万件ずつ、続きが無くなるまで要求する。途中までを返すことはない。Cosense が示す続きの位置が
+   * 前に辿ったところへ戻ったら、終わらないので `CosenseApiError` で失敗する。
+   */
   readonly searchTitles: (project: string) => Promise<readonly TitleEntry[]>
   /** ページの履歴。新しい順で、Cosense が返す最新の 100 件まで。 */
   readonly pageSnapshots: (project: string, pageId: string) => Promise<readonly PageSnapshotEntry[]>

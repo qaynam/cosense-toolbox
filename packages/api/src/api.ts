@@ -104,7 +104,12 @@ export interface CosenseApi {
   readonly searchFullText: (project: string, query: string) => Call<SearchResult>
   /** タイトルのベクトル検索。使えないプロジェクトでは、失敗にせず空の結果を返す。 */
   readonly searchVector: (project: string, query: string) => Call<VectorResult>
-  /** プロジェクトのすべてのページのタイトルと、そこから出ているリンク。 */
+  /**
+   * プロジェクトのすべてのページのタイトルと、そこから出ているリンク。
+   *
+   * 1 回に 1 万件ずつ、続きが無くなるまで要求する。途中までを返すことはない。Cosense が示す続きの位置が
+   * 前に辿ったところへ戻ったら、終わらないので `CosenseApiError` で失敗する。
+   */
   readonly searchTitles: (project: string) => Call<readonly TitleEntry[]>
   /** ページの履歴。新しい順で、Cosense が返す最新の 100 件まで。 */
   readonly pageSnapshots: (project: string, pageId: string) => Call<readonly PageSnapshotEntry[]>
@@ -211,8 +216,6 @@ const FULL_TEXT_SEARCH_LIMIT = 100
 const RELATED_LIMIT = 100_000
 /** `search/titles` が 1 回に返す最大の件数 */
 const TITLES_PER_PAGE = 10_000
-/** `search/titles` を何回まで続けて取るか。続きがあると言い続けるサーバーでも止まるように */
-const MAX_TITLE_PAGES = 20
 /** 同じ origin へのリダイレクトを何回まで辿るか */
 const MAX_REDIRECTS = 3
 /** ファイルを取るときに、リダイレクトを何回まで辿るか */
@@ -507,6 +510,8 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
 
   // 1 回に TITLES_PER_PAGE 件までしか返らず、続きの位置を `x-following-id` で知らせる。
   // 大きいプロジェクトでは最初の回だけで止めると、ほとんどのページを無いものとして扱ってしまう。
+  // 件数の上限で止めても同じく黙って途中までになるので、上限は設けない。続きの位置が前に辿った
+  // ところへ戻ったときだけ、終わらないので失敗にする。
   const searchTitles: CosenseApi["searchTitles"] = (project) => {
     const titlesPage = (followingId: Option.Option<string>) =>
       Effect.flatMap(
@@ -523,6 +528,7 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
               : Effect.map(decode(TitleEntryEnvelopeSchema)(response), (data) => data.pages),
             (titles) => ({
               titles,
+              status: response.status,
               next: Option.fromNullable(response.headers.get("x-following-id")).pipe(
                 Option.filter((id) => id !== ""),
               ),
@@ -532,19 +538,36 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
 
     return pipe(
       Effect.iterate(
-        { titles: [] as TitleEntry[], next: Option.none<string>(), pages: 0, done: false },
+        {
+          titles: [] as TitleEntry[],
+          next: Option.none<string>(),
+          followed: new Set<string>() as ReadonlySet<string>,
+          done: false,
+        },
         {
           while: (state) => !state.done,
           body: (state) =>
-            Effect.map(titlesPage(state.next), ({ titles, next }) => ({
-              titles: [...state.titles, ...titles],
-              next,
-              pages: state.pages + 1,
-              done:
-                Option.isNone(next) ||
-                titles.length < TITLES_PER_PAGE ||
-                state.pages + 1 >= MAX_TITLE_PAGES,
-            })),
+            Effect.flatMap(titlesPage(state.next), ({ titles, status, next }) => {
+              const followed = Option.match(state.next, {
+                onNone: () => state.followed,
+                onSome: (id) => new Set([...state.followed, id]),
+              })
+              const done = Option.isNone(next) || titles.length < TITLES_PER_PAGE
+              if (!done && followed.has(next.value)) {
+                return Effect.fail(
+                  new CosenseApiError({
+                    status,
+                    message: `search/titles went back to a position it had already returned (x-following-id: ${next.value})`,
+                  }),
+                )
+              }
+              return Effect.succeed({
+                titles: [...state.titles, ...titles],
+                next,
+                followed,
+                done,
+              })
+            }),
         },
       ),
       Effect.map((state) => state.titles),

@@ -10,6 +10,7 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 - ページの Infobox の抜き出しを止める `disableInfoboxExtraction` と戻す `enableInfoboxExtraction`、抜き出し直すよう頼む `updateInfoboxResult` を足した。
 - 定義ページの表 (文芸的データベース) を返す `literateDatabase` を足した。
 - `fetchAsset` は、渡した URL もリダイレクト先も http(s) でなければ取りに行かず、`kind: "invalidUrl"` の `CosenseApiError` で失敗するようにした。これまでは `file:` の URL も `file:` へのリダイレクトも取りに行き、Bun では手元のファイルを読んでいた。URL として読めない文字列では、`CosenseApiError` でない例外になっていた。
+- `searchTitles` が 20 万件で黙って途中までを返していたのを直した。件数で止めずに最後まで取り、Cosense が示す続きの位置が前に辿ったところへ戻ったときは `CosenseApiError` で失敗する。
 
 ### 0.1.0-beta.10 の変更
 
@@ -309,7 +310,7 @@ scrapbox.io は、要求の本文が 100 KiB (102,400 バイト) を超えると
 
 ### `searchTitles` は何度も要求することがある
 
-Cosense は 1 回に 10000 件までしか返さないので、大きいプロジェクトでは続きを順に取る。続きがあると言い続けても、20 回 (20 万件) で止める。
+Cosense は 1 回に 10000 件までしか返さないので、大きいプロジェクトでは続きが無くなるまで順に取る。件数の上限は設けず、途中までを返すことはない。Cosense が示す続きの位置が前に辿ったところへ戻ったら、終わらないので `CosenseApiError` で失敗する。
 
 ## effect で使う
 
