@@ -62,6 +62,12 @@ type Call<A> = Effect.Effect<A, CosenseApiError, HttpClient>
 
 /** {@link createCosenseApi} が返すもの。プロジェクトの中のものは `project(name)` から呼ぶ。 */
 export interface CosenseApi {
+  /**
+   * 自分 (PAT の持ち主)。
+   *
+   * PAT が無くても失敗しない。Cosense はゲストとして 200 で `{ "isGuest": true }` を返し、これを
+   * `id` などが空の `Me` にして返す。PAT が使えるかを確かめるなら、`id` が空でないかも見る。
+   */
   readonly getMe: () => Call<Me>
   readonly listProjects: () => Call<readonly ProjectSummary[]>
   /**
