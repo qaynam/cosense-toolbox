@@ -20,6 +20,12 @@ Cosense (旧 Scrapbox) の記法で書いたページを、JSX モジュール�
   既定の class 名に付ける接頭辞で、CSS フレームワークの `.link` などとぶつかるときに使う。
 - 出力の既定の class 名は、parser 1.0.0 に合わせて一部が Cosense Web のエディタと同じ名前に変わる (内部リンクは `page-link`、表は `table-block`、タイトルは `line line-title` など)。
   対応は [parser の README](../parser/README.md#100-の変更) の表のとおり。
+- **破壊的変更:** `renderOptions.handlers` / `renderOptions.extensions` の中の `ctx.options.pageUrl` が、cosense-x が出すのと同じリンク先を返すようになった。
+  - 今までは parser の既定の `/{title}` を返していた。そのため、parser の既定のハンドラ (`defaultHastHandlers.internalLink` など) に任せたハンドラは、`index` / `pageUrl` で決めたのとは違う URL へのリンクを出していた
+  - テキストにするリンク (索引に無いページや、`null` を返した `tagUrl` など) では空文字を返す。parser の既定のハンドラは、href の無い `<a>` を出す
+  - `toHast` の `resolveLink` を渡したときも同じで、`ctx.options.pageUrl` は `resolveLink` が返した href を返す
+  - 今までの `/{title}` が要るハンドラは、`@cosense-toolbox/parser/html` の `defaultPageUrl(title)` を呼ぶ
+- README の誤りを直した。`renderOptions` が parser の `toHast` にそのまま渡るのではないことを[書いた](#描画の設定-renderoptions)。API の表に、載っていなかった関数と型を足した。
 
 ### 0.1.0-beta.10 の変更
 
@@ -180,22 +186,72 @@ graph.twoHop["posts/react.csn"]
 
 ## API
 
-| モジュール                         | API                                                                                                                                                                                               |
-| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@cosense-toolbox/cosense-x`       | `compile` `toHast` `readPage` `createIndex` `createLinkResolver` `parseComponentTag` `parseClosingTag` `findInlineComponents` `splitFrontmatter` `collectMetadata` `normalizeTitle` `titleToSlug` |
-| `@cosense-toolbox/cosense-x/graph` | `scanPages` `buildGraph` `readPage` `createIndex` `normalizeTitle` `titleToSlug`                                                                                                                  |
+`@cosense-toolbox/cosense-x`:
+
+| 用途           | 関数                                                                                  | 型                                                                                                                                                         |
+| :------------- | :------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| コンパイル     | `compile`                                                                             | `CompileOptions` `CompileResult`                                                                                                                           |
+| hast にする    | `toHast` `defaultResolveLink`                                                         | `ToHastOptions` `RenderOptions` `ResolvedLink` `CosenseComponent` `HastHighlighter`                                                                        |
+| ファイルを読む | `readPage` `formatOf` `splitFrontmatter` `collectMetadata`                            | `ReadOptions` `ReadResult` `Format` `Frontmatter` `SplitFrontmatterResult` `CollectMetadataOptions` `PageMetadata`                                         |
+| リンクの解決   | `createIndex` `findByTitle` `createLinkResolver` `defaultPageUrl` `defaultProjectUrl` | `IndexInput` `IndexedPage` `PageIndex` `LinkOptions` `LinkTarget` `UnresolvedLinkPolicy`                                                                   |
+| コンポーネント | `groupComponents` `parseComponentTag` `parseClosingTag` `findInlineComponents`        | `ComponentAttribute` `ComponentAttributeValue` `ComponentBlock` `ComponentTag` `GroupedBlock` `FindInlineComponentsOptions` `InlineComponent` `InlinePart` |
+| タイトル       | `normalizeTitle` `titleToSlug`                                                        |                                                                                                                                                            |
+
+`@cosense-toolbox/cosense-x/graph` (JS の生成を import しない):
+
+| 用途           | 関数                                                                             | 型                                                                         |
+| :------------- | :------------------------------------------------------------------------------- | :------------------------------------------------------------------------- |
+| リンクグラフ   | `scanPages` `buildGraph`                                                         | `Graph` `GraphInput` `GraphPage` `ScanInput` `TwoHopGroup`                 |
+| 本体と同じもの | `readPage` `formatOf` `createIndex` `findByTitle` `normalizeTitle` `titleToSlug` | `ReadOptions` `ReadResult` `Format` `IndexInput` `IndexedPage` `PageIndex` |
 
 `compile` の主なオプション:
 
-| オプション                                                      | 内容                                                                                                                                                                                                         |
-| :-------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `format`                                                        | `'csn'` か `'csnx'`。省くと `filePath` の拡張子で決める                                                                                                                                                      |
-| `jsxImportSource`                                               | JSX ランタイムの読み込み元。既定は `'react'`                                                                                                                                                                 |
-| `elementAttributeNameCase`                                      | `'react'` なら `className`、`'html'` なら `class`。既定は `jsxImportSource` から決める                                                                                                                       |
-| `rehypePlugins`                                                 | hast に当てる rehype プラグイン                                                                                                                                                                              |
-| `index` `filePath` `pageUrl` `tagUrl` `projectUrl` `unresolved` | リンクの解決                                                                                                                                                                                                 |
-| `renderOptions`                                                 | 描画の設定。parser の `toHast` のオプションがそのまま渡る (`extensions` `handlers` `highlight` `classNames` `classPrefix` `showPads` `iconImageUrl`)。加えて `title: false` でタイトル行 (`<h1>`) を出さない |
-| `parseOptions`                                                  | パーサーに渡すオプション (記法の拡張など)                                                                                                                                                                    |
+| オプション                                                      | 内容                                                                                                                                                                                                                                |
+| :-------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `format`                                                        | `'csn'` か `'csnx'`。省くと `filePath` の拡張子で決める                                                                                                                                                                             |
+| `jsxImportSource`                                               | JSX ランタイムの読み込み元。既定は `'react'`                                                                                                                                                                                        |
+| `elementAttributeNameCase`                                      | `'react'` なら `className`、`'html'` なら `class`。既定は `jsxImportSource` から決める                                                                                                                                              |
+| `rehypePlugins`                                                 | hast に当てる rehype プラグイン                                                                                                                                                                                                     |
+| `index` `filePath` `pageUrl` `tagUrl` `projectUrl` `unresolved` | リンクの解決                                                                                                                                                                                                                        |
+| `renderOptions`                                                 | 描画の設定。parser の `toHast` のオプションのうち `extensions` `handlers` `highlight` `classNames` `classPrefix` `showPads` `iconImageUrl` と、タイトル行 (`<h1>`) を出さない `title: false`。[下を参照](#描画の設定-renderoptions) |
+| `parseOptions`                                                  | パーサーに渡すオプション (記法の拡張など)                                                                                                                                                                                           |
+
+### 描画の設定 (`renderOptions`)
+
+`renderOptions` は parser の `toHast` にそのまま渡るのではない。
+
+- リンク先は parser の `pageUrl` ではなく、`index` / `pageUrl` / `tagUrl` / `projectUrl` / `unresolved` で決まる。`renderOptions` には `pageUrl` を書けない
+- `handlers` と `extensions` の中の `ctx.options.pageUrl(title, node)` は、cosense-x が出すリンク先を返す。`title` は使わず、`node` から決める
+  - テキストにするリンクでは空文字を返す。parser の既定のハンドラは、href の無い `<a>` を出す
+  - リンク先を決めるので、`unresolved: 'warn'` / `'error'` の知らせも呼んだときに起きる
+- cosense-x は、`page` / `line` / `internalLink` / `projectLink` / `hashtag` / `icon` (`title: false` なら `title` も) のハンドラを差し替えて、リンクの解決とコンポーネントを足している。
+  `handlers` で同じノード型を渡すと、そちらが勝つ。
+  - `internalLink` / `projectLink` / `hashtag` / `icon` を渡すと、索引に無いページへのリンクをテキストにする処理が無くなる。
+    リンク先は `ctx.options.pageUrl` で読める。それを呼ばなければ、`unresolved: 'warn'` / `'error'` の知らせも起きない
+  - `page` を渡すと `.csnx` の行ごとのコンポーネントが、`line` を渡すと行の途中のコンポーネントが読まれなくなる
+  - `title` を渡すと、`title: false` は効かない
+- 出力に手を加えるだけなら `handlers` ではなく `extensions` を使う。`extensions` は、cosense-x が差し替えたハンドラの出力を受け取る
+
+```ts
+import { compile, createIndex } from "@cosense-toolbox/cosense-x"
+import { defaultHastHandlers } from "@cosense-toolbox/parser/html"
+
+await compile(source, {
+  index: createIndex([{ id: "posts/b.csn", title: "Page B", slug: "page-b" }]),
+  pageUrl: (page) => `/posts/${page.slug}/`,
+  renderOptions: {
+    handlers: {
+      // 既定のハンドラに任せたリンクも、pageUrl で決めた /posts/page-b/ を指す
+      internalLink: (node, ctx) => ({
+        type: "element",
+        tagName: "span",
+        properties: { className: ["ref"] },
+        children: defaultHastHandlers.internalLink(node, ctx),
+      }),
+    },
+  },
+})
+```
 
 ### コードブロックの色付け
 

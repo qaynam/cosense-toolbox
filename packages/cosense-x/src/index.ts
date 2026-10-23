@@ -1,7 +1,7 @@
 /**
  * `@cosense-toolbox/cosense-x` — Cosense の記法を JSX のモジュールにする。MDX の Cosense 版。
  *
- * リンクグラフだけが要るなら `./graph`、Cosense からページを取ってくるなら `./fetch` を使う。
+ * リンクグラフだけが要るなら `./graph` を使う。Cosense からページを取ってくるのは `@cosense-toolbox/api`。
  */
 export { compile } from "./compile"
 export type { CompileOptions, CompileResult } from "./compile"

@@ -73,8 +73,10 @@ export interface AstroCompileOptions extends Omit<
    */
   readonly unresolvedLinks?: "text" | "link"
   /**
-   * 描画の設定。parser の `toHast` のオプションがそのまま渡る
+   * 描画の設定。cosense-x の `compile` の `renderOptions` に渡る
    * (`extensions` / `handlers` / `classNames` / `showPads` / `iconImageUrl` / `title`)。
+   * リンク先は parser の `pageUrl` ではなく、この統合の `pageUrl` / `tagUrl` / `projectUrl` / `unresolvedLinks` で決める。
+   * `handlers` で cosense-x が差し替えるノード型を渡したときの振る舞いは、cosense-x の `ToHastOptions` を参照。
    * コードブロックの色付けは `syntaxHighlight` で決める。
    */
   readonly renderOptions?: AstroRenderOptions
