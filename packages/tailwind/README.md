@@ -10,6 +10,14 @@ Tailwind を使う場合は、`style.css` を別途読み込む必要はあり�
 
 > **beta**：class 名や出力はまだ変わりうる。
 
+### 1.0.0 の変更
+
+- **不具合の修正:** `require` で読むときの型 (`index.d.cts`) を、実際に返るものに合わせた。
+  `require("@cosense-toolbox/tailwind")` はプラグインそのものを返す (`module.exports = cosense`) が、型は `{ default: … }` の形になっていた。
+  そのため、CommonJS の TypeScript で `import cosense = require("@cosense-toolbox/tailwind")` と書くと、`cosense()` が型エラーになっていた。
+  型は `export = cosense` になり、`require` で読んだものをそのまま呼べる。
+  `CosenseTailwindOptions` は ESM の型にだけある。CommonJS で名前が要るときは `NonNullable<Parameters<typeof cosense>[0]>` と書く。
+
 ## インストール
 
 ```sh
