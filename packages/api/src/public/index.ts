@@ -138,7 +138,10 @@ export interface CosenseProjectApi {
    * テキストにする。
    */
   readonly exportForAi: (title: string, options?: ExportForAiOptions) => Promise<string>
-  /** 本文を全文検索する。pageRank の順に 100 件まで。 */
+  /**
+   * 本文を全文検索する。pageRank の順に、最初の 100 件だけを返す。101 件目からは取れない。
+   * 結果の `count` は見つかったページの数で、`pages` の数より多いことがある。
+   */
   readonly searchFullText: (query: string) => Promise<SearchResult>
   /** タイトルのベクトル検索。使えないプロジェクトでは、失敗にせず空の結果を返す。 */
   readonly searchVector: (query: string) => Promise<VectorResult>

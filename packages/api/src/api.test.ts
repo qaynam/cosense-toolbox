@@ -745,6 +745,11 @@ describe("検索", () => {
     )
   })
 
+  it("searchFullText() の count は、返した pages の数ではなく、見つかったページの数のまま返す", async () => {
+    const { layer } = testHttpClient(() => json({ count: 250, pages: [{ id: "a", title: "A" }] }))
+    expect((await run(myproject.searchFullText("hello"), layer)).count).toBe(250)
+  })
+
   it("searchVector() は、ベクトル検索が無効なプロジェクト (490) なら空の結果を返す", async () => {
     const { layer } = testHttpClient(() => new Response("feature disabled", { status: 490 }))
     expect(await run(myproject.searchVector("q"), layer)).toEqual({ pages: [] })
