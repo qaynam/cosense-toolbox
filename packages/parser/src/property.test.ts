@@ -229,7 +229,8 @@ describe("書き出し (toCosenseText)", () => {
         fc.pre(!/[[\]`]/.test(written.join("")))
         expect(stripPositions(parse(toCosenseText(page)))).toEqual(stripPositions(page))
       }),
-      { numRuns: 2000 },
+      // ラベルが `!` の外部リンク。`[! URL]` と書き出すと `!` の装飾として読まれるので、生成に任せず毎回試す。
+      { numRuns: 2000, examples: [["t\n[!https://x.test/a]"]] },
     )
   })
 })
