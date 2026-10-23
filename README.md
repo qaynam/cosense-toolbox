@@ -29,7 +29,7 @@ Cosense (旧 Scrapbox) のもっと楽しく便利に使うためのツールキ
 
 ## 開発ガイド
 
-Bun 1.3 以降と Node.js 20 以降が必要です。
+Bun 1.4.4 以降と Node.js 22.12 以降が必要です。
 
 ```sh
 bun install
