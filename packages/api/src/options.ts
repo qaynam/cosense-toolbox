@@ -51,6 +51,13 @@ export interface ListPagesOptions {
   readonly filterValue?: string
 }
 
+export interface ExportForAiOptions {
+  /** ページから何 hop 先のリンクまで入れるか。 @defaultValue `1` */
+  readonly hop?: 1 | 2
+  /** 関連ページの欄と同じように、リンク先を絞る言葉。前後の空白は除き、空なら絞らない */
+  readonly search?: string
+}
+
 export interface UpdatePageOptions {
   /**
    * 読んでから書くまでに、ほかの人が同じ行を書き換えていたとき (コンフリクト) にどうするか。

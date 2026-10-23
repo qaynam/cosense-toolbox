@@ -11,7 +11,6 @@ import type { CreatePageResult } from "./types"
 export const createPageWith =
   (operations: PageOperations) =>
   (
-    project: string,
     lines: readonly string[],
   ): Effect.Effect<CreatePageResult, CosenseApiError | PageExistsError, HttpClient> => {
     const title = lines[0] ?? ""
@@ -21,7 +20,7 @@ export const createPageWith =
       otherwise: Effect.Effect<A, E, HttpClient>,
     ): Effect.Effect<A, E | CosenseApiError | PageExistsError, HttpClient> =>
       Effect.flatMap(
-        operations.getPage(project, title),
+        operations.getPage(title),
         (found): Effect.Effect<A, E | PageExistsError, HttpClient> =>
           pipe(
             found,
@@ -34,8 +33,8 @@ export const createPageWith =
       )
 
     const create = pipe(
-      operations.previewEdit(project, { changes: computeChanges([], lines) }),
-      Effect.flatMap((preview) => operations.submitEdit(project, preview.previewId)),
+      operations.previewEdit({ changes: computeChanges([], lines) }),
+      Effect.flatMap((preview) => operations.submitEdit(preview.previewId)),
       Effect.map((submit): CreatePageResult => ({
         commitId: submit.commitId,
         title: pipe(
