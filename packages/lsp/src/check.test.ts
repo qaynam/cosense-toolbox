@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 
-import type { Extension } from "@cosense-toolbox/parser/extensions"
+import { type Extension, publicMedia } from "@cosense-toolbox/parser/extensions"
 import { Effect } from "effect"
 import { describe, expect, it } from "vitest"
 
@@ -164,6 +164,18 @@ describe("checkSite", () => {
         roots: [root],
         unresolvedLinks: "error",
         parseOptions: { extensions: [atFormula] },
+      }),
+    )
+    expect(reports).toEqual([])
+  })
+
+  it("reads [:/…] as a file when the parse options say so, without looking for the file", async () => {
+    const root = await site({ "a.csn": "投稿\n[:/images/a.png]" })
+    const reports = await Effect.runPromise(
+      checkSite({
+        roots: [root],
+        unresolvedLinks: "error",
+        parseOptions: { extensions: [publicMedia()] },
       }),
     )
     expect(reports).toEqual([])

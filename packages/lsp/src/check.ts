@@ -179,16 +179,18 @@ const checkPages = (
         parseOptions: withSiteFiles(parseOptions, file.path, mediaRoots),
         frontmatter,
       }
-      const siteFiles = pipe(
+      // Only a site's files are known. Outside one, `[:/…]` may still be a file, read so by
+      // `parseOptions`, but there is nothing to look it up in.
+      const missingFiles = pipe(
         siteOf(file.path, mediaRoots),
         Option.flatMap((root) => Option.fromNullable(sites.get(root))),
-        Option.getOrElse((): ReadonlyArray<string> => []),
+        Option.match({
+          onNone: () => [],
+          onSome: (siteFiles) => missingMediaDiagnostics(file.text, new Set(siteFiles), options),
+        }),
       )
       return pipe(
-        [
-          ...unresolvedLinkDiagnostics(index, file.text, options),
-          ...missingMediaDiagnostics(file.text, new Set(siteFiles), options),
-        ],
+        [...unresolvedLinkDiagnostics(index, file.text, options), ...missingFiles],
         Arr.map(reportOf(file)),
         Arr.sort(byPosition),
       )
