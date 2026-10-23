@@ -30,7 +30,8 @@ const routeSegmentsOf = (pathInPages: string): string[] => {
 
 export const defaultPageUrlFor = (config: PageUrlConfig): ((page: LinkTarget) => string) => {
   const base = config.base.replace(/\/$/, "")
-  const pagesDir = `${idOf(fileURLToPath(config.root), fileURLToPath(new URL("pages/", config.srcDir)))}/`
+  const pagesDir = fileURLToPath(new URL("pages/", config.srcDir))
+  const pagesPrefix = `${idOf(fileURLToPath(config.root), pagesDir)}/`
   const slash = appendsSlash(config) ? "/" : ""
 
   const routeUrl = (pathInPages: string): string => {
@@ -41,10 +42,10 @@ export const defaultPageUrlFor = (config: PageUrlConfig): ((page: LinkTarget) =>
   return (page) =>
     pipe(
       Option.fromNullable(page.id),
-      Option.filter((id) => id.startsWith(pagesDir)),
+      Option.filter((id) => id.startsWith(pagesPrefix)),
       Option.match({
         onNone: () => `${base}${defaultPageUrl(page)}`,
-        onSome: (id) => routeUrl(id.slice(pagesDir.length)),
+        onSome: (id) => routeUrl(id.slice(pagesPrefix.length)),
       }),
     )
 }
