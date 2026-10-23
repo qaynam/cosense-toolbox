@@ -100,7 +100,12 @@ export interface CosenseProjectApi {
   readonly getPage: (title: string) => Call<Option.Option<PageDetail>>
   /** ページの本文をテキストのまま返す。1 行目がタイトル。無いページは `none`。 */
   readonly getPageText: (title: string) => Call<Option.Option<string>>
-  /** 関連ページ。1 hop と 2 hop を並べて取り、それぞれ続きのページも辿る。 */
+  /**
+   * 関連ページ。1 hop と 2 hop を並べて取り、それぞれ続きのページも辿る。
+   *
+   * 続きが無くなるまで要求する。件数では止めず、途中までを返すことはない。Cosense が示す続きの位置が
+   * 前に辿ったところへ戻ったら、終わらないので `CosenseApiError` で失敗する。
+   */
   readonly getRelatedPages: (title: string) => Call<RelatedPages>
   /** ページの Infobox だけを読む。`getPage` の結果にも同じものが入っている。 */
   readonly getInfobox: (pageId: string) => Call<Infobox>
@@ -216,8 +221,6 @@ const projectSegmentOf = (name: string): string => {
 const NOT_FOUND = 404
 const VECTOR_SEARCH_DISABLED = 490
 const FULL_TEXT_SEARCH_LIMIT = 100
-/** 関連ページを 1 つの hop で何件まで辿るか。Cosense Web がページ送りをやめる数 */
-const RELATED_LIMIT = 100_000
 /** `search/titles` が 1 回に返す最大の件数 */
 const TITLES_PER_PAGE = 10_000
 /** 同じ origin へのリダイレクトを何回まで辿るか */
@@ -412,39 +415,57 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
   const get = <A, I>(path: string, schema: Schema.Schema<A, I>): Call<A> =>
     Effect.flatMap(request(path), decode(schema))
 
-  // 1 つの hop のページを、続きが無くなるか RELATED_LIMIT に届くまで順に取る。
-  // 最初の要求にはクエリを付けない (サーバーは最初のページを返す)。
+  // 1 つの hop のページを、続きが無くなるまで順に取る。最初の要求にはクエリを付けない (サーバーは
+  // 最初のページを返す)。件数の上限で止めると黙って途中までになるので、上限は設けない。続きの位置が
+  // 前に辿ったところへ戻ったときだけ、終わらないので失敗にする。
   const allOf = <A extends { readonly pagination: { hasNext: boolean; nextId: string | null } }, I>(
     base: string,
     hop: "links1hop" | "links2hop",
     schema: Schema.Schema<A, I>,
-    count: (response: A) => number,
   ): Call<A[]> =>
     pipe(
       Effect.iterate(
-        { responses: [] as A[], nextId: Option.none<string>(), total: 0, done: false },
+        {
+          responses: [] as A[],
+          nextId: Option.none<string>(),
+          followed: new Set<string>() as ReadonlySet<string>,
+          done: false,
+        },
         {
           while: (state) => !state.done,
           body: (state) =>
-            Effect.map(
-              get(
+            Effect.flatMap(
+              request(
                 Option.match(state.nextId, {
                   onNone: () => `${base}/${hop}`,
                   onSome: (nextId) => `${base}/${hop}?nextId=${encodeURIComponent(nextId)}`,
                 }),
-                schema,
               ),
-              (response) => {
-                const total = state.total + count(response)
-                const nextId = Option.fromNullable(response.pagination.nextId)
-                return {
-                  responses: [...state.responses, response],
-                  nextId,
-                  total,
-                  done:
-                    !response.pagination.hasNext || Option.isNone(nextId) || total >= RELATED_LIMIT,
-                }
-              },
+              (response) =>
+                Effect.flatMap(decode(schema)(response), (data) => {
+                  const followed = Option.match(state.nextId, {
+                    onNone: () => state.followed,
+                    onSome: (id) => new Set([...state.followed, id]),
+                  })
+                  const nextId = pipe(
+                    Option.fromNullable(data.pagination.nextId),
+                    Option.filter(() => data.pagination.hasNext),
+                  )
+                  if (Option.isSome(nextId) && followed.has(nextId.value)) {
+                    return Effect.fail(
+                      new CosenseApiError({
+                        status: response.status,
+                        message: `${hop} went back to a position it had already returned (nextId: ${nextId.value})`,
+                      }),
+                    )
+                  }
+                  return Effect.succeed({
+                    responses: [...state.responses, data],
+                    nextId,
+                    followed,
+                    done: Option.isNone(nextId),
+                  })
+                }),
             ),
         },
       ),
@@ -526,14 +547,8 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
       `/api/pages/v2/${segment}/${encodeTitleForUrl(title)}`
 
     const links1hopOf = (title: string): Call<RelatedPage[]> =>
-      Effect.map(
-        allOf(
-          relatedBaseOf(title),
-          "links1hop",
-          Links1HopResponseSchema,
-          (response) => response.links1hop.length,
-        ),
-        (responses) => responses.flatMap((response) => response.links1hop),
+      Effect.map(allOf(relatedBaseOf(title), "links1hop", Links1HopResponseSchema), (responses) =>
+        responses.flatMap((response) => response.links1hop),
       )
 
     // 抜き出しを止めた定義ページの一覧 (`infoboxDisableLinks`) に、足す (`"add"`) と止まり、除く (`"remove"`) と戻る。
@@ -691,18 +706,8 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
         return Effect.map(
           Effect.all(
             [
-              allOf(
-                base,
-                "links1hop",
-                Links1HopResponseSchema,
-                (response) => response.links1hop.length,
-              ),
-              allOf(
-                base,
-                "links2hop",
-                Links2HopResponseSchema,
-                (response) => response.links2hop.length,
-              ),
+              allOf(base, "links1hop", Links1HopResponseSchema),
+              allOf(base, "links2hop", Links2HopResponseSchema),
             ],
             { concurrency: "unbounded" },
           ),
