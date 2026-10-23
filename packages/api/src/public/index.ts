@@ -222,6 +222,8 @@ const runOrReject = <A, E>(effect: Effect.Effect<A, E>): Promise<A> =>
 /**
  * Cosense の API を呼ぶ関数をまとめて作る。
  *
+ * @throws TypeError - `origin` が http(s) の origin でないとき
+ *
  * @example
  * ```ts
  * const api = createCosenseApi({ pat: process.env.COSENSE_PAT })

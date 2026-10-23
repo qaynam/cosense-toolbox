@@ -6,6 +6,7 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 
 ### 1.0.0 の変更
 
+- **破壊的変更:** `origin` が http(s) の origin でなければ (URL として読めない文字列や、パスの付いたもの)、`createCosenseApi` と `isCosenseAssetUrl`、`cosenseIconUrl` が `TypeError` を投げるようにした。後ろの `/` は除いて使う。これまでは `https://scrapbox.io/` を渡すと `https://scrapbox.io//api/…` に送り、`isCosenseAssetUrl` はどの URL も Cosense 上のファイルとしなかった。
 - Infobox を読めるようにした。`getPage` と `relatedPages` の結果に、Infobox の定義と本文から抜き出した値 (`infoboxDefinition` / `infoboxResult` / `infoboxDisableLinks`) を入れ、ページの Infobox だけを読む `getInfobox` を足した。`projectDetail` の結果には、Infobox を使うプロジェクトか (`infobox`) を入れた。
 - ページの Infobox の抜き出しを止める `disableInfoboxExtraction` と戻す `enableInfoboxExtraction`、抜き出し直すよう頼む `updateInfoboxResult` を足した。
 - 定義ページの表 (文芸的データベース) を返す `literateDatabase` を足した。
@@ -81,7 +82,7 @@ try {
 | オプション | 意味                                                                                  |
 | :--------- | :------------------------------------------------------------------------------------ |
 | `pat`      | Cosense の Personal Access Token。非公開プロジェクトを読むときに渡す                  |
-| `origin`   | API の origin。既定は `https://scrapbox.io`                                           |
+| `origin`   | API の origin。既定は `https://scrapbox.io`。下の「`origin` には origin だけを渡す」  |
 | `fetch`    | 要求を送る fetch。テストや、キャッシュを挟みたいときに渡す。既定は `globalThis.fetch` |
 
 ## 呼べるもの
@@ -299,6 +300,10 @@ const { data, contentType } = await api.fetchAsset("https://scrapbox.io/files/xx
 - 渡した URL もリダイレクト先も、http(s) でなければ取りに行かない (`kind: "invalidUrl"`)。Bun の fetch は `file:` の URL も読むので、ページに書かれた画像の URL から手元のファイルを読まないように。
 
 ## 気をつけること
+
+### `origin` には origin だけを渡す
+
+`origin` は `https://scrapbox.io` のような http(s) の origin で、後ろの `/` は付けても付けなくてもよい。URL として読めない文字列や、http(s) でないもの、パスやクエリの付いたものを渡すと、`createCosenseApi` は作るときに `TypeError` を投げる (`isCosenseAssetUrl` と `cosenseIconUrl` も同じ)。
 
 ### PAT は `origin` にだけ送る
 

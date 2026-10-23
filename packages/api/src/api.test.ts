@@ -71,6 +71,31 @@ describe("認証", () => {
     await run(createCosenseApi({ origin: "https://cosense.example" }).me(), layer)
     expect(calls[0]?.url).toBe("https://cosense.example/api/users/me")
   })
+
+  it("origin の後ろに / があっても、/ を重ねずに送る", async () => {
+    const { layer, calls } = testHttpClient(() => json({ id: "u1" }))
+    await run(createCosenseApi({ origin: "https://cosense.example/" }).me(), layer)
+    expect(calls[0]?.url).toBe("https://cosense.example/api/users/me")
+  })
+
+  it("origin は http でもよい", async () => {
+    const { layer, calls } = testHttpClient(() => json({ id: "u1" }))
+    await run(createCosenseApi({ origin: "http://localhost:8787" }).me(), layer)
+    expect(calls[0]?.url).toBe("http://localhost:8787/api/users/me")
+  })
+
+  it("origin が URL として読めなければ、作るときに、その値を示す TypeError を投げる", () => {
+    expect(() => createCosenseApi({ origin: "cosense.example" })).toThrow(TypeError)
+    expect(() => createCosenseApi({ origin: "cosense.example" })).toThrow("cosense.example")
+  })
+
+  it("origin が http(s) でなければ、作るときに TypeError を投げる", () => {
+    expect(() => createCosenseApi({ origin: "wss://cosense.example" })).toThrow(TypeError)
+  })
+
+  it("origin にパスが付いていれば、作るときに TypeError を投げる", () => {
+    expect(() => createCosenseApi({ origin: "https://cosense.example/api" })).toThrow(TypeError)
+  })
 })
 
 describe("プロジェクト名", () => {

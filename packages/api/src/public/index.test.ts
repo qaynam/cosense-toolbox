@@ -53,6 +53,10 @@ describe("createCosenseApi (Promise)", () => {
     expect(reject).not.toHaveBeenCalled()
   })
 
+  it("origin が http(s) の origin でなければ、作るときに TypeError を投げる", () => {
+    expect(() => createCosenseApi({ origin: "not a url" })).toThrow(TypeError)
+  })
+
   it("fetch を渡さなければ、呼んだときの globalThis.fetch で送る", async () => {
     const api = createCosenseApi()
     const fetch = vi.fn(respond(() => json({ id: "u1" })))

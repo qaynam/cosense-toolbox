@@ -6,8 +6,8 @@ import { HttpClient } from "./http-client"
 import { literateDatabaseOf } from "./literate-database"
 import {
   type CosenseApiConfig,
-  DEFAULT_ORIGIN,
   type ListPagesOptions,
+  originOf,
   type UpdatePageOptions,
 } from "./options"
 import {
@@ -269,7 +269,7 @@ const errorBodyOf = (
 const sameOriginPath = (origin: string, location: string): Option.Option<string> => {
   try {
     const resolved = new URL(location, origin)
-    return resolved.origin === new URL(origin).origin
+    return resolved.origin === origin
       ? Option.some(`${resolved.pathname}${resolved.search}`)
       : Option.none()
   } catch {
@@ -299,9 +299,13 @@ const notFoundAsNone = <A>(effect: Call<A>): Call<Option.Option<A>> =>
     ),
   )
 
-/** API を呼ぶ関数をまとめて作る。どれも、要求を送る `HttpClient` が要る。 */
+/**
+ * API を呼ぶ関数をまとめて作る。どれも、要求を送る `HttpClient` が要る。
+ *
+ * @throws TypeError - `origin` が http(s) の origin でないとき
+ */
 export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
-  const origin = config.origin ?? DEFAULT_ORIGIN
+  const origin = originOf(config.origin)
 
   const headersFor = (hasBody: boolean): Record<string, string> => ({
     ...(config.pat === undefined ? {} : { "x-personal-access-token": config.pat }),
@@ -788,7 +792,7 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
           const response = yield* pipe(
             client.fetch(current.href, {
               redirect: "manual",
-              headers: current.origin === new URL(origin).origin ? headersFor(false) : {},
+              headers: current.origin === origin ? headersFor(false) : {},
             }),
             Effect.mapError(
               (error) =>
