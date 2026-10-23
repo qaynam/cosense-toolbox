@@ -150,7 +150,7 @@ code:ts
 
 ページ全体は `<div class="page">` で包まれます。1行目は `<h1 class="title">`、通常行は `.line`、引用行は `<blockquote>` になります。字下げの深さは `.line[data-indent]` で表します。
 
-コードブロックの各行はそれぞれ要素になり、表は `<table class="table">` になります。装飾は `.decoration` と記号ごとの `deco-*` class で区別します。
+コードブロックの各行はそれぞれ要素になり、表は `<table class="table">` になります。字下げした表にも、行と同じく `data-indent` が付きます。装飾は `.decoration` と記号ごとの `deco-*` class で区別します。
 
 <DocHeading level={2} id="safety" title="エスケープと URL の検査" />
 

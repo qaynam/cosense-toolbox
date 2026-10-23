@@ -22,6 +22,8 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
   hastscript や `@types/hast` を別に入れなくてよい。
 - 依存に `hastscript` を足した。`hast-util-to-html` がすでに使っている部品の上に増えるのは `hast-util-parse-selector` だけで、
   `parse` や `./compile` だけを使うバンドルには入らない。
+- **不具合の修正:** 字下げして書いた表 (`table:名前`) の `<table>` に、行と同じく `data-indent` を付けるようにした (深さが 0 なら付けない)。
+  今までは字下げの深さが出力から消え、表だけがページの左端に寄っていた。`@cosense-toolbox/style` は、同じ深さの行の本文と同じ位置に表を置く。
 
 ### 0.1.0-beta.9 の変更
 
