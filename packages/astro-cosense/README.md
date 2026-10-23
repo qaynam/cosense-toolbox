@@ -7,6 +7,20 @@ Cosense (旧 Scrapbox) の記法で書いた `.csn` / `.csnx` を、Astro のペ
 
 > **beta**：公開 API はまだ変わりうる。
 
+### 1.0.0 の変更
+
+- **破壊的変更:** `pageUrl` を渡さないときのリンク先を変えた。
+  今までは、どのページへのリンクも cosense-x の既定の `/{slug}` で、サイトの `base` が付かず、`src/pages` のページの URL とも合わなかった。
+  - `src/pages` (正しくは `srcDir` の下の `pages`) のページへは、Astro がそのファイルを出す URL にする。
+    `src/pages/a/b.csnx` なら `{base}/a/b/`、`src/pages/a/index.csnx` なら `{base}/a/`。[下を参照](#リンク先)
+  - それ以外のページ (content collection など) へは `{base}/{slug}`。`base` が無いサイトでは今までと同じ
+  - `pageUrl` を渡しているサイトは変わらない
+  - 今までどおり `/{slug}` にしたいときは、`` pageUrl: (page) => `/${encodeURIComponent(page.slug)}` `` を渡す
+  - `src/pages` のページの URL をファイルのパスから組み立てていた `pageUrl` は、消せることがある。同じ URL になるかは、ビルドした HTML のリンクを比べて確かめる
+- **破壊的変更:** `renderOptions.handlers` / `renderOptions.extensions` の中の `ctx.options.pageUrl` が、この統合が出すのと同じリンク先を返すようになった (cosense-x の変更)。
+  今までは parser の既定の `/{title}` を返していた。それが要るハンドラは、`@cosense-toolbox/parser/html` の `defaultPageUrl(title)` を呼ぶ。
+- README の誤りを直した。`renderOptions` が parser の `toHast` にそのまま渡るのではないこと、レイアウトに `file` も渡ること、`pageUrl` の `id` が null になりうることを書いた。
+
 ### 0.1.0-beta.10 の変更
 
 - Cosense のファイルを取るのに、`@cosense-toolbox/cosense-x/fetch` ではなく `@cosense-toolbox/api` を使うようになった。
@@ -43,20 +57,47 @@ export default defineConfig({
 })
 ```
 
-| オプション            | 内容                                                                                                                                                                                                                    |
-| :-------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `components`          | すべてのページに渡すコンポーネントを default export するモジュールの、プロジェクトのルートからのパス                                                                                                                    |
-| `pageUrl`             | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパス                                                                                                                         |
-| `tagUrl` `projectUrl` | `compile` の同名のオプションと同じ                                                                                                                                                                                      |
-| `unresolvedLinks`     | サイトに無いページへのリンクの出し方。`'text'` (既定) はテキスト、`'link'` はタイトルから作った URL へのリンクにする                                                                                                    |
-| `lint`                | ビルドの前にリンク切れを調べる。`{ unresolvedLinks?, frontmatter? }`。省略すると調べない。[下を参照](#リンク切れを調べる)                                                                                               |
-| `publicMedia`         | サイトに置いたファイルを `[:/images/a.png]` で画像・動画・音声として読む (parser の `publicMedia`)。パスの前に `base` が付く。`false` で無効。既定は有効                                                                |
-| `parseOptions`        | パースの設定。parser の `parse` のオプション (`extensions` など) がそのまま渡る                                                                                                                                         |
-| `renderOptions`       | 描画の設定。parser の `toHast` のオプション (`extensions` `handlers` `classNames` `showPads` `iconImageUrl`) と `title` がそのまま渡る。色付けは `syntaxHighlight` で決める                                             |
-| `rehypePlugins`       | `compile` の同名のオプションと同じ                                                                                                                                                                                      |
-| `syntaxHighlight`     | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け)                                                                      |
-| `assets`              | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効                                                                                      |
-| `gyazoVideo`          | 拡張子の無い Gyazo の URL が動画だったときの出し方。既定の `'gif'` は通信せず `/raw` の画像 (録画は動く gif)。`'video'` / `'embed'` はビルド時に oEmbed で聞き、動画なら `<video>` / Gyazo のプレーヤーの埋め込みにする |
+| オプション            | 内容                                                                                                                                                                                                                                                                                        |
+| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `components`          | すべてのページに渡すコンポーネントを default export するモジュールの、プロジェクトのルートからのパス                                                                                                                                                                                        |
+| `pageUrl`             | リンク先のページの URL。`{ id, title, slug }` を受け取る。`id` はプロジェクトのルートからのパスで、サイトに無いページ (`unresolvedLinks: 'link'`) では `null`。返した URL をそのまま使う (`base` は付けない)。省いたときは[下を参照](#リンク先)                                             |
+| `tagUrl` `projectUrl` | `compile` の同名のオプションと同じ                                                                                                                                                                                                                                                          |
+| `unresolvedLinks`     | サイトに無いページへのリンクの出し方。`'text'` (既定) はテキスト、`'link'` はタイトルから作った URL へのリンクにする                                                                                                                                                                        |
+| `lint`                | ビルドの前にリンク切れを調べる。`{ unresolvedLinks?, frontmatter? }`。省略すると調べない。[下を参照](#リンク切れを調べる)                                                                                                                                                                   |
+| `publicMedia`         | サイトに置いたファイルを `[:/images/a.png]` で画像・動画・音声として読む (parser の `publicMedia`)。パスの前に `base` が付く。`false` で無効。既定は有効                                                                                                                                    |
+| `parseOptions`        | パースの設定。parser の `parse` のオプション (`extensions` など) がそのまま渡る                                                                                                                                                                                                             |
+| `renderOptions`       | 描画の設定。cosense-x の `compile` の `renderOptions` に渡る (`extensions` `handlers` `classNames` `showPads` `iconImageUrl` `title`)。リンク先と、`handlers` で cosense-x のハンドラを上書きしたときの振る舞いは[下を参照](#描画の設定-renderoptions)。色付けは `syntaxHighlight` で決める |
+| `rehypePlugins`       | `compile` の同名のオプションと同じ                                                                                                                                                                                                                                                          |
+| `syntaxHighlight`     | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け)                                                                                                                                          |
+| `assets`              | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効                                                                                                                                                          |
+| `gyazoVideo`          | 拡張子の無い Gyazo の URL が動画だったときの出し方。既定の `'gif'` は通信せず `/raw` の画像 (録画は動く gif)。`'video'` / `'embed'` はビルド時に oEmbed で聞き、動画なら `<video>` / Gyazo のプレーヤーの埋め込みにする                                                                     |
+
+## リンク先
+
+`[ページ名]` と `#タグ` のリンク先は、`pageUrl` を渡さなければ次のようになる。サイトに `base` があれば、その下を指す。
+
+| リンク先のページ                                   | URL                                                                                 |
+| :------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| `src/pages/a/b.csnx`                               | `{base}/a/b/`                                                                       |
+| `src/pages/a/index.csnx`                           | `{base}/a/`                                                                         |
+| `src/pages/index.csnx`                             | `{base}/`                                                                           |
+| `src/pages` の外のページ (content collection など) | `{base}/{slug}`。`slug` は frontmatter の `slug`、無ければ 1 行目のタイトルから作る |
+
+- `src/pages` のページは、Astro がそのファイルを配信する URL にする。`src/pages` は正しくは `srcDir` の下の `pages`
+- URL の末尾の `/` は、Astro がビルドしたページの一覧 (sitemap などが使う) と同じ規則で、`trailingSlash` と `build.format` から決める。
+  `trailingSlash: 'always'` なら付け、`'never'` なら付けない。`'ignore'` (既定) なら、`build.format` が `'directory'` (既定) のときだけ付ける
+- `src/pages` の外のページの URL は、ルーティングを書いた利用者にしか分からない。content collection の記事を `/posts/{slug}/` などで出すなら、`pageUrl` を渡す
+
+`pageUrl` を渡すと、すべてのページへのリンクがその URL になる。返した URL をそのまま使うので、`base` は自分で付ける。
+
+## 描画の設定 (`renderOptions`)
+
+`renderOptions` は cosense-x の `compile` に渡る。parser の `toHast` のオプションがそのまま渡るのではない。
+
+- リンク先は parser の `pageUrl` ではなく、この統合の `pageUrl` / `tagUrl` / `projectUrl` / `unresolvedLinks` で決まる。
+  `handlers` の中の `ctx.options.pageUrl(title, node)` も、そうして決めた URL を返す (テキストにするリンクでは空文字)
+- cosense-x は、`page` / `line` / `internalLink` / `projectLink` / `hashtag` / `icon` (`title: false` なら `title` も) のハンドラを差し替えて、リンクの解決とコンポーネントを足している。
+  `handlers` で同じノード型を渡すと、そちらが勝つ。詳しくは [cosense-x の README](../cosense-x#描画の設定-renderoptions)
 
 ## リンク切れを調べる
 
@@ -281,8 +322,9 @@ const { Content } = await render(post)
 ## ページ
 
 `src/pages` に `.csn` / `.csnx` を置くと、そのままページになる。
+ほかのページからの `[リンク]` は、`pageUrl` を渡さなければそのページの URL を指す ([リンク先](#リンク先))。
 frontmatter の `layout` にレイアウトの `.astro` を指定すると、本文をその default のスロットに入れる。
-レイアウトには `frontmatter` と `metadata` が props で渡る。
+レイアウトには `file` (ページのファイルの絶対パス) と `frontmatter` と `metadata` が props で渡る。
 
 ```
 ---
