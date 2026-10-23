@@ -35,7 +35,8 @@ Effect.runFork(
       check: ({ args }) => check(args),
       print,
     }),
-    // A server that cannot start, or a bug: said where errors go, rather than lost with exit 0.
+    // runFork drops a defect without a word, and the process would exit with 0. A server that
+    // cannot start (a transport it cannot use) and a bug alike are said where errors go.
     Effect.catchAllDefect((defect) =>
       Effect.sync(() => {
         process.stderr.write(`${Cause.pretty(Cause.die(defect))}\n`)
