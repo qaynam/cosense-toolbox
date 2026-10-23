@@ -25,6 +25,20 @@ describe("isCosenseAssetUrl", () => {
       }),
     ).toBe(true)
   })
+
+  it("origin の後ろに / があっても、その origin のファイルを対象にする", () => {
+    expect(
+      isCosenseAssetUrl("https://cosense.example/files/abc.png", {
+        origin: "https://cosense.example/",
+      }),
+    ).toBe(true)
+  })
+
+  it("origin が http(s) の origin でなければ TypeError を投げる", () => {
+    expect(() => isCosenseAssetUrl("https://scrapbox.io/files/abc.png", { origin: "" })).toThrow(
+      TypeError,
+    )
+  })
 })
 
 describe("cosenseIconUrl", () => {
@@ -37,6 +51,18 @@ describe("cosenseIconUrl", () => {
   it("[/project/name.icon] のように別プロジェクトを指すときは、そのプロジェクトのページにする", () => {
     expect(cosenseIconUrl("mine", "/icons/炎上")).toBe(
       "https://scrapbox.io/api/pages/icons/%E7%82%8E%E4%B8%8A/icon",
+    )
+  })
+
+  it("origin の後ろに / があっても、/ を重ねない", () => {
+    expect(cosenseIconUrl("help-jp", "cosense", { origin: "https://cosense.example/" })).toBe(
+      "https://cosense.example/api/pages/help-jp/cosense/icon",
+    )
+  })
+
+  it("origin が http(s) の origin でなければ TypeError を投げる", () => {
+    expect(() => cosenseIconUrl("help-jp", "cosense", { origin: "cosense.example" })).toThrow(
+      TypeError,
     )
   })
 })

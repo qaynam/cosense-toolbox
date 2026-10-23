@@ -19,12 +19,12 @@ export class HttpClient extends Context.Tag("@cosense-toolbox/api/HttpClient")<
   HttpClientShape
 >() {}
 
-/** 渡した `fetch` で送る HttpClient。 */
+/** 渡した `fetch` で送る HttpClient。effect を中断すると (`Effect.timeout` など)、送っている要求も止める。 */
 export const httpClientOf = (fetch: typeof globalThis.fetch): HttpClientShape =>
   HttpClient.of({
     fetch: (input, init) =>
       Effect.tryPromise({
-        try: () => fetch(input, init),
+        try: (signal) => fetch(input, { ...init, signal }),
         catch: (cause) => new HttpClientError({ cause }),
       }),
   })

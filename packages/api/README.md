@@ -4,13 +4,17 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 
 > **beta**：公開 API はまだ変わりうる。
 
-### 0.1.0-beta.11 の変更
+### 1.0.0 の変更
 
+- **破壊的変更:** `origin` が http(s) の origin でなければ (URL として読めない文字列や、パスの付いたもの)、`createCosenseApi` と `isCosenseAssetUrl`、`cosenseIconUrl` が `TypeError` を投げるようにした。後ろの `/` は除いて使う。これまでは `https://scrapbox.io/` を渡すと `https://scrapbox.io//api/…` に送り、`isCosenseAssetUrl` はどの URL も Cosense 上のファイルとしなかった。
 - Infobox を読めるようにした。`getPage` と `relatedPages` の結果に、Infobox の定義と本文から抜き出した値 (`infoboxDefinition` / `infoboxResult` / `infoboxDisableLinks`) を入れ、ページの Infobox だけを読む `getInfobox` を足した。`projectDetail` の結果には、Infobox を使うプロジェクトか (`infobox`) を入れた。
 - ページの Infobox の抜き出しを止める `disableInfoboxExtraction` と戻す `enableInfoboxExtraction`、抜き出し直すよう頼む `updateInfoboxResult` を足した。
 - 定義ページの表 (文芸的データベース) を返す `literateDatabase` を足した。
 - `fetchAsset` は、渡した URL もリダイレクト先も http(s) でなければ取りに行かず、`kind: "invalidUrl"` の `CosenseApiError` で失敗するようにした。これまでは `file:` の URL も `file:` へのリダイレクトも取りに行き、Bun では手元のファイルを読んでいた。URL として読めない文字列では、`CosenseApiError` でない例外になっていた。
 - `searchTitles` が 20 万件で黙って途中までを返していたのを直した。件数で止めずに最後まで取り、Cosense が示す続きの位置が前に辿ったところへ戻ったときは `CosenseApiError` で失敗する。
+- プロジェクト名を、どの要求でもエンコードしてパスに入れるようにした。これまでは `projectDetail` などの一部だけで、ほかは `a/../b` のような名前だと、PAT を付けたまま別のパスへ送っていた。
+- Promise の入口で、Cloudflare Workers (workerd) が、`catch` した失敗も未処理の reject として報告していたのを直した。
+- effect の入口の `httpClientOf` で、effect を中断すると (`Effect.timeout` など)、送っている要求も止めるようにした。これまでは中断しても fetch が続いていた。
 
 ### 0.1.0-beta.10 の変更
 
@@ -78,7 +82,7 @@ try {
 | オプション | 意味                                                                                  |
 | :--------- | :------------------------------------------------------------------------------------ |
 | `pat`      | Cosense の Personal Access Token。非公開プロジェクトを読むときに渡す                  |
-| `origin`   | API の origin。既定は `https://scrapbox.io`                                           |
+| `origin`   | API の origin。既定は `https://scrapbox.io`。下の「`origin` には origin だけを渡す」  |
 | `fetch`    | 要求を送る fetch。テストや、キャッシュを挟みたいときに渡す。既定は `globalThis.fetch` |
 
 ## 呼べるもの
@@ -297,6 +301,10 @@ const { data, contentType } = await api.fetchAsset("https://scrapbox.io/files/xx
 
 ## 気をつけること
 
+### `origin` には origin だけを渡す
+
+`origin` は `https://scrapbox.io` のような http(s) の origin で、後ろの `/` は付けても付けなくてもよい。URL として読めない文字列や、http(s) でないもの、パスやクエリの付いたものを渡すと、`createCosenseApi` は作るときに `TypeError` を投げる (`isCosenseAssetUrl` と `cosenseIconUrl` も同じ)。
+
 ### PAT は `origin` にだけ送る
 
 リダイレクトは fetch に任せず、自分で辿る。同じ `origin` へのリダイレクト (名前を変えたページなど) は PAT を付けたまま 3 回まで辿り、別の origin へのリダイレクトは辿らずに失敗する。PAT を付けたまま別のサイトへ送らないため。
@@ -316,7 +324,7 @@ Cosense は 1 回に 10000 件までしか返さないので、大きいプロ�
 
 effect を使っているなら、`@cosense-toolbox/api/effect` から effect の型のまま使える。無いものは `Option`、失敗は `CosenseApiError` (`_tag: "CosenseApiError"`) になる。
 
-要求は `HttpClient` を通して送るので、`HttpClientLive` (`globalThis.fetch`) か、`httpClientOf(fetch)` で作ったものを渡す。テストでは `HttpClient` を差し替えられる。
+要求は `HttpClient` を通して送るので、`HttpClientLive` (`globalThis.fetch`) か、`httpClientOf(fetch)` で作ったものを渡す。テストでは `HttpClient` を差し替えられる。effect を中断すると (`Effect.timeout` など)、送っている要求も止める。
 
 ```ts
 import { createCosenseApi, HttpClientLive } from "@cosense-toolbox/api/effect"

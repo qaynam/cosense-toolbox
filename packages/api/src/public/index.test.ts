@@ -10,6 +10,7 @@ const respond = (response: () => Response) => (async () => response()) as typeof
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe("createCosenseApi (Promise)", () => {
@@ -42,6 +43,18 @@ describe("createCosenseApi (Promise)", () => {
     const failure = await api.me().catch((error: unknown) => error)
     expect(failure).toBeInstanceOf(CosenseApiError)
     expect(failure).toMatchObject({ status: 403, code: "SomeError", kind: "forbidden" })
+  })
+
+  // workerd は、呼んだ人が catch していても、受け取る人のいないまま reject された Promise を未処理と報告する。
+  it("失敗しても、受け取る人のいないまま reject された Promise を作らない", async () => {
+    const reject = vi.spyOn(Promise, "reject")
+    const api = createCosenseApi({ fetch: respond(() => json({ error: "SomeError" }, 403)) })
+    await api.me().catch(() => undefined)
+    expect(reject).not.toHaveBeenCalled()
+  })
+
+  it("origin が http(s) の origin でなければ、作るときに TypeError を投げる", () => {
+    expect(() => createCosenseApi({ origin: "not a url" })).toThrow(TypeError)
   })
 
   it("fetch を渡さなければ、呼んだときの globalThis.fetch で送る", async () => {

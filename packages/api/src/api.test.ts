@@ -71,6 +71,77 @@ describe("認証", () => {
     await run(createCosenseApi({ origin: "https://cosense.example" }).me(), layer)
     expect(calls[0]?.url).toBe("https://cosense.example/api/users/me")
   })
+
+  it("origin の後ろに / があっても、/ を重ねずに送る", async () => {
+    const { layer, calls } = testHttpClient(() => json({ id: "u1" }))
+    await run(createCosenseApi({ origin: "https://cosense.example/" }).me(), layer)
+    expect(calls[0]?.url).toBe("https://cosense.example/api/users/me")
+  })
+
+  it("origin は http でもよい", async () => {
+    const { layer, calls } = testHttpClient(() => json({ id: "u1" }))
+    await run(createCosenseApi({ origin: "http://localhost:8787" }).me(), layer)
+    expect(calls[0]?.url).toBe("http://localhost:8787/api/users/me")
+  })
+
+  it("origin が URL として読めなければ、作るときに、その値を示す TypeError を投げる", () => {
+    expect(() => createCosenseApi({ origin: "cosense.example" })).toThrow(TypeError)
+    expect(() => createCosenseApi({ origin: "cosense.example" })).toThrow("cosense.example")
+  })
+
+  it("origin が http(s) でなければ、作るときに TypeError を投げる", () => {
+    expect(() => createCosenseApi({ origin: "wss://cosense.example" })).toThrow(TypeError)
+  })
+
+  it("origin にパスが付いていれば、作るときに TypeError を投げる", () => {
+    expect(() => createCosenseApi({ origin: "https://cosense.example/api" })).toThrow(TypeError)
+  })
+})
+
+describe("プロジェクト名", () => {
+  const PROJECT = "a/../b"
+  const ENCODED = "/a%2F..%2Fb"
+
+  const requests: readonly (readonly [
+    string,
+    () => Effect.Effect<unknown, unknown, HttpClient>,
+  ])[] = [
+    ["projectDetail", () => api.projectDetail(PROJECT)],
+    ["projectUsers", () => api.projectUsers(PROJECT)],
+    ["listPages", () => api.listPages(PROJECT)],
+    ["getPage", () => api.getPage(PROJECT, "title")],
+    ["getPageText", () => api.getPageText(PROJECT, "title")],
+    ["relatedPages", () => api.relatedPages(PROJECT, "title")],
+    ["getInfobox", () => api.getInfobox(PROJECT, "page1")],
+    ["literateDatabase", () => api.literateDatabase(PROJECT, "title")],
+    ["exportForAi", () => api.exportForAi(PROJECT, "title", 1)],
+    ["searchFullText", () => api.searchFullText(PROJECT, "query")],
+    ["searchVector", () => api.searchVector(PROJECT, "query")],
+    ["searchTitles", () => api.searchTitles(PROJECT)],
+    ["pageSnapshots", () => api.pageSnapshots(PROJECT, "page1")],
+    ["pageSnapshot", () => api.pageSnapshot(PROJECT, "page1", "snapshot1")],
+    ["previewEdit", () => api.previewEdit(PROJECT, { changes: [] })],
+    ["submitEdit", () => api.submitEdit(PROJECT, "preview1")],
+    ["replaceLinks", () => api.replaceLinks(PROJECT, "from", "to")],
+    ["markAccessed", () => api.markAccessed(PROJECT, "page1")],
+    ["disableInfoboxExtraction", () => api.disableInfoboxExtraction(PROJECT, "page1", "Recipe")],
+    ["enableInfoboxExtraction", () => api.enableInfoboxExtraction(PROJECT, "page1", "Recipe")],
+    ["updateInfoboxResult", () => api.updateInfoboxResult(PROJECT, "page1")],
+    [
+      "updatePage",
+      () => api.updatePage(PROJECT, { id: "p", title: "t", commitId: "c", lines: [] }, ["t"]),
+    ],
+    ["createPage", () => api.createPage(PROJECT, ["title"])],
+  ]
+
+  it.each(requests)(
+    "%s() は、/ や .. を含む名前も、パスの 1 つの区切りの中に収めて送る",
+    async (_, call) => {
+      const { layer, calls } = testHttpClient(() => json({}, 404))
+      await Effect.runPromise(Effect.either(Effect.provide(call(), layer)))
+      expect(calls[0]?.url).toContain(ENCODED)
+    },
+  )
 })
 
 describe("読み取り", () => {
