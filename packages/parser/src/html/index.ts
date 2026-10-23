@@ -7,11 +7,11 @@
  * 使わない拡張は tree-shaking で落ちる。
  * HTML 以外の形式 (プレーンテキストなど) は `./compile` の `createCompiler` で AST から直接作る。
  *
- * `handlers` や `extensions` は hast を返すので、hast を組み立てる `h` (hastscript) と、
- * その型 (`Element` など) もここから出す。利用者が hastscript や `@types/hast` を別に入れずに書けるようにするため。
+ * `handlers` や `extensions` は hast を返すので、その型 (`Element` など) もここから出す。
+ * hast を組み立てる `h` は出さない。hastscript の API が、このパッケージの semver の約束に入らないようにするため。
+ * 組み立てたい人は hastscript を自分で入れる。
  */
 export type { Element, ElementContent, Root } from "hast"
-export { h } from "hastscript"
 export {
   codeLanguageOf,
   defaultClassNames,
