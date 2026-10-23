@@ -50,7 +50,6 @@ const asWritten = (
 export const updatePageWith =
   (operations: PageOperations) =>
   (
-    project: string,
     base: PageToUpdate,
     lines: readonly string[],
     options: UpdatePageOptions = {},
@@ -66,10 +65,10 @@ export const updatePageWith =
       const changes = computeChanges(current.lines, text)
       if (changes.length === 0) return Effect.succeed({ written: true, commitId: current.commitId })
       return pipe(
-        operations.previewEdit(project, { pageId: current.id, changes }),
+        operations.previewEdit({ pageId: current.id, changes }),
         Effect.flatMap((preview) =>
           preview.pagePreview?.commitId === current.commitId
-            ? Effect.map(operations.submitEdit(project, preview.previewId), (submit): Attempt => ({
+            ? Effect.map(operations.submitEdit(preview.previewId), (submit): Attempt => ({
                 written: true,
                 commitId: submit.commitId,
                 ...(submit.titleChanged === undefined ? {} : { titleChanged: submit.titleChanged }),
@@ -129,7 +128,7 @@ export const updatePageWith =
           )
         }
         return Effect.flatMap(
-          operations.getPage(project, base.title),
+          operations.getPage(base.title),
           Option.match({
             onNone: () =>
               Effect.fail(
