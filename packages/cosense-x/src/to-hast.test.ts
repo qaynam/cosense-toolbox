@@ -3,7 +3,7 @@ import { tableCellNotation } from "@cosense-toolbox/parser/extensions"
 import {
   defaultHastHandlers,
   escapeHtml,
-  h,
+  type HastHandler,
   tableCellLineBreaks,
   toHtml,
 } from "@cosense-toolbox/parser/html"
@@ -109,6 +109,14 @@ describe("リンクの解決", () => {
 })
 
 describe("handlers から見たリンクの解決 (ctx.options.pageUrl)", () => {
+  /** `ctx.options.pageUrl` が返した URL を `data-url` に出すハンドラ。 */
+  const showPageUrl: HastHandler<"internalLink"> = (node, ctx) => ({
+    type: "element",
+    tagName: "a",
+    properties: { dataUrl: ctx.options.pageUrl(node.target, node) },
+    children: [],
+  })
+
   it("parser の既定の internalLink に任せると、resolveLink が決めた URL へのリンクになる", () => {
     const html = render("タイトル\n[b]", {
       resolveLink: () => ({ href: "/posts/b" }),
@@ -120,9 +128,7 @@ describe("handlers から見たリンクの解決 (ctx.options.pageUrl)", () => 
   it("resolveLink が null を返したリンクでは空文字を返す", () => {
     const html = render("タイトル\n[b]", {
       resolveLink: () => null,
-      handlers: {
-        internalLink: (node, ctx) => h("a", { dataUrl: ctx.options.pageUrl(node.target, node) }),
-      },
+      handlers: { internalLink: showPageUrl },
     })
     expect(html).toContain('<a data-url=""></a>')
   })
@@ -130,9 +136,7 @@ describe("handlers から見たリンクの解決 (ctx.options.pageUrl)", () => 
   it("resolveLink が script の動く URL を返したリンクでは空文字を返す", () => {
     const html = render("タイトル\n[b]", {
       resolveLink: () => ({ href: "javascript:alert(1)" }),
-      handlers: {
-        internalLink: (node, ctx) => h("a", { dataUrl: ctx.options.pageUrl(node.target, node) }),
-      },
+      handlers: { internalLink: showPageUrl },
     })
     expect(html).toContain('<a data-url=""></a>')
   })
