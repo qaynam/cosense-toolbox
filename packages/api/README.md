@@ -4,13 +4,14 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 
 > **beta**：公開 API はまだ変わりうる。
 
-### 0.1.0-beta.11 の変更
+### 1.0.0 の変更
 
 - Infobox を読めるようにした。`getPage` と `relatedPages` の結果に、Infobox の定義と本文から抜き出した値 (`infoboxDefinition` / `infoboxResult` / `infoboxDisableLinks`) を入れ、ページの Infobox だけを読む `getInfobox` を足した。`projectDetail` の結果には、Infobox を使うプロジェクトか (`infobox`) を入れた。
 - ページの Infobox の抜き出しを止める `disableInfoboxExtraction` と戻す `enableInfoboxExtraction`、抜き出し直すよう頼む `updateInfoboxResult` を足した。
 - 定義ページの表 (文芸的データベース) を返す `literateDatabase` を足した。
 - `fetchAsset` は、渡した URL もリダイレクト先も http(s) でなければ取りに行かず、`kind: "invalidUrl"` の `CosenseApiError` で失敗するようにした。これまでは `file:` の URL も `file:` へのリダイレクトも取りに行き、Bun では手元のファイルを読んでいた。URL として読めない文字列では、`CosenseApiError` でない例外になっていた。
 - `searchTitles` が 20 万件で黙って途中までを返していたのを直した。件数で止めずに最後まで取り、Cosense が示す続きの位置が前に辿ったところへ戻ったときは `CosenseApiError` で失敗する。
+- Promise の入口で、Cloudflare Workers (workerd) が、`catch` した失敗も未処理の reject として報告していたのを直した。
 
 ### 0.1.0-beta.10 の変更
 

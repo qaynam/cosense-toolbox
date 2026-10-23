@@ -208,8 +208,15 @@ export interface CosenseApi {
  * `catch` した人が `instanceof CosenseApiError` や `status` で見分けられるように。
  */
 const runOrReject = <A, E>(effect: Effect.Effect<A, E>): Promise<A> =>
-  Effect.runPromiseExit(effect).then((exit) =>
-    Exit.isSuccess(exit) ? exit.value : Promise.reject(Cause.squash(exit.cause)),
+  Effect.runPromiseExit(effect).then(
+    Exit.match({
+      onSuccess: (value) => value,
+      onFailure: (cause) => {
+        // Promise.reject(…) を返すと、受け取る人のいないまま reject された Promise がいったんでき、
+        // Cloudflare の workerd は、呼んだ人が catch していても未処理の reject として報告する。
+        throw Cause.squash(cause)
+      },
+    }),
   )
 
 /**
