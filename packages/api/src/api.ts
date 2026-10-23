@@ -405,7 +405,7 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
     Effect.flatMap(request(path), decode(schema))
 
   const relatedBaseOf = (project: string, title: string): string =>
-    `/api/pages/v2/${project}/${encodeTitleForUrl(title)}`
+    `/api/pages/v2/${encodeURIComponent(project)}/${encodeTitleForUrl(title)}`
 
   // 1 つの hop のページを、続きが無くなるか RELATED_LIMIT に届くまで順に取る。
   // 最初の要求にはクエリを付けない (サーバーは最初のページを返す)。
@@ -501,10 +501,13 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
     action: "add" | "remove",
   ): Call<Infobox> =>
     Effect.flatMap(
-      request(`/api/pages/${project}/${encodeURIComponent(pageId)}/infobox/disable-links`, {
-        method: "POST",
-        body: { title: definitionTitle, action },
-      }),
+      request(
+        `/api/pages/${encodeURIComponent(project)}/${encodeURIComponent(pageId)}/infobox/disable-links`,
+        {
+          method: "POST",
+          body: { title: definitionTitle, action },
+        },
+      ),
       decode(InfoboxSchema),
     )
 
@@ -517,8 +520,9 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
       Effect.flatMap(
         request(
           Option.match(followingId, {
-            onNone: () => `/api/pages/${project}/search/titles`,
-            onSome: (id) => `/api/pages/${project}/search/titles?followingId=${id}`,
+            onNone: () => `/api/pages/${encodeURIComponent(project)}/search/titles`,
+            onSome: (id) =>
+              `/api/pages/${encodeURIComponent(project)}/search/titles?followingId=${id}`,
           }),
         ),
         (response) =>
@@ -608,7 +612,7 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
       }
       const query = params.toString()
       return get(
-        `/api/pages/${project}/${query === "" ? "" : `?${query}`}`,
+        `/api/pages/${encodeURIComponent(project)}/${query === "" ? "" : `?${query}`}`,
         ListPagesResponseSchema,
       )
     },
@@ -617,7 +621,7 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
     getPage: (project, title) =>
       pipe(
         get(
-          `/api/pages/v2/${project}/${encodeTitleForUrl(title)}/?followRename=true`,
+          `/api/pages/v2/${encodeURIComponent(project)}/${encodeTitleForUrl(title)}/?followRename=true`,
           PageV2ResponseSchema,
         ),
         Effect.map((data) =>
@@ -651,12 +655,17 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
       ),
 
     getPageText: (project, title) =>
-      notFoundAsNone(requestText(`/api/pages/${project}/${encodeTitleForUrl(title)}/text`)),
+      notFoundAsNone(
+        requestText(`/api/pages/${encodeURIComponent(project)}/${encodeTitleForUrl(title)}/text`),
+      ),
 
     relatedPages,
 
     getInfobox: (project, pageId) =>
-      get(`/api/pages/${project}/${encodeURIComponent(pageId)}/infobox`, InfoboxSchema),
+      get(
+        `/api/pages/${encodeURIComponent(project)}/${encodeURIComponent(pageId)}/infobox`,
+        InfoboxSchema,
+      ),
 
     exportForAi: (project, title, hop, search) => {
       // タイトルはクエリに入るので、encodeTitleForUrl (パス用) ではなく普通にエンコードする。
@@ -670,7 +679,7 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
 
     searchFullText: (project, query) =>
       get(
-        `/api/pages/${project}/search/query?${new URLSearchParams({
+        `/api/pages/${encodeURIComponent(project)}/search/query?${new URLSearchParams({
           q: query,
           skip: "0",
           limit: String(FULL_TEXT_SEARCH_LIMIT),
@@ -684,7 +693,7 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
     searchVector: (project, query) =>
       pipe(
         get(
-          `/api/pages/${project}/search/vector/titles?q=${encodeURIComponent(query)}`,
+          `/api/pages/${encodeURIComponent(project)}/search/vector/titles?q=${encodeURIComponent(query)}`,
           SearchVectorResponseSchema,
         ),
         Effect.catchIf(
@@ -698,7 +707,7 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
     pageSnapshots: (project, pageId) =>
       Effect.map(
         get(
-          `/api/page-snapshots/${project}/${encodeURIComponent(pageId)}`,
+          `/api/page-snapshots/${encodeURIComponent(project)}/${encodeURIComponent(pageId)}`,
           PageSnapshotsResponseSchema,
         ),
         (data) => data.timestamps.filter((entry) => entry.id !== ""),
@@ -707,7 +716,7 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
     pageSnapshot: (project, pageId, snapshotId) =>
       Effect.map(
         get(
-          `/api/page-snapshots/${project}/${encodeURIComponent(pageId)}/${encodeURIComponent(snapshotId)}`,
+          `/api/page-snapshots/${encodeURIComponent(project)}/${encodeURIComponent(pageId)}/${encodeURIComponent(snapshotId)}`,
           PageSnapshotResponseSchema,
         ),
         (data) => data.snapshot,
@@ -715,13 +724,16 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
 
     previewEdit: (project, body) =>
       Effect.flatMap(
-        request(`/api/pages/v2/${project}/page-edit-for-ai/preview`, { method: "POST", body }),
+        request(`/api/pages/v2/${encodeURIComponent(project)}/page-edit-for-ai/preview`, {
+          method: "POST",
+          body,
+        }),
         decode(PreviewResponseSchema),
       ),
 
     submitEdit: (project, previewId) =>
       Effect.flatMap(
-        request(`/api/pages/v2/${project}/page-edit-for-ai/submit`, {
+        request(`/api/pages/v2/${encodeURIComponent(project)}/page-edit-for-ai/submit`, {
           method: "POST",
           body: { previewId },
         }),
@@ -730,13 +742,16 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
 
     replaceLinks: (project, from, to) =>
       Effect.flatMap(
-        request(`/api/pages/${project}/replace/links`, { method: "POST", body: { from, to } }),
+        request(`/api/pages/${encodeURIComponent(project)}/replace/links`, {
+          method: "POST",
+          body: { from, to },
+        }),
         decode(ReplaceLinksResponseSchema),
       ),
 
     // 未読かどうかの記録で、できなくても困ることはないので失敗にしない。POST を断られたら GET で記録する。
     markAccessed: (project, pageId) => {
-      const path = `/api/pages/${project}/${encodeURIComponent(pageId)}/accessed`
+      const path = `/api/pages/${encodeURIComponent(project)}/${encodeURIComponent(pageId)}/accessed`
       return pipe(
         request(path, { method: "POST", body: {} }),
         Effect.orElse(() => request(path)),
@@ -754,9 +769,12 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
     // 応答の本文は読み捨てる。Cosense Web も使わず、抜き出した値は読み直して知る。
     updateInfoboxResult: (project, pageId) =>
       pipe(
-        requestRaw(`/api/pages/${project}/${encodeURIComponent(pageId)}/infobox/update-result`, {
-          method: "POST",
-        }),
+        requestRaw(
+          `/api/pages/${encodeURIComponent(project)}/${encodeURIComponent(pageId)}/infobox/update-result`,
+          {
+            method: "POST",
+          },
+        ),
         Effect.flatMap((response) => bodyOf(response, "text", () => response.text())),
         Effect.asVoid,
       ),
