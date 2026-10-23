@@ -26,6 +26,7 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 - `fetchAsset` は、渡した URL もリダイレクト先も http(s) でなければ取りに行かず、`kind: "invalidUrl"` の `CosenseApiError` で失敗するようにした。これまでは `file:` の URL も `file:` へのリダイレクトも取りに行き、Bun では手元のファイルを読んでいた。URL として読めない文字列では、`CosenseApiError` でない例外になっていた。
 - `listTitles` (これまでの `searchTitles`) が 20 万件で黙って途中までを返していたのを直した。件数で止めずに最後まで取り、Cosense が示す続きの位置が前に辿ったところへ戻ったときは `CosenseApiError` で失敗する。
 - プロジェクト名を、どの要求でもエンコードしてパスに入れるようにした。これまでは `getProject` (これまでの `projectDetail`) などの一部だけで、ほかは `a/../b` のような名前だと、PAT を付けたまま別のパスへ送っていた。
+- `createPage` は、1 行目が空か空白だけなら、何も送らずに `TypeError` で reject するようにした (effect の入口では defect)。これまでは空のタイトルで同じタイトルのページを探してから、ページを作ろうとしていた。
 - Promise の入口で、Cloudflare Workers (workerd) が、`catch` した失敗も未処理の reject として報告していたのを直した。
 - effect の入口の `httpClientOf` で、effect を中断すると (`Effect.timeout` など)、送っている要求も止めるようにした。これまでは中断しても fetch が続いていた。
 
@@ -208,6 +209,7 @@ try {
 
 - 同じタイトルかは、Cosense と同じく大文字と小文字、空白と `_` を区別せずに比べる。名前を変えたページの古いタイトルは、もうあるものとしない。
 - Cosense 自体は同じタイトルを断らず、後ろに番号を付けて作る。`createPage` は先に確かめるが、確かめてから作るまでのあいだにほかの人が同じタイトルで作ると、番号の付いたタイトルで作ることがある。作ったタイトルは結果の `title` で分かる。
+- 1 行目が空か空白だけなら、何も送らずに `TypeError` で reject する (effect の入口では defect)。Cosense Web は前後の空白を除いてタイトルにするので、1 行目がタイトルにならない。
 - 続けて書き換えるときは、`getPage` で読んでから `updatePage` に渡す (行の id と `commitId` が要るため)。
 
 ### タイトルを変える

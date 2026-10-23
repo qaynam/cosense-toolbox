@@ -15,6 +15,16 @@ export const createPageWith =
   ): Effect.Effect<CreatePageResult, CosenseApiError | PageExistsError, HttpClient> => {
     const title = lines[0] ?? ""
 
+    // Cosense Web は行の前後の空白を除いてタイトルにし、空になる行は飛ばして次の行をタイトルにする。
+    // 1 行目がタイトルにならず、同じタイトルのページがあるかも確かめられないので、何も送らない。
+    if (title.trim() === "") {
+      return Effect.die(
+        new TypeError(
+          `the first line is the title and must not be empty or only whitespace: ${JSON.stringify(title)}`,
+        ),
+      )
+    }
+
     // getPage は名前を変えたページを古いタイトルでも引くので、タイトルが同じページだけを、もうあるものとする。
     const failIfExists = <A, E>(
       otherwise: Effect.Effect<A, E, HttpClient>,

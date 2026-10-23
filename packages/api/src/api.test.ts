@@ -1,4 +1,4 @@
-import { Effect, Either, Layer, Option } from "effect"
+import { Cause, Effect, Either, Layer, Option } from "effect"
 import { describe, expect, it } from "vitest"
 
 import { createCosenseApi } from "./api"
@@ -41,6 +41,15 @@ const runFailure = <A, E>(
   effect: Effect.Effect<A, E, HttpClient>,
   layer: Layer.Layer<HttpClient>,
 ): Promise<E> => Effect.runPromise(Effect.flip(Effect.provide(effect, layer)))
+
+/** effect を走らせ、失敗の型に入れずに止めたもの (defect) を返す。defect でなければ `undefined`。 */
+const runDefect = <A, E>(
+  effect: Effect.Effect<A, E, HttpClient>,
+  layer: Layer.Layer<HttpClient>,
+): Promise<unknown> =>
+  Effect.runPromise(Effect.flip(Effect.sandbox(Effect.provide(effect, layer)))).then((cause) =>
+    Option.getOrUndefined(Cause.dieOption(cause)),
+  )
 
 const headersOf = (call: Call | undefined): Record<string, string> =>
   call?.init.headers as Record<string, string>
@@ -1397,6 +1406,22 @@ describe("createPage", () => {
     })
     const failure = await runFailure(myproject.createPage(["New page", "本文"]), layer)
     expect(failure).toMatchObject({ status: 409, code: "DuplicateTitle" })
+  })
+
+  it.each([
+    ["行が無い", []],
+    ["1 行目が空", ["", "本文"]],
+    ["1 行目が空白だけ", ["  ", "本文"]],
+    ["1 行目が全角の空白だけ", ["\u3000", "本文"]],
+  ])("%s なら、タイトルが無いので TypeError で止める (失敗の型には入れない)", async (_, lines) => {
+    const { layer } = server({})
+    expect(await runDefect(myproject.createPage(lines), layer)).toBeInstanceOf(TypeError)
+  })
+
+  it("タイトルが無ければ、同じタイトルのページを探しもせず、何も送らない", async () => {
+    const { layer, steps } = server({})
+    await runDefect(myproject.createPage(["", "本文"]), layer)
+    expect(steps()).toEqual([])
   })
 
   it("ほかの理由で断られたら、読み直さずにそのエラーで止める", async () => {

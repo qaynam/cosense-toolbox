@@ -197,6 +197,9 @@ export interface CosenseProjectApi {
    * Cosense は同じタイトルを断らず、後ろに番号を付けて作る。そのため先に確かめるが、確かめてから
    * 作るまでのあいだにほかの人が同じタイトルで作ると、番号の付いたタイトルで作ることがある
    * (結果の `title`)。
+   *
+   * 1 行目が空か空白だけなら、何も送らずに `TypeError` で reject する。Cosense Web は前後の空白を
+   * 除いてタイトルにするので、1 行目がタイトルにならない。
    */
   readonly createPage: (lines: readonly string[]) => Promise<CreatePageResult>
 }
