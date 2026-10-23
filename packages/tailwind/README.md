@@ -23,6 +23,8 @@ Tailwind を使う場合は、`style.css` を別途読み込む必要はあり�
   `iconImageUrl` を渡さずにユーザー名のリンクとして出すアイコンには当たらない。リンクのほうは `cosense-link:` で選ぶ。
 - 字下げして書いた表 (`table:名前`) を、同じ深さの行の本文と同じ位置に置くようにした (`@cosense-toolbox/style` と同じ)。
   `@cosense-toolbox/parser` 1.0.0 の `toHtml` が表に付ける `data-indent` を見るので、parser も 1.0.0 にそろえる。
+- **不具合の修正:** オプションの例の `classname: article;` を `className: article;` に直した。
+  プラグインは `className` だけを読むので、例のとおりに書くと class 名が `cosense` のまま変わらなかった。
 
 modifier の対象の、今までと 1.0.0 の対応 (名前を変えていない `strong` / `em` / `s` / `u` は除く):
 
@@ -167,9 +169,11 @@ class 名は `toHtml` の既定 (`classNames` を渡さなかったとき) に�
 
 ## オプション
 
+<!-- prettier は CSS のプロパティ名を小文字にするが、プラグインは className だけを読むので、整形させない -->
+<!-- prettier-ignore -->
 ```css
 @plugin "@cosense-toolbox/tailwind" {
-  classname: article;
+  className: article;
 }
 ```
 

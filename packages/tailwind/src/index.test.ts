@@ -123,6 +123,15 @@ describe("cosense プラグイン", () => {
     expect(selectors).toContain(".article")
   })
 
+  it("README のオプションの例をそのまま @plugin に書くと、class 名が変わる", async () => {
+    const readme = await readFile(join(import.meta.dirname, "..", "README.md"), "utf8")
+    const [example = ""] = /@plugin "@cosense-toolbox\/tailwind" \{[^}]*\}/.exec(readme) ?? []
+    const selectors = rulesOf(await build(["article"], cosense, example)).map(
+      ([selector]) => selector,
+    )
+    expect(selectors).toContain(".article")
+  })
+
   it("class に cosense が無ければ何も出さない", async () => {
     expect((await build(["flex"])).trim()).not.toContain(".csn-line")
   })
