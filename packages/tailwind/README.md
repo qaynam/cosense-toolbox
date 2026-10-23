@@ -18,6 +18,9 @@ Tailwind を使う場合は、`style.css` を別途読み込む必要はあり�
   `className` で選ぶ包む要素 (既定の `cosense`)、`not-cosense`、modifier の名前 (`cosense-link:` など)、CSS 変数 (`--cosense-*`) は変わらない。
   - **移行:** parser と style も 1.0.0 にそろえる。parser の 0.1.0-beta の出力 (`.page` / `.line`) には当たらなくなる。
     記事の HTML に自分で既定の class 名を書いていたところは、parser の README の表のとおりに書き換える。
+- **不具合の修正:** `cosense-icon:` を、アイコンの画像 (`img.csn-icon`) だけに当てるようにした。
+  今までは `.icon` を選んでいて、画像とそれを包むリンクの両方に当たっていた。`p-1` や `m-1` のような余白の utility は、リンクと画像の両方に付いて 2 重になっていた。
+  `iconImageUrl` を渡さずにユーザー名のリンクとして出すアイコンには当たらない。リンクのほうは `cosense-link:` で選ぶ。
 - 字下げして書いた表 (`table:名前`) を、同じ深さの行の本文と同じ位置に置くようにした (`@cosense-toolbox/style` と同じ)。
   `@cosense-toolbox/parser` 1.0.0 の `toHtml` が表に付ける `data-indent` を見るので、parser も 1.0.0 にそろえる。
 
@@ -43,7 +46,7 @@ modifier の対象の、今までと 1.0.0 の対応 (名前を変えていな�
 | `cosense-audio:`         | `.audio`                       | `.csn-audio`                       |
 | `cosense-embed:`         | `.embed`                       | `.csn-embed`                       |
 | `cosense-location:`      | `.link-location`               | `.csn-link-location`               |
-| `cosense-icon:`          | `.icon`                        | `.csn-icon`                        |
+| `cosense-icon:`          | `.icon`                        | `img.csn-icon`                     |
 | `cosense-formula:`       | `.formula`                     | `.csn-formula`                     |
 
 ## インストール
@@ -115,7 +118,7 @@ Tailwind v4 の CSS に `@plugin` で足す。
 | `cosense-audio:{utility}`         | `.csn-audio`                       | 音声                                                        |
 | `cosense-embed:{utility}`         | `.csn-embed`                       | YouTube などの埋め込み                                      |
 | `cosense-location:{utility}`      | `.csn-link-location`               | 地図 `[N35,E139]`                                           |
-| `cosense-icon:{utility}`          | `.csn-icon`                        | `[ユーザー名.icon]`                                         |
+| `cosense-icon:{utility}`          | `img.csn-icon`                     | `[ユーザー名.icon]`                                         |
 | `cosense-formula:{utility}`       | `.csn-formula`                     | `[$ 数式]`                                                  |
 
 対象は HTML の要素名ではなく、Cosense の記法で分けている。`toHtml` はリンク・タグ・アイコンのどれにも同じ `<a>` を使うため、要素名では区別できない。

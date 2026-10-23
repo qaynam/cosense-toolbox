@@ -59,6 +59,7 @@ export const MODIFIERS: readonly Modifier[] = [
   { name: "audio", target: ".csn-audio", notation: "音声" },
   { name: "embed", target: ".csn-embed", notation: "YouTube などの埋め込み" },
   { name: "location", target: ".csn-link-location", notation: "地図 `[N35,E139]`" },
-  { name: "icon", target: ".csn-icon", notation: "`[ユーザー名.icon]`" },
+  // アイコンは画像を包むリンクにも同じ class が付くので、画像だけを選ぶ。リンクも選ぶと utility が 2 重に効く。
+  { name: "icon", target: "img.csn-icon", notation: "`[ユーザー名.icon]`" },
   { name: "formula", target: ".csn-formula", notation: "`[$ 数式]`" },
 ]

@@ -159,6 +159,14 @@ describe("modifier", () => {
     ])
   })
 
+  it("cosense-icon:{utility} は、アイコンの画像だけに当てる。画像を包むリンクにも同じ class が付くため", async () => {
+    const rules = rulesOf(await build(["cosense", "cosense-icon:[color:red]"]))
+    expect(rules).toContainEqual([
+      normalize(`.cosense-icon\\:\\[color\\:red\\] :is(:where(img.csn-icon)${NOT})`),
+      ["color:red"],
+    ])
+  })
+
   it("modifier のルールは既定のスタイルより後ろに出る。詳細度が同じなので後ろのものが勝つ", async () => {
     const selectors = rulesOf(await build(["cosense", "cosense-link:[color:red]"])).map(
       ([selector]) => selector,
