@@ -25,6 +25,7 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 - 定義ページの表 (文芸的データベース) を返す `getLiterateDatabase` を足した。
 - `fetchAsset` は、渡した URL もリダイレクト先も http(s) でなければ取りに行かず、`kind: "invalidUrl"` の `CosenseApiError` で失敗するようにした。これまでは `file:` の URL も `file:` へのリダイレクトも取りに行き、Bun では手元のファイルを読んでいた。URL として読めない文字列では、`CosenseApiError` でない例外になっていた。
 - `listTitles` (これまでの `searchTitles`) が 20 万件で黙って途中までを返していたのを直した。件数で止めずに最後まで取り、Cosense が示す続きの位置が前に辿ったところへ戻ったときは `CosenseApiError` で失敗する。
+- `getRelatedPages` (これまでの `relatedPages`) が、1 つの hop で 10 万件を超えると黙って途中までを返していたのを直した。`listTitles` と同じく件数で止めずに最後まで取り、続きの位置が前に辿ったところへ戻ったときは `CosenseApiError` で失敗する。`getLiterateDatabase` の 1 hop も同じ。
 - プロジェクト名を、どの要求でもエンコードしてパスに入れるようにした。これまでは `getProject` (これまでの `projectDetail`) などの一部だけで、ほかは `a/../b` のような名前だと、PAT を付けたまま別のパスへ送っていた。
 - `createPage` は、1 行目が空か空白だけなら、何も送らずに `TypeError` で reject するようにした (effect の入口では defect)。これまでは空のタイトルで同じタイトルのページを探してから、ページを作ろうとしていた。
 - Promise の入口で、Cloudflare Workers (workerd) が、`catch` した失敗も未処理の reject として報告していたのを直した。
@@ -341,6 +342,10 @@ scrapbox.io は、要求の本文が 100 KiB (102,400 バイト) を超えると
 ### `listTitles` は何度も要求することがある
 
 Cosense は 1 回に 10000 件までしか返さないので、大きいプロジェクトでは続きが無くなるまで順に取る。件数の上限は設けず、途中までを返すことはない。Cosense が示す続きの位置が前に辿ったところへ戻ったら、終わらないので `CosenseApiError` で失敗する。
+
+### `getRelatedPages` も続きを最後まで辿る
+
+関連ページも、1 hop と 2 hop のそれぞれで、続きが無くなるまで順に取る。Cosense Web は 1 つの hop で 10 万件までしか取らないが、`getRelatedPages` は件数の上限を設けず、途中までを返すことはない。続きの位置が前に辿ったところへ戻ったときは、`listTitles` と同じく `CosenseApiError` で失敗する。`getLiterateDatabase` が取る 1 hop も同じ。
 
 ## effect で使う
 

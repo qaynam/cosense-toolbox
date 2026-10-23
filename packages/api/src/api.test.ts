@@ -422,6 +422,60 @@ describe("getRelatedPages", () => {
     )
   })
 
+  /** 関連ページの応答。`count` 件のページと、続きの位置 (`nextId`) を持つ。 */
+  const relatedPage = (
+    hop: "links1hop" | "links2hop",
+    count: number,
+    nextId: string | null,
+  ): Response =>
+    json({
+      [hop]: Array.from({ length: count }, (_, i) => ({ id: String(i), title: `t${i}` })),
+      pagination: { hasNext: nextId !== null, nextId },
+    })
+
+  it("件数で切らずに、10 万件を超えても続きを最後まで辿る", async () => {
+    const { layer } = testHttpClient((url) => {
+      if (url.endsWith("/links1hop")) return relatedPage("links1hop", 100_000, "second")
+      if (url.includes("/links1hop?")) return relatedPage("links1hop", 7, null)
+      return relatedPage("links2hop", 0, null)
+    })
+    const result = await run(myproject.getRelatedPages("My Page"), layer)
+    expect(result.links1hop).toHaveLength(100_007)
+  })
+
+  it("hasNext が false なら、nextId があっても続きを取らない", async () => {
+    const { layer, calls } = testHttpClient((url) =>
+      url.endsWith("/links1hop")
+        ? json({ links1hop: [{ id: "a" }], pagination: { hasNext: false, nextId: "ignored" } })
+        : relatedPage("links2hop", 1, null),
+    )
+    await run(myproject.getRelatedPages("My Page"), layer)
+    expect(calls).toHaveLength(2)
+  })
+
+  it("同じ nextId を返し続けるサーバーでは、途中までを返さずに失敗する", async () => {
+    const { layer } = testHttpClient((url) =>
+      url.includes("/links2hop")
+        ? relatedPage("links2hop", 1, "again")
+        : relatedPage("links1hop", 1, null),
+    )
+    const failure = await runFailure(myproject.getRelatedPages("My Page"), layer)
+    expect(failure).toBeInstanceOf(CosenseApiError)
+    expect(failure).toMatchObject({ status: 200 })
+  })
+
+  it("nextId が前に辿った位置に戻っても、途中までを返さずに失敗する", async () => {
+    const { layer } = testHttpClient((url) => {
+      if (url.endsWith("/links2hop")) return relatedPage("links2hop", 1, "a")
+      if (url.endsWith("?nextId=a")) return relatedPage("links2hop", 1, "b")
+      if (url.endsWith("?nextId=b")) return relatedPage("links2hop", 1, "a")
+      return relatedPage("links1hop", 1, null)
+    })
+    expect(await runFailure(myproject.getRelatedPages("My Page"), layer)).toBeInstanceOf(
+      CosenseApiError,
+    )
+  })
+
   it("関連ページの Infobox も返す", async () => {
     const { layer } = testHttpClient((url) =>
       url.endsWith("/links1hop")

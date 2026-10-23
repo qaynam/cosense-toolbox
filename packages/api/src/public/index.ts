@@ -113,7 +113,12 @@ export interface CosenseProjectApi {
   readonly getPage: (title: string) => Promise<PageDetail | null>
   /** ページの本文をテキストのまま返す。1 行目がタイトル。無いページは `null`。 */
   readonly getPageText: (title: string) => Promise<string | null>
-  /** 関連ページ。1 hop と 2 hop を並べて取り、それぞれ続きのページも辿る。 */
+  /**
+   * 関連ページ。1 hop と 2 hop を並べて取り、それぞれ続きのページも辿る。
+   *
+   * 続きが無くなるまで要求する。件数では止めず、途中までを返すことはない。Cosense が示す続きの位置が
+   * 前に辿ったところへ戻ったら、終わらないので `CosenseApiError` で reject する。
+   */
   readonly getRelatedPages: (title: string) => Promise<RelatedPages>
   /** ページの Infobox だけを読む。`getPage` の結果にも同じものが入っている。 */
   readonly getInfobox: (pageId: string) => Promise<Infobox>
