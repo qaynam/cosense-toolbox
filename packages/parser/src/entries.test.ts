@@ -20,7 +20,7 @@ describe("サブパスの入口", () => {
     expect(exported.sort()).toEqual(Object.keys(entry).sort())
   })
 
-  it("./html は HTML 系の出力 (hast と HTML の文字列) と、描画の拡張と、hast を組み立てる h を出す", async () => {
+  it("./html は HTML 系の出力 (hast と HTML の文字列) と、描画の拡張を出す。hast を組み立てる h は出さない", async () => {
     expect(Object.keys(await import("./html")).sort()).toEqual(
       [
         "codeLanguageOf",
@@ -29,7 +29,6 @@ describe("サブパスの入口", () => {
         "defaultHastHandlers",
         "defaultPageUrl",
         "escapeHtml",
-        "h",
         "safeHref",
         "safeSrc",
         "tableCellLineBreaks",

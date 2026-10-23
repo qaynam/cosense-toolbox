@@ -1,10 +1,11 @@
+import { h } from "hastscript"
 import { describe, expect, it } from "vitest"
 
 import { tableCellNotation } from "../extensions"
 import type { InlineConstruct } from "../inline/types"
 import { parse, parseLine, type ParseOptions } from "../parse"
 import type { InlineNodeInit } from "../types"
-import { type Element, type ElementContent, h } from "."
+import type { Element, ElementContent } from "."
 import type { HastHandlers } from "./to-hast"
 import { codeLanguageOf, defaultPageUrl, safeHref, safeSrc } from "./to-hast"
 import { escapeHtml, toHtml } from "./to-html"
