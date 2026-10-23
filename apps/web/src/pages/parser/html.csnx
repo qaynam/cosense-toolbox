@@ -113,13 +113,19 @@ code:ts
 
 <DocHeading level={3} id="hastscript" title="h で要素を組み立てる" />
 
-`handlers` と `extensions` は hast の要素を返します。同じサブパスの `h` ([hastscript https://github.com/syntax-tree/hastscript] の `h`) を使うと、`{ type: "element", … }` のオブジェクトを手で書かずに済みます。`h(タグ名, 属性, ...子)` の形で、class は空白で区切った文字列のまま渡せます。子の文字列はテキストとしてエスケープされ、`null` と `undefined` は出力されません。
+`handlers` と `extensions` は hast の要素を返します。[hastscript https://github.com/syntax-tree/hastscript] の `h` を使うと、`{ type: "element", … }` のオブジェクトを手で書かずに済みます。hastscript はこのパッケージに含まれないので、別に入れてください。出力は hast 3 なので、hastscript は 9 を使います。
+
+code:sh
+ npm i hastscript@9
+
+`h(タグ名, 属性, ...子)` の形で、class は空白で区切った文字列のまま渡せます。子の文字列はテキストとしてエスケープされ、`null` と `undefined` は出力されません。
 
 次の例は、コードブロックを行ごとの要素に分けず、ファイル名を添えた 1 つの `<pre>` の箱にまとめます。
 
 code:ts
- import { h, toHtml } from "@cosense-toolbox/parser/html"
- 
+ import { toHtml } from "@cosense-toolbox/parser/html"
+ import { h } from "hastscript"
+
  toHtml(page, {
    handlers: {
      codeBlock: (node) =>
@@ -130,11 +136,12 @@ code:ts
    },
  })
 
-ハンドラーの型を書くときは、hast の型 `Element`、`ElementContent`、`Root` も同じサブパスから import できます。`ctx.children(node)` の戻り値 (`ElementContent[]`) は、そのまま `h` の子に渡せます。
+ハンドラーの型を書くときは、hast の型 `Element`、`ElementContent`、`Root` を `@cosense-toolbox/parser/html` から import できます。`ctx.children(node)` の戻り値 (`ElementContent[]`) は、そのまま `h` の子に渡せます。
 
 code:ts
- import { type Element, type ElementContent, h } from "@cosense-toolbox/parser/html"
- 
+ import type { Element, ElementContent } from "@cosense-toolbox/parser/html"
+ import { h } from "hastscript"
+
  const card = (children: ElementContent[]): Element => h("div", { className: "card" }, children)
 
 <DocHeading level={3} id="style" title="style" />
