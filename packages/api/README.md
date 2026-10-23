@@ -29,6 +29,7 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 - プロジェクト名を、どの要求でもエンコードしてパスに入れるようにした。これまでは `getProject` (これまでの `projectDetail`) などの一部だけで、ほかは `a/../b` のような名前だと、PAT を付けたまま別のパスへ送っていた。
 - `createPage` は、1 行目が空か空白だけなら、何も送らずに `TypeError` で reject するようにした (effect の入口では defect)。これまでは空のタイトルで同じタイトルのページを探してから、ページを作ろうとしていた。
 - `getMe()` (これまでの `me()`) は PAT が無くても失敗せず、`id` などが空の `Me` を返すことを、README と doc に書いた。動きは変えていない。これまでの README の例は、PAT が無いと `unauthorized` で失敗するように読めた。
+- `searchFullText` は pageRank の順に最初の 100 件だけを返し、結果の `count` は見つかったページの数 (`pages` の数より多いことがある) であることを、README と doc に書いた。動きは変えていない。
 - Promise の入口で、Cloudflare Workers (workerd) が、`catch` した失敗も未処理の reject として報告していたのを直した。
 - effect の入口の `httpClientOf` で、effect を中断すると (`Effect.timeout` など)、送っている要求も止めるようにした。これまでは中断しても fetch が続いていた。
 
@@ -127,7 +128,7 @@ try {
 | `getInfobox(pageId)`                                | ページの Infobox。`getPage` の結果にも入っている。下の「Infobox」                         |
 | `getLiterateDatabase(title)`                        | 定義ページの表 (文芸的データベース)。定義ページでなければ `null`                          |
 | `exportForAi(title, { hop?, search? })`             | 「AI 用にエクスポート」のテキスト。ページと `hop` (既定は 1) 以内のリンク先               |
-| `searchFullText(query)`                             | 本文の全文検索。pageRank の順に 100 件まで                                                |
+| `searchFullText(query)`                             | 本文の全文検索。pageRank の順に最初の 100 件だけ (`count` は見つかった数)                 |
 | `searchVector(query)`                               | タイトルのベクトル検索。使えないプロジェクトでは空の結果                                  |
 | `listTitles()`                                      | すべてのページのタイトルと、そこから出ているリンク                                        |
 | `listSnapshots(pageId)`                             | ページの履歴。新しい順に、最新の 100 件まで                                               |
@@ -356,6 +357,10 @@ Cosense は 1 回に 10000 件までしか返さないので、大きいプロ�
 ### `getRelatedPages` も続きを最後まで辿る
 
 関連ページも、1 hop と 2 hop のそれぞれで、続きが無くなるまで順に取る。Cosense Web は 1 つの hop で 10 万件までしか取らないが、`getRelatedPages` は件数の上限を設けず、途中までを返すことはない。続きの位置が前に辿ったところへ戻ったときは、`listTitles` と同じく `CosenseApiError` で失敗する。`getLiterateDatabase` が取る 1 hop も同じ。
+
+### `searchFullText` は最初の 100 件だけを返す
+
+`searchFullText` は、pageRank の順に最初の 100 件だけを `pages` に入れて返す。101 件目からは取れない (`limit` や `skip` は渡せない)。結果の `count` は見つかったページの数なので、100 を超えることがある。`count` が `pages` の数より多ければ、言葉を足して絞る。
 
 ## effect で使う
 
