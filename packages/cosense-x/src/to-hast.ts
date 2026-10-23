@@ -68,14 +68,19 @@ export interface ResolvedLink {
 }
 
 /**
- * parser の `toHast` のオプションに、リンクの解決とコンポーネントを足したもの。
+ * parser の `toHast` のオプションの `pageUrl` を `resolveLink` に替え、コンポーネントと `title` を足したもの。
  * 描画の規則 (要素と class 名) は parser の `toHast` が持ち、ここでは差分だけを足す。
  * `@cosense-toolbox/style` や `toHtml` の出力とずれないようにするため。
+ *
+ * 差分は、`page` / `line` / `internalLink` / `projectLink` / `hashtag` / `icon` (`title: false` なら `title` も)
+ * のハンドラとして parser に渡す。`handlers` で同じノード型を渡すとそちらが勝ち、そのノード型では
+ * リンクをテキストに戻すこと・コンポーネント・`title: false` が効かなくなる。
  */
 export interface ToHastOptions extends Omit<HastOptions, "pageUrl"> {
   /**
    * ページを指す記法 (`[title]` / `[/proj/page]` / `#tag` / `[user.icon]`) の遷移先。
    * null を返すとリンクにせず、テキストとして出す。
+   * ハンドラから見える `ctx.options.pageUrl` もこれで決めた href を返し、テキストにするリンクでは空文字を返す。
    *
    * @defaultValue `toHtml` と同じく `/{title}`
    */
@@ -176,6 +181,18 @@ export const toHastEither = (
           text(resolved.label ?? label),
         ]),
     })
+
+  /**
+   * ハンドラの `ctx.options.pageUrl`。parser の既定のハンドラに任せたハンドラも、cosense-x が出すのと
+   * 同じ URL へのリンクを出せるようにする。テキストにするリンクでは空文字を返し、parser の既定のハンドラは
+   * href の無い `<a>` を出す。parser の `pageUrl` の形に合わせて title も受け取るが、リンク先は node で決める。
+   */
+  const pageUrl = (_title: string, node: PageRefNode): string =>
+    pipe(
+      resolve(node),
+      Option.map((resolved) => resolved.href),
+      Option.getOrElse(() => ""),
+    )
 
   // Cosense Web と同じく、そのユーザーのページへのリンクで画像を包む。
   const icon = (node: IconNode, ctx: HastContext): ElementContent[] => {
@@ -283,7 +300,7 @@ export const toHastEither = (
       icon,
     }
     // 利用者の handlers は最後に重ねるので、cosense-x が差し替えたものも上書きできる。
-    return toHastOf(page, { ...rest, handlers: { ...cosenseHandlers, ...handlers } })
+    return toHastOf(page, { ...rest, pageUrl, handlers: { ...cosenseHandlers, ...handlers } })
   })
 }
 
