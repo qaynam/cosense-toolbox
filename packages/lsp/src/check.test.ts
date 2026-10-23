@@ -75,6 +75,45 @@ describe("csn-lsp check", () => {
     expect(await check(root)).toEqual({ output: "", exitCode: 0 })
   })
 
+  it("reads [:/…] in a page of a site as a file of the site, not as a link", async () => {
+    const root = await site({ "public/images/a.png": "", "src/a.csn": "A\n[:/images/a.png]" })
+    expect(await check(root, "src")).toEqual({ output: "", exitCode: 0 })
+  })
+
+  it("reports each [:/…] whose file the page's site does not have", async () => {
+    const root = await site({ "public/images/a.png": "", "src/a.csn": "A\n[:/images/b.png]" })
+    expect(await check(root, "src")).toEqual({
+      output: "src/a.csn:2:1 error ファイルが見つからない: /images/b.png\n",
+      exitCode: 1,
+    })
+  })
+
+  it("reports a missing file as loudly as it is told to report a missing page", async () => {
+    const root = await site({ "public/images/a.png": "", "src/a.csn": "A\n[:/images/b.png]" })
+    expect(await check(root, "src", "--unresolved-links", "warning")).toEqual({
+      output: "src/a.csn:2:1 warning ファイルが見つからない: /images/b.png\n",
+      exitCode: 0,
+    })
+  })
+
+  it("reports what it finds in a page in the order it is written", async () => {
+    const root = await site({
+      "public/images/a.png": "",
+      "src/a.csn": "A\n[:/images/b.png]\n[無いページ]",
+    })
+    expect((await check(root, "src")).output).toBe(
+      "src/a.csn:2:1 error ファイルが見つからない: /images/b.png\n" +
+        "src/a.csn:3:1 error リンク先のページが見つからない: [無いページ]\n",
+    )
+  })
+
+  it("reads [:/…] as a link to a page outside a site, as Cosense Web does", async () => {
+    const root = await site({ "src/a.csn": "A\n[:/images/a.png]" })
+    expect((await check(root, "src")).output).toBe(
+      "src/a.csn:2:1 error リンク先のページが見つからない: [:/images/a.png]\n",
+    )
+  })
+
   it("stops with the usage and exit code 2 on an option it does not know", async () => {
     const root = await site({ "a.csn": "投稿" })
     const { output, exitCode } = await check(root, "--fix")

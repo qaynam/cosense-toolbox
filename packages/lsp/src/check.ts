@@ -2,11 +2,20 @@ import { relative, resolve, sep } from "node:path"
 import { parseArgs } from "node:util"
 
 import type { ParseOptions } from "@cosense-toolbox/parser"
-import { Array as Arr, Effect, Either, Match, Option, pipe, Predicate } from "effect"
+import { Array as Arr, Effect, Either, Match, Option, Order, pipe, Predicate } from "effect"
 import { type Diagnostic, DiagnosticSeverity } from "vscode-languageserver/node"
 
 import { decodeSeverity, SEVERITIES, type Severity, unresolvedLinkDiagnostics } from "./diagnostics"
-import { indexOf, type PageFile, readPageFiles } from "./workspace"
+import { mediaFilesIn, missingMediaDiagnostics } from "./media"
+import { defaultSettings } from "./settings"
+import {
+  findMediaRoots,
+  indexOf,
+  type PageFile,
+  readPageFiles,
+  siteOf,
+  withSiteFiles,
+} from "./workspace"
 
 /**
  * `csn-lsp check`: the server's diagnostics for every page of a site, for a terminal or CI.
@@ -17,10 +26,13 @@ import { indexOf, type PageFile, readPageFiles } from "./workspace"
 export const USAGE = `Usage: csn-lsp check [directory ...] [options]
 
 Reads the .csn and .csnx pages under each directory (default: the current one) and reports
-every [link] to a page none of them holds.
+every [link] to a page none of them holds. In a page of a site (a directory holding public/,
+looked for under the current directory), [:/images/a.png] is a file in public/, reported
+when it is not there.
 
 Options:
-  --unresolved-links <level>  off | hint | information | warning | error (default: error)
+  --unresolved-links <level>  off | hint | information | warning | error (default: error),
+                              for missing pages and files alike
   --no-frontmatter            read a first line of --- as the title, not as YAML
   -h, --help                  print this help
 `
@@ -130,30 +142,69 @@ const reportOf =
     message: Predicate.isString(message) ? message : message.value,
   })
 
+/** A page's reports in the order they are written, whichever check found them. */
+const byPosition = Order.combine(
+  Order.mapInput(Order.number, (report: Report) => report.line),
+  Order.mapInput(Order.number, (report: Report) => report.column),
+)
+
+/** Each site's media root, and the files there as site paths. */
+type Sites = ReadonlyMap<string, ReadonlyArray<string>>
+
+/** The sites under `directory`, found as the editor finds them under a workspace folder. */
+const sitesUnder = (directory: string): Effect.Effect<Sites> =>
+  pipe(
+    findMediaRoots([directory], defaultSettings.mediaRoot),
+    Effect.flatMap(
+      Effect.forEach((root) => Effect.map(mediaFilesIn(root), (files) => [root, files] as const)),
+    ),
+    Effect.map((found) => new Map(found)),
+  )
+
+/**
+ * `checkSite`, but in a page of one of `sites`, `[:/…]` is a file of that site, reported
+ * when the site does not have it. The editor reports both the same way.
+ */
+const checkPages = (
+  { roots, unresolvedLinks, parseOptions = {}, frontmatter = true }: CheckSiteOptions,
+  sites: Sites,
+): Effect.Effect<ReadonlyArray<Report>> => {
+  const mediaRoots = [...sites.keys()]
+  return Effect.map(readPageFiles(roots, { frontmatter, mediaRoots }), (files) => {
+    const index = indexOf(files)
+    return Arr.flatMap(files, (file) => {
+      const options = {
+        severity: unresolvedLinks,
+        components: file.path.endsWith(".csnx"),
+        parseOptions: withSiteFiles(parseOptions, file.path, mediaRoots),
+        frontmatter,
+      }
+      const siteFiles = pipe(
+        siteOf(file.path, mediaRoots),
+        Option.flatMap((root) => Option.fromNullable(sites.get(root))),
+        Option.getOrElse((): ReadonlyArray<string> => []),
+      )
+      return pipe(
+        [
+          ...unresolvedLinkDiagnostics(index, file.text, options),
+          ...missingMediaDiagnostics(file.text, new Set(siteFiles), options),
+        ],
+        Arr.map(reportOf(file)),
+        Arr.sort(byPosition),
+      )
+    })
+  })
+}
+
 /**
  * Every link to a missing page under `roots`, file by file in the order they were read.
  * The judgement is the editor's own, so what an editor flags is what is reported here.
+ *
+ * It does not look for sites: `[:/…]` is read as `parseOptions` read it, a link unless they
+ * hold the parser's `publicMedia`. `runCheck` looks for them, as `csn-lsp check` does.
  */
-export const checkSite = ({
-  roots,
-  unresolvedLinks,
-  parseOptions = {},
-  frontmatter = true,
-}: CheckSiteOptions): Effect.Effect<ReadonlyArray<Report>> =>
-  Effect.map(readPageFiles(roots, { frontmatter }), (files) => {
-    const index = indexOf(files)
-    return Arr.flatMap(files, (file) =>
-      Arr.map(
-        unresolvedLinkDiagnostics(index, file.text, {
-          severity: unresolvedLinks,
-          components: file.path.endsWith(".csnx"),
-          parseOptions,
-          frontmatter,
-        }),
-        reportOf(file),
-      ),
-    )
-  })
+export const checkSite = (options: CheckSiteOptions): Effect.Effect<ReadonlyArray<Report>> =>
+  checkPages(options, new Map())
 
 /** A report as a line of output: `path:line:column level message`, `path` from `cwd`. */
 const lineOf =
@@ -172,9 +223,13 @@ export const runCheck = (args: ReadonlyArray<string>, cwd: string): Effect.Effec
     onRight: Match.valueTags({
       usage: () => Effect.succeed({ output: USAGE, exitCode: 0 }),
       check: ({ options }) =>
-        Effect.map(checkSite(options), (reports) => ({
-          output: Arr.map(reports, lineOf(cwd)).join(""),
-          exitCode: Arr.some(reports, ({ level }) => level === "error") ? 1 : 0,
-        })),
+        pipe(
+          sitesUnder(cwd),
+          Effect.flatMap((sites) => checkPages(options, sites)),
+          Effect.map((reports) => ({
+            output: Arr.map(reports, lineOf(cwd)).join(""),
+            exitCode: Arr.some(reports, ({ level }) => level === "error") ? 1 : 0,
+          })),
+        ),
     }),
   })
