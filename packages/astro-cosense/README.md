@@ -135,7 +135,7 @@ import { toHtml } from "@cosense-toolbox/parser/html"
 import { localizeCosenseAssets } from "virtual:cosense-x/assets"
 
 const project = "help-jp"
-const text = await createCosenseApi().getPageText(project, "ブラケティング")
+const text = await createCosenseApi().project(project).getPageText("ブラケティング")
 if (text === null) throw new Error("ページが無い")
 const html = await localizeCosenseAssets(
   toHtml(parse(text), { iconImageUrl: (icon) => cosenseIconUrl(project, icon.user) }),

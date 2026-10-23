@@ -46,41 +46,42 @@ const headersOf = (call: Call | undefined): Record<string, string> =>
   call?.init.headers as Record<string, string>
 
 const api = createCosenseApi({ pat: PAT })
+const myproject = api.project("myproject")
 
 describe("認証", () => {
   it("pat を渡すと x-personal-access-token を付ける", async () => {
     const { layer, calls } = testHttpClient(() => json({ id: "u1" }))
-    await run(api.me(), layer)
+    await run(api.getMe(), layer)
     expect(headersOf(calls[0])["x-personal-access-token"]).toBe(PAT)
   })
 
   it("pat を渡さなければ、認証のヘッダを付けずに読む (公開プロジェクト)", async () => {
     const { layer, calls } = testHttpClient(() => json({ id: "u1" }))
-    await run(createCosenseApi().me(), layer)
+    await run(createCosenseApi().getMe(), layer)
     expect(headersOf(calls[0])).toEqual({})
   })
 
   it("origin を渡さなければ https://scrapbox.io に送る", async () => {
     const { layer, calls } = testHttpClient(() => json({ id: "u1" }))
-    await run(createCosenseApi().me(), layer)
+    await run(createCosenseApi().getMe(), layer)
     expect(calls[0]?.url).toBe("https://scrapbox.io/api/users/me")
   })
 
   it("origin を渡すと、そこに送る", async () => {
     const { layer, calls } = testHttpClient(() => json({ id: "u1" }))
-    await run(createCosenseApi({ origin: "https://cosense.example" }).me(), layer)
+    await run(createCosenseApi({ origin: "https://cosense.example" }).getMe(), layer)
     expect(calls[0]?.url).toBe("https://cosense.example/api/users/me")
   })
 
   it("origin の後ろに / があっても、/ を重ねずに送る", async () => {
     const { layer, calls } = testHttpClient(() => json({ id: "u1" }))
-    await run(createCosenseApi({ origin: "https://cosense.example/" }).me(), layer)
+    await run(createCosenseApi({ origin: "https://cosense.example/" }).getMe(), layer)
     expect(calls[0]?.url).toBe("https://cosense.example/api/users/me")
   })
 
   it("origin は http でもよい", async () => {
     const { layer, calls } = testHttpClient(() => json({ id: "u1" }))
-    await run(createCosenseApi({ origin: "http://localhost:8787" }).me(), layer)
+    await run(createCosenseApi({ origin: "http://localhost:8787" }).getMe(), layer)
     expect(calls[0]?.url).toBe("http://localhost:8787/api/users/me")
   })
 
@@ -98,40 +99,52 @@ describe("認証", () => {
   })
 })
 
-describe("プロジェクト名", () => {
+describe("project", () => {
   const PROJECT = "a/../b"
   const ENCODED = "/a%2F..%2Fb"
+  const project = api.project(PROJECT)
+
+  it("渡した名前を、そのまま name に持つ", () => {
+    expect(project.name).toBe("a/../b")
+  })
+
+  it.each(["", ".", ".."])(
+    "名前が %j なら、パスの 1 つの区切りにならないので TypeError を投げる",
+    (name) => {
+      expect(() => api.project(name)).toThrow(TypeError)
+    },
+  )
 
   const requests: readonly (readonly [
     string,
     () => Effect.Effect<unknown, unknown, HttpClient>,
   ])[] = [
-    ["projectDetail", () => api.projectDetail(PROJECT)],
-    ["projectUsers", () => api.projectUsers(PROJECT)],
-    ["listPages", () => api.listPages(PROJECT)],
-    ["getPage", () => api.getPage(PROJECT, "title")],
-    ["getPageText", () => api.getPageText(PROJECT, "title")],
-    ["relatedPages", () => api.relatedPages(PROJECT, "title")],
-    ["getInfobox", () => api.getInfobox(PROJECT, "page1")],
-    ["literateDatabase", () => api.literateDatabase(PROJECT, "title")],
-    ["exportForAi", () => api.exportForAi(PROJECT, "title", 1)],
-    ["searchFullText", () => api.searchFullText(PROJECT, "query")],
-    ["searchVector", () => api.searchVector(PROJECT, "query")],
-    ["searchTitles", () => api.searchTitles(PROJECT)],
-    ["pageSnapshots", () => api.pageSnapshots(PROJECT, "page1")],
-    ["pageSnapshot", () => api.pageSnapshot(PROJECT, "page1", "snapshot1")],
-    ["previewEdit", () => api.previewEdit(PROJECT, { changes: [] })],
-    ["submitEdit", () => api.submitEdit(PROJECT, "preview1")],
-    ["replaceLinks", () => api.replaceLinks(PROJECT, "from", "to")],
-    ["markAccessed", () => api.markAccessed(PROJECT, "page1")],
-    ["disableInfoboxExtraction", () => api.disableInfoboxExtraction(PROJECT, "page1", "Recipe")],
-    ["enableInfoboxExtraction", () => api.enableInfoboxExtraction(PROJECT, "page1", "Recipe")],
-    ["updateInfoboxResult", () => api.updateInfoboxResult(PROJECT, "page1")],
+    ["getProject", () => project.getProject()],
+    ["listUsers", () => project.listUsers()],
+    ["listPages", () => project.listPages()],
+    ["getPage", () => project.getPage("title")],
+    ["getPageText", () => project.getPageText("title")],
+    ["getRelatedPages", () => project.getRelatedPages("title")],
+    ["getInfobox", () => project.getInfobox("page1")],
+    ["getLiterateDatabase", () => project.getLiterateDatabase("title")],
+    ["exportForAi", () => project.exportForAi("title")],
+    ["searchFullText", () => project.searchFullText("query")],
+    ["searchVector", () => project.searchVector("query")],
+    ["listTitles", () => project.listTitles()],
+    ["listSnapshots", () => project.listSnapshots("page1")],
+    ["getSnapshot", () => project.getSnapshot("page1", "snapshot1")],
+    ["previewEdit", () => project.previewEdit({ changes: [] })],
+    ["submitEdit", () => project.submitEdit("preview1")],
+    ["replaceLinks", () => project.replaceLinks("from", "to")],
+    ["markAccessed", () => project.markAccessed("page1")],
+    ["disableInfoboxExtraction", () => project.disableInfoboxExtraction("page1", "Recipe")],
+    ["enableInfoboxExtraction", () => project.enableInfoboxExtraction("page1", "Recipe")],
+    ["requestInfoboxExtraction", () => project.requestInfoboxExtraction("page1")],
     [
       "updatePage",
-      () => api.updatePage(PROJECT, { id: "p", title: "t", commitId: "c", lines: [] }, ["t"]),
+      () => project.updatePage({ id: "p", title: "t", commitId: "c", lines: [] }, ["t"]),
     ],
-    ["createPage", () => api.createPage(PROJECT, ["title"])],
+    ["createPage", () => project.createPage(["title"])],
   ]
 
   it.each(requests)(
@@ -145,9 +158,9 @@ describe("プロジェクト名", () => {
 })
 
 describe("読み取り", () => {
-  it("me() は、無い項目を空の値にして返す", async () => {
+  it("getMe() は、無い項目を空の値にして返す", async () => {
     const { layer } = testHttpClient(() => json({ id: "u1", name: "taro", displayName: "Taro" }))
-    expect(await run(api.me(), layer)).toEqual({
+    expect(await run(api.getMe(), layer)).toEqual({
       id: "u1",
       name: "taro",
       displayName: "Taro",
@@ -155,27 +168,27 @@ describe("読み取り", () => {
     })
   })
 
-  it("projects() は、応答の projects を返す", async () => {
+  it("listProjects() は、応答の projects を返す", async () => {
     const { layer } = testHttpClient(() => json({ projects: [{ id: "p1", name: "myproject" }] }))
-    const result = await run(api.projects(), layer)
+    const result = await run(api.listProjects(), layer)
     expect(result.map((project) => project.name)).toEqual(["myproject"])
   })
 
-  it("projectDetail() は、画像の送り先の設定を返す", async () => {
+  it("getProject() は、画像の送り先の設定を返す", async () => {
     const { layer, calls } = testHttpClient(() =>
       json({ id: "p1", name: "myproject", uploadImageTo: "gyazo" }),
     )
-    const result = await run(api.projectDetail("myproject"), layer)
+    const result = await run(myproject.getProject(), layer)
     expect(result).toMatchObject({ uploadImageTo: "gyazo", gyazoTeamsName: null })
     expect(calls[0]?.url).toBe("https://scrapbox.io/api/projects/myproject")
   })
 
-  it("projectDetail() は、Infobox を使うプロジェクトかを返す", async () => {
+  it("getProject() は、Infobox を使うプロジェクトかを返す", async () => {
     const { layer } = testHttpClient(() => json({ id: "p1", name: "myproject", infobox: true }))
-    expect(await run(api.projectDetail("myproject"), layer)).toMatchObject({ infobox: true })
+    expect(await run(myproject.getProject(), layer)).toMatchObject({ infobox: true })
   })
 
-  it("projectUsers() は、今のメンバーと抜けたメンバーを合わせて返す", async () => {
+  it("listUsers() は、今のメンバーと抜けたメンバーを合わせて返す", async () => {
     const { layer } = testHttpClient(() =>
       json({
         projectId: "p1",
@@ -183,7 +196,7 @@ describe("読み取り", () => {
         memberSnapshots: [{ data: { id: "u2", name: "hanako" } }, {}],
       }),
     )
-    expect(await run(api.projectUsers("myproject"), layer)).toEqual({
+    expect(await run(myproject.listUsers(), layer)).toEqual({
       projectId: "p1",
       users: [
         { id: "u1", name: "taro" },
@@ -196,10 +209,7 @@ describe("読み取り", () => {
     const { layer, calls } = testHttpClient(() =>
       json({ count: 2, pages: [{ id: "a" }, { id: "b" }] }),
     )
-    const result = await run(
-      api.listPages("myproject", { sort: "updated", limit: 10, skip: 5 }),
-      layer,
-    )
+    const result = await run(myproject.listPages({ sort: "updated", limit: 10, skip: 5 }), layer)
     expect(result.count).toBe(2)
     expect(result.pages).toHaveLength(2)
     expect(calls[0]?.url).toBe(
@@ -209,7 +219,7 @@ describe("読み取り", () => {
 
   it("listPages() の絞り込みは、filterType と filterValue の両方があるときだけ送る", async () => {
     const { layer, calls } = testHttpClient(() => json({}))
-    await run(api.listPages("myproject", { filterType: "icon" }), layer)
+    await run(myproject.listPages({ filterType: "icon" }), layer)
     expect(calls[0]?.url).toBe("https://scrapbox.io/api/pages/myproject/")
   })
 })
@@ -227,7 +237,7 @@ describe("getPage", () => {
         views: 12,
       }),
     )
-    const page = await run(api.getPage("myproject", "My Page"), layer)
+    const page = await run(myproject.getPage("My Page"), layer)
     expect(page).toEqual(
       Option.some({
         id: "page1",
@@ -273,7 +283,7 @@ describe("getPage", () => {
         infoboxDisableLinks: ["food_log"],
       }),
     )
-    const page = await run(api.getPage("myproject", "Tomato Soup"), layer)
+    const page = await run(myproject.getPage("Tomato Soup"), layer)
     expect(Option.getOrThrow(page)).toMatchObject({
       infoboxDefinition: ["Ingredients", "Category\tAnswer one of: soup, salad"],
       infoboxResult: [
@@ -301,7 +311,7 @@ describe("getPage", () => {
         ],
       }),
     )
-    const page = await run(api.getPage("myproject", "Tomato Soup"), layer)
+    const page = await run(myproject.getPage("Tomato Soup"), layer)
     expect(Option.getOrThrow(page).infoboxResult).toEqual([
       {
         title: "",
@@ -315,7 +325,7 @@ describe("getPage", () => {
 
   it("タイトルの空白は _ にし、/ は %2F にし、日本語はそのまま送る", async () => {
     const { layer, calls } = testHttpClient(() => json({ persistent: false }))
-    await run(api.getPage("myproject", "日本語 タイトル/foo"), layer)
+    await run(myproject.getPage("日本語 タイトル/foo"), layer)
     expect(calls[0]?.url).toBe(
       "https://scrapbox.io/api/pages/v2/myproject/日本語_タイトル%2Ffoo/?followRename=true",
     )
@@ -323,7 +333,7 @@ describe("getPage", () => {
 
   it("404 なら none", async () => {
     const { layer } = testHttpClient(() => new Response("not found", { status: 404 }))
-    expect(await run(api.getPage("myproject", "Missing"), layer)).toEqual(Option.none())
+    expect(await run(myproject.getPage("Missing"), layer)).toEqual(Option.none())
   })
 
   it("まだ書かれていないページ (persistent: false) も none", async () => {
@@ -335,14 +345,14 @@ describe("getPage", () => {
         lines: [{ id: "placeholder-line", text: "New Page" }],
       }),
     )
-    expect(await run(api.getPage("myproject", "New Page"), layer)).toEqual(Option.none())
+    expect(await run(myproject.getPage("New Page"), layer)).toEqual(Option.none())
   })
 })
 
 describe("getPageText", () => {
   it("ページの本文をテキストのまま返す", async () => {
     const { layer, calls } = testHttpClient(() => new Response("My Page\nhello"))
-    expect(await run(api.getPageText("myproject", "My Page"), layer)).toEqual(
+    expect(await run(myproject.getPageText("My Page"), layer)).toEqual(
       Option.some("My Page\nhello"),
     )
     expect(calls[0]?.url).toBe("https://scrapbox.io/api/pages/myproject/My_Page/text")
@@ -350,18 +360,18 @@ describe("getPageText", () => {
 
   it("404 なら none", async () => {
     const { layer } = testHttpClient(() => new Response("not found", { status: 404 }))
-    expect(await run(api.getPageText("myproject", "Missing"), layer)).toEqual(Option.none())
+    expect(await run(myproject.getPageText("Missing"), layer)).toEqual(Option.none())
   })
 })
 
-describe("relatedPages", () => {
+describe("getRelatedPages", () => {
   it("1 hop と 2 hop を両方取る", async () => {
     const { layer, calls } = testHttpClient((url) =>
       url.endsWith("/links1hop")
         ? json({ links1hop: [{ id: "a", title: "A" }] })
         : json({ links2hop: [{ id: "b", title: "B" }] }),
     )
-    const result = await run(api.relatedPages("myproject", "My Page"), layer)
+    const result = await run(myproject.getRelatedPages("My Page"), layer)
     expect(result.links1hop).toHaveLength(1)
     expect(result.links2hop).toHaveLength(1)
     expect(calls.map((call) => call.url).sort()).toEqual([
@@ -393,7 +403,7 @@ describe("relatedPages", () => {
         pagination: { hasNext: false, nextId: null },
       })
     })
-    const result = await run(api.relatedPages("myproject", "My Page"), layer)
+    const result = await run(myproject.getRelatedPages("My Page"), layer)
     expect(result.links1hop.map((page) => page.title)).toEqual(["A"])
     expect(result.links2hop.map((page) => page.title)).toEqual(["B", "C"])
     expect(result.hiddenHeadwordsLc).toEqual(["hidden"])
@@ -418,7 +428,7 @@ describe("relatedPages", () => {
           })
         : json({ links2hop: [{ id: "b", title: "Recipe", infoboxDefinition: ["Category"] }] }),
     )
-    const result = await run(api.relatedPages("myproject", "My Page"), layer)
+    const result = await run(myproject.getRelatedPages("My Page"), layer)
     expect(result.links1hop[0]).toMatchObject({
       infoboxDefinition: [],
       infoboxResult: [{ title: "Recipe", infobox: { Category: "soup" } }],
@@ -441,7 +451,7 @@ describe("getInfobox", () => {
         infoboxDisableLinks: ["food_log"],
       }),
     )
-    expect(await run(api.getInfobox("myproject", "page1"), layer)).toEqual({
+    expect(await run(myproject.getInfobox("page1"), layer)).toEqual({
       infoboxDefinition: [],
       infoboxResult: [
         { title: "Recipe", infobox: { Category: "soup" }, hallucination: true, truncated: false },
@@ -452,7 +462,7 @@ describe("getInfobox", () => {
   })
 })
 
-describe("literateDatabase", () => {
+describe("getLiterateDatabase", () => {
   const definition = {
     id: "def",
     title: "Recipe",
@@ -474,7 +484,7 @@ describe("literateDatabase", () => {
 
   it("列は定義の表の行の最初のセルで、ExcludeTitleLine の行は除く", async () => {
     const { layer } = testHttpClient(respondWith(definition, []))
-    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    const table = await run(myproject.getLiterateDatabase("Recipe"), layer)
     expect(Option.getOrThrow(table).fields).toEqual(["Ingredients", "Category"])
   })
 
@@ -486,7 +496,7 @@ describe("literateDatabase", () => {
         }),
       ]),
     )
-    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    const table = await run(myproject.getLiterateDatabase("Recipe"), layer)
     expect(Option.getOrThrow(table).rows.map((row) => [row.page.title, row.infobox])).toEqual([
       ["Tomato Soup", { Category: "soup" }],
     ])
@@ -496,7 +506,7 @@ describe("literateDatabase", () => {
     const { layer } = testHttpClient(
       respondWith(definition, [linkingPage("Kitchen", { linksLc: ["cooking"] })]),
     )
-    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    const table = await run(myproject.getLiterateDatabase("Recipe"), layer)
     expect(Option.getOrThrow(table).rows).toEqual([])
   })
 
@@ -504,7 +514,7 @@ describe("literateDatabase", () => {
     const { layer } = testHttpClient(
       respondWith(definition, [linkingPage("Food Log", { infoboxDisableLinks: ["recipe"] })]),
     )
-    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    const table = await run(myproject.getLiterateDatabase("Recipe"), layer)
     expect(Option.getOrThrow(table).rows).toEqual([])
   })
 
@@ -520,13 +530,13 @@ describe("literateDatabase", () => {
         }),
       ]),
     )
-    const table = await run(api.literateDatabase("myproject", "Weekly Recipe"), layer)
+    const table = await run(myproject.getLiterateDatabase("Weekly Recipe"), layer)
     expect(Option.getOrThrow(table).rows[0]?.infobox).toEqual({ Category: "soup" })
   })
 
   it("まだ抜き出していないページの値は空", async () => {
     const { layer } = testHttpClient(respondWith(definition, [linkingPage("Tomato Soup")]))
-    const table = await run(api.literateDatabase("myproject", "Recipe"), layer)
+    const table = await run(myproject.getLiterateDatabase("Recipe"), layer)
     expect(Option.getOrThrow(table).rows[0]?.infobox).toEqual({})
   })
 
@@ -541,7 +551,7 @@ describe("literateDatabase", () => {
       if (url.includes("/links1hop?")) return json({ links1hop: [linkingPage("Green Salad")] })
       return json(definition)
     })
-    const table = await run(api.literateDatabase("myproject", "Old Recipe"), layer)
+    const table = await run(myproject.getLiterateDatabase("Old Recipe"), layer)
     expect(Option.getOrThrow(table).rows.map((row) => row.page.title)).toEqual([
       "Tomato Soup",
       "Green Salad",
@@ -557,13 +567,13 @@ describe("literateDatabase", () => {
     const { layer, calls } = testHttpClient(
       respondWith({ ...definition, infoboxDefinition: [] }, []),
     )
-    expect(await run(api.literateDatabase("myproject", "Recipe"), layer)).toEqual(Option.none())
+    expect(await run(myproject.getLiterateDatabase("Recipe"), layer)).toEqual(Option.none())
     expect(calls).toHaveLength(1)
   })
 
   it("ページが無ければ none", async () => {
     const { layer } = testHttpClient(() => new Response("not found", { status: 404 }))
-    expect(await run(api.literateDatabase("myproject", "Missing"), layer)).toEqual(Option.none())
+    expect(await run(myproject.getLiterateDatabase("Missing"), layer)).toEqual(Option.none())
   })
 })
 
@@ -576,7 +586,7 @@ describe("Infobox の抜き出し", () => {
 
   it("disableInfoboxExtraction() は、定義ページのタイトルを止めるものに足し、止めた後の Infobox を返す", async () => {
     const { layer, calls } = testHttpClient(() => json(infobox))
-    const result = await run(api.disableInfoboxExtraction("myproject", "page1", "Recipe"), layer)
+    const result = await run(myproject.disableInfoboxExtraction("page1", "Recipe"), layer)
     expect(result.infoboxDisableLinks).toEqual(["recipe"])
     expect(calls.map((call) => [call.url, call.init.method, call.init.body])).toEqual([
       [
@@ -589,7 +599,7 @@ describe("Infobox の抜き出し", () => {
 
   it("enableInfoboxExtraction() は、定義ページのタイトルを止めるものから除き、戻した後の Infobox を返す", async () => {
     const { layer, calls } = testHttpClient(() => json({ ...infobox, infoboxDisableLinks: [] }))
-    const result = await run(api.enableInfoboxExtraction("myproject", "page1", "Recipe"), layer)
+    const result = await run(myproject.enableInfoboxExtraction("page1", "Recipe"), layer)
     expect(result.infoboxDisableLinks).toEqual([])
     expect(calls.map((call) => [call.url, call.init.method, call.init.body])).toEqual([
       [
@@ -600,22 +610,22 @@ describe("Infobox の抜き出し", () => {
     ])
   })
 
-  it("updateInfoboxResult() は、抜き出し直すよう POST で頼む", async () => {
+  it("requestInfoboxExtraction() は、抜き出し直すよう POST で頼む", async () => {
     const { layer, calls } = testHttpClient(() => json({}))
-    await run(api.updateInfoboxResult("myproject", "page1"), layer)
+    await run(myproject.requestInfoboxExtraction("page1"), layer)
     expect(calls.map((call) => [call.url, call.init.method])).toEqual([
       ["https://scrapbox.io/api/pages/myproject/page1/infobox/update-result", "POST"],
     ])
   })
 
-  it("updateInfoboxResult() は、応答の本文が JSON でなくても成功する", async () => {
+  it("requestInfoboxExtraction() は、応答の本文が JSON でなくても成功する", async () => {
     const { layer } = testHttpClient(() => new Response("OK"))
-    expect(await run(api.updateInfoboxResult("myproject", "page1"), layer)).toBeUndefined()
+    expect(await run(myproject.requestInfoboxExtraction("page1"), layer)).toBeUndefined()
   })
 
-  it("updateInfoboxResult() は、断られたらそのエラーで失敗する", async () => {
+  it("requestInfoboxExtraction() は、断られたらそのエラーで失敗する", async () => {
     const { layer } = testHttpClient(() => json({ error: "Forbidden" }, 403))
-    expect(await runFailure(api.updateInfoboxResult("myproject", "page1"), layer)).toMatchObject({
+    expect(await runFailure(myproject.requestInfoboxExtraction("page1"), layer)).toMatchObject({
       status: 403,
       kind: "forbidden",
     })
@@ -623,11 +633,11 @@ describe("Infobox の抜き出し", () => {
 })
 
 describe("exportForAi", () => {
-  it("指定した hop の書き出しをテキストのまま返す", async () => {
+  it("hop を渡さなければ、1 hop の書き出しをテキストのまま返す", async () => {
     const { layer, calls } = testHttpClient(
       () => new Response("page text", { headers: { "content-type": "text/plain" } }),
     )
-    expect(await run(api.exportForAi("myproject", "My Page", 1), layer)).toBe("page text")
+    expect(await run(myproject.exportForAi("My Page"), layer)).toBe("page text")
     expect(calls[0]?.url).toBe(
       "https://scrapbox.io/api/smart-context/export-1hop-links/myproject.txt?title=My+Page",
     )
@@ -635,7 +645,7 @@ describe("exportForAi", () => {
 
   it("search は前後の空白を除いて送る", async () => {
     const { layer, calls } = testHttpClient(() => new Response("text"))
-    await run(api.exportForAi("myproject", "ページ", 2, " 検索 "), layer)
+    await run(myproject.exportForAi("ページ", { hop: 2, search: " 検索 " }), layer)
     expect(calls[0]?.url).toBe(
       "https://scrapbox.io/api/smart-context/export-2hop-links/myproject.txt?title=%E3%83%9A%E3%83%BC%E3%82%B8&search=%E6%A4%9C%E7%B4%A2",
     )
@@ -643,7 +653,7 @@ describe("exportForAi", () => {
 
   it("空白だけの search は送らない", async () => {
     const { layer, calls } = testHttpClient(() => new Response("text"))
-    await run(api.exportForAi("myproject", "ページ", 2, "   "), layer)
+    await run(myproject.exportForAi("ページ", { hop: 2, search: "   " }), layer)
     expect(calls[0]?.url).toBe(
       "https://scrapbox.io/api/smart-context/export-2hop-links/myproject.txt?title=%E3%83%9A%E3%83%BC%E3%82%B8",
     )
@@ -655,7 +665,7 @@ describe("検索", () => {
     const { layer, calls } = testHttpClient(() =>
       json({ count: 1, existsExactTitleMatch: true, pages: [{ id: "a", title: "A" }] }),
     )
-    const result = await run(api.searchFullText("myproject", "hello world"), layer)
+    const result = await run(myproject.searchFullText("hello world"), layer)
     expect(result.count).toBe(1)
     expect(calls[0]?.url).toBe(
       "https://scrapbox.io/api/pages/myproject/search/query?q=hello+world&skip=0&limit=100&sort=pageRank&field=lines",
@@ -664,28 +674,28 @@ describe("検索", () => {
 
   it("searchVector() は、ベクトル検索が無効なプロジェクト (490) なら空の結果を返す", async () => {
     const { layer } = testHttpClient(() => new Response("feature disabled", { status: 490 }))
-    expect(await run(api.searchVector("myproject", "q"), layer)).toEqual({ pages: [] })
+    expect(await run(myproject.searchVector("q"), layer)).toEqual({ pages: [] })
   })
 
-  it("searchTitles() は、配列だけの応答も読む", async () => {
+  it("listTitles() は、配列だけの応答も読む", async () => {
     const { layer } = testHttpClient(() =>
       json([{ id: "a", title: "A", titleLc: "a", updated: 1, image: null }]),
     )
-    const result = await run(api.searchTitles("myproject"), layer)
+    const result = await run(myproject.listTitles(), layer)
     expect(result.map((entry) => entry.title)).toEqual(["A"])
     expect(result[0]?.links).toEqual([])
   })
 
-  it("searchTitles() は、各ページから出ているリンクも返す", async () => {
+  it("listTitles() は、各ページから出ているリンクも返す", async () => {
     const { layer } = testHttpClient(() =>
       json([{ id: "a", title: "A", titleLc: "a", updated: 1, image: null, links: ["B", "C"] }]),
     )
-    const result = await run(api.searchTitles("myproject"), layer)
+    const result = await run(myproject.listTitles(), layer)
     expect(result[0]?.links).toEqual(["B", "C"])
   })
 })
 
-describe("searchTitles はプロジェクト全体を辿る", () => {
+describe("listTitles はプロジェクト全体を辿る", () => {
   const titlePage = (count: number, followingId: string | null): Response =>
     new Response(
       JSON.stringify(Array.from({ length: count }, (_, i) => ({ id: String(i), title: `t${i}` }))),
@@ -704,28 +714,28 @@ describe("searchTitles はプロジェクト全体を辿る", () => {
       call++
       return call === 1 ? titlePage(10000, "second") : titlePage(7, null)
     })
-    const titles = await run(api.searchTitles("big"), layer)
+    const titles = await run(api.project("big").listTitles(), layer)
     expect(titles).toHaveLength(10007)
     expect(calls[1]?.url).toContain("followingId=second")
   })
 
   it("1 回に収まるプロジェクトは 1 回で終わる", async () => {
     const { layer, calls } = testHttpClient(() => titlePage(12, null))
-    const titles = await run(api.searchTitles("small"), layer)
+    const titles = await run(api.project("small").listTitles(), layer)
     expect(titles).toHaveLength(12)
     expect(calls).toHaveLength(1)
   })
 
   it("ちょうど 10000 件でも、x-following-id が無ければ終わる", async () => {
     const { layer, calls } = testHttpClient(() => titlePage(10000, null))
-    const titles = await run(api.searchTitles("exact"), layer)
+    const titles = await run(api.project("exact").listTitles(), layer)
     expect(titles).toHaveLength(10000)
     expect(calls).toHaveLength(1)
   })
 
   it("10000 件に届かなければ、x-following-id があっても終わりとみなす", async () => {
     const { layer, calls } = testHttpClient(() => titlePage(12, "next"))
-    await run(api.searchTitles("small"), layer)
+    await run(api.project("small").listTitles(), layer)
     expect(calls).toHaveLength(1)
   })
 
@@ -735,13 +745,13 @@ describe("searchTitles はプロジェクト全体を辿る", () => {
       call++
       return call <= 21 ? titlePage(10000, `p${call}`) : titlePage(7, null)
     })
-    const titles = await run(api.searchTitles("huge"), layer)
+    const titles = await run(api.project("huge").listTitles(), layer)
     expect(titles).toHaveLength(210007)
   })
 
   it("同じ x-following-id を返し続けるサーバーでは、途中までを返さずに失敗する", async () => {
     const { layer, calls } = testHttpClient(() => titlePage(10000, "again"))
-    const failure = await runFailure(api.searchTitles("endless"), layer)
+    const failure = await runFailure(api.project("endless").listTitles(), layer)
     expect(failure).toBeInstanceOf(CosenseApiError)
     expect(failure).toMatchObject({ status: 200 })
     expect(calls).toHaveLength(2)
@@ -751,27 +761,27 @@ describe("searchTitles はプロジェクト全体を辿る", () => {
     const cursors = ["a", "b", "a"]
     let call = 0
     const { layer, calls } = testHttpClient(() => titlePage(10000, cursors[call++] ?? null))
-    expect(await runFailure(api.searchTitles("cycle"), layer)).toBeInstanceOf(CosenseApiError)
+    expect(await runFailure(api.project("cycle").listTitles(), layer)).toBeInstanceOf(
+      CosenseApiError,
+    )
     expect(calls).toHaveLength(3)
   })
 })
 
 describe("履歴", () => {
-  it("pageSnapshots() は、id の無い項目を除いて返す", async () => {
+  it("listSnapshots() は、id の無い項目を除いて返す", async () => {
     const { layer, calls } = testHttpClient(() =>
       json({ timestamps: [{ id: "s1", created: 1 }, { created: 2 }] }),
     )
-    expect(await run(api.pageSnapshots("myproject", "page1"), layer)).toEqual([
-      { id: "s1", created: 1 },
-    ])
+    expect(await run(myproject.listSnapshots("page1"), layer)).toEqual([{ id: "s1", created: 1 }])
     expect(calls[0]?.url).toBe("https://scrapbox.io/api/page-snapshots/myproject/page1")
   })
 
-  it("pageSnapshot() は、その時点のページを返す", async () => {
+  it("getSnapshot() は、その時点のページを返す", async () => {
     const { layer, calls } = testHttpClient(() =>
       json({ snapshot: { title: "My Page", created: 1, lines: [{ id: "l1", text: "My Page" }] } }),
     )
-    const snapshot = await run(api.pageSnapshot("myproject", "page1", "s1"), layer)
+    const snapshot = await run(myproject.getSnapshot("page1", "s1"), layer)
     expect(snapshot.lines.map((line) => line.text)).toEqual(["My Page"])
     expect(calls[0]?.url).toBe("https://scrapbox.io/api/page-snapshots/myproject/page1/s1")
   })
@@ -780,28 +790,28 @@ describe("履歴", () => {
 describe("失敗", () => {
   it("応答の本文の error を code に入れる", async () => {
     const { layer } = testHttpClient(() => json({ error: "SomeError" }, 403))
-    expect(await runFailure(api.me(), layer)).toMatchObject({ status: 403, code: "SomeError" })
+    expect(await runFailure(api.getMe(), layer)).toMatchObject({ status: 403, code: "SomeError" })
   })
 
   it("本文に error が無ければ、name を code に入れる", async () => {
     const { layer } = testHttpClient(() =>
       json({ name: "NotLoggedInError", message: "You are not logged in yet." }, 401),
     )
-    expect(await runFailure(api.me(), layer)).toMatchObject({ code: "NotLoggedInError" })
+    expect(await runFailure(api.getMe(), layer)).toMatchObject({ code: "NotLoggedInError" })
   })
 
   it("本文に error と name の両方があれば、error を code に入れる", async () => {
     const { layer } = testHttpClient(() =>
       json({ error: "NotFastForward", name: "ConflictError" }, 409),
     )
-    expect(await runFailure(api.me(), layer)).toMatchObject({ code: "NotFastForward" })
+    expect(await runFailure(api.getMe(), layer)).toMatchObject({ code: "NotFastForward" })
   })
 
   it("本文の message を、エラーの文に入れる", async () => {
     const { layer } = testHttpClient(() =>
       json({ name: "NotLoggedInError", message: "You are not logged in yet." }, 401),
     )
-    const failure = await runFailure(api.me(), layer)
+    const failure = await runFailure(api.getMe(), layer)
     expect(failure.message).toContain("You are not logged in yet.")
   })
 
@@ -809,7 +819,7 @@ describe("失敗", () => {
     const { layer } = testHttpClient(
       () => new Response("request entity too large", { status: 400 }),
     )
-    const failure = await runFailure(api.me(), layer)
+    const failure = await runFailure(api.getMe(), layer)
     expect(failure.message).toContain("request entity too large")
   })
 
@@ -817,7 +827,7 @@ describe("失敗", () => {
     const { layer } = testHttpClient(
       () => new Response("<!DOCTYPE html><html><body>Bad Gateway</body></html>", { status: 502 }),
     )
-    const failure = await runFailure(api.me(), layer)
+    const failure = await runFailure(api.getMe(), layer)
     expect(failure.message).not.toContain("<")
   })
 
@@ -835,19 +845,19 @@ describe("失敗", () => {
     [400, { error: "SomeError" }, "unknown"],
   ])("status %i、本文 %j なら kind は %s", async (status, body, kind) => {
     const { layer } = testHttpClient(() => json(body, status))
-    expect(await runFailure(api.me(), layer)).toMatchObject({ kind })
+    expect(await runFailure(api.getMe(), layer)).toMatchObject({ kind })
   })
 
   it("本文が大きすぎて断られたら (400 request entity too large)、kind は tooLarge", async () => {
     const { layer } = testHttpClient(
       () => new Response("request entity too large", { status: 400 }),
     )
-    expect(await runFailure(api.me(), layer)).toMatchObject({ status: 400, kind: "tooLarge" })
+    expect(await runFailure(api.getMe(), layer)).toMatchObject({ status: 400, kind: "tooLarge" })
   })
 
   it("返ってきた JSON が読めなければ、code は DecodeError、kind は decode", async () => {
     const { layer } = testHttpClient(() => new Response("not json"))
-    expect(await runFailure(api.me(), layer)).toMatchObject({
+    expect(await runFailure(api.getMe(), layer)).toMatchObject({
       status: 200,
       code: "DecodeError",
       kind: "decode",
@@ -861,12 +871,12 @@ describe("失敗", () => {
         fetch: () => Effect.fail(new HttpClientError({ cause: new Error("offline") })),
       }),
     )
-    expect(await runFailure(api.me(), layer)).toMatchObject({ status: 0, kind: "network" })
+    expect(await runFailure(api.getMe(), layer)).toMatchObject({ status: 0, kind: "network" })
   })
 
   it("エラーの文に PAT を出さない", async () => {
     const { layer } = testHttpClient(() => new Response("unauthorized", { status: 401 }))
-    const failure = await runFailure(api.me(), layer)
+    const failure = await runFailure(api.getMe(), layer)
     expect(String(failure)).not.toContain(PAT)
   })
 })
@@ -874,7 +884,7 @@ describe("失敗", () => {
 describe("リダイレクト", () => {
   it("fetch には任せず (redirect: manual)、PAT を別のサイトへ送らない", async () => {
     const { layer, calls } = testHttpClient(() => json({ id: "u1" }))
-    await run(api.me(), layer)
+    await run(api.getMe(), layer)
     expect(calls[0]?.init.redirect).toBe("manual")
   })
 
@@ -887,7 +897,7 @@ describe("リダイレクト", () => {
           })
         : json({ id: "pg1", title: "New Title", persistent: true, lines: [] }),
     )
-    const page = await run(api.getPage("myproject", "Old Title"), layer)
+    const page = await run(myproject.getPage("Old Title"), layer)
     expect(Option.isSome(page)).toBe(true)
     expect(calls[1]?.url).toBe("https://scrapbox.io/api/pages/v2/myproject/New_Title")
     expect(headersOf(calls[1])["x-personal-access-token"]).toBe(PAT)
@@ -898,7 +908,7 @@ describe("リダイレクト", () => {
       () =>
         new Response(null, { status: 302, headers: { location: "https://evil.example/steal" } }),
     )
-    const failure = await runFailure(api.me(), layer)
+    const failure = await runFailure(api.getMe(), layer)
     expect(failure).toMatchObject({ status: 302 })
     expect(calls).toHaveLength(1)
   })
@@ -909,7 +919,7 @@ describe("リダイレクト", () => {
         new Response(null, { status: 302, headers: { location: "/api/pages/v2/myproject/Round" } }),
     )
     const result = await Effect.runPromise(
-      Effect.either(Effect.provide(api.getPage("myproject", "Round"), layer)),
+      Effect.either(Effect.provide(myproject.getPage("Round"), layer)),
     )
     expect(Either.isLeft(result)).toBe(true)
     expect(calls).toHaveLength(4)
@@ -923,11 +933,8 @@ describe("書き込み", () => {
         ? json({ previewId: "pv1", expireAt: "later", pagePreview: null })
         : json({ commitId: "c1", page: { title: "My Page" } }),
     )
-    const preview = await run(
-      api.previewEdit("myproject", { changes: [{ _delete: "line1" }] }),
-      layer,
-    )
-    const submit = await run(api.submitEdit("myproject", preview.previewId), layer)
+    const preview = await run(myproject.previewEdit({ changes: [{ _delete: "line1" }] }), layer)
+    const submit = await run(myproject.submitEdit(preview.previewId), layer)
     expect(submit.commitId).toBe("c1")
     expect(calls.map((call) => [call.url, call.init.method, call.init.body])).toEqual([
       [
@@ -946,7 +953,7 @@ describe("書き込み", () => {
 
   it("previewEdit() は、ほかの人が先に書き換えたこと (409 NotFastForward) を code で知らせる", async () => {
     const { layer } = testHttpClient(() => json({ error: "NotFastForward", latest: null }, 409))
-    expect(await runFailure(api.previewEdit("myproject", { changes: [] }), layer)).toMatchObject({
+    expect(await runFailure(myproject.previewEdit({ changes: [] }), layer)).toMatchObject({
       status: 409,
       code: "NotFastForward",
     })
@@ -954,7 +961,7 @@ describe("書き込み", () => {
 
   it("submitEdit() は、用意してから書くまでに同じタイトルのページができたこと (409 DuplicateTitle) を code で知らせる", async () => {
     const { layer } = testHttpClient(() => json({ error: "DuplicateTitle" }, 409))
-    expect(await runFailure(api.submitEdit("myproject", "pv1"), layer)).toMatchObject({
+    expect(await runFailure(myproject.submitEdit("pv1"), layer)).toMatchObject({
       status: 409,
       code: "DuplicateTitle",
     })
@@ -964,7 +971,7 @@ describe("書き込み", () => {
     const { layer, calls } = testHttpClient(() =>
       json({ message: "3 pages have been successfully updated!" }),
     )
-    const result = await run(api.replaceLinks("myproject", "old title", "new title"), layer)
+    const result = await run(myproject.replaceLinks("old title", "new title"), layer)
     expect(result).toEqual({ message: "3 pages have been successfully updated!" })
     expect(calls[0]?.url).toBe("https://scrapbox.io/api/pages/myproject/replace/links")
     expect(calls[0]?.init.body).toBe(JSON.stringify({ from: "old title", to: "new title" }))
@@ -974,7 +981,7 @@ describe("書き込み", () => {
 describe("markAccessed", () => {
   it("開いたことを POST で記録する", async () => {
     const { layer, calls } = testHttpClient(() => json({}))
-    await run(api.markAccessed("myproject", "page1"), layer)
+    await run(myproject.markAccessed("page1"), layer)
     expect(calls.map((call) => [call.url, call.init.method])).toEqual([
       ["https://scrapbox.io/api/pages/myproject/page1/accessed", "POST"],
     ])
@@ -984,13 +991,13 @@ describe("markAccessed", () => {
     const { layer, calls } = testHttpClient((_url, init) =>
       init.method === "POST" ? json({}, 405) : json({}),
     )
-    await run(api.markAccessed("myproject", "page1"), layer)
+    await run(myproject.markAccessed("page1"), layer)
     expect(calls.map((call) => call.init.method)).toEqual(["POST", "GET"])
   })
 
   it("記録できなくても失敗しない", async () => {
     const { layer } = testHttpClient(() => json({}, 404))
-    expect(await run(api.markAccessed("myproject", "page1"), layer)).toBeUndefined()
+    expect(await run(myproject.markAccessed("page1"), layer)).toBeUndefined()
   })
 })
 
@@ -1041,7 +1048,7 @@ describe("updatePage", () => {
 
   it("何も変えていなければ、何も送らない", async () => {
     const { layer, calls } = server({})
-    const result = await run(api.updatePage("myproject", BASE, ["Title", "alpha", "beta"]), layer)
+    const result = await run(myproject.updatePage(BASE, ["Title", "alpha", "beta"]), layer)
     expect(result).toEqual({ commitId: "c0", lines: ["Title", "alpha", "beta"], overwritten: [] })
     expect(calls).toHaveLength(0)
   })
@@ -1051,7 +1058,7 @@ describe("updatePage", () => {
       preview: [previewOn("c0")],
       submit: [json({ commitId: "c1" })],
     })
-    const result = await run(api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]), layer)
+    const result = await run(myproject.updatePage(BASE, ["Title", "ALPHA", "beta"]), layer)
     expect(result.commitId).toBe("c1")
     expect(steps()).toEqual(["preview", "submit"])
     expect(previewBodies()).toEqual([
@@ -1071,7 +1078,7 @@ describe("updatePage", () => {
       ],
       submit: [json({ commitId: "c2" })],
     })
-    const result = await run(api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]), layer)
+    const result = await run(myproject.updatePage(BASE, ["Title", "ALPHA", "beta"]), layer)
     expect(result).toEqual({ commitId: "c2", lines: ["Title", "ALPHA", "BETA"], overwritten: [] })
     expect(steps()).toEqual(["preview", "page", "preview", "submit"])
     expect(previewBodies()[1]).toEqual({
@@ -1086,7 +1093,7 @@ describe("updatePage", () => {
       page: [latest("c1", BASE.lines)],
       submit: [json({ commitId: "c2" })],
     })
-    await run(api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]), layer)
+    await run(myproject.updatePage(BASE, ["Title", "ALPHA", "beta"]), layer)
     expect(calls.map((call) => call.url)).toContain(
       "https://scrapbox.io/api/pages/v2/myproject/Title/?followRename=true",
     )
@@ -1102,9 +1109,7 @@ describe("updatePage", () => {
   it("ほかの人が同じ行を書き換えていたら、既定では何も書かずに PageConflictError で止める", async () => {
     const { layer, steps } = server({ preview: [previewOn("c1")], page: [theirsOnAlpha()] })
     const failure = await Effect.runPromise(
-      Effect.flip(
-        Effect.provide(api.updatePage("myproject", BASE, ["Title", "ours", "beta"]), layer),
-      ),
+      Effect.flip(Effect.provide(myproject.updatePage(BASE, ["Title", "ours", "beta"]), layer)),
     )
     expect(failure).toBeInstanceOf(PageConflictError)
     expect(failure).toMatchObject({
@@ -1115,10 +1120,7 @@ describe("updatePage", () => {
 
   it("PageConflictError には、合わせた先の今のページ (commitId と行の id) を入れる", async () => {
     const { layer } = server({ preview: [previewOn("c1")], page: [theirsOnAlpha()] })
-    const failure = await runFailure(
-      api.updatePage("myproject", BASE, ["Title", "ours", "beta"]),
-      layer,
-    )
+    const failure = await runFailure(myproject.updatePage(BASE, ["Title", "ours", "beta"]), layer)
     expect(failure).toMatchObject({
       latest: {
         commitId: "c1",
@@ -1137,13 +1139,10 @@ describe("updatePage", () => {
       page: [theirsOnAlpha()],
       submit: [json({ commitId: "c2" })],
     })
-    const failure = await runFailure(
-      api.updatePage("myproject", BASE, ["Title", "ours", "beta"]),
-      layer,
-    )
+    const failure = await runFailure(myproject.updatePage(BASE, ["Title", "ours", "beta"]), layer)
     if (!(failure instanceof PageConflictError)) throw failure
     const result = await run(
-      api.updatePage("myproject", failure.latest, ["Title", "ours and theirs", "beta"]),
+      myproject.updatePage(failure.latest, ["Title", "ours and theirs", "beta"]),
       layer,
     )
     expect(result.commitId).toBe("c2")
@@ -1164,10 +1163,7 @@ describe("updatePage", () => {
         }),
       ],
     })
-    const result = await run(
-      api.updatePage("myproject", BASE, ["New title", "alpha", "beta"]),
-      layer,
-    )
+    const result = await run(myproject.updatePage(BASE, ["New title", "alpha", "beta"]), layer)
     expect(result.titleChanged).toEqual({ from: "Title", to: "New title" })
   })
 
@@ -1182,7 +1178,7 @@ describe("updatePage", () => {
         }),
       ],
     })
-    const result = await run(api.updatePage("myproject", BASE, ["Other", "alpha", "beta"]), layer)
+    const result = await run(myproject.updatePage(BASE, ["Other", "alpha", "beta"]), layer)
     expect(result.lines).toEqual(["Other_1", "alpha", "beta"])
   })
 
@@ -1191,7 +1187,7 @@ describe("updatePage", () => {
       preview: [previewOn("c0")],
       submit: [json({ commitId: "c1", titleChanged: { from: "Title" } })],
     })
-    const result = await run(api.updatePage("myproject", BASE, ["Other", "alpha", "beta"]), layer)
+    const result = await run(myproject.updatePage(BASE, ["Other", "alpha", "beta"]), layer)
     expect(result.lines).toEqual(["Other", "alpha", "beta"])
   })
 
@@ -1202,7 +1198,7 @@ describe("updatePage", () => {
       submit: [json({ commitId: "c2" })],
     })
     const result = await run(
-      api.updatePage("myproject", BASE, ["Title", "ours", "beta"], { whenConflict: "overwrite" }),
+      myproject.updatePage(BASE, ["Title", "ours", "beta"], { whenConflict: "overwrite" }),
       layer,
     )
     expect(result).toEqual({
@@ -1222,7 +1218,7 @@ describe("updatePage", () => {
       submit: [json({ commitId: "c2" })],
     })
     const result = await run(
-      api.updatePage("myproject", BASE, ["Title", "beta"], { whenConflict: "overwrite" }),
+      myproject.updatePage(BASE, ["Title", "beta"], { whenConflict: "overwrite" }),
       layer,
     )
     expect(result.lines).toEqual(["Title", "beta"])
@@ -1240,7 +1236,7 @@ describe("updatePage", () => {
       ],
       submit: [json({ commitId: "c2" })],
     })
-    const result = await run(api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]), layer)
+    const result = await run(myproject.updatePage(BASE, ["Title", "ALPHA", "beta"]), layer)
     expect(result.lines).toEqual(["Title", "ALPHA"])
     expect(steps()).toEqual(["preview", "page", "preview", "submit"])
   })
@@ -1257,7 +1253,7 @@ describe("updatePage", () => {
         ]),
       ],
     })
-    const result = await run(api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]), layer)
+    const result = await run(myproject.updatePage(BASE, ["Title", "ALPHA", "beta"]), layer)
     expect(result).toMatchObject({ commitId: "c2", lines: ["Title", "ALPHA", "BETA"] })
     expect(steps()).toEqual(["preview", "submit", "page", "preview", "submit"])
   })
@@ -1268,7 +1264,7 @@ describe("updatePage", () => {
       page: [latest("c0", BASE.lines)],
     })
     expect(
-      await runFailure(api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]), layer),
+      await runFailure(myproject.updatePage(BASE, ["Title", "ALPHA", "beta"]), layer),
     ).toMatchObject({ status: 422 })
   })
 
@@ -1278,7 +1274,7 @@ describe("updatePage", () => {
       page: [new Response("not found", { status: 404 })],
     })
     expect(
-      await runFailure(api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]), layer),
+      await runFailure(myproject.updatePage(BASE, ["Title", "ALPHA", "beta"]), layer),
     ).toMatchObject({ status: 404 })
   })
 
@@ -1287,10 +1283,7 @@ describe("updatePage", () => {
       preview: [previewOn("c1"), previewOn("c2"), previewOn("c3")],
       page: [latest("c1", BASE.lines), latest("c2", BASE.lines), latest("c3", BASE.lines)],
     })
-    const failure = await runFailure(
-      api.updatePage("myproject", BASE, ["Title", "ALPHA", "beta"]),
-      layer,
-    )
+    const failure = await runFailure(myproject.updatePage(BASE, ["Title", "ALPHA", "beta"]), layer)
     expect(failure).toMatchObject({ status: 409, code: "NotFastForward", kind: "notFastForward" })
     expect(steps().filter((step) => step === "preview")).toHaveLength(3)
   })
@@ -1317,7 +1310,7 @@ describe("createPage", () => {
       preview: [preview()],
       submit: [json({ commitId: "c1", page: { title: "New page" } })],
     })
-    const result = await run(api.createPage("myproject", ["New page", "本文"]), layer)
+    const result = await run(myproject.createPage(["New page", "本文"]), layer)
     expect(result).toEqual({ commitId: "c1", title: "New page" })
     expect(steps()).toEqual(["page", "preview", "submit"])
     expect(previewBodies()).toEqual([
@@ -1332,7 +1325,7 @@ describe("createPage", () => {
 
   it("同じタイトルのページがあれば、何も書かずに PageExistsError で止め、そのページを渡す", async () => {
     const { layer, steps } = server({ page: [existing("New page")] })
-    const failure = await runFailure(api.createPage("myproject", ["New page", "本文"]), layer)
+    const failure = await runFailure(myproject.createPage(["New page", "本文"]), layer)
     expect(failure).toBeInstanceOf(PageExistsError)
     expect(failure).toMatchObject({ page: { id: "page9", commitId: "c5" } })
     expect(steps()).toEqual(["page"])
@@ -1340,7 +1333,7 @@ describe("createPage", () => {
 
   it("大文字と小文字、空白と _ だけが違うタイトルも、同じページとして止める", async () => {
     const { layer } = server({ page: [existing("New page")] })
-    const failure = await runFailure(api.createPage("myproject", ["new_PAGE", "本文"]), layer)
+    const failure = await runFailure(myproject.createPage(["new_PAGE", "本文"]), layer)
     expect(failure).toBeInstanceOf(PageExistsError)
   })
 
@@ -1350,7 +1343,7 @@ describe("createPage", () => {
       preview: [preview()],
       submit: [json({ commitId: "c1", page: { title: "Old name" } })],
     })
-    const result = await run(api.createPage("myproject", ["Old name", "本文"]), layer)
+    const result = await run(myproject.createPage(["Old name", "本文"]), layer)
     expect(result.title).toBe("Old name")
     expect(steps()).toEqual(["page", "preview", "submit"])
   })
@@ -1361,7 +1354,7 @@ describe("createPage", () => {
       preview: [preview()],
       submit: [json({ commitId: "c1", page: { title: "New page_1" } })],
     })
-    const result = await run(api.createPage("myproject", ["New page", "本文"]), layer)
+    const result = await run(myproject.createPage(["New page", "本文"]), layer)
     expect(result.title).toBe("New page_1")
   })
 
@@ -1371,7 +1364,7 @@ describe("createPage", () => {
       preview: [preview()],
       submit: [json({ commitId: "c1" })],
     })
-    const result = await run(api.createPage("myproject", ["New page", "本文"]), layer)
+    const result = await run(myproject.createPage(["New page", "本文"]), layer)
     expect(result.title).toBe("New page")
   })
 
@@ -1381,7 +1374,7 @@ describe("createPage", () => {
       preview: [preview()],
       submit: [json({ commitId: "c1", page: {} })],
     })
-    const result = await run(api.createPage("myproject", ["New page", "本文"]), layer)
+    const result = await run(myproject.createPage(["New page", "本文"]), layer)
     expect(result.title).toBe("New page")
   })
 
@@ -1391,7 +1384,7 @@ describe("createPage", () => {
       preview: [preview()],
       submit: [json({ error: "DuplicateTitle" }, 409)],
     })
-    const failure = await runFailure(api.createPage("myproject", ["New page", "本文"]), layer)
+    const failure = await runFailure(myproject.createPage(["New page", "本文"]), layer)
     expect(failure).toBeInstanceOf(PageExistsError)
     expect(steps()).toEqual(["page", "preview", "submit", "page"])
   })
@@ -1402,7 +1395,7 @@ describe("createPage", () => {
       preview: [preview()],
       submit: [json({ error: "DuplicateTitle" }, 409)],
     })
-    const failure = await runFailure(api.createPage("myproject", ["New page", "本文"]), layer)
+    const failure = await runFailure(myproject.createPage(["New page", "本文"]), layer)
     expect(failure).toMatchObject({ status: 409, code: "DuplicateTitle" })
   })
 
@@ -1412,7 +1405,7 @@ describe("createPage", () => {
       preview: [preview()],
       submit: [json({ error: "Forbidden" }, 403)],
     })
-    const failure = await runFailure(api.createPage("myproject", ["New page", "本文"]), layer)
+    const failure = await runFailure(myproject.createPage(["New page", "本文"]), layer)
     expect(failure).toMatchObject({ status: 403 })
     expect(steps()).toEqual(["page", "preview", "submit"])
   })
