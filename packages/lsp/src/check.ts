@@ -2,10 +2,10 @@ import { relative, resolve, sep } from "node:path"
 import { parseArgs } from "node:util"
 
 import type { ParseOptions } from "@cosense-toolbox/parser"
-import { Array as Arr, Effect, Match, Option, pipe, Predicate } from "effect"
+import { Array as Arr, Effect, Either, Match, Option, pipe, Predicate } from "effect"
 import { type Diagnostic, DiagnosticSeverity } from "vscode-languageserver/node"
 
-import { type Severity, severityOf, unresolvedLinkDiagnostics } from "./diagnostics"
+import { decodeSeverity, SEVERITIES, type Severity, unresolvedLinkDiagnostics } from "./diagnostics"
 import { indexOf, type PageFile, readPageFiles } from "./workspace"
 
 /**
@@ -22,6 +22,7 @@ every [link] to a page none of them holds.
 Options:
   --unresolved-links <level>  off | hint | information | warning | error (default: error)
   --no-frontmatter            read a first line of --- as the title, not as YAML
+  -h, --help                  print this help
 `
 
 /** What the command prints, and the code it exits with. */
@@ -59,28 +60,54 @@ export interface Report {
  */
 const DEFAULT_LEVEL: Severity = "error"
 
-const argsOf = (args: ReadonlyArray<string>, cwd: string): Option.Option<CheckSiteOptions> =>
-  pipe(
-    Option.liftThrowable(parseArgs)({
-      args: [...args],
-      allowPositionals: true,
-      strict: true,
-      options: {
-        "unresolved-links": { type: "string" },
-        "no-frontmatter": { type: "boolean" },
-      },
-    }),
-    Option.map(({ values, positionals }) => ({
-      roots: Arr.match(positionals, {
-        onEmpty: () => [cwd],
-        onNonEmpty: (directories) => Arr.map(directories, (directory) => resolve(cwd, directory)),
-      }),
-      unresolvedLinks: pipe(
-        Option.fromNullable(values["unresolved-links"]),
-        Option.match({ onNone: () => DEFAULT_LEVEL, onSome: severityOf }),
+/** What the arguments ask for: how the command is used, or a check. */
+type Asked =
+  { readonly _tag: "usage" } | { readonly _tag: "check"; readonly options: CheckSiteOptions }
+
+/** The level `--unresolved-links` names, or what is wrong with it. */
+const unresolvedLinksOf = (level: string | undefined): Either.Either<Severity, string> =>
+  Option.match(Option.fromNullable(level), {
+    onNone: () => Either.right(DEFAULT_LEVEL),
+    onSome: (named) =>
+      Either.fromOption(
+        decodeSeverity(named),
+        () => `--unresolved-links takes one of ${Arr.join(SEVERITIES, ", ")}, not "${named}"`,
       ),
-      frontmatter: values["no-frontmatter"] !== true,
-    })),
+  })
+
+/** What `args` ask for, run from `cwd`, or what is wrong with them. */
+const askedOf = (args: ReadonlyArray<string>, cwd: string): Either.Either<Asked, string> =>
+  pipe(
+    Either.try({
+      try: () =>
+        parseArgs({
+          args: [...args],
+          allowPositionals: true,
+          strict: true,
+          options: {
+            "unresolved-links": { type: "string" },
+            "no-frontmatter": { type: "boolean" },
+            help: { type: "boolean", short: "h" },
+          },
+        }),
+      catch: (error) => (error instanceof Error ? error.message : String(error)),
+    }),
+    Either.flatMap(({ values, positionals }): Either.Either<Asked, string> =>
+      values.help === true
+        ? Either.right({ _tag: "usage" })
+        : Either.map(unresolvedLinksOf(values["unresolved-links"]), (unresolvedLinks) => ({
+            _tag: "check",
+            options: {
+              roots: Arr.match(positionals, {
+                onEmpty: () => [cwd],
+                onNonEmpty: (directories) =>
+                  Arr.map(directories, (directory) => resolve(cwd, directory)),
+              }),
+              unresolvedLinks,
+              frontmatter: values["no-frontmatter"] !== true,
+            },
+          })),
+    ),
   )
 
 const levelOf = (severity: DiagnosticSeverity | undefined): ReportLevel =>
@@ -134,13 +161,20 @@ const lineOf =
   ({ path, line, column, level, message }: Report): string =>
     `${relative(cwd, path).split(sep).join("/")}:${line}:${column} ${level} ${message}\n`
 
-/** Runs a check as `args` asks, from `cwd`. Never fails: a bad option is exit code 2. */
+/**
+ * Runs a check as `args` asks, from `cwd`. Never fails: `--help` is the usage with exit code
+ * 0, and a bad option says what is wrong, then the usage, with exit code 2.
+ */
 export const runCheck = (args: ReadonlyArray<string>, cwd: string): Effect.Effect<CheckResult> =>
-  Option.match(argsOf(args, cwd), {
-    onNone: () => Effect.succeed({ output: USAGE, exitCode: 2 }),
-    onSome: (options) =>
-      Effect.map(checkSite(options), (reports) => ({
-        output: Arr.map(reports, lineOf(cwd)).join(""),
-        exitCode: Arr.some(reports, ({ level }) => level === "error") ? 1 : 0,
-      })),
+  Either.match(askedOf(args, cwd), {
+    onLeft: (problem) =>
+      Effect.succeed({ output: `csn-lsp check: ${problem}\n\n${USAGE}`, exitCode: 2 }),
+    onRight: Match.valueTags({
+      usage: () => Effect.succeed({ output: USAGE, exitCode: 0 }),
+      check: ({ options }) =>
+        Effect.map(checkSite(options), (reports) => ({
+          output: Arr.map(reports, lineOf(cwd)).join(""),
+          exitCode: Arr.some(reports, ({ level }) => level === "error") ? 1 : 0,
+        })),
+    }),
   })

@@ -6,7 +6,7 @@ import type { Extension } from "@cosense-toolbox/parser/extensions"
 import { Effect } from "effect"
 import { describe, expect, it } from "vitest"
 
-import { checkSite, runCheck } from "./check"
+import { checkSite, runCheck, USAGE } from "./check"
 
 const site = async (files: Record<string, string>): Promise<string> => {
   const root = await mkdtemp(join(tmpdir(), "csn-check-"))
@@ -80,6 +80,20 @@ describe("csn-lsp check", () => {
     const { output, exitCode } = await check(root, "--fix")
     expect(exitCode).toBe(2)
     expect(output).toContain("Usage: csn-lsp check")
+  })
+
+  it("stops with exit code 2, naming the levels there are, on a level it does not know", async () => {
+    const root = await site({ "a.csn": "投稿\n[無いページ]" })
+    const { output, exitCode } = await check(root, "--unresolved-links", "eror")
+    expect(exitCode).toBe(2)
+    expect(output).toContain(
+      'csn-lsp check: --unresolved-links takes one of off, hint, information, warning, error, not "eror"',
+    )
+  })
+
+  it("prints the usage and passes with --help", async () => {
+    const root = await site({ "a.csn": "投稿\n[無いページ]" })
+    expect(await check(root, "--help")).toEqual({ output: USAGE, exitCode: 0 })
   })
 })
 
