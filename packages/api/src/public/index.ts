@@ -167,6 +167,7 @@ export interface CosenseApi {
    * リダイレクト先の URL も期限付き (`/files/` は 5 分) なので、静的なサイトには中身を置く必要がある。
    * ファイルは別の場所 (Google Cloud Storage や Gyazo) へリダイレクトされるので、5 回まで辿る。
    * PAT は `origin` への要求にだけ付け、リダイレクト先には送らない。
+   * 渡した URL もリダイレクト先も、http(s) でなければ取りに行かずに `kind: "invalidUrl"` で失敗する。
    */
   readonly fetchAsset: (url: string) => Promise<FetchedAsset>
   /**

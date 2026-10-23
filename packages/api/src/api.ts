@@ -161,6 +161,7 @@ export interface CosenseApi {
    * リダイレクト先の URL も期限付き (`/files/` は 5 分) なので、静的なサイトには中身を置く必要がある。
    * ファイルは別の場所 (Google Cloud Storage や Gyazo) へリダイレクトされるので、5 回まで辿る。
    * PAT は `origin` への要求にだけ付け、リダイレクト先には送らない。
+   * 渡した URL もリダイレクト先も、http(s) でなければ取りに行かずに `kind: "invalidUrl"` で失敗する。
    */
   readonly fetchAsset: (url: string) => Call<FetchedAsset>
   /**
@@ -218,6 +219,13 @@ const MAX_REDIRECTS = 3
 const MAX_ASSET_REDIRECTS = 5
 
 const isRedirect = (status: number): boolean => status >= 300 && status < 400
+
+// Bun の fetch は file: の URL も読むので、リダイレクト先も含めて http(s) 以外は取りに行かない。
+const httpUrlOf = (text: string, base?: string): Option.Option<URL> =>
+  pipe(
+    Option.liftThrowable(() => new URL(text, base))(),
+    Option.filter((url) => url.protocol === "http:" || url.protocol === "https:"),
+  )
 
 /** エラーの文に入れる、本文の文の長さの上限 */
 const DETAIL_LIMIT = 200
@@ -733,13 +741,13 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
     // リダイレクトは fetch に任せず自分で辿る。任せると、PAT を付けたまま別のオリジンへ送ってしまう。
     // ほかの API と違ってファイルは別のオリジンへ転送されるので、そこへも辿るが、PAT は付けない。
     fetchAsset: (url) => {
-      const follow = (current: string, redirects: number): Call<FetchedAsset> =>
+      const follow = (current: URL, redirects: number): Call<FetchedAsset> =>
         Effect.gen(function* () {
           const client = yield* HttpClient
           const response = yield* pipe(
-            client.fetch(current, {
+            client.fetch(current.href, {
               redirect: "manual",
-              headers: new URL(current).origin === new URL(origin).origin ? headersFor(false) : {},
+              headers: current.origin === new URL(origin).origin ? headersFor(false) : {},
             }),
             Effect.mapError(
               (error) =>
@@ -759,7 +767,17 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
                 }),
               )
             }
-            return yield* follow(new URL(location, current).href, redirects + 1)
+            const next = httpUrlOf(location, current.href)
+            if (Option.isNone(next)) {
+              return yield* Effect.fail(
+                new CosenseApiError({
+                  status: response.status,
+                  kind: "invalidUrl",
+                  message: `Redirected to a URL that is not http(s): ${location}`,
+                }),
+              )
+            }
+            return yield* follow(next.value, redirects + 1)
           }
           if (!response.ok) {
             return yield* Effect.fail(
@@ -775,7 +793,17 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
             contentType: response.headers.get("content-type") ?? "",
           }
         })
-      return follow(url, 0)
+      return Option.match(httpUrlOf(url), {
+        onNone: () =>
+          Effect.fail(
+            new CosenseApiError({
+              status: 0,
+              kind: "invalidUrl",
+              message: `Not an http(s) URL: ${url}`,
+            }),
+          ),
+        onSome: (start) => follow(start, 0),
+      })
     },
   } satisfies Omit<CosenseApi, "updatePage" | "createPage" | "literateDatabase">
 

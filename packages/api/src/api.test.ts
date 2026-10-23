@@ -1385,4 +1385,51 @@ describe("fetchAsset", () => {
     expect(await runFailure(api.fetchAsset(FILE), layer)).toMatchObject({ status: 302 })
     expect(calls).toHaveLength(6)
   })
+
+  it("http の URL も取る", async () => {
+    const { layer } = routes({
+      "http://example.com/a.png": () =>
+        new Response("x", { headers: { "content-type": "image/png" } }),
+    })
+    const asset = await run(api.fetchAsset("http://example.com/a.png"), layer)
+    expect(asset.contentType).toBe("image/png")
+  })
+
+  it("http(s) でない URL は、取りに行かずに invalidUrl で失敗する", async () => {
+    const { layer, calls } = routes({})
+    expect(await runFailure(api.fetchAsset("file:///etc/hosts"), layer)).toMatchObject({
+      kind: "invalidUrl",
+      status: 0,
+    })
+    expect(calls).toHaveLength(0)
+  })
+
+  it("URL として読めない文字列も、invalidUrl で失敗する", async () => {
+    const { layer } = routes({})
+    expect(await runFailure(api.fetchAsset("not a url"), layer)).toMatchObject({
+      kind: "invalidUrl",
+      status: 0,
+    })
+  })
+
+  it("リダイレクト先が http(s) でなければ、辿らずに invalidUrl で失敗する", async () => {
+    const { layer, calls } = routes({
+      [FILE]: () => new Response(null, { status: 302, headers: { location: "file:///etc/hosts" } }),
+    })
+    expect(await runFailure(api.fetchAsset(FILE), layer)).toMatchObject({
+      kind: "invalidUrl",
+      status: 302,
+    })
+    expect(calls.map((call) => call.url)).toEqual([FILE])
+  })
+
+  it("リダイレクト先が URL として読めなくても、invalidUrl で失敗する", async () => {
+    const { layer } = routes({
+      [FILE]: () => new Response(null, { status: 302, headers: { location: "https://[" } }),
+    })
+    expect(await runFailure(api.fetchAsset(FILE), layer)).toMatchObject({
+      kind: "invalidUrl",
+      status: 302,
+    })
+  })
 })

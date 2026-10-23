@@ -9,6 +9,7 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 - Infobox を読めるようにした。`getPage` と `relatedPages` の結果に、Infobox の定義と本文から抜き出した値 (`infoboxDefinition` / `infoboxResult` / `infoboxDisableLinks`) を入れ、ページの Infobox だけを読む `getInfobox` を足した。`projectDetail` の結果には、Infobox を使うプロジェクトか (`infobox`) を入れた。
 - ページの Infobox の抜き出しを止める `disableInfoboxExtraction` と戻す `enableInfoboxExtraction`、抜き出し直すよう頼む `updateInfoboxResult` を足した。
 - 定義ページの表 (文芸的データベース) を返す `literateDatabase` を足した。
+- `fetchAsset` は、渡した URL もリダイレクト先も http(s) でなければ取りに行かず、`kind: "invalidUrl"` の `CosenseApiError` で失敗するようにした。これまでは `file:` の URL も `file:` へのリダイレクトも取りに行き、Bun では手元のファイルを読んでいた。URL として読めない文字列では、`CosenseApiError` でない例外になっていた。
 
 ### 0.1.0-beta.10 の変更
 
@@ -66,9 +67,10 @@ try {
 | `"serverError"`    | 5xx                                                                           |
 | `"network"`        | 応答が来なかった (DNS や接続の失敗)                                           |
 | `"decode"`         | 2xx だが、本文を読めなかったか、形が合わなかった                              |
+| `"invalidUrl"`     | `fetchAsset` に渡した URL かリダイレクト先が、http(s) の URL でない           |
 | `"unknown"`        | どれでもない                                                                  |
 
-`status` には HTTP の status (応答が来なかったら `0`)、`code` には応答の本文の `error` か `name` の値 (`"NotFastForward"` や `"NotLoggedInError"` など) が入る。`message` には、Cosense が返した説明も入る。
+`status` には HTTP の status (応答が来なかったか、要求を送らなかったら `0`)、`code` には応答の本文の `error` か `name` の値 (`"NotFastForward"` や `"NotLoggedInError"` など) が入る。`message` には、Cosense が返した説明も入る。
 
 ## オプション
 
@@ -290,6 +292,7 @@ const { data, contentType } = await api.fetchAsset("https://scrapbox.io/files/xx
 - リダイレクト先の URL は期限付き (`/files/` は 5 分) なので、解決した URL を埋め込んでもすぐ表示されなくなる。静的なサイトでは中身を取ってきてサイトの中に置く ([`@cosense-toolbox/astro`](../astro-cosense) はこれを自動で行う)。
 - URL を作る・見分けるだけの `cosenseIconUrl` と `isCosenseAssetUrl` は通信しないので、`createCosenseApi` を作らずに使える。
 - `api.fetchAsset` はリダイレクトを 5 回まで自分で辿り、PAT は Cosense (`origin`) への要求にだけ付ける。リダイレクト先の Google Cloud Storage や Gyazo には送らない。取れなければ `CosenseApiError` で reject する。
+- 渡した URL もリダイレクト先も、http(s) でなければ取りに行かない (`kind: "invalidUrl"`)。Bun の fetch は `file:` の URL も読むので、ページに書かれた画像の URL から手元のファイルを読まないように。
 
 ## 気をつけること
 
