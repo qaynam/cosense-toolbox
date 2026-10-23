@@ -6,7 +6,7 @@ import { stat } from "node:fs/promises"
 import { basename, extname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { compile, type CompileOptions } from "@cosense-toolbox/cosense-x"
+import { compile, type CompileOptions, type LinkTarget } from "@cosense-toolbox/cosense-x"
 import { Option } from "effect"
 import type { Plugin } from "vite"
 
@@ -51,9 +51,19 @@ export interface AstroCompileOptions extends Omit<
   | "index"
   | "jsxImportSource"
   | "elementAttributeNameCase"
+  | "pageUrl"
   | "renderOptions"
   | "unresolved"
 > {
+  /**
+   * リンク先のページの URL。返した URL をそのまま使うので、サイトに `base` があれば前に付けて返す。
+   * `id` はプロジェクトのルートからのパスで、サイトに無いページ (`unresolvedLinks: 'link'`) では null。
+   *
+   * @defaultValue `{srcDir}/pages` の下のページは、Astro がそのファイルを出す URL
+   * (`src/pages/a/b.csnx` なら `{base}/a/b/`、`src/pages/a/index.csnx` なら `{base}/a/`。
+   * 末尾の `/` は `trailingSlash` と `build.format` に従う)。それ以外のページは `{base}/{slug}`
+   */
+  readonly pageUrl?: (page: LinkTarget) => string
   /**
    * サイトに無いページへのリンクの出し方。`'text'` はテキストにする (非公開のページの名前が
    * URL に漏れない)。`'link'` はタイトルから作った URL へのリンクにする。
