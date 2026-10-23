@@ -1678,8 +1678,9 @@ body.is-app {
   background: transparent;
   font-size: 0.9em;
 }
+/* 下の余白だけを足す。左の余白は style.css が字下げした表の深さに使う */
 .doc .page .table {
-  margin: 0 0 24px;
+  margin-bottom: 24px;
 }
 .doc .page .table td {
   padding: 6px 10px;

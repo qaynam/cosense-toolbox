@@ -178,6 +178,12 @@ describe("ブロック", () => {
     )
   })
 
+  it("字下げしたテーブルは、行と同じく深さを data 属性で出す", () => {
+    expect(toHtml(parse("t\n a\n table:x\n  a\tb\n"))).toContain(
+      '<table class="table" data-indent="1">',
+    )
+  })
+
   it("セルの中のリンクはリンクになり、ほかの記法は書いたまま出す", () => {
     expect(tableHtml("[リンク] [* 太字]")).toContain(
       '<td><a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> [* 太字]</td>',
