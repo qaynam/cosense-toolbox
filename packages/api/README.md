@@ -28,6 +28,7 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 - `getRelatedPages` (これまでの `relatedPages`) が、1 つの hop で 10 万件を超えると黙って途中までを返していたのを直した。`listTitles` と同じく件数で止めずに最後まで取り、続きの位置が前に辿ったところへ戻ったときは `CosenseApiError` で失敗する。`getLiterateDatabase` の 1 hop も同じ。
 - プロジェクト名を、どの要求でもエンコードしてパスに入れるようにした。これまでは `getProject` (これまでの `projectDetail`) などの一部だけで、ほかは `a/../b` のような名前だと、PAT を付けたまま別のパスへ送っていた。
 - `createPage` は、1 行目が空か空白だけなら、何も送らずに `TypeError` で reject するようにした (effect の入口では defect)。これまでは空のタイトルで同じタイトルのページを探してから、ページを作ろうとしていた。
+- `getMe()` (これまでの `me()`) は PAT が無くても失敗せず、`id` などが空の `Me` を返すことを、README と doc に書いた。動きは変えていない。これまでの README の例は、PAT が無いと `unauthorized` で失敗するように読めた。
 - Promise の入口で、Cloudflare Workers (workerd) が、`catch` した失敗も未処理の reject として報告していたのを直した。
 - effect の入口の `httpClientOf` で、effect を中断すると (`Effect.timeout` など)、送っている要求も止めるようにした。これまでは中断しても fetch が続いていた。
 
@@ -68,10 +69,10 @@ const { pages } = await project.searchFullText("検索する言葉")
 import { CosenseApiError } from "@cosense-toolbox/api"
 
 try {
-  await api.getMe()
+  await project.getPage("title")
 } catch (error) {
   if (!(error instanceof CosenseApiError)) throw error
-  if (error.kind === "unauthorized") console.error("PAT が無いか、違う")
+  if (error.kind === "unauthorized") console.error("非公開プロジェクトで、PAT が無いか、違う")
   else console.error(error.kind, error.status, error.code, error.message)
 }
 ```
@@ -108,7 +109,7 @@ try {
 
 | 関数              | 返すもの                                                                                         |
 | :---------------- | :----------------------------------------------------------------------------------------------- |
-| `getMe()`         | 自分 (PAT の持ち主)                                                                              |
+| `getMe()`         | 自分 (PAT の持ち主)。PAT が無くても失敗しない。下の「`getMe()` は PAT が無くても失敗しない」     |
 | `listProjects()`  | 自分の入っているプロジェクト                                                                     |
 | `fetchAsset(url)` | Cosense 上のファイル (`/files/…` やアイコン) の中身と Content-Type。下の「Cosense 上のファイル」 |
 | `project(name)`   | プロジェクト `name` の中のものを呼ぶ関数 (下の表)。`name` に渡した名前を持つ                     |
@@ -323,6 +324,15 @@ const { data, contentType } = await api.fetchAsset("https://scrapbox.io/files/xx
 - 渡した URL もリダイレクト先も、http(s) でなければ取りに行かない (`kind: "invalidUrl"`)。Bun の fetch は `file:` の URL も読むので、ページに書かれた画像の URL から手元のファイルを読まないように。
 
 ## 気をつけること
+
+### `getMe()` は PAT が無くても失敗しない
+
+PAT を渡さないと、Cosense は 401 ではなく 200 で、ゲストとして `{ "isGuest": true }` だけを返す。`getMe()` はこれを、`id` や `name` が空の `Me` にして返す。`Me` には `isGuest` を入れていないので、ゲストかは `id` が空かで見分ける。PAT が使えるかを確かめるなら、reject しないことに加えて、`id` が空でないかも見る。
+
+```ts
+const me = await api.getMe()
+if (me.id === "") console.error("ゲストとして答えられた")
+```
 
 ### `origin` には origin だけを渡す
 

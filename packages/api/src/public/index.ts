@@ -72,6 +72,12 @@ export type * from "../types"
  * 失敗は `CosenseApiError` で reject する。
  */
 export interface CosenseApi {
+  /**
+   * 自分 (PAT の持ち主)。
+   *
+   * PAT が無くても reject しない。Cosense はゲストとして 200 で `{ "isGuest": true }` を返し、これを
+   * `id` などが空の `Me` にして返す。PAT が使えるかを確かめるなら、`id` が空でないかも見る。
+   */
   readonly getMe: () => Promise<Me>
   readonly listProjects: () => Promise<readonly ProjectSummary[]>
   /**

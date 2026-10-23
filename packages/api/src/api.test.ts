@@ -177,6 +177,16 @@ describe("読み取り", () => {
     })
   })
 
+  it("getMe() は、PAT が無くゲストとして答えられても (isGuest) 失敗せず、id の空の Me を返す", async () => {
+    const { layer } = testHttpClient(() => json({ isGuest: true }))
+    expect(await run(createCosenseApi().getMe(), layer)).toEqual({
+      id: "",
+      name: "",
+      displayName: "",
+      pageFilters: [],
+    })
+  })
+
   it("listProjects() は、応答の projects を返す", async () => {
     const { layer } = testHttpClient(() => json({ projects: [{ id: "p1", name: "myproject" }] }))
     const result = await run(api.listProjects(), layer)
