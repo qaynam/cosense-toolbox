@@ -4,6 +4,7 @@ import { tableCellNotation } from "../extensions"
 import type { InlineConstruct } from "../inline/types"
 import { parse, parseLine, type ParseOptions } from "../parse"
 import type { InlineNodeInit } from "../types"
+import { type Element, type ElementContent, h } from "."
 import type { HastHandlers } from "./to-hast"
 import { codeLanguageOf, defaultPageUrl, safeHref, safeSrc } from "./to-hast"
 import { escapeHtml, toHtml } from "./to-html"
@@ -373,6 +374,41 @@ describe("差し替え", () => {
     const html = toHtml(parseLine("[リンク] https://a.test/x"), { pageUrl: () => "/x" })
     expect(html).toContain('href="https://a.test/x"')
     expect(html).toContain('href="/x"')
+  })
+})
+
+describe("h で組み立てたハンドラ", () => {
+  /** 子を枠の要素で包む。型は hast ではなく ./html から読む。 */
+  const boxed = (children: ElementContent[]): Element => h("div", { className: "box" }, children)
+
+  it("h に渡した class の文字列は class 属性になる", () => {
+    const html = toHtml(parseLine("`x`"), {
+      handlers: { inlineCode: (node) => h("kbd", { className: "key small" }, node.value) },
+    })
+    expect(html).toBe('<div class="line"><kbd class="key small">x</kbd></div>')
+  })
+
+  it("h の子に渡した文字列は、テキストとしてエスケープされる", () => {
+    const html = toHtml(parseLine("`<b>`"), {
+      handlers: { inlineCode: (node) => h("kbd", node.value) },
+    })
+    expect(html).toBe('<div class="line"><kbd>&lt;b></kbd></div>')
+  })
+
+  it("h の子に渡した null は出力に入らない", () => {
+    const html = toHtml(parseLine("`x`"), {
+      handlers: { inlineCode: (node) => h("kbd", [null, node.value, null]) },
+    })
+    expect(html).toBe('<div class="line"><kbd>x</kbd></div>')
+  })
+
+  it("ctx.children の出力を、h で作った要素の子にできる", () => {
+    const html = toHtml(parseLine("[* [リンク]]"), {
+      handlers: { decoration: (node, ctx) => boxed(ctx.children(node)) },
+    })
+    expect(html).toBe(
+      '<div class="line"><div class="box"><a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a></div></div>',
+    )
   })
 })
 

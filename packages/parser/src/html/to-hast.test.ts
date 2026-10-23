@@ -1,10 +1,10 @@
 import fc from "fast-check"
-import type { Element, ElementContent, Root } from "hast"
 import { describe, expect, it } from "vitest"
 
 import { tableCellNotation } from "../extensions"
 import { parse, parseLine } from "../parse"
 import type { AnyNode } from "../types"
+import type { Element, ElementContent, Root } from "."
 import { codeLineNumbers } from "./code-line-numbers"
 import { type RenderExtension, toHast } from "./to-hast"
 import { toHtml } from "./to-html"

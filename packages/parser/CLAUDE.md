@@ -28,7 +28,11 @@
    - `hast-util-to-html` と `@types/hast`：`./html` の `toHast` / `toHtml` だけが使う。
      HTML 系の出力 (HTML の文字列・JSX・rehype) を hast 1 つにまとめ、hast を文字列にする処理は
      unified の標準に任せるため (属性名の変換やエスケープを自前で持たない)
-   - `parse` だけを使う人のバンドルには入らないこと (§4 の tree-shaking の確認) を保つ
+   - `hastscript`：`./html` が `h` として出すだけで、パッケージの中では使わない。
+     `handlers` / `extensions` は hast を返すので、利用者が hast の要素を手で書かずに組み立てられるようにするため。
+     ハンドラの型を書くための hast の型 (`Element` / `ElementContent` / `Root`) も `./html` から出す。
+     部品 (property-information など) は hast-util-to-html と共有していて、増えるのは hast-util-parse-selector だけ
+   - `parse` や `./compile` だけを使う人のバンドルには入らないこと (§7 の tree-shaking の確認) を保つ
      （`tsdown` / `vitest` / `typescript` / `fast-check` は devDependencies なので対象外。）
 6. **CSS をこのパッケージに置かない**。既定の見た目は `@cosense-toolbox/style`（別パッケージ）
    の担当。JS のバンドルに CSS 文字列を持たせると、スタイルを使わない利用者まで太る。
@@ -279,11 +283,11 @@ tree-shaking の確認（`parse` だけを import したバンドルに schema /
 # dist/index.mjs から parse だけを import したバンドルに、他の層が入らないこと
 echo "import { parse } from './dist/index.mjs'; console.log(parse('x'))" > only-parse.tmp.mjs
 bunx esbuild only-parse.tmp.mjs --bundle --format=esm --minify --outfile=/tmp/bundle.js
-grep -c "PageSchema\|toPlainText\|collectLinks\|code-block-start" /tmp/bundle.js   # → 0
-# ./compile だけを使うバンドルに、./html (既定の class 名や hast-util-to-html) が入らないこと
+grep -c "PageSchema\|toPlainText\|collectLinks\|code-block-start\|Expected node, nodes" /tmp/bundle.js   # → 0
+# ./compile だけを使うバンドルに、./html (既定の class 名や hast-util-to-html、hastscript) が入らないこと
 echo "import { toPlainText } from './dist/compile.mjs'; console.log(toPlainText)" > only-compile.tmp.mjs
 bunx esbuild only-compile.tmp.mjs --bundle --format=esm --minify --outfile=/tmp/bundle.js
-grep -c "code-block-start\|allowDangerousHtml" /tmp/bundle.js   # → 0
+grep -c "code-block-start\|allowDangerousHtml\|Expected node, nodes" /tmp/bundle.js   # → 0
 rm only-parse.tmp.mjs only-compile.tmp.mjs
 ```
 

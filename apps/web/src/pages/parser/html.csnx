@@ -24,6 +24,9 @@ toc:
   - id: handlers
     text: handlers と extensions
     depth: 3
+  - id: hastscript
+    text: h で要素を組み立てる
+    depth: 3
   - id: style
     text: style
     depth: 3
@@ -107,6 +110,32 @@ code:ts
 `extensions` は既定の描画または `handlers` の結果を後から加工します。たとえば画像ノードを `<figure>` で包む処理を追加できます。複数の拡張は配列の順に適用されます。
 
 標準の `codeLineNumbers()` はコード行に行番号属性を付け、`tableCellLineBreaks(marker)` は表セル内の指定文字列を `<br>` にします。
+
+<DocHeading level={3} id="hastscript" title="h で要素を組み立てる" />
+
+`handlers` と `extensions` は hast の要素を返します。同じサブパスの `h` ([hastscript https://github.com/syntax-tree/hastscript] の `h`) を使うと、`{ type: "element", … }` のオブジェクトを手で書かずに済みます。`h(タグ名, 属性, ...子)` の形で、class は空白で区切った文字列のまま渡せます。子の文字列はテキストとしてエスケープされ、`null` と `undefined` は出力されません。
+
+次の例は、コードブロックを行ごとの要素に分けず、ファイル名を添えた 1 つの `<pre>` の箱にまとめます。
+
+code:ts
+ import { h, toHtml } from "@cosense-toolbox/parser/html"
+ 
+ toHtml(page, {
+   handlers: {
+     codeBlock: (node) =>
+       h("figure", { className: "code-box" }, [
+         h("figcaption", node.filename),
+         h("pre", h("code", node.lines.map((line) => line.value).join("\n"))),
+       ]),
+   },
+ })
+
+ハンドラーの型を書くときは、hast の型 `Element`、`ElementContent`、`Root` も同じサブパスから import できます。`ctx.children(node)` の戻り値 (`ElementContent[]`) は、そのまま `h` の子に渡せます。
+
+code:ts
+ import { type Element, type ElementContent, h } from "@cosense-toolbox/parser/html"
+ 
+ const card = (children: ElementContent[]): Element => h("div", { className: "card" }, children)
 
 <DocHeading level={3} id="style" title="style" />
 
