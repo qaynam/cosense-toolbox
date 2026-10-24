@@ -14,6 +14,11 @@ Tailwind を使う場合は、`style.css` を別途読み込む必要はあり�
 
 - 字下げして書いた表 (`table:名前`) を、同じ深さの行の本文と同じ位置に置くようにした (`@cosense-toolbox/style` と同じ)。
   `@cosense-toolbox/parser` 1.0.0 の `toHtml` が表に付ける `data-indent` を見るので、parser も 1.0.0 にそろえる。
+- **不具合の修正:** `require` で読むときの型 (`index.d.cts`) を、実際に返るものに合わせた。
+  `require("@cosense-toolbox/tailwind")` はプラグインそのものを返す (`module.exports = cosense`) が、型は `{ default: … }` の形になっていた。
+  そのため、CommonJS の TypeScript で `import cosense = require("@cosense-toolbox/tailwind")` と書くと、`cosense()` が型エラーになっていた。
+  型は `export = cosense` になり、`require` で読んだものをそのまま呼べる。
+  `CosenseTailwindOptions` は ESM の型にだけある。CommonJS で名前が要るときは `NonNullable<Parameters<typeof cosense>[0]>` と書く。
 
 ## インストール
 
