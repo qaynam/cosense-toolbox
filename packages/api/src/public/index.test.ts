@@ -257,6 +257,13 @@ describe("createPage (Promise)", () => {
       PageExistsError,
     )
   })
+
+  it("1 行目が空なら、タイトルが無いので TypeError で reject する", async () => {
+    const api = createCosenseApi({ fetch: respond(() => new Response("", { status: 404 })) })
+    await expect(api.project("myproject").createPage(["", "本文"])).rejects.toBeInstanceOf(
+      TypeError,
+    )
+  })
 })
 
 describe("fetchAsset (Promise)", () => {

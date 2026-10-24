@@ -200,8 +200,10 @@ export interface SearchResultPage {
 }
 
 export interface SearchResult {
+  /** 見つかったページの数。`pages` は最初の 100 件だけなので、`pages` の数より多いことがある */
   readonly count: number
   readonly existsExactTitleMatch: boolean
+  /** pageRank の順に、最初の 100 件まで */
   readonly pages: readonly SearchResultPage[]
 }
 
