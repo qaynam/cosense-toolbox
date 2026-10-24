@@ -1,9 +1,11 @@
+import { h } from "hastscript"
 import { describe, expect, it } from "vitest"
 
 import { tableCellNotation } from "../extensions"
 import type { InlineConstruct } from "../inline/types"
 import { parse, parseLine, type ParseOptions } from "../parse"
 import type { InlineNodeInit } from "../types"
+import type { Element, ElementContent } from "."
 import type { HastHandlers } from "./to-hast"
 import { codeLanguageOf, defaultPageUrl, safeHref, safeSrc } from "./to-hast"
 import { escapeHtml, toHtml } from "./to-html"
@@ -174,6 +176,12 @@ describe("ブロック", () => {
   it("テーブルは caption 付きの table になる", () => {
     expect(toHtml(parse("t\ntable:名前\n あ\tい"))).toContain(
       '<table class="table"><caption>名前</caption><tbody><tr><td>あ</td><td>い</td></tr></tbody></table>',
+    )
+  })
+
+  it("字下げしたテーブルは、行と同じく深さを data 属性で出す", () => {
+    expect(toHtml(parse("t\n a\n table:x\n  a\tb\n"))).toContain(
+      '<table class="table" data-indent="1">',
     )
   })
 
@@ -373,6 +381,41 @@ describe("差し替え", () => {
     const html = toHtml(parseLine("[リンク] https://a.test/x"), { pageUrl: () => "/x" })
     expect(html).toContain('href="https://a.test/x"')
     expect(html).toContain('href="/x"')
+  })
+})
+
+describe("h で組み立てたハンドラ", () => {
+  /** 子を枠の要素で包む。型は hast ではなく ./html から読む。 */
+  const boxed = (children: ElementContent[]): Element => h("div", { className: "box" }, children)
+
+  it("h に渡した class の文字列は class 属性になる", () => {
+    const html = toHtml(parseLine("`x`"), {
+      handlers: { inlineCode: (node) => h("kbd", { className: "key small" }, node.value) },
+    })
+    expect(html).toBe('<div class="line"><kbd class="key small">x</kbd></div>')
+  })
+
+  it("h の子に渡した文字列は、テキストとしてエスケープされる", () => {
+    const html = toHtml(parseLine("`<b>`"), {
+      handlers: { inlineCode: (node) => h("kbd", node.value) },
+    })
+    expect(html).toBe('<div class="line"><kbd>&lt;b></kbd></div>')
+  })
+
+  it("h の子に渡した null は出力に入らない", () => {
+    const html = toHtml(parseLine("`x`"), {
+      handlers: { inlineCode: (node) => h("kbd", [null, node.value, null]) },
+    })
+    expect(html).toBe('<div class="line"><kbd>x</kbd></div>')
+  })
+
+  it("ctx.children の出力を、h で作った要素の子にできる", () => {
+    const html = toHtml(parseLine("[* [リンク]]"), {
+      handlers: { decoration: (node, ctx) => boxed(ctx.children(node)) },
+    })
+    expect(html).toBe(
+      '<div class="line"><div class="box"><a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a></div></div>',
+    )
   })
 })
 

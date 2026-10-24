@@ -3,7 +3,7 @@
  * Cosense のページを、ビルド時に API から取ってきて描画する。
  * ネットワークにつながらなければ、このページだけ案内を出して飛ばす。
  */
-import { cosenseIconUrl, fetchPageText } from "@cosense-toolbox/cosense-x/fetch"
+import { cosenseIconUrl, createCosenseApi } from "@cosense-toolbox/api"
 import { parse } from "@cosense-toolbox/parser"
 import { codeLineNumbers, toHtml } from "@cosense-toolbox/parser/html"
 import { localizeCosenseAssets } from "virtual:cosense-x/assets"
@@ -15,18 +15,23 @@ const project = "qaynam"
 const title = "MCPについて"
 // 非公開プロジェクトのページを取るときは、.env に Cosense の Personal Access Token を書く。
 const pat = import.meta.env.COSENSE_PAT
+const api = createCosenseApi(pat ? { pat } : {})
 const highlight = await createCodeHighlight()
 
 let html: string | null = null
 try {
-  const text = await fetchPageText(project, title, pat ? { pat } : {})
-  const rendered = toHtml(parse(text), {
-    highlight,
-    extensions: [codeLineNumbers()],
-    pageUrl: (target) => `https://scrapbox.io/${project}/${encodeURIComponent(target)}`,
-    iconImageUrl: (icon) => cosenseIconUrl(project, icon.user),
-  })
-  html = await localizeCosenseAssets(rendered)
+  const text = await api.getPageText(project, title)
+  if (text === null) {
+    console.warn(`[cosense] ${project}/${title} が見つからなかった`)
+  } else {
+    const rendered = toHtml(parse(text), {
+      highlight,
+      extensions: [codeLineNumbers()],
+      pageUrl: (target) => `https://scrapbox.io/${project}/${encodeURIComponent(target)}`,
+      iconImageUrl: (icon) => cosenseIconUrl(project, icon.user),
+    })
+    html = await localizeCosenseAssets(rendered)
+  }
 } catch (error) {
   console.warn(`[cosense] ${project}/${title} を取得できなかった:`, error)
 }

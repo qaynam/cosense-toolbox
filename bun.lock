@@ -171,6 +171,7 @@
       },
       "devDependencies": {
         "fast-check": "^3.23.1",
+        "hastscript": "^9.0.1",
         "tsdown": "^0.22.14",
         "typescript": "^6.0.0",
         "vitest": "^2.1.8",

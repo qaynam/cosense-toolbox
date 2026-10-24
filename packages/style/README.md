@@ -22,6 +22,11 @@ import "@cosense-toolbox/style"
 Tailwind CSS を使う場合は、この CSS の代わりに [`@cosense-toolbox/tailwind`](../tailwind) を利用できます。
 `class="cosense"` を付けた要素の中に同じスタイルが適用されます。
 
+### 1.0.0 の変更
+
+- 字下げして書いた表 (`table:名前`) を、同じ深さの行の本文と同じ位置に置くようにした。
+  `@cosense-toolbox/parser` 1.0.0 の `toHtml` が表に付ける `data-indent` を見るので、parser も 1.0.0 にそろえる。
+
 ## 前提
 
 すべてのルールが `.page` の下にスコープされている。`toHtml(page)` の出力はルートに `.page` を持つので
