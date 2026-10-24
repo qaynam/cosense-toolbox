@@ -20,7 +20,7 @@ const withBreaks = (marker: string): HastOptions => ({ extensions: [tableCellLin
 describe("tableCellLineBreaks", () => {
   it("セルの中の marker を <br> にする", () => {
     expect(tableHtml("1 行目\\n2 行目\tそのまま", withBreaks("\\n"))).toContain(
-      "<td>1 行目<br>2 行目</td><td>そのまま</td>",
+      '<td class="cell">1 行目<br>2 行目</td><td class="cell">そのまま</td>',
     )
   })
 
@@ -37,7 +37,9 @@ describe("tableCellLineBreaks", () => {
   })
 
   it("marker は文字列そのままで探し、区切った文字はエスケープする", () => {
-    expect(tableHtml("a<br>b<c>.*", withBreaks("<br>"))).toContain("<td>a<br>b&lt;c>.*</td>")
+    expect(tableHtml("a<br>b<c>.*", withBreaks("<br>"))).toContain(
+      '<td class="cell">a<br>b&lt;c>.*</td>',
+    )
   })
 
   it("装飾の中にも当てる", () => {
@@ -84,7 +86,9 @@ describe("tableCellLineBreaks", () => {
         internalLink: (node) => span(node.label),
       },
     })
-    expect(html).toContain("<td><span>\\nu</span> <span>a\\nb</span> <span>x\\ny</span></td>")
+    expect(html).toContain(
+      '<td class="cell"><span>\\nu</span> <span>a\\nb</span> <span>x\\ny</span></td>',
+    )
   })
 
   it("セルの外には当てない", () => {
@@ -92,7 +96,7 @@ describe("tableCellLineBreaks", () => {
   })
 
   it("marker が空文字なら何もしない", () => {
-    expect(tableHtml("ab", withBreaks(""))).toContain("<td>ab</td>")
+    expect(tableHtml("ab", withBreaks(""))).toContain('<td class="cell">ab</td>')
   })
 
   it("handlers.tableCell で置き換えた出力にも当てる", () => {

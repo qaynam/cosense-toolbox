@@ -355,7 +355,7 @@ describe("テーブルのセル", () => {
     const result = await compile(source, { index })
     expect(result.metadata.links).toEqual(["B"])
     expect(await renderPage(source, { index })).toContain(
-      '<td><a class="page-link" href="/b">B</a></td><td>[* 太字]</td>',
+      '<td class="cell"><a class="page-link" href="/b">B</a></td><td class="cell">[* 太字]</td>',
     )
   })
 
@@ -365,7 +365,7 @@ describe("テーブルのセル", () => {
       renderOptions: { extensions: [tableCellLineBreaks("\\n")] },
     })
     expect(html).toContain(
-      '<td><span class="deco deco-*"><strong>太字</strong></span><br/>2 行目</td>',
+      '<td class="cell"><span class="deco deco-*"><strong>太字</strong></span><br/>2 行目</td>',
     )
   })
 })
