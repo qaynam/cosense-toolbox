@@ -63,8 +63,11 @@ export interface CompileOptions extends LinkOptions, Omit<ReadOptions, "filePath
    */
   readonly elementAttributeNameCase?: "html" | "react"
   /**
-   * 描画の設定。parser の `toHast` のオプションに、cosense-x の `title` を足したもの
-   * (`handlers` / `extensions` / `highlight` / `classNames` / `showPads` / `iconImageUrl` / `title`)。
+   * 描画の設定。parser の `toHast` のオプションのうち `handlers` / `extensions` / `highlight` /
+   * `classNames` / `showPads` / `iconImageUrl` と、cosense-x の `title`。
+   * リンク先は parser の `pageUrl` ではなく、`index` / `pageUrl` / `tagUrl` / `projectUrl` / `unresolved` で決める。
+   * ハンドラの `ctx.options.pageUrl` も、そうして決めた URL を返す。
+   * `handlers` で cosense-x が差し替えるノード型を渡したときの振る舞いは `ToHastOptions` を参照。
    * パースの設定 (`parseOptions`) と分けて置き、どの段階の設定かを名前で分かるようにしている。
    */
   readonly renderOptions?: RenderOptions

@@ -31,6 +31,7 @@ import {
   type SyntaxHighlightOption,
 } from "./highlight"
 import { type CosenseLintOptions, type LintResult, lintSite } from "./lint"
+import { defaultPageUrlFor } from "./page-url"
 import { createSiteCache, EXTENSIONS, idOf, isCosenseFile } from "./site"
 import {
   ASSETS_MODULE_ID,
@@ -312,7 +313,11 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
               vitePluginCosense({
                 root: config.root,
                 site,
-                compile: { ...compileOptions, rehypePlugins },
+                compile: {
+                  ...compileOptions,
+                  pageUrl: compileOptions.pageUrl ?? defaultPageUrlFor(config),
+                  rehypePlugins,
+                },
                 assets,
                 highlighter,
                 components:

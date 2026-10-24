@@ -57,6 +57,8 @@ code:js
 
 `src/pages` に `.csn` / `.csnx` を置くと、ファイルの場所がそのまま URL になります。レイアウトを使うページは、先頭の frontmatter で Astro の `.astro` ファイルを指定します。
 
+`pageUrl` を省くと、`src/pages` のページへの `[リンク]` はそのページの URL を、それ以外のページへのリンクは `/{slug}` を指します。どちらもサイトの `base` の下の URL です。
+
 code:csnx
  ---
  layout: ../layouts/Page.astro

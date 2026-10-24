@@ -14,14 +14,14 @@
      effect の `decodeUnknownEither` と同じ命名）と、それを `orThrow` で包んだ公開版を並べて置く。
    - パッケージの中では Either 版どうしをつなぐ。公開版をパッケージの中から呼ばない。
    - `compile` は async なので、境目で投げた例外は reject になる。
-   - `./fetch` は通信の境目なので、HTTP の失敗は Promise の reject で返す。
 2. **無いかもしれない値は、内部では `Option`**。公開 API の境目で `Option.getOrNull` などで
    `null` / `undefined` にする（parser の `asEmbedSrc` と同じ）。内部版は `componentTagOf` のように
    `〜Of` と名付け、公開版（`parseComponentTag`）と並べる。
 3. **種類で分かれるものは `_tag` を付けたユニオンにし、`Match.tag` と `Match.exhaustive` で分ける**
    （行の役割 `BlockRole`、行の途中のタグ `Tag`、リンクの解決結果 `LinkResolution`）。
    Cosense の AST のノード型は `createCompiler` のハンドラ（`to-hast.ts`）か `Match.when({ type })` で分ける。
-4. **ファイル I/O をしない**（`./fetch` を除く）。ファイルを読むのは Astro 統合などの利用側。
+4. **ファイル I/O も通信もしない**。ファイルを読むのは Astro 統合などの利用側で、
+   Cosense の API を呼ぶのは `@cosense-toolbox/api`。
    `node:path` も使わない。ブラウザや Workers でもコンパイルできるようにするため。
 5. **グラフだけを使う人に、JS の生成を持ち込まない**。`./graph` から辿れるモジュール
    （`read` / `metadata` / `links` / `frontmatter` / `components` / `title`）は unified 系・estree 系を import しない。

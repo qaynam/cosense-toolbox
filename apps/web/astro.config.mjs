@@ -23,11 +23,6 @@ export default defineConfig({
       assets: false,
       parseOptions: { extensions: [extraEmbeds()] },
       renderOptions: { extensions: [codeLanguage()], handlers: { embed, location } },
-      pageUrl: ({ id }) =>
-        `/${(id ?? "").replace(/^src\/pages\//, "").replace(/(?:\/?index)?\.csnx?$/, "")}/`.replace(
-          /^\/\/$/,
-          "/",
-        ),
       lint: { unresolvedLinks: "error" },
     }),
   ],
