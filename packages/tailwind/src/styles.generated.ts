@@ -323,7 +323,25 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
+        "body": ".table[data-indent=\"1\"]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "--cosense-depth": "1"
+      }
+    },
+    {
+      "selector": {
         "body": ".line[data-indent=\"2\"]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "--cosense-depth": "2"
+      }
+    },
+    {
+      "selector": {
+        "body": ".table[data-indent=\"2\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -341,7 +359,25 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
+        "body": ".table[data-indent=\"3\"]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "--cosense-depth": "3"
+      }
+    },
+    {
+      "selector": {
         "body": ".line[data-indent=\"4\"]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "--cosense-depth": "4"
+      }
+    },
+    {
+      "selector": {
+        "body": ".table[data-indent=\"4\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -359,7 +395,25 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
+        "body": ".table[data-indent=\"5\"]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "--cosense-depth": "5"
+      }
+    },
+    {
+      "selector": {
         "body": ".line[data-indent=\"6\"]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "--cosense-depth": "6"
+      }
+    },
+    {
+      "selector": {
+        "body": ".table[data-indent=\"6\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -377,7 +431,25 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
+        "body": ".table[data-indent=\"7\"]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "--cosense-depth": "7"
+      }
+    },
+    {
+      "selector": {
         "body": ".line[data-indent=\"8\"]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "--cosense-depth": "8"
+      }
+    },
+    {
+      "selector": {
+        "body": ".table[data-indent=\"8\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -395,7 +467,25 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
+        "body": ".table[data-indent=\"9\"]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "--cosense-depth": "9"
+      }
+    },
+    {
+      "selector": {
         "body": ".line[data-indent=\"10\"]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "--cosense-depth": "10"
+      }
+    },
+    {
+      "selector": {
+        "body": ".table[data-indent=\"10\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -427,6 +517,15 @@ export const styles: CosenseStyles = {
       },
       "declarations": {
         "color": "var(--cosense-link-hover, var(--page-link-hover-color, #0d4ff3))"
+      }
+    },
+    {
+      "selector": {
+        "body": ".table[data-indent]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "margin-left": "calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0))"
       }
     },
     {

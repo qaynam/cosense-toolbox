@@ -629,10 +629,11 @@ export const defaultHastHandlers = {
   table: (node, ctx) => {
     const caption = node.name === "" ? [] : [element("caption", {}, [text(node.name)])]
     return [
-      element("table", withClass(ctx.options.classNames.table), [
-        ...caption,
-        element("tbody", {}, ctx.children(node)),
-      ]),
+      element(
+        "table",
+        withClass(ctx.options.classNames.table, { dataIndent: positive(node.indent) }),
+        [...caption, element("tbody", {}, ctx.children(node))],
+      ),
     ]
   },
   tableRow: (node, ctx) => [element("tr", {}, ctx.children(node))],

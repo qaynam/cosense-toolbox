@@ -1,7 +1,7 @@
 {
   "name": "@cosense-toolbox/parser",
   "version": "0.1.0-beta.10",
-  "description": "Cosense (Scrapbox) notation parser — every node carries its source position. Zero runtime deps except effect.",
+  "description": "Cosense (Scrapbox) notation parser — every node carries its source position. Parsing depends only on effect.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -97,6 +97,7 @@
   },
   "devDependencies": {
     "fast-check": "^3.23.1",
+    "hastscript": "^9.0.1",
     "tsdown": "^0.22.14",
     "typescript": "^6.0.0",
     "vitest": "^2.1.8"

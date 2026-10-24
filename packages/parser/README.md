@@ -4,13 +4,23 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 **ドキュメント → <https://cosense-toolbox.qaynam.dev/parser/>**
 
-- 依存は `effect` だけ。DOM も Node の API も使わないので、ブラウザでも Node でも Workers でも動く
+- パースが使う依存は `effect` だけ。HTML への変換 (`./html`) は、hast の標準の部品 (`hast-util-to-html`) も使う。
+  DOM も Node の API も使わないので、ブラウザでも Node でも Workers でも動く
 - どのノードも元のテキストの何行目の何文字目から始まるかを持つので、エディタの色付けやカーソル位置の判定に使える
 - AST はメソッドを持たないただのオブジェクト。`JSON.stringify` して保存しておき、あとで読み直せる
 - 記法そのものを増やせる。プロジェクト固有の書きかたも元からある記法と同じように扱える
 - パースだけなら gzip 約 10 KB。HTML 変換や走査は別の import 元なので、使わなければバンドルに入らない
 
 > **beta**：公開 API はまだ変わりうる。安定するまではバージョンを固定して使うほうが安全。
+
+### 1.0.0 の変更
+
+- `@cosense-toolbox/parser/html` から、hast の型 `Element` / `ElementContent` / `Root` を出すようにした。
+  `handlers` や `extensions` の型を、`@types/hast` を別に入れずに書ける。
+  hast の要素は、[hastscript](https://github.com/syntax-tree/hastscript) 9 (hast 3) を入れて `h` で組み立てると、
+  `{ type: "element", tagName, properties: { className: […] }, children }` と手で書かずに `h("kbd", { className: "key" }, node.value)` と書ける。
+- **不具合の修正:** 字下げして書いた表 (`table:名前`) の `<table>` に、行と同じく `data-indent` を付けるようにした (深さが 0 なら付けない)。
+  今までは字下げの深さが出力から消え、表だけがページの左端に寄っていた。`@cosense-toolbox/style` は、同じ深さの行の本文と同じ位置に表を置く。
 
 ### 0.1.0-beta.9 の変更
 

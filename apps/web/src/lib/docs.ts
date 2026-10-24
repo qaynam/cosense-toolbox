@@ -59,7 +59,7 @@ export const DOC_GROUPS: DocGroup[] = [
         href: "/parser/html/",
         label: "HTML への変換",
         description: "toHast と toHtml の出力・オプション。",
-        keywords: "toHast toHtml handlers highlight classNames style",
+        keywords: "toHast toHtml handlers highlight classNames style h hastscript",
       },
       {
         href: "/parser/compile/",

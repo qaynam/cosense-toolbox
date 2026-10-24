@@ -61,36 +61,47 @@
 /*
  * インデントの深さ。data-indent の数値を calc に持ち込む手段 (attr() の type 指定) が
  * まだ広く使えないので、段数ごとに変数を置いて以降の計算で使い回す。
+ * 字下げした表も data-indent を持つので、行と同じ変数で深さを表す。
  * 11 段以上はインデントも中点も付かない。
  */
-.page .line[data-indent="1"] {
+.page .line[data-indent="1"],
+.page .table[data-indent="1"] {
   --cosense-depth: 1;
 }
-.page .line[data-indent="2"] {
+.page .line[data-indent="2"],
+.page .table[data-indent="2"] {
   --cosense-depth: 2;
 }
-.page .line[data-indent="3"] {
+.page .line[data-indent="3"],
+.page .table[data-indent="3"] {
   --cosense-depth: 3;
 }
-.page .line[data-indent="4"] {
+.page .line[data-indent="4"],
+.page .table[data-indent="4"] {
   --cosense-depth: 4;
 }
-.page .line[data-indent="5"] {
+.page .line[data-indent="5"],
+.page .table[data-indent="5"] {
   --cosense-depth: 5;
 }
-.page .line[data-indent="6"] {
+.page .line[data-indent="6"],
+.page .table[data-indent="6"] {
   --cosense-depth: 6;
 }
-.page .line[data-indent="7"] {
+.page .line[data-indent="7"],
+.page .table[data-indent="7"] {
   --cosense-depth: 7;
 }
-.page .line[data-indent="8"] {
+.page .line[data-indent="8"],
+.page .table[data-indent="8"] {
   --cosense-depth: 8;
 }
-.page .line[data-indent="9"] {
+.page .line[data-indent="9"],
+.page .table[data-indent="9"] {
   --cosense-depth: 9;
 }
-.page .line[data-indent="10"] {
+.page .line[data-indent="10"],
+.page .table[data-indent="10"] {
   --cosense-depth: 10;
 }
 
@@ -289,6 +300,14 @@
   margin: 0;
   border-collapse: collapse;
   caption-side: top;
+}
+
+/*
+ * 字下げした表は、同じ深さの行の本文と同じ位置から始める。
+ * 罫線を重ねる表 (border-collapse: collapse) には padding が効かないので、margin で寄せる。
+ */
+.page .table[data-indent] {
+  margin-left: calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0));
 }
 
 /* 表の名前もコードブロックのファイル名と同じ見出しバッジ。 */
