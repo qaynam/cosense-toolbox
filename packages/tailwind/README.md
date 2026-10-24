@@ -12,13 +12,13 @@ Tailwind を使う場合は、`style.css` を別途読み込む必要はあり�
 
 ### 1.0.0 の変更
 
-- **破壊的変更:** `@cosense-toolbox/parser` 1.0.0 の既定の class 名に合わせ、既定のスタイルと modifier の対象を
-  `csn-` で始まる名前にした (`.page .line` → `.csn-page .csn-line`)。parser の class 名に接頭辞が無いと、
-  DaisyUI の `.link` / `.table` のような CSS フレームワークの class とぶつかるため。
+- **破壊的変更:** `@cosense-toolbox/parser` 1.0.0 の既定の class 名に合わせ、既定のスタイルと modifier の対象を変えた。
+  parser は Cosense Web のエディタと同じ class 名を出すようになった (内部リンクは `.page-link`、表は `.table-block`、タイトルは `.line.line-title`、装飾は `.deco`)。
   `className` で選ぶ包む要素 (既定の `cosense`)、`not-cosense`、modifier の名前 (`cosense-link:` など)、CSS 変数 (`--cosense-*`) は変わらない。
-  - **移行:** parser と style も 1.0.0 にそろえる。parser の 0.1.0-beta の出力 (`.page` / `.line`) には当たらなくなる。
+  - **移行:** parser と style も 1.0.0 にそろえる。parser の 0.1.0-beta の出力 (`.link` の内部リンク、`.table`、`.title`) には当たらなくなる。
     記事の HTML に自分で既定の class 名を書いていたところは、parser の README の表のとおりに書き換える。
-- **不具合の修正:** `cosense-icon:` を、アイコンの画像 (`img.csn-icon`) だけに当てるようにした。
+- `prefix` オプションを足した。parser の `toHtml` に `classPrefix` を渡したときは、同じ値を渡す ([CSS フレームワークの class とぶつかるとき](#css-フレームワークの-class-とぶつかるとき))。
+- **不具合の修正:** `cosense-icon:` を、アイコンの画像 (`img.icon`) だけに当てるようにした。
   今までは `.icon` を選んでいて、画像とそれを包むリンクの両方に当たっていた。`p-1` や `m-1` のような余白の utility は、リンクと画像の両方に付いて 2 重になっていた。
   `iconImageUrl` を渡さずにユーザー名のリンクとして出すアイコンには当たらない。リンクのほうは `cosense-link:` で選ぶ。
 - 字下げして書いた表 (`table:名前`) を、同じ深さの行の本文と同じ位置に置くようにした (`@cosense-toolbox/style` と同じ)。
@@ -26,30 +26,19 @@ Tailwind を使う場合は、`style.css` を別途読み込む必要はあり�
 - **不具合の修正:** オプションの例の `classname: article;` を `className: article;` に直した。
   プラグインは `className` だけを読むので、例のとおりに書くと class 名が `cosense` のまま変わらなかった。
 
-modifier の対象の、今までと 1.0.0 の対応 (名前を変えていない `strong` / `em` / `s` / `u` は除く):
+対象を変えた modifier の、今までと 1.0.0 の対応:
 
-| Modifier                 | 今までの対象                   | 1.0.0 の対象                       |
-| :----------------------- | :----------------------------- | :--------------------------------- |
-| `cosense-title:`         | `.title`                       | `.csn-title`                       |
-| `cosense-line:`          | `.line`                        | `.csn-line`                        |
-| `cosense-heading:`       | `.decoration[data-size-level]` | `.csn-decoration[data-size-level]` |
-| `cosense-link:`          | `.link`                        | `.csn-link`                        |
-| `cosense-link-external:` | `.link-external`               | `.csn-link-external`               |
-| `cosense-link-project:`  | `.link-project`                | `.csn-link-project`                |
-| `cosense-hashtag:`       | `.hashtag`                     | `.csn-hashtag`                     |
-| `cosense-code:`          | `.code`                        | `.csn-code`                        |
-| `cosense-code-block:`    | `.code-block > code`           | `.csn-code-block > code`           |
-| `cosense-code-filename:` | `.code-block-start`            | `.csn-code-filename`               |
-| `cosense-quote:`         | `.quote`                       | `.csn-quote`                       |
-| `cosense-table:`         | `.table`                       | `.csn-table`                       |
-| `cosense-td:`            | `.table td`                    | `.csn-table td`                    |
-| `cosense-image:`         | `.image`                       | `.csn-image`                       |
-| `cosense-video:`         | `.video`                       | `.csn-video`                       |
-| `cosense-audio:`         | `.audio`                       | `.csn-audio`                       |
-| `cosense-embed:`         | `.embed`                       | `.csn-embed`                       |
-| `cosense-location:`      | `.link-location`               | `.csn-link-location`               |
-| `cosense-icon:`          | `.icon`                        | `img.csn-icon`                     |
-| `cosense-formula:`       | `.formula`                     | `.csn-formula`                     |
+| Modifier           | 今までの対象                   | 1.0.0 の対象             |
+| :----------------- | :----------------------------- | :----------------------- |
+| `cosense-title:`   | `.title`                       | `.line-title`            |
+| `cosense-line:`    | `.line`                        | `.line:not(.line-title)` |
+| `cosense-heading:` | `.decoration[data-size-level]` | `.deco[data-size-level]` |
+| `cosense-link:`    | `.link`                        | `.page-link, .link`      |
+| `cosense-table:`   | `.table`                       | `.table-block`           |
+| `cosense-td:`      | `.table td`                    | `.table-block td`        |
+| `cosense-icon:`    | `.icon`                        | `img.icon`               |
+
+`cosense-line:` はタイトルを除く。タイトルにも Cosense Web と同じく `.line` が付くようになったが、当たる要素は今までと同じ。
 
 ## インストール
 
@@ -96,40 +85,40 @@ Tailwind v4 の CSS に `@plugin` で足す。
 `cosense-link:hover:underline` のように続けて書くと、リンクを hover したときだけ当たる。
 `md:cosense-title:text-5xl` や `dark:cosense-link:text-sky-300` のように、画面幅やダークモードの variant とも組み合わせられる。
 
-| Modifier                          | Target                             | 記法                                                        |
-| :-------------------------------- | :--------------------------------- | :---------------------------------------------------------- |
-| `cosense-title:{utility}`         | `.csn-title`                       | タイトル (1 行目)                                           |
-| `cosense-line:{utility}`          | `.csn-line`                        | 各行                                                        |
-| `cosense-heading:{utility}`       | `.csn-decoration[data-size-level]` | `[** 見出し]` などの大きな文字                              |
-| `cosense-strong:{utility}`        | `strong`                           | `[[太字]]` `[* 太字]`                                       |
-| `cosense-em:{utility}`            | `em`                               | `[/ 斜体]`                                                  |
-| `cosense-s:{utility}`             | `s`                                | `[- 打ち消し]`                                              |
-| `cosense-u:{utility}`             | `u`                                | `[_ 下線]`                                                  |
-| `cosense-link:{utility}`          | `.csn-link`                        | リンクすべて (`[ページ]` `[https://…]` `[/project/ページ]`) |
-| `cosense-link-external:{utility}` | `.csn-link-external`               | 外部リンク `[https://…]`                                    |
-| `cosense-link-project:{utility}`  | `.csn-link-project`                | 別プロジェクトへのリンク `[/project/ページ]`                |
-| `cosense-hashtag:{utility}`       | `.csn-hashtag`                     | `#タグ`                                                     |
-| `cosense-code:{utility}`          | `.csn-code`                        | `` `コード` ``                                              |
-| `cosense-code-block:{utility}`    | `.csn-code-block > code`           | `code:ファイル名` のブロックの各行                          |
-| `cosense-code-filename:{utility}` | `.csn-code-filename`               | `code:ファイル名` のファイル名                              |
-| `cosense-quote:{utility}`         | `.csn-quote`                       | `>` で始まる引用                                            |
-| `cosense-table:{utility}`         | `.csn-table`                       | `table:名前` の表                                           |
-| `cosense-td:{utility}`            | `.csn-table td`                    | 表のセル                                                    |
-| `cosense-image:{utility}`         | `.csn-image`                       | 画像                                                        |
-| `cosense-video:{utility}`         | `.csn-video`                       | 動画                                                        |
-| `cosense-audio:{utility}`         | `.csn-audio`                       | 音声                                                        |
-| `cosense-embed:{utility}`         | `.csn-embed`                       | YouTube などの埋め込み                                      |
-| `cosense-location:{utility}`      | `.csn-link-location`               | 地図 `[N35,E139]`                                           |
-| `cosense-icon:{utility}`          | `img.csn-icon`                     | `[ユーザー名.icon]`                                         |
-| `cosense-formula:{utility}`       | `.csn-formula`                     | `[$ 数式]`                                                  |
+| Modifier                          | Target                   | 記法                                                        |
+| :-------------------------------- | :----------------------- | :---------------------------------------------------------- |
+| `cosense-title:{utility}`         | `.line-title`            | タイトル (1 行目)                                           |
+| `cosense-line:{utility}`          | `.line:not(.line-title)` | タイトルを除く各行                                          |
+| `cosense-heading:{utility}`       | `.deco[data-size-level]` | `[** 見出し]` などの大きな文字                              |
+| `cosense-strong:{utility}`        | `strong`                 | `[[太字]]` `[* 太字]`                                       |
+| `cosense-em:{utility}`            | `em`                     | `[/ 斜体]`                                                  |
+| `cosense-s:{utility}`             | `s`                      | `[- 打ち消し]`                                              |
+| `cosense-u:{utility}`             | `u`                      | `[_ 下線]`                                                  |
+| `cosense-link:{utility}`          | `.page-link, .link`      | リンクすべて (`[ページ]` `[https://…]` `[/project/ページ]`) |
+| `cosense-link-external:{utility}` | `.link-external`         | 外部リンク `[https://…]`                                    |
+| `cosense-link-project:{utility}`  | `.link-project`          | 別プロジェクトへのリンク `[/project/ページ]`                |
+| `cosense-hashtag:{utility}`       | `.hashtag`               | `#タグ`                                                     |
+| `cosense-code:{utility}`          | `.code`                  | `` `コード` ``                                              |
+| `cosense-code-block:{utility}`    | `.code-block > code`     | `code:ファイル名` のブロックの各行                          |
+| `cosense-code-filename:{utility}` | `.code-block-start`      | `code:ファイル名` のファイル名                              |
+| `cosense-quote:{utility}`         | `.quote`                 | `>` で始まる引用                                            |
+| `cosense-table:{utility}`         | `.table-block`           | `table:名前` の表                                           |
+| `cosense-td:{utility}`            | `.table-block td`        | 表のセル                                                    |
+| `cosense-image:{utility}`         | `.image`                 | 画像                                                        |
+| `cosense-video:{utility}`         | `.video`                 | 動画                                                        |
+| `cosense-audio:{utility}`         | `.audio`                 | 音声                                                        |
+| `cosense-embed:{utility}`         | `.embed`                 | YouTube などの埋め込み                                      |
+| `cosense-location:{utility}`      | `.link-location`         | 地図 `[N35,E139]`                                           |
+| `cosense-icon:{utility}`          | `img.icon`               | `[ユーザー名.icon]`                                         |
+| `cosense-formula:{utility}`       | `.formula`               | `[$ 数式]`                                                  |
 
 対象は HTML の要素名ではなく、Cosense の記法で分けている。`toHtml` はリンク・タグ・アイコンのどれにも同じ `<a>` を使うため、要素名では区別できない。
-class 名は `toHtml` の既定 (`classNames` を渡さなかったとき) に合わせている。
+class 名は `toHtml` の既定 (`classNames` を渡さなかったとき) に合わせている。既定の class 名は Cosense Web のエディタと同じもので、`toHtml` に `classPrefix` を渡したときは、`prefix` オプションで同じ接頭辞を付ける。
 
 ### 装飾の記号ごとに調整する
 
 `cosense-deco-[記号]:{utility}` で、その記号の装飾 (`[| 文字]` なら `|`) だけに utility を当てられる。
-`toHtml` は装飾を `<span class="csn-decoration deco-|">` のように記号ごとの class で出すので、それを選ぶ。
+`toHtml` は装飾を `<span class="deco deco-|">` のように記号ごとの class で出すので、それを選ぶ。
 
 ```html
 <article
@@ -177,13 +166,32 @@ class 名は `toHtml` の既定 (`classNames` を渡さなかったとき) に�
 }
 ```
 
-| オプション  | 既定      | 内容                                                                                                                                 |
-| :---------- | :-------- | :----------------------------------------------------------------------------------------------------------------------------------- |
-| `className` | `cosense` | スタイルを当てる class 名。除外の class 名は `not-{className}`、modifier は `{className}-link:` `{className}-deco-[…]:` のようになる |
+| オプション  | 既定       | 内容                                                                                                                                 |
+| :---------- | :--------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| `className` | `cosense`  | スタイルを当てる class 名。除外の class 名は `not-{className}`、modifier は `{className}-link:` `{className}-deco-[…]:` のようになる |
+| `prefix`    | (付けない) | parser の `toHtml` に渡した `classPrefix`。既定のスタイルと modifier が選ぶ class 名の前に付ける                                     |
+
+## CSS フレームワークの class とぶつかるとき
+
+`toHtml` の既定の class 名は Cosense Web と同じ `.link` や `.image` なので、DaisyUI の `.link` や Bulma の `.image` のように、CSS フレームワークがページ全体に当てる class とぶつかることがある。
+そのときは `toHtml` に `classPrefix` を渡して class 名に接頭辞を付け、プラグインの `prefix` にも同じ値を渡す。
+装飾の記号ごとの `deco-*` には、どちらも付けない。
+
+```ts
+toHtml(page, { classPrefix: "csn-" }) // <div class="csn-line"><a class="csn-page-link" …>
+```
+
+```css
+@plugin "@cosense-toolbox/tailwind" {
+  prefix: csn-;
+}
+```
+
+modifier の名前 (`cosense-link:` など) は変わらない。
 
 ## style.css との違い
 
-- style.css の `.csn-page` を `.cosense` に置き換えている。宣言はすべて同じ
+- style.css の `.page` を `.cosense` に置き換えている。宣言はすべて同じ。`prefix` を渡すと、セレクタの class 名に接頭辞を付ける (style の `csn.css` と同じ)
 - 各ルールのセレクタを `:where()` で包み、どのルールも `.cosense` 1 つぶんの詳細度 (0,1,0) にしている。typography と同じ作り
   - 包むと元の詳細度の差が無くなるので、ルールは元の詳細度の低い順 (同じなら style.css に書いた順) に並べ直して出す。同じ詳細度のルールどうしは後ろに書いたものが勝つので、どの要素でも style.css と同じルールが勝つ
   - modifier のルールは既定のスタイルより後ろに、同じ詳細度で出るので、既定のスタイルに勝つ

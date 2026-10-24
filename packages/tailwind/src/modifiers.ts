@@ -17,11 +17,12 @@ export interface Modifier {
 }
 
 export const MODIFIERS: readonly Modifier[] = [
-  { name: "title", target: ".csn-title", notation: "タイトル (1 行目)" },
-  { name: "line", target: ".csn-line", notation: "各行" },
+  { name: "title", target: ".line-title", notation: "タイトル (1 行目)" },
+  // タイトルにも Cosense Web と同じく line が付くので、タイトルは除く。
+  { name: "line", target: ".line:not(.line-title)", notation: "タイトルを除く各行" },
   {
     name: "heading",
-    target: ".csn-decoration[data-size-level]",
+    target: ".deco[data-size-level]",
     notation: "`[** 見出し]` などの大きな文字",
   },
   { name: "strong", target: "strong", notation: "`[[太字]]` `[* 太字]`" },
@@ -30,36 +31,37 @@ export const MODIFIERS: readonly Modifier[] = [
   { name: "u", target: "u", notation: "`[_ 下線]`" },
   {
     name: "link",
-    target: ".csn-link",
+    // 内部リンクは page-link、外部リンク・アイコン・地図は link (どちらも Cosense Web と同じ名前)。
+    target: ".page-link, .link",
     notation: "リンクすべて (`[ページ]` `[https://…]` `[/project/ページ]`)",
   },
-  { name: "link-external", target: ".csn-link-external", notation: "外部リンク `[https://…]`" },
+  { name: "link-external", target: ".link-external", notation: "外部リンク `[https://…]`" },
   {
     name: "link-project",
-    target: ".csn-link-project",
+    target: ".link-project",
     notation: "別プロジェクトへのリンク `[/project/ページ]`",
   },
-  { name: "hashtag", target: ".csn-hashtag", notation: "`#タグ`" },
-  { name: "code", target: ".csn-code", notation: "`` `コード` ``" },
+  { name: "hashtag", target: ".hashtag", notation: "`#タグ`" },
+  { name: "code", target: ".code", notation: "`` `コード` ``" },
   {
     name: "code-block",
-    target: ".csn-code-block > code",
+    target: ".code-block > code",
     notation: "`code:ファイル名` のブロックの各行",
   },
   {
     name: "code-filename",
-    target: ".csn-code-filename",
+    target: ".code-block-start",
     notation: "`code:ファイル名` のファイル名",
   },
-  { name: "quote", target: ".csn-quote", notation: "`>` で始まる引用" },
-  { name: "table", target: ".csn-table", notation: "`table:名前` の表" },
-  { name: "td", target: ".csn-table td", notation: "表のセル" },
-  { name: "image", target: ".csn-image", notation: "画像" },
-  { name: "video", target: ".csn-video", notation: "動画" },
-  { name: "audio", target: ".csn-audio", notation: "音声" },
-  { name: "embed", target: ".csn-embed", notation: "YouTube などの埋め込み" },
-  { name: "location", target: ".csn-link-location", notation: "地図 `[N35,E139]`" },
+  { name: "quote", target: ".quote", notation: "`>` で始まる引用" },
+  { name: "table", target: ".table-block", notation: "`table:名前` の表" },
+  { name: "td", target: ".table-block td", notation: "表のセル" },
+  { name: "image", target: ".image", notation: "画像" },
+  { name: "video", target: ".video", notation: "動画" },
+  { name: "audio", target: ".audio", notation: "音声" },
+  { name: "embed", target: ".embed", notation: "YouTube などの埋め込み" },
+  { name: "location", target: ".link-location", notation: "地図 `[N35,E139]`" },
   // アイコンは画像を包むリンクにも同じ class が付くので、画像だけを選ぶ。リンクも選ぶと utility が 2 重に効く。
-  { name: "icon", target: "img.csn-icon", notation: "`[ユーザー名.icon]`" },
-  { name: "formula", target: ".csn-formula", notation: "`[$ 数式]`" },
+  { name: "icon", target: "img.icon", notation: "`[ユーザー名.icon]`" },
+  { name: "formula", target: ".formula", notation: "`[$ 数式]`" },
 ]

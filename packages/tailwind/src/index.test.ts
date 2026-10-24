@@ -12,6 +12,7 @@ import { MODIFIERS } from "./modifiers"
 import { styles } from "./styles.generated"
 
 const STYLE_CSS = join(import.meta.dirname, "..", "..", "style", "style.css")
+const CSN_CSS = join(import.meta.dirname, "..", "..", "style", "csn.css")
 
 /** `@plugin` で読み込んだときと同じ経路で Tailwind に通し、使った class の CSS を返す。 */
 const build = async (
@@ -65,10 +66,13 @@ const rulesOf = (css: string): [string, string[]][] => {
 
 const NOT = ':not(:where([class~="not-cosense"],[class~="not-cosense"] *))'
 
-/** `.csn-page .x::before` を、プラグインが出す `.cosense :where(.x):not(…)::before` の形にする。 */
-const flattened = (selector: string): string => {
-  if (selector === ".csn-page") return ".cosense"
-  const [, body, pseudo = ""] = /^\.csn-page (.+?)(::[a-z-]+)?$/.exec(selector) ?? []
+/**
+ * `.page .x::before` を、プラグインが出す `.cosense :where(.x):not(…)::before` の形にする。
+ * `root` は style.css の根の class (csn.css なら `.csn-page`)。
+ */
+const flattened = (selector: string, root = ".page"): string => {
+  if (selector === root) return ".cosense"
+  const [, body, pseudo = ""] = new RegExp(`^\\${root} (.+?)(::[a-z-]+)?$`).exec(selector) ?? []
   return normalize(`.cosense :where(${body})${NOT}${pseudo}`)
 }
 
@@ -95,15 +99,13 @@ describe("cosense プラグイン", () => {
     const selectors = rulesOf(await build(["cosense"])).map(([selector]) => selector)
     expect(selectors).toEqual([
       ".cosense",
-      ...styles.rules.map(({ selector }) =>
-        flattened(`.csn-page ${selector.body}${selector.pseudo}`),
-      ),
+      ...styles.rules.map(({ selector }) => flattened(`.page ${selector.body}${selector.pseudo}`)),
     ])
   })
 
   it("擬似要素のあるセレクタでは、not-cosense の除外を擬似要素より前に入れる", async () => {
     const selectors = rulesOf(await build(["cosense"])).map(([selector]) => selector)
-    expect(selectors).toContain(normalize(`.cosense :where(.csn-line[data-indent])${NOT}::before`))
+    expect(selectors).toContain(normalize(`.cosense :where(.line[data-indent])${NOT}::before`))
   })
 
   it("className を渡すと、class 名と除外の class 名が変わる", async () => {
@@ -111,7 +113,7 @@ describe("cosense プラグイン", () => {
     const selectors = rulesOf(css).map(([selector]) => selector)
     expect(selectors).toContain(
       normalize(
-        '.article :where(.csn-line):not(:where([class~="not-article"],[class~="not-article"] *))',
+        '.article :where(.line:not(.line-title)):not(:where([class~="not-article"],[class~="not-article"] *))',
       ),
     )
     expect(selectors.some((selector) => selector.includes("cosense"))).toBe(false)
@@ -133,12 +135,49 @@ describe("cosense プラグイン", () => {
   })
 
   it("class に cosense が無ければ何も出さない", async () => {
-    expect((await build(["flex"])).trim()).not.toContain(".csn-line")
+    expect((await build(["flex"])).trim()).not.toContain(".line")
+  })
+})
+
+describe("接頭辞", () => {
+  it("prefix に csn- を渡すと、style の csn.css のすべてのルールを .cosense の下に出す", async () => {
+    const expected = rulesOf(await readFile(CSN_CSS, "utf8")).map(
+      ([selector, declarations]): [string, string[]] => [
+        flattened(selector, ".csn-page"),
+        declarations,
+      ],
+    )
+    const css = await build(["cosense"], cosense({ prefix: "csn-" }))
+    expect(sorted(rulesOf(css))).toEqual(sorted(expected))
+  })
+
+  it("CSS の @plugin のブロックでも prefix を渡せる", async () => {
+    const css = await build(["cosense"], cosense, '@plugin "cosense" { prefix: csn-; }')
+    expect(rulesOf(css).map(([selector]) => selector)).toContain(
+      normalize(`.cosense :where(.csn-line:not(.csn-line-title))${NOT}`),
+    )
+  })
+
+  it("prefix は modifier の対象の class 名にも付く", async () => {
+    const rules = rulesOf(await build(["cosense-link:[color:red]"], cosense({ prefix: "csn-" })))
+    expect(rules).toContainEqual([
+      normalize(`.cosense-link\\:\\[color\\:red\\] :is(:where(.csn-page-link,.csn-link)${NOT})`),
+      ["color:red"],
+    ])
+  })
+
+  it("prefix は装飾の class に付き、記号ごとの deco- には付かない (toHtml の classPrefix と同じ)", async () => {
+    const css = await build(["cosense-deco-[|]:[color:red]"], cosense({ prefix: "csn-" }))
+    expect(rulesOf(css).map(([selector]) => selector)).toEqual([
+      normalize(
+        `.cosense-deco-\\[\\|\\]\\:\\[color\\:red\\] :is(:where(.csn-deco.deco-\\|)${NOT})`,
+      ),
+    ])
   })
 })
 
 describe("parser の既定の class 名との対応", () => {
-  /** parser の既定の class 名を 1 つずつにしたもの。`csn-link csn-link-external` は 2 つになる。 */
+  /** parser の既定の class 名を 1 つずつにしたもの。`link link-external` は 2 つになる。 */
   const parserClasses = new Set(
     Object.values(defaultClassNames).flatMap((names) => names.split(" ")),
   )
@@ -163,7 +202,7 @@ describe("modifier", () => {
   it("cosense-link:{utility} は、.cosense の中のリンクだけに utility を当てる", async () => {
     const rules = rulesOf(await build(["cosense", "cosense-link:[color:red]"]))
     expect(rules).toContainEqual([
-      normalize(`.cosense-link\\:\\[color\\:red\\] :is(:where(.csn-link)${NOT})`),
+      normalize(`.cosense-link\\:\\[color\\:red\\] :is(:where(.page-link,.link)${NOT})`),
       ["color:red"],
     ])
   })
@@ -171,7 +210,7 @@ describe("modifier", () => {
   it("cosense-icon:{utility} は、アイコンの画像だけに当てる。画像を包むリンクにも同じ class が付くため", async () => {
     const rules = rulesOf(await build(["cosense", "cosense-icon:[color:red]"]))
     expect(rules).toContainEqual([
-      normalize(`.cosense-icon\\:\\[color\\:red\\] :is(:where(img.csn-icon)${NOT})`),
+      normalize(`.cosense-icon\\:\\[color\\:red\\] :is(:where(img.icon)${NOT})`),
       ["color:red"],
     ])
   })
@@ -214,24 +253,22 @@ describe("装飾の記号の modifier", () => {
   const decoSelectors = async (candidates: string[], plugin: unknown = cosense) =>
     rulesOf(await build(candidates, plugin))
       .map(([selector]) => selector)
-      .filter((selector) => selector.includes("csn-decoration"))
+      .filter((selector) => selector.includes("deco"))
 
   it("cosense-deco-[|]:{utility} は、その記号の装飾 ([| 文字]) だけに当てる", async () => {
     expect(await decoSelectors(["cosense-deco-[|]:[color:red]"])).toEqual([
-      normalize(
-        `.cosense-deco-\\[\\|\\]\\:\\[color\\:red\\] :is(:where(.csn-decoration.deco-\\|)${NOT})`,
-      ),
+      normalize(`.cosense-deco-\\[\\|\\]\\:\\[color\\:red\\] :is(:where(.deco.deco-\\|)${NOT})`),
     ])
   })
 
   it("記号を並べると、それらをすべて持つ装飾 ([*/ 文字] など) に当てる", async () => {
     const [selector] = await decoSelectors(["cosense-deco-[*/]:[color:red]"])
-    expect(selector).toContain(":where(.csn-decoration.deco-\\*.deco-\\/)")
+    expect(selector).toContain(":where(.deco.deco-\\*.deco-\\/)")
   })
 
   it("下線の記号 _ は、Tailwind の決まりどおり [\\_] と書く", async () => {
     const [selector] = await decoSelectors(["cosense-deco-[\\_]:[color:red]"])
-    expect(selector).toContain(":where(.csn-decoration.deco-_)")
+    expect(selector).toContain(":where(.deco.deco-_)")
   })
 
   it("既定のスタイルより後ろに、同じ詳細度で出る", async () => {
