@@ -215,7 +215,15 @@ export const toHastEither = (
       const body: ElementContent = Option.match(src, {
         onNone: () => text(node.user),
         onSome: (url) =>
-          element("img", withClass(cls.icon, { src: url, alt: node.user, title: node.user })),
+          element(
+            "img",
+            withClass(cls.icon, {
+              src: url,
+              alt: node.user,
+              title: node.user,
+              dataLarge: node.large ? "true" : undefined,
+            }),
+          ),
       })
       return Option.match(href, {
         onNone: () => body,
