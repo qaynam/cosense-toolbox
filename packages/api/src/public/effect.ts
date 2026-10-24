@@ -4,7 +4,7 @@
  * 呼ぶ関数はどれも、要求を送る `HttpClient` が要る。`HttpClientLive` (globalThis.fetch) か、
  * `httpClientOf(fetch)` で作ったものを渡す。失敗は `CosenseApiError` (`_tag: "CosenseApiError"`)。
  */
-export { type CosenseApi, createCosenseApi } from "../api"
+export { type CosenseApi, type CosenseProjectApi, createCosenseApi } from "../api"
 export { cosenseIconUrl, isCosenseAssetUrl } from "../assets"
 export {
   alignLines,
@@ -33,6 +33,7 @@ export { type MergeConflict, type MergeResult, mergeThreeWay } from "../merge"
 export type {
   CosenseApiConfig,
   CosenseApiOptions,
+  ExportForAiOptions,
   ListPagesOptions,
   UpdatePageOptions,
 } from "../options"

@@ -24,6 +24,9 @@ toc:
   - id: handlers
     text: handlers と extensions
     depth: 3
+  - id: hastscript
+    text: h で要素を組み立てる
+    depth: 3
   - id: style
     text: style
     depth: 3
@@ -108,6 +111,39 @@ code:ts
 
 標準の `codeLineNumbers()` はコード行に行番号属性を付け、`tableCellLineBreaks(marker)` は表セル内の指定文字列を `<br>` にします。
 
+<DocHeading level={3} id="hastscript" title="h で要素を組み立てる" />
+
+`handlers` と `extensions` は hast の要素を返します。[hastscript https://github.com/syntax-tree/hastscript] の `h` を使うと、`{ type: "element", … }` のオブジェクトを手で書かずに済みます。hastscript はこのパッケージに含まれないので、別に入れてください。出力は hast 3 なので、hastscript は 9 を使います。
+
+code:sh
+ npm i hastscript@9
+
+`h(タグ名, 属性, ...子)` の形で、class は空白で区切った文字列のまま渡せます。子の文字列はテキストとしてエスケープされ、`null` と `undefined` は出力されません。
+
+次の例は、コードブロックを行ごとの要素に分けず、ファイル名を添えた 1 つの `<pre>` の箱にまとめます。
+
+code:ts
+ import { toHtml } from "@cosense-toolbox/parser/html"
+ import { h } from "hastscript"
+
+ toHtml(page, {
+   handlers: {
+     codeBlock: (node) =>
+       h("figure", { className: "code-box" }, [
+         h("figcaption", node.filename),
+         h("pre", h("code", node.lines.map((line) => line.value).join("\n"))),
+       ]),
+   },
+ })
+
+ハンドラーの型を書くときは、hast の型 `Element`、`ElementContent`、`Root` を `@cosense-toolbox/parser/html` から import できます。`ctx.children(node)` の戻り値 (`ElementContent[]`) は、そのまま `h` の子に渡せます。
+
+code:ts
+ import type { Element, ElementContent } from "@cosense-toolbox/parser/html"
+ import { h } from "hastscript"
+
+ const card = (children: ElementContent[]): Element => h("div", { className: "card" }, children)
+
 <DocHeading level={3} id="style" title="style" />
 
 `toHtml` に `style` 文字列を渡すと、出力の先頭に `<style>` 要素を追加します。iframe の `srcdoc` のように、HTML と CSS を一つの文字列にまとめたい場合に使えます。
@@ -121,7 +157,7 @@ code:ts
 
 ページ全体は `<div class="page">` で包まれます。1行目は `<h1 class="title">`、通常行は `.line`、引用行は `<blockquote>` になります。字下げの深さは `.line[data-indent]` で表します。
 
-コードブロックの各行はそれぞれ要素になり、表は `<table class="table">` になります。装飾は `.decoration` と記号ごとの `deco-*` class で区別します。
+コードブロックの各行はそれぞれ要素になり、表は `<table class="table">` になります。字下げした表にも、行と同じく `data-indent` が付きます。装飾は `.decoration` と記号ごとの `deco-*` class で区別します。
 
 <DocHeading level={2} id="safety" title="エスケープと URL の検査" />
 

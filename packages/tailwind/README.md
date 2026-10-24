@@ -10,6 +10,11 @@ Tailwind を使う場合は、`style.css` を別途読み込む必要はあり�
 
 > **beta**：class 名や出力はまだ変わりうる。
 
+### 1.0.0 の変更
+
+- 字下げして書いた表 (`table:名前`) を、同じ深さの行の本文と同じ位置に置くようにした (`@cosense-toolbox/style` と同じ)。
+  `@cosense-toolbox/parser` 1.0.0 の `toHtml` が表に付ける `data-indent` を見るので、parser も 1.0.0 にそろえる。
+
 ## インストール
 
 ```sh
