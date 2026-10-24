@@ -74,6 +74,7 @@ export type PageRefNode = InternalLink | ProjectLink | Hashtag | IconNode
  */
 export interface HtmlClassNames {
   readonly page?: string
+  /** タイトル (1 行目) の `<h1>` */
   readonly title?: string
   readonly line?: string
   /** 引用行の `<blockquote>` */
@@ -116,47 +117,55 @@ export interface HtmlClassNames {
   readonly embed?: string
   /** 地図 (`[N35,E139]`) の、Google マップへのリンク */
   readonly location?: string
+  /** アイコンの画像 (画像の URL が無ければユーザー名) を包む `<a>` */
+  readonly iconLink?: string
+  /** アイコンの `<img>` */
   readonly icon?: string
   readonly formula?: string
   readonly decoration?: string
 }
 
 /**
- * 既定の class 名。どれも `csn-` で始まる。
- * CSS フレームワークがページ全体に当てる `.link` / `.table` / `.title` などの class に、出力が巻き込まれないようにするため。
- * 装飾の記号ごとの `deco-*` は Cosense Web の class 名に合わせたものなので、ここには含めず接頭辞も付けない。
+ * 既定の class 名。Cosense Web のエディタが同じ記法に付ける class 名に合わせている
+ * (`page-link` / `table-block` / `line-title` / `cli` / `deco` など)。
+ * Cosense Web の userCSS で覚えた名前のまま、出力を選べるようにするため。
+ *
+ * Cosense Web はどれも `page-link` にする別プロジェクトへのリンクとタグ、`link` にする外部リンクと地図には、
+ * 見分けるための class (`link-project` / `hashtag` / `link-external` / `link-location`) を足している。
+ * 装飾の記号ごとの `deco-*` は、記号から決まる名前なのでここには含めない。
  */
 export const defaultClassNames: HtmlClassNames = {
-  page: "csn-page",
-  title: "csn-title",
-  line: "csn-line",
-  quote: "csn-quote",
-  monospace: "csn-monospace",
-  commandPrefix: "csn-command-prefix",
-  commandSpace: "csn-command-space",
-  command: "csn-command",
-  codeBlock: "csn-code-block",
-  codeStart: "csn-code-start",
-  codeFilename: "csn-code-filename",
-  codeBody: "csn-code-body",
-  codeHighlight: "csn-code-highlight",
-  table: "csn-table",
-  indentMark: "csn-indent-mark",
-  pad: "csn-pad",
-  dot: "csn-dot",
-  internalLink: "csn-link",
-  externalLink: "csn-link csn-link-external",
-  projectLink: "csn-link csn-link-project",
-  hashtag: "csn-hashtag",
-  inlineCode: "csn-code",
-  image: "csn-image",
-  video: "csn-video",
-  audio: "csn-audio",
-  embed: "csn-embed",
-  location: "csn-link csn-link-location",
-  icon: "csn-icon",
-  formula: "csn-formula",
-  decoration: "csn-decoration",
+  page: "page",
+  title: "line line-title",
+  line: "line",
+  quote: "quote",
+  monospace: "cli",
+  commandPrefix: "prefix",
+  commandSpace: "space",
+  command: "command",
+  codeBlock: "code-block",
+  codeStart: "code-start",
+  codeFilename: "code-block-start",
+  codeBody: "code-body",
+  codeHighlight: "highlight",
+  table: "table-block",
+  indentMark: "indent-mark",
+  pad: "pad",
+  dot: "dot",
+  internalLink: "page-link",
+  externalLink: "link link-external",
+  projectLink: "page-link link-project",
+  hashtag: "page-link hashtag",
+  inlineCode: "code",
+  image: "image",
+  video: "video",
+  audio: "audio",
+  embed: "embed",
+  location: "link link-location",
+  iconLink: "link icon",
+  icon: "icon",
+  formula: "formula",
+  decoration: "deco",
 }
 
 /**
@@ -180,7 +189,7 @@ export type HastContent = ElementContent | RawNode
  *
  * shiki の `codeToHast` のように `pre > code` を返したときは、code の中身を使い、
  * pre の class と style (テーマの背景色や文字色) をコードブロックの code に移す。
- * 行の要素 (`div.csn-line`) の中に置くので、pre そのものは出さない。
+ * 行の要素 (`div.line`) の中に置くので、pre そのものは出さない。
  */
 export type HastHighlighter = (code: string, language: string) => Root | HastContent[] | null
 
@@ -216,6 +225,16 @@ export interface HastRenderOptions {
   readonly highlight?: HastHighlighter
   /** 出力する要素に付ける class 名。 */
   readonly classNames?: HtmlClassNames
+  /**
+   * 既定の class 名の前に付ける文字列。`"csn-"` なら `line` は `csn-line`、`link link-external` は
+   * `csn-link csn-link-external` になる。既定の名前は Cosense Web と同じ `link` や `image` なので、
+   * CSS フレームワークがページ全体に当てる class (DaisyUI の `.link`、Bulma の `.image` など) とぶつかるときに使う。
+   *
+   * `classNames` で渡した名前と、装飾の記号ごとの `deco-*` には付けない。
+   *
+   * @defaultValue `""` (付けない)
+   */
+  readonly classPrefix?: string
   /**
    * インデントを Cosense Web と同じ要素として書き出す。深さ 1 段につき `pad` が 1 つ並び、
    * その右端に中点が付く。
@@ -760,7 +779,7 @@ export const defaultHastHandlers = {
         onSome: (url) =>
           element("img", withClass(cls.icon, { src: url, alt: node.user, title: node.user })),
       })
-      return element("a", withClass(joinClasses(cls.internalLink, cls.icon), { href }), [body])
+      return element("a", withClass(cls.iconLink, { href }), [body])
     })
   },
 
@@ -784,12 +803,26 @@ export const defaultHastHandlers = {
   },
 } satisfies HastHandlers
 
+/** class 名の前に `prefix` を付ける。1 つの値に並んだ class 名には、1 つずつ付ける。 */
+const prefixed = (classNames: HtmlClassNames, prefix: string): HtmlClassNames =>
+  Object.fromEntries(
+    Object.entries(classNames).map(([key, names]) => [
+      key,
+      classList(names)
+        .map((name) => `${prefix}${name}`)
+        .join(" "),
+    ]),
+  )
+
 /** オプションの既定値を埋める。 */
 const resolveOptions = (options: HastRenderOptions): ResolvedHastOptions => ({
   pageUrl: options.pageUrl ?? defaultPageUrl,
   iconImageUrl: options.iconImageUrl ?? (() => null),
   highlight: options.highlight ?? null,
-  classNames: { ...defaultClassNames, ...options.classNames },
+  classNames: {
+    ...prefixed(defaultClassNames, options.classPrefix ?? ""),
+    ...options.classNames,
+  },
   showPads: options.showPads === true,
 })
 

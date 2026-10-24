@@ -27,12 +27,12 @@ describe("toHast", () => {
         {
           type: "element",
           tagName: "div",
-          properties: { className: ["csn-page"] },
+          properties: { className: ["page"] },
           children: [
             {
               type: "element",
               tagName: "h1",
-              properties: { className: ["csn-title"] },
+              properties: { className: ["line", "line-title"] },
               children: [{ type: "text", value: "タイトル" }],
             },
           ],
@@ -44,7 +44,7 @@ describe("toHast", () => {
   it("ページ以外のノードも hast にできる", () => {
     expect(first(toHast(parseLine("`x`")))).toMatchObject({
       tagName: "div",
-      properties: { className: ["csn-line"] },
+      properties: { className: ["line"] },
     })
   })
 })
@@ -62,7 +62,7 @@ describe("コードブロックの色付け (highlight)", () => {
     })
     expect(seen).toEqual(["js"])
     expect(html).toContain(
-      '<code class="csn-code-body csn-code-highlight"><i>const a = 1\n  return &lt;a></i></code>',
+      '<code class="code-body highlight"><i>const a = 1\n  return &lt;a></i></code>',
     )
   })
 
@@ -114,7 +114,7 @@ describe("コードブロックの色付け (highlight)", () => {
       highlight: () => shikiOf(["const a = 1", "  return <a>"]),
     })
     const open =
-      '<div class="csn-line csn-code-block" data-indent="1"><code class="csn-code-body csn-code-highlight shiki github-light" style="--cosense-code-bg:#fff;--cosense-code-text:#24292e">'
+      '<div class="line code-block" data-indent="1"><code class="code-body highlight shiki github-light" style="--cosense-code-bg:#fff;--cosense-code-text:#24292e">'
     expect(html).toContain(
       `${open}<span class="line">const a = 1</span></code></div>${open}<span class="line">  return &lt;a></span></code></div>`,
     )
@@ -139,27 +139,27 @@ describe("コードブロックの色付け (highlight)", () => {
     ["多い", ["a", "b", "c"]],
   ])("行の要素がソースの行より%s出力は、行に分けずにひと塊のまま出す", (_, lines) => {
     const html = toHtml(parse(SOURCE), { highlight: () => shikiOf(lines) })
-    expect(html.match(/<code class="csn-code-body/g)).toHaveLength(1)
+    expect(html.match(/<code class="code-body/g)).toHaveLength(1)
   })
 
   it("pre の隣にほかの要素があれば、pre を剥がさずに出す", () => {
     const pre = tag("pre", [tag("code", [italic("x")])])
     expect(toHtml(parse(SOURCE), { highlight: () => [pre, italic("y")] })).toContain(
-      '<code class="csn-code-body csn-code-highlight"><pre><code><i>x</i></code></pre><i>y</i></code>',
+      '<code class="code-body highlight"><pre><code><i>x</i></code></pre><i>y</i></code>',
     )
   })
 
   it("pre > code でない入れ子は、剥がさずにそのまま出す", () => {
     const outer = tag("div", [tag("span", [italic("x")])])
     expect(toHtml(parse(SOURCE), { highlight: () => [outer] })).toContain(
-      '<code class="csn-code-body csn-code-highlight"><div><span><i>x</i></span></div></code>',
+      '<code class="code-body highlight"><div><span><i>x</i></span></div></code>',
     )
   })
 
   it("pre > code 以外の root は、その中身をそのまま code に入れる", () => {
     const root: Root = { type: "root", children: [italic("x")] }
     expect(toHtml(parse(SOURCE), { highlight: () => root })).toContain(
-      '<code class="csn-code-body csn-code-highlight"><i>x</i></code>',
+      '<code class="code-body highlight"><i>x</i></code>',
     )
   })
 })
@@ -178,7 +178,7 @@ describe("handlers (置き換え)", () => {
       handlers: { decoration: (node, ctx) => tag("b", ctx.children(node)) },
     })
     expect(html).toBe(
-      '<div class="csn-line"><b><a class="csn-link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> と 太字</b></div>',
+      '<div class="line"><b><a class="page-link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> と 太字</b></div>',
     )
   })
 
@@ -259,7 +259,7 @@ describe("extensions (出力の加工)", () => {
     const html = toHtml(parse(SOURCE), {
       extensions: [{ inlineCode: (output) => tag("mark", output) }],
     })
-    expect(html).toContain('<mark><code class="csn-code">code</code></mark>')
+    expect(html).toContain('<mark><code class="code">code</code></mark>')
   })
 
   it("並べた順に重なる。前の拡張の出力が次の拡張に渡る", () => {
@@ -269,7 +269,7 @@ describe("extensions (出力の加工)", () => {
         { inlineCode: (output) => tag("a2", output) },
       ],
     })
-    expect(html).toContain('<a2><a1><code class="csn-code">code</code></a1></a2>')
+    expect(html).toContain('<a2><a1><code class="code">code</code></a1></a2>')
   })
 
   it("そのノード型の関数を持たない拡張は、出力に触れない", () => {
@@ -298,7 +298,7 @@ describe("extensions (出力の加工)", () => {
       ],
     })
     expect(html).toContain(
-      '<section><span class="csn-decoration deco-*"><strong>太字</strong></span>csn-decoration</section>',
+      '<section><span class="deco deco-*"><strong>太字</strong></span>deco</section>',
     )
   })
 

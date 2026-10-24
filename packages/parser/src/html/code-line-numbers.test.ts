@@ -23,16 +23,14 @@ const tag = (tagName: string, children: ElementContent[]): Element => ({
 describe("codeLineNumbers", () => {
   const SOURCE = "タイトル\ncode:a.js\n one\n two"
   const attributes = (html: string, name: string): string[] =>
-    [
-      ...html.matchAll(
-        new RegExp(`<div class="csn-line csn-code-block"[^>]*${name}="(\\d+)"`, "g"),
-      ),
-    ].map((match) => match[1] ?? "")
+    [...html.matchAll(new RegExp(`<div class="line code-block"[^>]*${name}="(\\d+)"`, "g"))].map(
+      (match) => match[1] ?? "",
+    )
 
   it("コードブロックの本体行に、1 から数えた data-line を付ける。ヘッダ行には付けない", () => {
     const html = toHtml(parse(SOURCE), { extensions: [codeLineNumbers()] })
     expect(attributes(html, "data-line")).toEqual(["1", "2"])
-    expect(html).toContain('<div class="csn-line csn-code-block"><code class="csn-code-start">')
+    expect(html).toContain('<div class="line code-block"><code class="code-start">')
   })
 
   it("番号の桁数 (ブロックの最後の番号の桁数) を data-line-digits で全行に付ける。CSS が番号の欄の幅に使う", () => {

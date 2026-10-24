@@ -15,13 +15,18 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 
 ### 1.0.0 の変更
 
-- **破壊的変更:** `toHtml` / `toHast` が出す既定の class 名に、すべて `csn-` を付けた (下の表)。
-  今までの `.link` / `.table` / `.title` / `.image` / `.icon` のような接頭辞の無い名前は、DaisyUI・Bootstrap・Bulma などの
-  CSS フレームワークがページ全体に当てる class と同じ名前で、フレームワークの見た目が出力に混ざっていたため。
-  装飾の記号ごとの `deco-*` は Cosense Web の class 名に合わせたものなので変えていない。`data-*` 属性も変わらない。
+- **破壊的変更:** `toHtml` / `toHast` が出す既定の class 名のうち、下の表のものを、Cosense Web のエディタが同じ記法に付ける class 名に合わせた。
+  Cosense Web の userCSS で覚えた名前のまま、出力を選べるようにするため。表に無い名前と `data-*` 属性は変わらない。
+  タイトルの `<h1>` にも、Cosense Web と同じく行の `line` が付く。
   - **移行:** `@cosense-toolbox/style` と `@cosense-toolbox/tailwind` も 1.0.0 で新しい名前に合わせたので、parser と同時に上げる。
-    自分の CSS やテストで既定の class 名を書いていたところは、表のとおりに書き換える (`.page .line` → `.csn-page .csn-line`)。
+    自分の CSS やテストで既定の class 名を書いていたところは、表のとおりに書き換える (`.table` → `.table-block`)。
+    行に当てていた CSS (`.line`) がタイトルに当たらないようにするには、`.line:not(.line-title)` と書く。
     今までの名前のまま出したいときは、`classNames` に表の「今まで」の名前を渡す。
+- オプションに `classPrefix` を足した。既定の class 名すべての前に付ける文字列で、`"csn-"` なら `line` は `csn-line`、`link link-external` は `csn-link csn-link-external` になる。
+  既定の名前は Cosense Web と同じ `link` などなので、DaisyUI の `.link` のような、CSS フレームワークがページ全体に当てる class とぶつかるときに使う。
+  `classNames` で渡した名前と、装飾の記号ごとの `deco-*` には付けない。`@cosense-toolbox/style` は、class 名に `csn-` を付けた `csn.css` も持っている。
+- `classNames` にキー `iconLink` を足した。アイコンを包む `<a>` の class 名で、既定は Cosense Web と同じ `link icon`。
+  今までは `internalLink` と `icon` をつないだ名前だったので、内部リンクの名前を変えるとアイコンのリンクも変わっていた。`icon` は `<img>` だけの class 名になる。
 - `@cosense-toolbox/parser/html` から、hast の型 `Element` / `ElementContent` / `Root` を出すようにした。
   `handlers` や `extensions` の型を、`@types/hast` を別に入れずに書ける。
   hast の要素は、[hastscript](https://github.com/syntax-tree/hastscript) 9 (hast 3) を入れて `h` で組み立てると、
@@ -29,40 +34,20 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
 - **不具合の修正:** 字下げして書いた表 (`table:名前`) の `<table>` に、行と同じく `data-indent` を付けるようにした (深さが 0 なら付けない)。
   今までは字下げの深さが出力から消え、表だけがページの左端に寄っていた。`@cosense-toolbox/style` は、同じ深さの行の本文と同じ位置に表を置く。
 
-既定の class 名の、今までと 1.0.0 の対応:
+Cosense Web に合わせた既定の class 名の、今までと 1.0.0 の対応:
 
-| `classNames` のキー | 今まで               | 1.0.0                        |
-| :------------------ | :------------------- | :--------------------------- |
-| `page`              | `page`               | `csn-page`                   |
-| `title`             | `title`              | `csn-title`                  |
-| `line`              | `line`               | `csn-line`                   |
-| `quote`             | `quote`              | `csn-quote`                  |
-| `monospace`         | `monospace`          | `csn-monospace`              |
-| `commandPrefix`     | `prefix`             | `csn-command-prefix`         |
-| `commandSpace`      | `space`              | `csn-command-space`          |
-| `command`           | `command`            | `csn-command`                |
-| `codeBlock`         | `code-block`         | `csn-code-block`             |
-| `codeStart`         | `code-start`         | `csn-code-start`             |
-| `codeFilename`      | `code-block-start`   | `csn-code-filename`          |
-| `codeBody`          | `code-body`          | `csn-code-body`              |
-| `codeHighlight`     | `highlight`          | `csn-code-highlight`         |
-| `table`             | `table`              | `csn-table`                  |
-| `indentMark`        | `indent-mark`        | `csn-indent-mark`            |
-| `pad`               | `pad`                | `csn-pad`                    |
-| `dot`               | `dot`                | `csn-dot`                    |
-| `internalLink`      | `link`               | `csn-link`                   |
-| `externalLink`      | `link link-external` | `csn-link csn-link-external` |
-| `projectLink`       | `link link-project`  | `csn-link csn-link-project`  |
-| `hashtag`           | `hashtag`            | `csn-hashtag`                |
-| `inlineCode`        | `code`               | `csn-code`                   |
-| `image`             | `image`              | `csn-image`                  |
-| `video`             | `video`              | `csn-video`                  |
-| `audio`             | `audio`              | `csn-audio`                  |
-| `embed`             | `embed`              | `csn-embed`                  |
-| `location`          | `link link-location` | `csn-link csn-link-location` |
-| `icon`              | `icon`               | `csn-icon`                   |
-| `formula`           | `formula`            | `csn-formula`                |
-| `decoration`        | `decoration`         | `csn-decoration`             |
+| `classNames` のキー | 今まで              | 1.0.0                    | Cosense Web       |
+| :------------------ | :------------------ | :----------------------- | :---------------- |
+| `title`             | `title`             | `line line-title`        | `line line-title` |
+| `monospace`         | `monospace`         | `cli`                    | `cli`             |
+| `table`             | `table`             | `table-block`            | `table-block`     |
+| `internalLink`      | `link`              | `page-link`              | `page-link`       |
+| `projectLink`       | `link link-project` | `page-link link-project` | `page-link`       |
+| `hashtag`           | `hashtag`           | `page-link hashtag`      | `page-link`       |
+| `decoration`        | `decoration`        | `deco`                   | `deco`            |
+
+Cosense Web は別プロジェクトへのリンクとタグも内部リンクと同じ `page-link` にするので、見分けるための `link-project` と `hashtag` を足している。
+外部リンクの `link-external` と地図の `link-location` も同じ理由で足したもので、Cosense Web はどちらも `link` だけ。
 
 ### 0.1.0-beta.9 の変更
 
@@ -173,7 +158,7 @@ const page = parse(`今日のメモ
 #あとで読む`)
 
 collectLinks(page) // → ['プロジェクトA', 'あとで読む']
-toHtml(page) // → '<div class="csn-page"><h1 class="csn-title">今日のメモ</h1>…'
+toHtml(page) // → '<div class="page"><h1 class="line line-title">今日のメモ</h1>…'
 ```
 
 ## API
