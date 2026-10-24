@@ -13,11 +13,14 @@
  * 変数を自前でルート要素に定義していないのは、そうすると継承で降ってくる
  * 利用者の指定を打ち消してしまうため。
  *
- * toHtml の既定の class 名はどれも csn- で始まり、CSS フレームワークがページ全体に当てる
- * .link / .table / .title などの class とは名前がぶつからない。
+ * toHtml の既定の class 名は Cosense Web のエディタと同じ (.line / .page-link / .table-block など)。
+ * どのルールも出力の根の .page の子孫として書いているので、ページのほかの場所には当たらない。
+ * 逆に、CSS フレームワークがページ全体に当てる .link / .image などが出力に当たってしまうときは、
+ * toHtml に classPrefix: "csn-" を渡し、このファイルの代わりに csn.css を読み込む。
+ * csn.css は、このファイルの class 名すべてに csn- を付けて作る (bun run generate)。
  *
- * すべてのルールは、出力の根の .csn-page の子孫として書く。@cosense-toolbox/tailwind が
- * このファイルを読み、.csn-page を利用者の class (既定は cosense) に置き換えて使うため。
+ * 根の .page の下に書くのは、@cosense-toolbox/tailwind のためでもある。
+ * tailwind はこのファイルを読み、.page を利用者の class (既定は cosense) に置き換えて使う。
  */
 
 /* ---------------------------------------------------------------------------
@@ -29,7 +32,7 @@
  * em で書いた各所の寸法はこの基準に乗るので、ここを変えると全体が拡縮する。
  * line-height は本体の 28px を比に直したもの (28 / 15)。
  */
-.csn-page {
+.page {
   /* 周りのページからフォントが降ってこないよう、ここで断ち切る。 */
   font-family: var(--cosense-font, "Open Sans", Helvetica, Arial, "Hiragino Sans", sans-serif);
   font-size: var(--cosense-font-size, 15px);
@@ -41,7 +44,7 @@
 }
 
 /* 本体のタイトルは 25.95px / 42px。基準の 15px に対して 1.73 倍。 */
-.csn-page .csn-title {
+.page .line-title {
   margin: 0 0 0.77em;
   font-size: 1.73em;
   font-weight: 700;
@@ -49,7 +52,8 @@
   color: var(--cosense-title, var(--line-title-color, var(--page-text-color, #4a4a4a)));
 }
 
-.csn-page .csn-line {
+/* タイトルにも Cosense Web と同じく .line が付くので除く。min-height が当たると、空のタイトルが 1 行ぶんの高さを取る。 */
+.page .line:not(.line-title) {
   position: relative;
   min-height: 1em;
   /* 記法の記号が合字にならないように (本体と同じ)。 */
@@ -66,57 +70,57 @@
  * 字下げした表も data-indent を持つので、行と同じ変数で深さを表す。
  * 11 段以上はインデントも中点も付かない。
  */
-.csn-page .csn-line[data-indent="1"],
-.csn-page .csn-table[data-indent="1"] {
+.page .line[data-indent="1"],
+.page .table-block[data-indent="1"] {
   --cosense-depth: 1;
 }
-.csn-page .csn-line[data-indent="2"],
-.csn-page .csn-table[data-indent="2"] {
+.page .line[data-indent="2"],
+.page .table-block[data-indent="2"] {
   --cosense-depth: 2;
 }
-.csn-page .csn-line[data-indent="3"],
-.csn-page .csn-table[data-indent="3"] {
+.page .line[data-indent="3"],
+.page .table-block[data-indent="3"] {
   --cosense-depth: 3;
 }
-.csn-page .csn-line[data-indent="4"],
-.csn-page .csn-table[data-indent="4"] {
+.page .line[data-indent="4"],
+.page .table-block[data-indent="4"] {
   --cosense-depth: 4;
 }
-.csn-page .csn-line[data-indent="5"],
-.csn-page .csn-table[data-indent="5"] {
+.page .line[data-indent="5"],
+.page .table-block[data-indent="5"] {
   --cosense-depth: 5;
 }
-.csn-page .csn-line[data-indent="6"],
-.csn-page .csn-table[data-indent="6"] {
+.page .line[data-indent="6"],
+.page .table-block[data-indent="6"] {
   --cosense-depth: 6;
 }
-.csn-page .csn-line[data-indent="7"],
-.csn-page .csn-table[data-indent="7"] {
+.page .line[data-indent="7"],
+.page .table-block[data-indent="7"] {
   --cosense-depth: 7;
 }
-.csn-page .csn-line[data-indent="8"],
-.csn-page .csn-table[data-indent="8"] {
+.page .line[data-indent="8"],
+.page .table-block[data-indent="8"] {
   --cosense-depth: 8;
 }
-.csn-page .csn-line[data-indent="9"],
-.csn-page .csn-table[data-indent="9"] {
+.page .line[data-indent="9"],
+.page .table-block[data-indent="9"] {
   --cosense-depth: 9;
 }
-.csn-page .csn-line[data-indent="10"],
-.csn-page .csn-table[data-indent="10"] {
+.page .line[data-indent="10"],
+.page .table-block[data-indent="10"] {
   --cosense-depth: 10;
 }
 
-.csn-page .csn-line[data-indent] {
+.page .line[data-indent] {
   padding-left: calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0));
 }
 
 /*
  * 本体と同じく、字下げの右端に中点を置く。
  * toHtml の既定の出力には中点にあたる要素が無いので擬似要素で描く。
- * showPads で .csn-dot を出した場合は要素側に任せ、二重に描かないようにする。
+ * showPads で .dot を出した場合は要素側に任せ、二重に描かないようにする。
  */
-.csn-page .csn-line[data-indent]::before {
+.page .line[data-indent]::before {
   content: "";
   position: absolute;
   top: 0.7em;
@@ -127,12 +131,12 @@
   background: var(--cosense-text, var(--page-text-color, #555));
 }
 
-.csn-page .csn-line:has(> .csn-indent-mark)::before {
+.page .line:has(> .indent-mark)::before {
   content: none;
 }
 
 /* showPads: true のときだけ出る要素。余白の数がそのまま深さを表す。 */
-.csn-page .csn-indent-mark {
+.page .indent-mark {
   position: absolute;
   left: 0;
   top: 0;
@@ -140,14 +144,14 @@
   color: transparent;
 }
 
-.csn-page .csn-pad {
+.page .pad {
   display: inline-block;
   width: var(--cosense-indent, 1.5em);
   height: 1em;
   overflow: hidden;
 }
 
-.csn-page .csn-dot {
+.page .dot {
   position: absolute;
   right: 0.65em;
   top: 0.7em;
@@ -161,15 +165,15 @@
  * リンク
  * ------------------------------------------------------------------------- */
 
-.csn-page .csn-link,
-.csn-page .csn-hashtag {
+.page .page-link,
+.page .link {
   color: var(--cosense-link, var(--page-link-color, #3d72f5));
   text-decoration: none;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
 }
 
-.csn-page .csn-link:hover,
-.csn-page .csn-hashtag:hover {
+.page .page-link:hover,
+.page .link:hover {
   color: var(--cosense-link-hover, var(--page-link-hover-color, #0d4ff3));
 }
 
@@ -177,16 +181,16 @@
  * コード
  * ------------------------------------------------------------------------- */
 
-.csn-page .csn-code,
-.csn-page .csn-code-start,
-.csn-page .csn-code-body,
-.csn-page .csn-monospace {
+.page .code,
+.page .code-start,
+.page .code-body,
+.page .cli {
   font-family: var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace);
   color: var(--cosense-code-text, var(--code-color, #342d9c));
 }
 
-.csn-page .csn-code,
-.csn-page .csn-monospace {
+.page .code,
+.page .cli {
   padding: 0 0.2em;
   border-radius: 4px;
   font-size: 90%;
@@ -199,7 +203,7 @@
  * 塗るのは行ではなく中の <code>。行の padding より内側から始めることで、
  * ブロック全体がインデントの位置に揃う。
  */
-.csn-page .csn-line.csn-code-block > code {
+.page .line.code-block > code {
   display: block;
   /* 空の行も 1 行ぶんの高さを保つ。中身が無いと行の箱ができず、高さが 0 になるため。 */
   min-height: 1.7em;
@@ -212,7 +216,7 @@
  * 本体行はヘッダより 1 段深いが、ブロックの左端はヘッダに揃える (Cosense Web と同じ)。
  * 1 段ぶん左に出してから同じだけ padding で戻すことで、文字の位置は保ったまま背景だけ広げる。
  */
-.csn-page .csn-line.csn-code-block > .csn-code-body {
+.page .line.code-block > .code-body {
   margin-left: calc(var(--cosense-indent, 1.5em) * -1);
   padding-left: var(--cosense-indent, 1.5em);
   /* 値に残っている深い字下げを保ちつつ、長い行は折り返す。 */
@@ -220,7 +224,7 @@
 }
 
 /* ファイル名はCosense Web と同じ見出しバッジ。 */
-.csn-page .csn-code-filename {
+.page .code-block-start {
   padding: 1px 2px;
   font-size: 0.95em;
   color: var(--cosense-badge-text, #342d9c);
@@ -228,7 +232,7 @@
 }
 
 /* 中点が付くのはヘッダ行だけ (Cosense Web では本体行に dot が無い)。 */
-.csn-page .csn-line.csn-code-block:not(:has(> .csn-code-start))::before {
+.page .line.code-block:not(:has(> .code-start))::before {
   content: none;
 }
 
@@ -240,19 +244,19 @@
  * attr() の中身は選択されないので、コードをコピーしても番号は入らない。
  * 桁数を calc に持ち込む手段 (attr() の type 指定) がまだ広く使えないので、インデントと同じく桁数ごとに変数を置く。
  */
-.csn-page .csn-line.csn-code-block[data-line-digits="1"] {
+.page .line.code-block[data-line-digits="1"] {
   --cosense-line-digits: 1;
 }
-.csn-page .csn-line.csn-code-block[data-line-digits="2"] {
+.page .line.code-block[data-line-digits="2"] {
   --cosense-line-digits: 2;
 }
-.csn-page .csn-line.csn-code-block[data-line-digits="3"] {
+.page .line.code-block[data-line-digits="3"] {
   --cosense-line-digits: 3;
 }
-.csn-page .csn-line.csn-code-block[data-line-digits="4"] {
+.page .line.code-block[data-line-digits="4"] {
   --cosense-line-digits: 4;
 }
-.csn-page .csn-line.csn-code-block[data-line-digits="5"] {
+.page .line.code-block[data-line-digits="5"] {
   --cosense-line-digits: 5;
 }
 
@@ -260,11 +264,11 @@
  * 番号の欄の幅は「0.6em + 桁数ぶんの数字」。ch はコードの書体の数字 1 つぶんなので、欄と本文の両方で同じ書体を使う。
  * 本文は欄の右に数字 1 つぶんの間を空けて始める。
  */
-.csn-page .csn-line.csn-code-block[data-line] > .csn-code-body {
+.page .line.code-block[data-line] > .code-body {
   padding-left: calc(0.6em + (var(--cosense-line-digits, 5) + 1) * 1ch);
 }
 
-.csn-page .csn-line.csn-code-block[data-line]::before {
+.page .line.code-block[data-line]::before {
   content: attr(data-line);
   top: 0;
   /* ブロックの左端 (ヘッダ行と同じ位置) から、番号の欄の幅だけを使う。 */
@@ -286,7 +290,7 @@
  * 引用
  * ------------------------------------------------------------------------- */
 
-.csn-page .csn-quote {
+.page .quote {
   display: block;
   margin: 0;
   padding-left: 3px;
@@ -298,7 +302,7 @@
  * テーブル
  * ------------------------------------------------------------------------- */
 
-.csn-page .csn-table {
+.page .table-block {
   margin: 0;
   border-collapse: collapse;
   caption-side: top;
@@ -308,12 +312,12 @@
  * 字下げした表は、同じ深さの行の本文と同じ位置から始める。
  * 罫線を重ねる表 (border-collapse: collapse) には padding が効かないので、margin で寄せる。
  */
-.csn-page .csn-table[data-indent] {
+.page .table-block[data-indent] {
   margin-left: calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0));
 }
 
 /* 表の名前もコードブロックのファイル名と同じ見出しバッジ。 */
-.csn-page .csn-table caption {
+.page .table-block caption {
   padding: 1px 2px;
   text-align: center;
   font-size: 0.9em;
@@ -321,17 +325,17 @@
   background: var(--cosense-badge-bg, #ffcfc6);
 }
 
-.csn-page .csn-table td {
+.page .table-block td {
   padding: 0 2px 0 8px;
   white-space: nowrap;
 }
 
 /* 本体は罫線ではなく列ごとの塗り分けでセルを区切る。 */
-.csn-page .csn-table td:nth-child(odd) {
+.page .table-block td:nth-child(odd) {
   background: rgba(0, 0, 0, 0.04);
 }
 
-.csn-page .csn-table td:nth-child(even) {
+.page .table-block td:nth-child(even) {
   background: rgba(0, 0, 0, 0.06);
 }
 
@@ -339,35 +343,35 @@
  * 画像・アイコン・数式
  * ------------------------------------------------------------------------- */
 
-.csn-page .csn-image {
+.page .image {
   display: inline-block;
   max-width: 100%;
   max-height: 300px;
   vertical-align: bottom;
 }
 
-.csn-page .csn-image[data-large] {
+.page .image[data-large] {
   margin: 3px 0;
   max-width: 95%;
   max-height: none;
 }
 
 /* 動画は画像と同じ大きさの決まりで置く。 */
-.csn-page .csn-video {
+.page .video {
   display: inline-block;
   max-width: 100%;
   max-height: 300px;
   vertical-align: bottom;
 }
 
-.csn-page .csn-video[data-large] {
+.page .video[data-large] {
   margin: 3px 0;
   max-width: 95%;
   max-height: none;
 }
 
 /* 音声は再生の操作とラベルを 1 行に並べる。 */
-.csn-page .csn-audio {
+.page .audio {
   display: inline-flex;
   align-items: center;
   gap: 0.5em;
@@ -375,13 +379,13 @@
   vertical-align: middle;
 }
 
-.csn-page .csn-audio audio {
+.page .audio audio {
   max-width: 100%;
   height: 2.5em;
 }
 
 /* 埋め込みのプレーヤーは 16:9。音声だけのサービスは高さを決めて横に伸ばす。 */
-.csn-page .csn-embed {
+.page .embed {
   display: block;
   width: 100%;
   max-width: 560px;
@@ -390,18 +394,18 @@
   border: 0;
 }
 
-.csn-page .csn-embed[data-provider="spotify"],
-.csn-page .csn-embed[data-provider="anchor"] {
+.page .embed[data-provider="spotify"],
+.page .embed[data-provider="anchor"] {
   aspect-ratio: auto;
   height: 152px;
 }
 
 /*
- * アイコンは a.csn-icon > img.csn-icon の入れ子。iconImageUrl を渡していないときは img が無く、
- * ユーザー名のテキストリンクとして出る (色はリンクの .csn-link のもの)。
+ * アイコンは Cosense Web と同じ a.link.icon > img.icon の入れ子。iconImageUrl を渡していないときは img が無く、
+ * ユーザー名のテキストリンクとして出る (色はリンクの .link のもの)。
  * 行の真ん中に揃えてから少し上げるのは Cosense Web と同じ。baseline に揃えると行の上へ浮く。
  */
-.csn-page img.csn-icon {
+.page img.icon {
   display: inline-block;
   position: relative;
   top: -0.3em;
@@ -410,7 +414,7 @@
   vertical-align: middle;
 }
 
-.csn-page .csn-formula {
+.page .formula {
   margin: auto 6px;
   font-family: var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace);
   font-style: italic;
@@ -424,21 +428,21 @@
  * 見出しの倍率は本体と同じ 1.2 の等比。data-size-level は星の数 - 1 なので、
  * 星 1 つ (level 0) は太字のみでサイズを変えない。
  */
-.csn-page .csn-decoration[data-size-level="1"] {
+.page .deco[data-size-level="1"] {
   font-size: 1.2em;
 }
-.csn-page .csn-decoration[data-size-level="2"] {
+.page .deco[data-size-level="2"] {
   font-size: 1.44em;
 }
-.csn-page .csn-decoration[data-size-level="3"] {
+.page .deco[data-size-level="3"] {
   font-size: 1.73em;
 }
-.csn-page .csn-decoration[data-size-level="4"] {
+.page .deco[data-size-level="4"] {
   font-size: 2.07em;
 }
 
 /* 本体は見出しごとに行間を固定していて、比に直すとどの段階もおよそ 1.6 になる。 */
-.csn-page .csn-decoration[data-size-level] {
+.page .deco[data-size-level] {
   display: inline-block;
   line-height: 1.6;
 }

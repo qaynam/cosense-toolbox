@@ -24,58 +24,33 @@ Tailwind CSS を使う場合は、この CSS の代わりに [`@cosense-toolbox/
 
 ### 1.0.0 の変更
 
-- **破壊的変更:** すべてのルールを、`@cosense-toolbox/parser` 1.0.0 の `csn-` で始まる既定の class 名で書き直した
-  (`.page .line` → `.csn-page .csn-line`、下の表)。parser の class 名に接頭辞が無いと、DaisyUI・Bootstrap・Bulma などの
-  CSS フレームワークがページ全体に当てる `.link` / `.table` / `.title` / `.image` / `.icon` とぶつかるため。
-  CSS 変数 (`--cosense-*`) の名前と、装飾の記号ごとの `deco-*` は変わらない。
-  - **移行:** parser も 1.0.0 にそろえる。parser の 0.1.0-beta の出力 (`.page` / `.line`) には当たらなくなる。
-    `parseLine` の出力を包むために自分で書いていた `<div class="page">` は `<div class="csn-page">` にする。
+- **破壊的変更:** `@cosense-toolbox/parser` 1.0.0 が既定の class 名の一部を Cosense Web のエディタと同じ名前にしたので、ルールのセレクタを合わせた (下の表)。
+  CSS 変数 (`--cosense-*`) の名前は変わらない。
+  - **移行:** parser も 1.0.0 にそろえる。parser の 0.1.0-beta の出力 (`.link` の内部リンク、`.table`、`.title`) には当たらなくなる。
     このスタイルを上書きするために自分で書いていたセレクタも、表のとおりに書き換える。
+    タイトルにも Cosense Web と同じく `.line` が付くので、行だけに当てるセレクタは `.line:not(.line-title)` と書く。
+- class 名に `csn-` を付けた `csn.css` を足した (`@cosense-toolbox/style/csn.css`)。
+  parser の `toHtml` に `classPrefix: "csn-"` を渡したときに、この CSS の代わりに読み込む ([名前の衝突を避ける](#名前の衝突を避ける))。
 - 字下げして書いた表 (`table:名前`) を、同じ深さの行の本文と同じ位置に置くようにした。
   `@cosense-toolbox/parser` 1.0.0 の `toHtml` が表に付ける `data-indent` を見るので、parser も 1.0.0 にそろえる。
 
-セレクタに使う class 名の、今までと 1.0.0 の対応:
+セレクタに使う class 名のうち、変わったものの今までと 1.0.0 の対応:
 
-| 今まで              | 1.0.0                 |
-| :------------------ | :-------------------- |
-| `.page`             | `.csn-page`           |
-| `.title`            | `.csn-title`          |
-| `.line`             | `.csn-line`           |
-| `.quote`            | `.csn-quote`          |
-| `.monospace`        | `.csn-monospace`      |
-| `.prefix`           | `.csn-command-prefix` |
-| `.space`            | `.csn-command-space`  |
-| `.command`          | `.csn-command`        |
-| `.code-block`       | `.csn-code-block`     |
-| `.code-start`       | `.csn-code-start`     |
-| `.code-block-start` | `.csn-code-filename`  |
-| `.code-body`        | `.csn-code-body`      |
-| `.highlight`        | `.csn-code-highlight` |
-| `.table`            | `.csn-table`          |
-| `.indent-mark`      | `.csn-indent-mark`    |
-| `.pad`              | `.csn-pad`            |
-| `.dot`              | `.csn-dot`            |
-| `.link`             | `.csn-link`           |
-| `.link-external`    | `.csn-link-external`  |
-| `.link-project`     | `.csn-link-project`   |
-| `.hashtag`          | `.csn-hashtag`        |
-| `.code`             | `.csn-code`           |
-| `.image`            | `.csn-image`          |
-| `.video`            | `.csn-video`          |
-| `.audio`            | `.csn-audio`          |
-| `.embed`            | `.csn-embed`          |
-| `.link-location`    | `.csn-link-location`  |
-| `.icon`             | `.csn-icon`           |
-| `.formula`          | `.csn-formula`        |
-| `.decoration`       | `.csn-decoration`     |
+| 今まで                            | 1.0.0                  |
+| :-------------------------------- | :--------------------- |
+| `.title`                          | `.line-title`          |
+| `.monospace`                      | `.cli`                 |
+| `.table`                          | `.table-block`         |
+| `.decoration`                     | `.deco`                |
+| `.link` / `.hashtag` (リンクの色) | `.page-link` / `.link` |
 
 ## 前提
 
-すべてのルールが `.csn-page` の下にスコープされている。`toHtml(page)` の出力はルートに `.csn-page` を持つので
-そのまま当たるが、`parseLine` の 1 行だけを描画する場合は自分で `.csn-page` で包む。
+すべてのルールが `.page` の下にスコープされている。`toHtml(page)` の出力はルートに `.page` を持つので
+そのまま当たるが、`parseLine` の 1 行だけを描画する場合は自分で `.page` で包む。
 
 ```html
-<div class="csn-page">{toHtml(parseLine('[* 太字]'))}</div>
+<div class="page">{toHtml(parseLine('[* 太字]'))}</div>
 ```
 
 ## 色を変える
@@ -110,21 +85,21 @@ CSS 変数を定義するだけでよい。定義した変数が最優先にな�
 「本体テーマの変数」の列は fallback として参照している。Cosense のテーマ変数を持つページに
 埋め込めば、`--cosense-*` を書かなくても見た目が揃う。
 
-`.csn-page` は font-family / font-size / line-height を明示している。これを外すと
+`.page` は font-family / font-size / line-height を明示している。これを外すと
 埋め込み先のページからフォントが降ってきて表示が崩れるため。
 既定値は本体のページ本文と同じ **15px / 28px**（body の 14px ではなくエディタ側の値）で、
 見出しやコードなど em で書いた寸法はすべてこの基準に乗る。
 `--cosense-font-size` を変えれば全体が拡縮する。
 
-アイコンは `a.csn-icon > img.csn-icon` の入れ子。`toHtml` に `iconImageUrl` を渡していないときは
+アイコンは Cosense Web と同じ `a.link.icon > img.icon` の入れ子。`toHtml` に `iconImageUrl` を渡していないときは
 `<img>` が無く、ユーザー名のテキストリンクとして出る。
 
 ## インデントの中点
 
 Cosense と同じく、字下げの右端に中点を出す。`toHtml` の既定の出力には中点にあたる要素が
-無いので `.csn-line[data-indent]::before` で描いている。
+無いので `.line[data-indent]::before` で描いている。
 
-`toHtml(page, { showPads: true })` で Cosense Web と同じ形の `.csn-indent-mark` / `.csn-pad` / `.csn-dot` を
+`toHtml(page, { showPads: true })` で Cosense Web と同じ形の `.indent-mark` / `.pad` / `.dot` を
 書き出した場合は、擬似要素を止めて要素側のスタイルを使う。どちらでも見た目は同じ。
 
 ## コードブロックの行番号
@@ -134,11 +109,22 @@ Cosense と同じく、字下げの右端に中点を出す。`toHtml` の既定
 
 ## 名前の衝突を避ける
 
-`toHtml` の既定の class 名は `csn-` で始まる (`.csn-line` / `.csn-title` / `.csn-code` / `.csn-table`)。
-CSS フレームワークがページ全体に当てる `.link` / `.table` / `.title` などとは名前がぶつからないので、
-フレームワークの見た目は出力に混ざらない。この CSS も全ルールを `.csn-page` の下に書いてあるので、ページ側の要素には当たらない。
+`toHtml` の既定の class 名は Cosense Web のエディタと同じ (`.line` / `.page-link` / `.table-block` など)。
+この CSS は全ルールを `.page` の下に書いてあるので、ページ側の要素には当たらない。
 
-ただし、ページ側の CSS が要素名で当てるスタイル (`a { … }` や `table { … }`) は出力にも当たる。
+逆に、CSS フレームワークがページ全体に当てる class (DaisyUI の `.link` など) は、同じ名前を持つ出力の要素にも当たる。
+そのときは `toHtml` に `classPrefix: "csn-"` を渡し、この CSS の代わりに `csn.css` を読み込む。
+`csn.css` は、この CSS の class 名すべてに `csn-` を付けたもの。装飾の記号ごとの `deco-*` には、`toHtml` と同じく付けない。
+
+```ts
+import "@cosense-toolbox/style/csn.css"
+
+toHtml(page, { classPrefix: "csn-" }) // → '<div class="csn-page"><h1 class="csn-line csn-line-title">…'
+```
+
+`csn-` 以外の接頭辞を使うときは、[`@cosense-toolbox/tailwind`](../tailwind) の `prefix` を使うか、CSS を自分で書く。
+
+ページ側の CSS が要素名で当てるスタイル (`a { … }` や `table { … }`) は、どちらの CSS でも出力に当たる。
 どちらの CSS が勝つかも詳細度で決まる。気になる環境では次のどれかを使う。
 
 - 出力を iframe か Shadow DOM に入れて完全に切り離す
@@ -147,6 +133,15 @@ CSS フレームワークがページ全体に当てる `.link` / `.table` / `.t
 
 ```css
 @import "@cosense-toolbox/style" layer(cosense);
+```
+
+## 開発
+
+スタイルの正は `style.css`。`csn.css` は、そこから機械的に作ったもの。
+
+```sh
+bun run generate   # style.css を直したら csn.css を作り直す
+bun run test       # 作り直し忘れもここで落ちる
 ```
 
 ## ライセンス

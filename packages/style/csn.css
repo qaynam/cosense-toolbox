@@ -1,0 +1,453 @@
+/*
+ * 生成物。編集しない。
+ * style.css の class 名すべてに csn- を付けたもの。toHtml に classPrefix: "csn-" を渡したときに使う。
+ * style.css から `bun run generate` で作る。
+ */
+/*!
+ * @cosense-toolbox/style — @cosense-toolbox/parser の toHtml 出力に当てる既定のスタイル。
+ *
+ * Cosense 本体の CSS ではない。本体の CSS はエディタの DOM (.line > .text > 1 文字ごとの
+ * .char-index) に当てたもので、toHtml が出す構造には当たらないため、
+ * 見た目を寄せた別実装として書き起こしている。寸法と色は本体の既定値に合わせてある。
+ *
+ * 色と寸法は 3 段の fallback で解決する:
+ *
+ *   var(--cosense-link, var(--page-link-color, #3d72f5))
+ *        ↑利用者の指定    ↑Cosense のテーマ変数   ↑何も無いときの既定
+ *
+ * 変数を自前でルート要素に定義していないのは、そうすると継承で降ってくる
+ * 利用者の指定を打ち消してしまうため。
+ *
+ * toHtml の既定の class 名は Cosense Web のエディタと同じ (.line / .page-link / .table-block など)。
+ * どのルールも出力の根の .page の子孫として書いているので、ページのほかの場所には当たらない。
+ * 逆に、CSS フレームワークがページ全体に当てる .link / .image などが出力に当たってしまうときは、
+ * toHtml に classPrefix: "csn-" を渡し、このファイルの代わりに csn.css を読み込む。
+ * csn.css は、このファイルの class 名すべてに csn- を付けて作る (bun run generate)。
+ *
+ * 根の .page の下に書くのは、@cosense-toolbox/tailwind のためでもある。
+ * tailwind はこのファイルを読み、.page を利用者の class (既定は cosense) に置き換えて使う。
+ */
+
+/* ---------------------------------------------------------------------------
+ * ルート
+ * ------------------------------------------------------------------------- */
+
+/*
+ * 本体のページ本文は 15px / 28px (body の 14px ではなくエディタ側の値)。
+ * em で書いた各所の寸法はこの基準に乗るので、ここを変えると全体が拡縮する。
+ * line-height は本体の 28px を比に直したもの (28 / 15)。
+ */
+.csn-page {
+  /* 周りのページからフォントが降ってこないよう、ここで断ち切る。 */
+  font-family: var(--cosense-font, "Open Sans", Helvetica, Arial, "Hiragino Sans", sans-serif);
+  font-size: var(--cosense-font-size, 15px);
+  line-height: var(--cosense-line-height, 1.87);
+  color: var(--cosense-text, var(--page-text-color, #4a4a4a));
+  background: var(--cosense-bg, var(--page-bg, #fefefe));
+  text-align: left;
+  word-wrap: break-word;
+}
+
+/* 本体のタイトルは 25.95px / 42px。基準の 15px に対して 1.73 倍。 */
+.csn-page .csn-line-title {
+  margin: 0 0 0.77em;
+  font-size: 1.73em;
+  font-weight: 700;
+  line-height: 1.62;
+  color: var(--cosense-title, var(--line-title-color, var(--page-text-color, #4a4a4a)));
+}
+
+/* タイトルにも Cosense Web と同じく .line が付くので除く。min-height が当たると、空のタイトルが 1 行ぶんの高さを取る。 */
+.csn-page .csn-line:not(.csn-line-title) {
+  position: relative;
+  min-height: 1em;
+  /* 記法の記号が合字にならないように (本体と同じ)。 */
+  font-variant-ligatures: no-common-ligatures;
+}
+
+/* ---------------------------------------------------------------------------
+ * インデントと中点
+ * ------------------------------------------------------------------------- */
+
+/*
+ * インデントの深さ。data-indent の数値を calc に持ち込む手段 (attr() の type 指定) が
+ * まだ広く使えないので、段数ごとに変数を置いて以降の計算で使い回す。
+ * 字下げした表も data-indent を持つので、行と同じ変数で深さを表す。
+ * 11 段以上はインデントも中点も付かない。
+ */
+.csn-page .csn-line[data-indent="1"],
+.csn-page .csn-table-block[data-indent="1"] {
+  --cosense-depth: 1;
+}
+.csn-page .csn-line[data-indent="2"],
+.csn-page .csn-table-block[data-indent="2"] {
+  --cosense-depth: 2;
+}
+.csn-page .csn-line[data-indent="3"],
+.csn-page .csn-table-block[data-indent="3"] {
+  --cosense-depth: 3;
+}
+.csn-page .csn-line[data-indent="4"],
+.csn-page .csn-table-block[data-indent="4"] {
+  --cosense-depth: 4;
+}
+.csn-page .csn-line[data-indent="5"],
+.csn-page .csn-table-block[data-indent="5"] {
+  --cosense-depth: 5;
+}
+.csn-page .csn-line[data-indent="6"],
+.csn-page .csn-table-block[data-indent="6"] {
+  --cosense-depth: 6;
+}
+.csn-page .csn-line[data-indent="7"],
+.csn-page .csn-table-block[data-indent="7"] {
+  --cosense-depth: 7;
+}
+.csn-page .csn-line[data-indent="8"],
+.csn-page .csn-table-block[data-indent="8"] {
+  --cosense-depth: 8;
+}
+.csn-page .csn-line[data-indent="9"],
+.csn-page .csn-table-block[data-indent="9"] {
+  --cosense-depth: 9;
+}
+.csn-page .csn-line[data-indent="10"],
+.csn-page .csn-table-block[data-indent="10"] {
+  --cosense-depth: 10;
+}
+
+.csn-page .csn-line[data-indent] {
+  padding-left: calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0));
+}
+
+/*
+ * 本体と同じく、字下げの右端に中点を置く。
+ * toHtml の既定の出力には中点にあたる要素が無いので擬似要素で描く。
+ * showPads で .dot を出した場合は要素側に任せ、二重に描かないようにする。
+ */
+.csn-page .csn-line[data-indent]::before {
+  content: "";
+  position: absolute;
+  top: 0.7em;
+  left: calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0) - 1.05em);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cosense-text, var(--page-text-color, #555));
+}
+
+.csn-page .csn-line:has(> .csn-indent-mark)::before {
+  content: none;
+}
+
+/* showPads: true のときだけ出る要素。余白の数がそのまま深さを表す。 */
+.csn-page .csn-indent-mark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 1em;
+  color: transparent;
+}
+
+.csn-page .csn-pad {
+  display: inline-block;
+  width: var(--cosense-indent, 1.5em);
+  height: 1em;
+  overflow: hidden;
+}
+
+.csn-page .csn-dot {
+  position: absolute;
+  right: 0.65em;
+  top: 0.7em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cosense-text, var(--page-text-color, #555));
+}
+
+/* ---------------------------------------------------------------------------
+ * リンク
+ * ------------------------------------------------------------------------- */
+
+.csn-page .csn-page-link,
+.csn-page .csn-link {
+  color: var(--cosense-link, var(--page-link-color, #3d72f5));
+  text-decoration: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
+}
+
+.csn-page .csn-page-link:hover,
+.csn-page .csn-link:hover {
+  color: var(--cosense-link-hover, var(--page-link-hover-color, #0d4ff3));
+}
+
+/* ---------------------------------------------------------------------------
+ * コード
+ * ------------------------------------------------------------------------- */
+
+.csn-page .csn-code,
+.csn-page .csn-code-start,
+.csn-page .csn-code-body,
+.csn-page .csn-cli {
+  font-family: var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace);
+  color: var(--cosense-code-text, var(--code-color, #342d9c));
+}
+
+.csn-page .csn-code,
+.csn-page .csn-cli {
+  padding: 0 0.2em;
+  border-radius: 4px;
+  font-size: 90%;
+  word-wrap: break-word;
+  background: var(--cosense-code-bg, var(--code-bg, rgba(0, 0, 0, 0.04)));
+}
+
+/*
+ * コードブロックは 1 行 = 1 要素なので、背景も行ごとに塗って隣り合う行でひと続きに見せる。
+ * 塗るのは行ではなく中の <code>。行の padding より内側から始めることで、
+ * ブロック全体がインデントの位置に揃う。
+ */
+.csn-page .csn-line.csn-code-block > code {
+  display: block;
+  /* 空の行も 1 行ぶんの高さを保つ。中身が無いと行の箱ができず、高さが 0 になるため。 */
+  min-height: 1.7em;
+  line-height: 1.7em;
+  tab-size: 4;
+  background: var(--cosense-code-bg, var(--code-bg, rgba(0, 0, 0, 0.04)));
+}
+
+/*
+ * 本体行はヘッダより 1 段深いが、ブロックの左端はヘッダに揃える (Cosense Web と同じ)。
+ * 1 段ぶん左に出してから同じだけ padding で戻すことで、文字の位置は保ったまま背景だけ広げる。
+ */
+.csn-page .csn-line.csn-code-block > .csn-code-body {
+  margin-left: calc(var(--cosense-indent, 1.5em) * -1);
+  padding-left: var(--cosense-indent, 1.5em);
+  /* 値に残っている深い字下げを保ちつつ、長い行は折り返す。 */
+  white-space: pre-wrap;
+}
+
+/* ファイル名はCosense Web と同じ見出しバッジ。 */
+.csn-page .csn-code-block-start {
+  padding: 1px 2px;
+  font-size: 0.95em;
+  color: var(--cosense-badge-text, #342d9c);
+  background: var(--cosense-badge-bg, #ffcfc6);
+}
+
+/* 中点が付くのはヘッダ行だけ (Cosense Web では本体行に dot が無い)。 */
+.csn-page .csn-line.csn-code-block:not(:has(> .csn-code-start))::before {
+  content: none;
+}
+
+/*
+ * 行番号。codeLineNumbers() の拡張を渡したときだけ、本体行に data-line と data-line-digits が付く。
+ *
+ * エディタと同じく、本文の左に番号の欄を取る。欄の幅はブロックの最後の番号の桁数 (data-line-digits) で決め、
+ * 同じブロックの行はすべて同じ位置から本文が始まる。番号は行の要素の擬似要素なので本文の文字には混ざらず、
+ * attr() の中身は選択されないので、コードをコピーしても番号は入らない。
+ * 桁数を calc に持ち込む手段 (attr() の type 指定) がまだ広く使えないので、インデントと同じく桁数ごとに変数を置く。
+ */
+.csn-page .csn-line.csn-code-block[data-line-digits="1"] {
+  --cosense-line-digits: 1;
+}
+.csn-page .csn-line.csn-code-block[data-line-digits="2"] {
+  --cosense-line-digits: 2;
+}
+.csn-page .csn-line.csn-code-block[data-line-digits="3"] {
+  --cosense-line-digits: 3;
+}
+.csn-page .csn-line.csn-code-block[data-line-digits="4"] {
+  --cosense-line-digits: 4;
+}
+.csn-page .csn-line.csn-code-block[data-line-digits="5"] {
+  --cosense-line-digits: 5;
+}
+
+/*
+ * 番号の欄の幅は「0.6em + 桁数ぶんの数字」。ch はコードの書体の数字 1 つぶんなので、欄と本文の両方で同じ書体を使う。
+ * 本文は欄の右に数字 1 つぶんの間を空けて始める。
+ */
+.csn-page .csn-line.csn-code-block[data-line] > .csn-code-body {
+  padding-left: calc(0.6em + (var(--cosense-line-digits, 5) + 1) * 1ch);
+}
+
+.csn-page .csn-line.csn-code-block[data-line]::before {
+  content: attr(data-line);
+  top: 0;
+  /* ブロックの左端 (ヘッダ行と同じ位置) から、番号の欄の幅だけを使う。 */
+  left: calc(var(--cosense-indent, 1.5em) * (var(--cosense-depth, 1) - 1));
+  width: calc(0.6em + var(--cosense-line-digits, 5) * 1ch);
+  height: auto;
+  display: flex;
+  justify-content: flex-end;
+  white-space: nowrap;
+  border-radius: 0;
+  background: none;
+  font-family: var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace);
+  /* 文字の大きさを変えると、欄の幅の ch と em が本文とずれるので変えない。 */
+  line-height: 1.7em;
+  color: var(--cosense-line-number, rgba(0, 0, 0, 0.35));
+}
+
+/* ---------------------------------------------------------------------------
+ * 引用
+ * ------------------------------------------------------------------------- */
+
+.csn-page .csn-quote {
+  display: block;
+  margin: 0;
+  padding-left: 3px;
+  border-left: solid 1px #a0a0a0;
+  background: var(--cosense-quote-bg, var(--quote-bg-color, rgba(0, 0, 0, 0.05)));
+}
+
+/* ---------------------------------------------------------------------------
+ * テーブル
+ * ------------------------------------------------------------------------- */
+
+.csn-page .csn-table-block {
+  margin: 0;
+  border-collapse: collapse;
+  caption-side: top;
+}
+
+/*
+ * 字下げした表は、同じ深さの行の本文と同じ位置から始める。
+ * 罫線を重ねる表 (border-collapse: collapse) には padding が効かないので、margin で寄せる。
+ */
+.csn-page .csn-table-block[data-indent] {
+  margin-left: calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0));
+}
+
+/* 表の名前もコードブロックのファイル名と同じ見出しバッジ。 */
+.csn-page .csn-table-block caption {
+  padding: 1px 2px;
+  text-align: center;
+  font-size: 0.9em;
+  color: var(--cosense-badge-text, #342d9c);
+  background: var(--cosense-badge-bg, #ffcfc6);
+}
+
+.csn-page .csn-table-block td {
+  padding: 0 2px 0 8px;
+  white-space: nowrap;
+}
+
+/* 本体は罫線ではなく列ごとの塗り分けでセルを区切る。 */
+.csn-page .csn-table-block td:nth-child(odd) {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.csn-page .csn-table-block td:nth-child(even) {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* ---------------------------------------------------------------------------
+ * 画像・アイコン・数式
+ * ------------------------------------------------------------------------- */
+
+.csn-page .csn-image {
+  display: inline-block;
+  max-width: 100%;
+  max-height: 300px;
+  vertical-align: bottom;
+}
+
+.csn-page .csn-image[data-large] {
+  margin: 3px 0;
+  max-width: 95%;
+  max-height: none;
+}
+
+/* 動画は画像と同じ大きさの決まりで置く。 */
+.csn-page .csn-video {
+  display: inline-block;
+  max-width: 100%;
+  max-height: 300px;
+  vertical-align: bottom;
+}
+
+.csn-page .csn-video[data-large] {
+  margin: 3px 0;
+  max-width: 95%;
+  max-height: none;
+}
+
+/* 音声は再生の操作とラベルを 1 行に並べる。 */
+.csn-page .csn-audio {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.csn-page .csn-audio audio {
+  max-width: 100%;
+  height: 2.5em;
+}
+
+/* 埋め込みのプレーヤーは 16:9。音声だけのサービスは高さを決めて横に伸ばす。 */
+.csn-page .csn-embed {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 16 / 9;
+  margin: 3px 0;
+  border: 0;
+}
+
+.csn-page .csn-embed[data-provider="spotify"],
+.csn-page .csn-embed[data-provider="anchor"] {
+  aspect-ratio: auto;
+  height: 152px;
+}
+
+/*
+ * アイコンは Cosense Web と同じ a.link.icon > img.icon の入れ子。iconImageUrl を渡していないときは img が無く、
+ * ユーザー名のテキストリンクとして出る (色はリンクの .link のもの)。
+ * 行の真ん中に揃えてから少し上げるのは Cosense Web と同じ。baseline に揃えると行の上へ浮く。
+ */
+.csn-page img.csn-icon {
+  display: inline-block;
+  position: relative;
+  top: -0.3em;
+  height: 1.3em;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.csn-page .csn-formula {
+  margin: auto 6px;
+  font-family: var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-style: italic;
+}
+
+/* ---------------------------------------------------------------------------
+ * 装飾
+ * ------------------------------------------------------------------------- */
+
+/*
+ * 見出しの倍率は本体と同じ 1.2 の等比。data-size-level は星の数 - 1 なので、
+ * 星 1 つ (level 0) は太字のみでサイズを変えない。
+ */
+.csn-page .csn-deco[data-size-level="1"] {
+  font-size: 1.2em;
+}
+.csn-page .csn-deco[data-size-level="2"] {
+  font-size: 1.44em;
+}
+.csn-page .csn-deco[data-size-level="3"] {
+  font-size: 1.73em;
+}
+.csn-page .csn-deco[data-size-level="4"] {
+  font-size: 2.07em;
+}
+
+/* 本体は見出しごとに行間を固定していて、比に直すとどの段階もおよそ 1.6 になる。 */
+.csn-page .csn-deco[data-size-level] {
+  display: inline-block;
+  line-height: 1.6;
+}
