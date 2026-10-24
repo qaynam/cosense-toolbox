@@ -22,7 +22,13 @@ export default defineConfig({
       components: "./src/components/cosense-docs.ts",
       assets: false,
       parseOptions: { extensions: [extraEmbeds()] },
-      renderOptions: { extensions: [codeLanguage()], handlers: { embed, location } },
+      renderOptions: {
+        // 既定の class 名 (.line など) は、shiki がコードの行に付ける span.line とぶつかるので、csn- を付ける。
+        // global.css は、それに合わせた @cosense-toolbox/style/csn.css を読む。
+        classPrefix: "csn-",
+        extensions: [codeLanguage()],
+        handlers: { embed, location },
+      },
       pageUrl: ({ id }) =>
         `/${(id ?? "").replace(/^src\/pages\//, "").replace(/(?:\/?index)?\.csnx?$/, "")}/`.replace(
           /^\/\/$/,
