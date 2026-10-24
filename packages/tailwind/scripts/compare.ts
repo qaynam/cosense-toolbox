@@ -125,10 +125,10 @@ try {
   const differences: string[] = []
   for (const hover of [false, true]) {
     const expected = await render(styleCss, body, hover)
-    // ルートの class だけを `page` から `cosense` に替える。
+    // ルートの class だけを `csn-page` から `cosense` に替える。
     const actual = await render(
       tailwindCss,
-      body.replaceAll('<div class="page">', '<div class="cosense">'),
+      body.replaceAll('<div class="csn-page">', '<div class="cosense">'),
       hover,
     )
     expected.forEach((expectedStyle, i) => {
@@ -149,10 +149,10 @@ try {
   // 記法仕様のページに出てくる記号の装飾で確かめる。
   const checks = [
     ...MODIFIERS.map(({ name, target }) => ({ variant: `cosense-${name}`, target })),
-    { variant: "cosense-deco-[*]", target: ".decoration.deco-\\*" },
-    { variant: "cosense-deco-[-]", target: ".decoration.deco-\\-" },
-    { variant: "cosense-deco-[\\_]", target: ".decoration.deco-_" },
-    { variant: "cosense-deco-[|]", target: ".decoration.deco-\\|" },
+    { variant: "cosense-deco-[*]", target: ".csn-decoration.deco-\\*" },
+    { variant: "cosense-deco-[-]", target: ".csn-decoration.deco-\\-" },
+    { variant: "cosense-deco-[\\_]", target: ".csn-decoration.deco-_" },
+    { variant: "cosense-deco-[|]", target: ".csn-decoration.deco-\\|" },
   ]
   for (const modifier of checks) {
     const utility = `${modifier.variant}:[color:${MARK.replaceAll(" ", "")}]`
@@ -160,7 +160,7 @@ try {
     await page.setContent(
       documentOf(
         await pluginCss(["cosense", utility]),
-        body.replaceAll('<div class="page">', `<div class="cosense ${utility}">`),
+        body.replaceAll('<div class="csn-page">', `<div class="cosense ${utility}">`),
       ),
       { waitUntil: "domcontentloaded" },
     )

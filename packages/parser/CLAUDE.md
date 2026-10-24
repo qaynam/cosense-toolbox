@@ -285,11 +285,11 @@ tree-shaking の確認（`parse` だけを import したバンドルに schema /
 # dist/index.mjs から parse だけを import したバンドルに、他の層が入らないこと
 echo "import { parse } from './dist/index.mjs'; console.log(parse('x'))" > only-parse.tmp.mjs
 bunx esbuild only-parse.tmp.mjs --bundle --format=esm --minify --outfile=/tmp/bundle.js
-grep -c "PageSchema\|toPlainText\|collectLinks\|code-block-start" /tmp/bundle.js   # → 0
+grep -c "PageSchema\|toPlainText\|collectLinks\|csn-code-filename" /tmp/bundle.js   # → 0
 # ./compile だけを使うバンドルに、./html (既定の class 名や hast-util-to-html) が入らないこと
 echo "import { toPlainText } from './dist/compile.mjs'; console.log(toPlainText)" > only-compile.tmp.mjs
 bunx esbuild only-compile.tmp.mjs --bundle --format=esm --minify --outfile=/tmp/bundle.js
-grep -c "code-block-start\|allowDangerousHtml" /tmp/bundle.js   # → 0
+grep -c "csn-code-filename\|allowDangerousHtml" /tmp/bundle.js   # → 0
 rm only-parse.tmp.mjs only-compile.tmp.mjs
 ```
 

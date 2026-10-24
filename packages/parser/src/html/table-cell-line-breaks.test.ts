@@ -46,8 +46,8 @@ describe("tableCellLineBreaks", () => {
 
   it("コード・数式・リンクの表示には当てない", () => {
     const html = tableHtml("`a\\nb` [$ \\nu] [x\\ny] #a\\nb", withBreaks("\\n"))
-    expect(html).toContain('<code class="code">a\\nb</code>')
-    expect(html).toContain('<span class="formula">\\nu</span>')
+    expect(html).toContain('<code class="csn-code">a\\nb</code>')
+    expect(html).toContain('<span class="csn-formula">\\nu</span>')
     expect(html).toContain(">x\\ny</a>")
     expect(html).toContain(">#a\\nb</a>")
   })
@@ -88,7 +88,9 @@ describe("tableCellLineBreaks", () => {
   })
 
   it("セルの外には当てない", () => {
-    expect(toHtml(parse("t\na\\nb"), withBreaks("\\n"))).toContain('<div class="line">a\\nb</div>')
+    expect(toHtml(parse("t\na\\nb"), withBreaks("\\n"))).toContain(
+      '<div class="csn-line">a\\nb</div>',
+    )
   })
 
   it("marker が空文字なら何もしない", () => {

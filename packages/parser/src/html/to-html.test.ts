@@ -22,20 +22,34 @@ const tableHtml = (
 
 /** 1 行を描画して、行を包む div を外した中身だけを見る。 */
 const line = (source: string, options?: Parameters<typeof toHtml>[1]): string =>
-  toHtml(parseLine(source), options).replace(/^<div class="line">|<\/div>$/g, "")
+  toHtml(parseLine(source), options).replace(/^<div class="csn-line">|<\/div>$/g, "")
 
 describe("インライン記法", () => {
   it("内部リンクは a になる", () => {
-    expect(line("[リンク]")).toBe('<a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a>')
+    expect(line("[リンク]")).toBe(
+      '<a class="csn-link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a>',
+    )
+  })
+
+  it("外部リンクは、リンクと外部リンクの 2 つの class を持つ a になる", () => {
+    expect(line("[ラベル https://example.test/]")).toBe(
+      '<a class="csn-link csn-link-external" href="https://example.test/">ラベル</a>',
+    )
+  })
+
+  it("別プロジェクトへのリンクは、リンクと別プロジェクトの 2 つの class を持つ a になる", () => {
+    expect(line("[/proj/page]")).toBe(
+      '<a class="csn-link csn-link-project" href="/proj/page">/proj/page</a>',
+    )
   })
 
   it("ハッシュタグは # 付きで表示される", () => {
-    expect(line("#tag")).toBe('<a class="hashtag" href="/tag">#tag</a>')
+    expect(line("#tag")).toBe('<a class="csn-hashtag" href="/tag">#tag</a>')
   })
 
   it("装飾はフラグのぶんだけ要素が入れ子になる", () => {
     expect(line("[*-/_ text]")).toBe(
-      '<span class="decoration deco-* deco-- deco-/ deco-_"><strong><em><u><s>text</s></u></em></strong></span>',
+      '<span class="csn-decoration deco-* deco-- deco-/ deco-_"><strong><em><u><s>text</s></u></em></strong></span>',
     )
   })
 
@@ -44,23 +58,23 @@ describe("インライン記法", () => {
   })
 
   it("書かれた装飾記号を deco- の class にする", () => {
-    expect(line("[*-/_ text]")).toContain('class="decoration deco-* deco-- deco-/ deco-_"')
+    expect(line("[*-/_ text]")).toContain('class="csn-decoration deco-* deco-- deco-/ deco-_"')
   })
 
   it("deco- の class は属性値としてエスケープする", () => {
-    expect(line("[[太字]]")).toContain('class="decoration deco-*"')
+    expect(line("[[太字]]")).toContain('class="csn-decoration deco-*"')
   })
 
   it("装飾の中のリンクも描画される", () => {
-    expect(line("[* [リンク]]")).toContain('<a class="link"')
+    expect(line("[* [リンク]]")).toContain('<a class="csn-link"')
   })
 
   it("インラインコードは code になる", () => {
-    expect(line("`x`")).toBe('<code class="code">x</code>')
+    expect(line("`x`")).toBe('<code class="csn-code">x</code>')
   })
 
   it("アイコンはそのユーザーのページへのリンクになる", () => {
-    expect(line("[user.icon]")).toBe('<a class="link icon" href="/user">user</a>')
+    expect(line("[user.icon]")).toBe('<a class="csn-link csn-icon" href="/user">user</a>')
   })
 
   it("別プロジェクトのアイコンは区切りを保ったリンクになる", () => {
@@ -72,44 +86,44 @@ describe("インライン記法", () => {
       iconImageUrl: (node) => `/api/pages/help-jp/${node.user}/icon`,
     })
     expect(html).toBe(
-      '<a class="link icon" href="/user">' +
-        '<img class="icon" src="/api/pages/help-jp/user/icon" alt="user" title="user"></a>',
+      '<a class="csn-link csn-icon" href="/user">' +
+        '<img class="csn-icon" src="/api/pages/help-jp/user/icon" alt="user" title="user"></a>',
     )
   })
 
   it("連打の数だけ出る", () => {
-    expect(line("[user.icon*3]").match(/<a class="link icon"/g)).toHaveLength(3)
+    expect(line("[user.icon*3]").match(/<a class="csn-link csn-icon"/g)).toHaveLength(3)
   })
 })
 
 describe("ブロック", () => {
   it("1 行目は h1 になる", () => {
     expect(toHtml(parse("タイトル"))).toBe(
-      '<div class="page"><h1 class="title">タイトル</h1></div>',
+      '<div class="csn-page"><h1 class="csn-title">タイトル</h1></div>',
     )
   })
 
   it("空行は高さを保つために br を置く", () => {
-    expect(toHtml(parse("t\n\n"))).toContain('<div class="line"><br></div>')
+    expect(toHtml(parse("t\n\n"))).toContain('<div class="csn-line"><br></div>')
   })
 
   it("インデントは data 属性で出す", () => {
-    expect(toHtml(parse("t\n  字下げ"))).toContain('<div class="line" data-indent="2">')
+    expect(toHtml(parse("t\n  字下げ"))).toContain('<div class="csn-line" data-indent="2">')
   })
 
   it("引用は blockquote になる", () => {
-    expect(line("> 引用")).toBe('<blockquote class="quote">引用</blockquote>')
+    expect(line("> 引用")).toBe('<blockquote class="csn-quote">引用</blockquote>')
   })
 
   it("コマンドの行は、記号と空白とコマンドに分けて code に入れる (Cosense Web と同じ)", () => {
     expect(line("$ ls -la")).toBe(
-      '<code class="monospace"><span class="prefix">$</span><span class="space"> </span><span class="command">ls -la</span></code>',
+      '<code class="csn-monospace"><span class="csn-command-prefix">$</span><span class="csn-command-space"> </span><span class="csn-command">ls -la</span></code>',
     )
   })
 
   it("コマンドの中の記法は読まず、文字としてエスケープして出す", () => {
     expect(line("% echo [x] <b>")).toBe(
-      '<code class="monospace"><span class="prefix">%</span><span class="space"> </span><span class="command">echo [x] &lt;b></span></code>',
+      '<code class="csn-monospace"><span class="csn-command-prefix">%</span><span class="csn-command-space"> </span><span class="csn-command">echo [x] &lt;b></span></code>',
     )
   })
 
@@ -117,22 +131,22 @@ describe("ブロック", () => {
     expect(
       line("$ ls", { classNames: { commandPrefix: "p", commandSpace: "", command: "c" } }),
     ).toBe(
-      '<code class="monospace"><span class="p">$</span><span> </span><span class="c">ls</span></code>',
+      '<code class="csn-monospace"><span class="p">$</span><span> </span><span class="c">ls</span></code>',
     )
   })
 
   it("コードブロックは 1 行ずつの要素になる", () => {
     expect(toHtml(parse("t\ncode:a.ts\n <b>\n x"))).toContain(
-      '<div class="line code-block">' +
-        '<code class="code-start"><span class="code-block-start">a.ts</span></code></div>' +
-        '<div class="line code-block" data-indent="1"><code class="code-body">&lt;b></code></div>' +
-        '<div class="line code-block" data-indent="1"><code class="code-body">x</code></div>',
+      '<div class="csn-line csn-code-block">' +
+        '<code class="csn-code-start"><span class="csn-code-filename">a.ts</span></code></div>' +
+        '<div class="csn-line csn-code-block" data-indent="1"><code class="csn-code-body">&lt;b></code></div>' +
+        '<div class="csn-line csn-code-block" data-indent="1"><code class="csn-code-body">x</code></div>',
     )
   })
 
   it("本体行はヘッダより 1 段深く、それより深い字下げは中身に残る", () => {
     expect(toHtml(parse("t\n code:a.ts\n  foo\n    bar"))).toContain(
-      '<div class="line code-block" data-indent="2"><code class="code-body">  bar</code></div>',
+      '<div class="csn-line csn-code-block" data-indent="2"><code class="csn-code-body">  bar</code></div>',
     )
   })
 
@@ -147,7 +161,7 @@ describe("ブロック", () => {
     expect(seen).toEqual(["ts"])
     // 複数行にまたがるタグを壊さないよう、行では切らない。
     expect(html).toContain(
-      '<code class="code-body highlight"><i>const a = 1\nconst b = 2</i></code>',
+      '<code class="csn-code-body csn-code-highlight"><i>const a = 1\nconst b = 2</i></code>',
     )
   })
 
@@ -170,30 +184,30 @@ describe("ブロック", () => {
 
   it("highlight が無ければ 1 行ずつのまま", () => {
     const html = toHtml(parse("t\ncode:a.ts\n const a = 1\n const b = 2"))
-    expect(html.match(/<code class="code-body">/g)).toHaveLength(2)
+    expect(html.match(/<code class="csn-code-body">/g)).toHaveLength(2)
   })
 
   it("テーブルは caption 付きの table になる", () => {
     expect(toHtml(parse("t\ntable:名前\n あ\tい"))).toContain(
-      '<table class="table"><caption>名前</caption><tbody><tr><td>あ</td><td>い</td></tr></tbody></table>',
+      '<table class="csn-table"><caption>名前</caption><tbody><tr><td>あ</td><td>い</td></tr></tbody></table>',
     )
   })
 
   it("字下げしたテーブルは、行と同じく深さを data 属性で出す", () => {
     expect(toHtml(parse("t\n a\n table:x\n  a\tb\n"))).toContain(
-      '<table class="table" data-indent="1">',
+      '<table class="csn-table" data-indent="1">',
     )
   })
 
   it("セルの中のリンクはリンクになり、ほかの記法は書いたまま出す", () => {
     expect(tableHtml("[リンク] [* 太字]")).toContain(
-      '<td><a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> [* 太字]</td>',
+      '<td><a class="csn-link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> [* 太字]</td>',
     )
   })
 
   it("拡張 tableCellNotation() で読んだセルは、行と同じく装飾も出す", () => {
     expect(tableHtml("[* 太字]", {}, { extensions: [tableCellNotation()] })).toContain(
-      '<td><span class="decoration deco-*"><strong>太字</strong></span></td>',
+      '<td><span class="csn-decoration deco-*"><strong>太字</strong></span></td>',
     )
   })
 })
@@ -204,12 +218,12 @@ describe("画像", () => {
     const source = `[https://gyazo.com/${hash}]`
     // AST 側は書かれたままで、変換されるのは HTML の src だけ。
     expect(parseLine(source).children[0]).toMatchObject({ src: `https://gyazo.com/${hash}` })
-    expect(line(source)).toBe(`<img class="image" src="https://gyazo.com/${hash}/raw" alt="">`)
+    expect(line(source)).toBe(`<img class="csn-image" src="https://gyazo.com/${hash}/raw" alt="">`)
   })
 
   it("リンク付き画像は a で包む", () => {
     expect(line("[https://example.test https://x.test/a.png]")).toBe(
-      '<a href="https://example.test"><img class="image" src="https://x.test/a.png" alt=""></a>',
+      '<a href="https://example.test"><img class="csn-image" src="https://x.test/a.png" alt=""></a>',
     )
   })
 })
@@ -217,37 +231,37 @@ describe("画像", () => {
 describe("動画・音声・埋め込み", () => {
   it("動画は操作できてループする video になる", () => {
     expect(line("[https://x.test/a.mp4]")).toBe(
-      '<video class="video" src="https://x.test/a.mp4" controls loop preload="metadata"></video>',
+      '<video class="csn-video" src="https://x.test/a.mp4" controls loop preload="metadata"></video>',
     )
   })
 
   it("大きい動画には data-large が付く", () => {
     expect(line("[[https://x.test/a.mp4]]")).toBe(
-      '<video class="video" src="https://x.test/a.mp4" controls loop preload="metadata" data-large="true"></video>',
+      '<video class="csn-video" src="https://x.test/a.mp4" controls loop preload="metadata" data-large="true"></video>',
     )
   })
 
   it("リンク付き動画は a で包む", () => {
     expect(line("[https://example.test https://x.test/a.mp4]")).toBe(
-      '<a href="https://example.test"><video class="video" src="https://x.test/a.mp4" controls loop preload="metadata"></video></a>',
+      '<a href="https://example.test"><video class="csn-video" src="https://x.test/a.mp4" controls loop preload="metadata"></video></a>',
     )
   })
 
   it("音声は操作できる audio になる", () => {
     expect(line("[https://x.test/a.mp3]")).toBe(
-      '<span class="audio"><audio src="https://x.test/a.mp3" controls preload="metadata"></audio></span>',
+      '<span class="csn-audio"><audio src="https://x.test/a.mp3" controls preload="metadata"></audio></span>',
     )
   })
 
   it("音声のラベルは audio の後ろに出す", () => {
     expect(line("[https://x.test/a.mp3 BGM]")).toBe(
-      '<span class="audio"><audio src="https://x.test/a.mp3" controls preload="metadata"></audio>BGM</span>',
+      '<span class="csn-audio"><audio src="https://x.test/a.mp3" controls preload="metadata"></audio>BGM</span>',
     )
   })
 
   it("埋め込みはサービスのプレーヤーの iframe になる", () => {
     expect(line("[https://youtu.be/abc?t=30]")).toBe(
-      '<iframe class="embed" src="https://www.youtube.com/embed/abc?start=30" title="youtube" loading="lazy" allow="encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" data-provider="youtube" data-kind="video"></iframe>',
+      '<iframe class="csn-embed" src="https://www.youtube.com/embed/abc?start=30" title="youtube" loading="lazy" allow="encrypted-media; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" data-provider="youtube" data-kind="video"></iframe>',
     )
   })
 
@@ -259,7 +273,7 @@ describe("動画・音声・埋め込み", () => {
     expect(
       toHtml(parseLine("[https://figma.test/1]", { extensions: [{ bracketRules: [figma] }] })),
     ).toBe(
-      '<div class="line"><a class="link link-external" href="https://figma.test/1">https://figma.test/1</a></div>',
+      '<div class="csn-line"><a class="csn-link csn-link-external" href="https://figma.test/1">https://figma.test/1</a></div>',
     )
   })
 })
@@ -267,13 +281,13 @@ describe("動画・音声・埋め込み", () => {
 describe("地図", () => {
   it("地図は Google マップへのリンクになり、ラベルが無ければ座標を出す", () => {
     expect(line("[N35.6812,E139.7671]")).toBe(
-      '<a class="link link-location" href="https://www.google.com/maps/place/35.6812,139.7671">35.6812,139.7671</a>',
+      '<a class="csn-link csn-link-location" href="https://www.google.com/maps/place/35.6812,139.7671">35.6812,139.7671</a>',
     )
   })
 
   it("ラベルのある地図はラベルを出す", () => {
     expect(line("[東京駅 N35.6812,E139.7671]")).toBe(
-      '<a class="link link-location" href="https://www.google.com/maps/search/%E6%9D%B1%E4%BA%AC%E9%A7%85/@35.6812,139.7671,15z">東京駅</a>',
+      '<a class="csn-link csn-link-location" href="https://www.google.com/maps/search/%E6%9D%B1%E4%BA%AC%E9%A7%85/@35.6812,139.7671,15z">東京駅</a>',
     )
   })
 })
@@ -293,7 +307,7 @@ describe("エスケープと URL の安全性", () => {
   it("href に script が動く URL が来たら属性ごと落とす", () => {
     // 既定の href は encodeURIComponent するので安全だが、差し替えられた場合も守る。
     expect(line("[リンク]", { pageUrl: () => "javascript:alert(1)" })).toBe(
-      '<a class="link">リンク</a>',
+      '<a class="csn-link">リンク</a>',
     )
   })
 
@@ -304,7 +318,7 @@ describe("エスケープと URL の安全性", () => {
   it("画像の src が script になる場合も落とす (拡張が作った画像でも)", () => {
     const asImage = (inner: string) => ({ type: "image" as const, src: inner })
     const page = parseLine("[javascript:alert(1)]", { extensions: [{ bracketRules: [asImage] }] })
-    expect(toHtml(page)).toBe('<div class="line"><img class="image" alt=""></div>')
+    expect(toHtml(page)).toBe('<div class="csn-line"><img class="csn-image" alt=""></div>')
   })
 
   it("safeHref / safeSrc は独自ハンドラ用に公開されている", () => {
@@ -341,14 +355,14 @@ describe("差し替え", () => {
       },
     })
     expect(html).toContain("<x-link>リンク</x-link>")
-    expect(html).toContain('<code class="code">code</code>')
+    expect(html).toContain('<code class="csn-code">code</code>')
   })
 
   it("handlers が返した raw ノードは HTML としてそのまま入る", () => {
     const html = toHtml(parseLine("[$ x^2]"), {
       handlers: { formula: (node) => ({ type: "raw", value: `<math>${node.value}</math>` }) },
     })
-    expect(html).toBe('<div class="line"><math>x^2</math></div>')
+    expect(html).toBe('<div class="csn-line"><math>x^2</math></div>')
   })
 
   it("classNames は指定したキーだけを差し替える", () => {
@@ -356,7 +370,7 @@ describe("差し替え", () => {
       classNames: { internalLink: "text-blue-500 underline" },
     })
     expect(html).toContain('<a class="text-blue-500 underline"')
-    expect(html).toContain('<code class="code">')
+    expect(html).toContain('<code class="csn-code">')
   })
 
   it("class 名を空にすると class 属性ごと消える", () => {
@@ -392,21 +406,21 @@ describe("h で組み立てたハンドラ", () => {
     const html = toHtml(parseLine("`x`"), {
       handlers: { inlineCode: (node) => h("kbd", { className: "key small" }, node.value) },
     })
-    expect(html).toBe('<div class="line"><kbd class="key small">x</kbd></div>')
+    expect(html).toBe('<div class="csn-line"><kbd class="key small">x</kbd></div>')
   })
 
   it("h の子に渡した文字列は、テキストとしてエスケープされる", () => {
     const html = toHtml(parseLine("`<b>`"), {
       handlers: { inlineCode: (node) => h("kbd", node.value) },
     })
-    expect(html).toBe('<div class="line"><kbd>&lt;b></kbd></div>')
+    expect(html).toBe('<div class="csn-line"><kbd>&lt;b></kbd></div>')
   })
 
   it("h の子に渡した null は出力に入らない", () => {
     const html = toHtml(parseLine("`x`"), {
       handlers: { inlineCode: (node) => h("kbd", [null, node.value, null]) },
     })
-    expect(html).toBe('<div class="line"><kbd>x</kbd></div>')
+    expect(html).toBe('<div class="csn-line"><kbd>x</kbd></div>')
   })
 
   it("ctx.children の出力を、h で作った要素の子にできる", () => {
@@ -414,7 +428,7 @@ describe("h で組み立てたハンドラ", () => {
       handlers: { decoration: (node, ctx) => boxed(ctx.children(node)) },
     })
     expect(html).toBe(
-      '<div class="line"><div class="box"><a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a></div></div>',
+      '<div class="csn-line"><div class="box"><a class="csn-link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a></div></div>',
     )
   })
 })
@@ -449,15 +463,15 @@ describe("独自記法", () => {
 
   it("ハンドラが無い独自ノードでも中身を落とさずに描画が続く", () => {
     const html = toHtml(parseLine("hi @qaynam です", { extensions }))
-    expect(html).toBe('<div class="line">hi  です</div>')
+    expect(html).toBe('<div class="csn-line">hi  です</div>')
   })
 })
 
 describe("スタイルの差し込み", () => {
   it("style に渡した CSS が先頭に付く", () => {
-    const html = toHtml(parse("t"), { style: ".line { color: red }" })
+    const html = toHtml(parse("t"), { style: ".csn-line { color: red }" })
     expect(html).toBe(
-      '<style>.line { color: red }</style><div class="page"><h1 class="title">t</h1></div>',
+      '<style>.csn-line { color: red }</style><div class="csn-page"><h1 class="csn-title">t</h1></div>',
     )
   })
 
@@ -468,18 +482,20 @@ describe("スタイルの差し込み", () => {
 
 describe("インデントの中点", () => {
   it("既定では深さを data 属性だけで表す", () => {
-    expect(toHtml(parse("t\n  字下げ"))).toContain('<div class="line" data-indent="2">字下げ</div>')
+    expect(toHtml(parse("t\n  字下げ"))).toContain(
+      '<div class="csn-line" data-indent="2">字下げ</div>',
+    )
   })
 
   it("showPads を渡すと深さのぶんだけ余白が並び、右端に中点が付く", () => {
     expect(toHtml(parse("t\n  字下げ"), { showPads: true })).toContain(
-      '<div class="line" data-indent="2">' +
-        '<span class="indent-mark"><span class="pad"> </span><span class="pad"> </span>' +
-        '<span class="dot"></span></span>字下げ</div>',
+      '<div class="csn-line" data-indent="2">' +
+        '<span class="csn-indent-mark"><span class="csn-pad"> </span><span class="csn-pad"> </span>' +
+        '<span class="csn-dot"></span></span>字下げ</div>',
     )
   })
 
   it("インデントが無い行には付かない", () => {
-    expect(toHtml(parse("t\n字下げなし"), { showPads: true })).not.toContain("indent-mark")
+    expect(toHtml(parse("t\n字下げなし"), { showPads: true })).not.toContain("csn-indent-mark")
   })
 })

@@ -97,11 +97,11 @@ code:ts
 
 <DocHeading level={3} id="class-names" title="classNames と showPads" />
 
-`classNames` は描画要素の既定 class 名を差し替えます。指定したキーだけが置き換わり、既定名に追加したい場合は `"line my-class"` のように両方を書きます。空文字にすると class 属性を出しません。
+`classNames` は描画要素の既定 class 名を差し替えます。既定の class 名はどれも `csn-` で始まります (`csn-line`、`csn-link` など)。CSS フレームワークの `.link` や `.table` とぶつからないようにするためです。指定したキーだけが置き換わり、既定名に追加したい場合は `"csn-line my-class"` のように両方を書きます。空文字にすると class 属性を出しません。
 
-動画は `<video>`、音声は `<audio>`、埋め込みはサービスのプレーヤーの `<iframe>` になり、class 名は `video`、`audio`、`embed` です。プレーヤーの URL が分からない埋め込み (拡張が足したサービス) は、URL への外部リンクとして出します。地図は Google マップへのリンク (class 名は `link link-location`) です。地図そのものを描くには地図のサービスの鍵が要るため、既定ではリンクにしています。
+動画は `<video>`、音声は `<audio>`、埋め込みはサービスのプレーヤーの `<iframe>` になり、class 名は `csn-video`、`csn-audio`、`csn-embed` です。プレーヤーの URL が分からない埋め込み (拡張が足したサービス) は、URL への外部リンクとして出します。地図は Google マップへのリンク (class 名は `csn-link csn-link-location`) です。地図そのものを描くには地図のサービスの鍵が要るため、既定ではリンクにしています。
 
-`showPads: true` は、インデントの余白と中点を `.indent-mark` / `.pad` / `.dot` 要素として出力します。既定では `data-indent` 属性だけを付け、スタイル側が中点を描きます。
+`showPads: true` は、インデントの余白と中点を `.csn-indent-mark` / `.csn-pad` / `.csn-dot` 要素として出力します。既定では `data-indent` 属性だけを付け、スタイル側が中点を描きます。
 
 <DocHeading level={3} id="handlers" title="handlers と extensions" />
 
@@ -155,9 +155,9 @@ code:ts
 
 <DocHeading level={2} id="output" title="出力の構造" />
 
-ページ全体は `<div class="page">` で包まれます。1行目は `<h1 class="title">`、通常行は `.line`、引用行は `<blockquote>` になります。字下げの深さは `.line[data-indent]` で表します。
+ページ全体は `<div class="csn-page">` で包まれます。1行目は `<h1 class="csn-title">`、通常行は `.csn-line`、引用行は `<blockquote>` になります。字下げの深さは `.csn-line[data-indent]` で表します。
 
-コードブロックの各行はそれぞれ要素になり、表は `<table class="table">` になります。字下げした表にも、行と同じく `data-indent` が付きます。装飾は `.decoration` と記号ごとの `deco-*` class で区別します。
+コードブロックの各行はそれぞれ要素になり、表は `<table class="csn-table">` になります。字下げした表にも、行と同じく `data-indent` が付きます。装飾は `.csn-decoration` と記号ごとの `deco-*` class で区別します。`deco-*` は Cosense Web の class 名に合わせているので、`csn-` が付きません。
 
 <DocHeading level={2} id="safety" title="エスケープと URL の検査" />
 

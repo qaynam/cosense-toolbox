@@ -17,7 +17,7 @@ export const styles: CosenseStyles = {
   "rules": [
     {
       "selector": {
-        "body": ".title",
+        "body": ".csn-title",
         "pseudo": ""
       },
       "declarations": {
@@ -30,7 +30,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line",
+        "body": ".csn-line",
         "pseudo": ""
       },
       "declarations": {
@@ -41,7 +41,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".indent-mark",
+        "body": ".csn-indent-mark",
         "pseudo": ""
       },
       "declarations": {
@@ -54,7 +54,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".pad",
+        "body": ".csn-pad",
         "pseudo": ""
       },
       "declarations": {
@@ -66,7 +66,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".dot",
+        "body": ".csn-dot",
         "pseudo": ""
       },
       "declarations": {
@@ -81,7 +81,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".link",
+        "body": ".csn-link",
         "pseudo": ""
       },
       "declarations": {
@@ -92,7 +92,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".hashtag",
+        "body": ".csn-hashtag",
         "pseudo": ""
       },
       "declarations": {
@@ -103,7 +103,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".code",
+        "body": ".csn-code",
         "pseudo": ""
       },
       "declarations": {
@@ -113,7 +113,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".code-start",
+        "body": ".csn-code-start",
         "pseudo": ""
       },
       "declarations": {
@@ -123,7 +123,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".code-body",
+        "body": ".csn-code-body",
         "pseudo": ""
       },
       "declarations": {
@@ -133,7 +133,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".monospace",
+        "body": ".csn-monospace",
         "pseudo": ""
       },
       "declarations": {
@@ -143,7 +143,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".code",
+        "body": ".csn-code",
         "pseudo": ""
       },
       "declarations": {
@@ -156,7 +156,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".monospace",
+        "body": ".csn-monospace",
         "pseudo": ""
       },
       "declarations": {
@@ -169,7 +169,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".code-block-start",
+        "body": ".csn-code-filename",
         "pseudo": ""
       },
       "declarations": {
@@ -181,7 +181,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".quote",
+        "body": ".csn-quote",
         "pseudo": ""
       },
       "declarations": {
@@ -194,7 +194,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table",
+        "body": ".csn-table",
         "pseudo": ""
       },
       "declarations": {
@@ -205,7 +205,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".image",
+        "body": ".csn-image",
         "pseudo": ""
       },
       "declarations": {
@@ -217,7 +217,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".video",
+        "body": ".csn-video",
         "pseudo": ""
       },
       "declarations": {
@@ -229,7 +229,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".audio",
+        "body": ".csn-audio",
         "pseudo": ""
       },
       "declarations": {
@@ -242,7 +242,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".embed",
+        "body": ".csn-embed",
         "pseudo": ""
       },
       "declarations": {
@@ -256,7 +256,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".formula",
+        "body": ".csn-formula",
         "pseudo": ""
       },
       "declarations": {
@@ -267,7 +267,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table caption",
+        "body": ".csn-table caption",
         "pseudo": ""
       },
       "declarations": {
@@ -280,7 +280,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table td",
+        "body": ".csn-table td",
         "pseudo": ""
       },
       "declarations": {
@@ -290,7 +290,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".audio audio",
+        "body": ".csn-audio audio",
         "pseudo": ""
       },
       "declarations": {
@@ -300,7 +300,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": "img.icon",
+        "body": "img.csn-icon",
         "pseudo": ""
       },
       "declarations": {
@@ -314,7 +314,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent=\"1\"]",
+        "body": ".csn-line[data-indent=\"1\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -323,7 +323,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table[data-indent=\"1\"]",
+        "body": ".csn-table[data-indent=\"1\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -332,7 +332,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent=\"2\"]",
+        "body": ".csn-line[data-indent=\"2\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -341,7 +341,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table[data-indent=\"2\"]",
+        "body": ".csn-table[data-indent=\"2\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -350,7 +350,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent=\"3\"]",
+        "body": ".csn-line[data-indent=\"3\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -359,7 +359,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table[data-indent=\"3\"]",
+        "body": ".csn-table[data-indent=\"3\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -368,7 +368,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent=\"4\"]",
+        "body": ".csn-line[data-indent=\"4\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -377,7 +377,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table[data-indent=\"4\"]",
+        "body": ".csn-table[data-indent=\"4\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -386,7 +386,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent=\"5\"]",
+        "body": ".csn-line[data-indent=\"5\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -395,7 +395,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table[data-indent=\"5\"]",
+        "body": ".csn-table[data-indent=\"5\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -404,7 +404,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent=\"6\"]",
+        "body": ".csn-line[data-indent=\"6\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -413,7 +413,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table[data-indent=\"6\"]",
+        "body": ".csn-table[data-indent=\"6\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -422,7 +422,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent=\"7\"]",
+        "body": ".csn-line[data-indent=\"7\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -431,7 +431,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table[data-indent=\"7\"]",
+        "body": ".csn-table[data-indent=\"7\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -440,7 +440,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent=\"8\"]",
+        "body": ".csn-line[data-indent=\"8\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -449,7 +449,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table[data-indent=\"8\"]",
+        "body": ".csn-table[data-indent=\"8\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -458,7 +458,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent=\"9\"]",
+        "body": ".csn-line[data-indent=\"9\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -467,7 +467,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table[data-indent=\"9\"]",
+        "body": ".csn-table[data-indent=\"9\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -476,7 +476,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent=\"10\"]",
+        "body": ".csn-line[data-indent=\"10\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -485,7 +485,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table[data-indent=\"10\"]",
+        "body": ".csn-table[data-indent=\"10\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -494,7 +494,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent]",
+        "body": ".csn-line[data-indent]",
         "pseudo": ""
       },
       "declarations": {
@@ -503,7 +503,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".link:hover",
+        "body": ".csn-link:hover",
         "pseudo": ""
       },
       "declarations": {
@@ -512,7 +512,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".hashtag:hover",
+        "body": ".csn-hashtag:hover",
         "pseudo": ""
       },
       "declarations": {
@@ -521,7 +521,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table[data-indent]",
+        "body": ".csn-table[data-indent]",
         "pseudo": ""
       },
       "declarations": {
@@ -530,7 +530,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".image[data-large]",
+        "body": ".csn-image[data-large]",
         "pseudo": ""
       },
       "declarations": {
@@ -541,7 +541,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".video[data-large]",
+        "body": ".csn-video[data-large]",
         "pseudo": ""
       },
       "declarations": {
@@ -552,7 +552,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".embed[data-provider=\"spotify\"]",
+        "body": ".csn-embed[data-provider=\"spotify\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -562,7 +562,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".embed[data-provider=\"anchor\"]",
+        "body": ".csn-embed[data-provider=\"anchor\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -572,7 +572,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".decoration[data-size-level=\"1\"]",
+        "body": ".csn-decoration[data-size-level=\"1\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -581,7 +581,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".decoration[data-size-level=\"2\"]",
+        "body": ".csn-decoration[data-size-level=\"2\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -590,7 +590,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".decoration[data-size-level=\"3\"]",
+        "body": ".csn-decoration[data-size-level=\"3\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -599,7 +599,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".decoration[data-size-level=\"4\"]",
+        "body": ".csn-decoration[data-size-level=\"4\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -608,7 +608,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".decoration[data-size-level]",
+        "body": ".csn-decoration[data-size-level]",
         "pseudo": ""
       },
       "declarations": {
@@ -618,7 +618,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line[data-indent]",
+        "body": ".csn-line[data-indent]",
         "pseudo": "::before"
       },
       "declarations": {
@@ -634,7 +634,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line:has(> .indent-mark)",
+        "body": ".csn-line:has(> .csn-indent-mark)",
         "pseudo": "::before"
       },
       "declarations": {
@@ -643,7 +643,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block > code",
+        "body": ".csn-line.csn-code-block > code",
         "pseudo": ""
       },
       "declarations": {
@@ -656,7 +656,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table td:nth-child(odd)",
+        "body": ".csn-table td:nth-child(odd)",
         "pseudo": ""
       },
       "declarations": {
@@ -665,7 +665,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".table td:nth-child(even)",
+        "body": ".csn-table td:nth-child(even)",
         "pseudo": ""
       },
       "declarations": {
@@ -674,7 +674,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block > .code-body",
+        "body": ".csn-line.csn-code-block > .csn-code-body",
         "pseudo": ""
       },
       "declarations": {
@@ -685,7 +685,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block[data-line-digits=\"1\"]",
+        "body": ".csn-line.csn-code-block[data-line-digits=\"1\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -694,7 +694,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block[data-line-digits=\"2\"]",
+        "body": ".csn-line.csn-code-block[data-line-digits=\"2\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -703,7 +703,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block[data-line-digits=\"3\"]",
+        "body": ".csn-line.csn-code-block[data-line-digits=\"3\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -712,7 +712,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block[data-line-digits=\"4\"]",
+        "body": ".csn-line.csn-code-block[data-line-digits=\"4\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -721,7 +721,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block[data-line-digits=\"5\"]",
+        "body": ".csn-line.csn-code-block[data-line-digits=\"5\"]",
         "pseudo": ""
       },
       "declarations": {
@@ -730,7 +730,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block:not(:has(> .code-start))",
+        "body": ".csn-line.csn-code-block:not(:has(> .csn-code-start))",
         "pseudo": "::before"
       },
       "declarations": {
@@ -739,7 +739,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block[data-line]",
+        "body": ".csn-line.csn-code-block[data-line]",
         "pseudo": "::before"
       },
       "declarations": {
@@ -760,7 +760,7 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
-        "body": ".line.code-block[data-line] > .code-body",
+        "body": ".csn-line.csn-code-block[data-line] > .csn-code-body",
         "pseudo": ""
       },
       "declarations": {

@@ -22,7 +22,7 @@ const routes = (table: Record<string, () => Response>) => {
 const img = (src: string, properties: Record<string, unknown> = {}): Element => ({
   type: "element",
   tagName: "img",
-  properties: { className: ["image"], src, alt: "", ...properties },
+  properties: { className: ["csn-image"], src, alt: "", ...properties },
   children: [],
 })
 
@@ -35,7 +35,6 @@ const run = async (
   const tree: Root = { type: "root", children }
   const transform = rehypeGyazoVideos({
     as: options.as ?? "video",
-    classNames: { video: "video", embed: "embed" },
     fetch,
     warn: (message) => options.warnings?.push(message),
   })()
@@ -51,7 +50,7 @@ describe("rehypeGyazoVideos", () => {
     expect(tree.children[0]).toMatchObject({
       tagName: "video",
       properties: {
-        className: ["video"],
+        className: ["csn-video"],
         src: `https://i.gyazo.com/${HASH}.mp4`,
         controls: true,
         loop: true,
@@ -69,7 +68,7 @@ describe("rehypeGyazoVideos", () => {
     )
     expect(tree.children[0]).toMatchObject({
       tagName: "iframe",
-      properties: { className: ["embed"], src: `https://gyazo.com/player/${HASH}` },
+      properties: { className: ["csn-embed"], src: `https://gyazo.com/player/${HASH}` },
     })
   })
 

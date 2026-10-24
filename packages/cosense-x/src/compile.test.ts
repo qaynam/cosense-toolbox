@@ -38,10 +38,10 @@ const renderPage = async (
 describe("compile", () => {
   it("React で描画すると toHtml と同じ構造の HTML になる", async () => {
     expect(await renderPage("タイトル\n[* 太字] と [リンク]\n\n code")).toBe(
-      '<div class="page"><h1 class="title">タイトル</h1>' +
-        '<div class="line"><span class="decoration deco-*"><strong>太字</strong></span> と <a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a></div>' +
-        '<div class="line"><br/></div>' +
-        '<div class="line" data-indent="1">code</div></div>',
+      '<div class="csn-page"><h1 class="csn-title">タイトル</h1>' +
+        '<div class="csn-line"><span class="csn-decoration deco-*"><strong>太字</strong></span> と <a class="csn-link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a></div>' +
+        '<div class="csn-line"><br/></div>' +
+        '<div class="csn-line" data-indent="1">code</div></div>',
     )
   })
 
@@ -70,7 +70,7 @@ describe("compile", () => {
   it("jsxImportSource に合わせて import 元と属性名の書き方が変わる", async () => {
     const { code } = await compile("タイトル", { jsxImportSource: "astro" })
     expect(code).toContain('from "astro/jsx-runtime"')
-    expect(code).toContain('class: "page"')
+    expect(code).toContain('class: "csn-page"')
   })
 
   it("props.components で要素を差し替えられる", async () => {
@@ -93,19 +93,19 @@ describe(".csnx のコンポーネント", () => {
     const source = 'タイトル\n<Callout type="warn" count={2}>\n注意\n</Callout>\n後ろ'
     const html = await renderPage(source, { format: "csnx" }, { components: { Callout } })
     expect(html).toContain(
-      '<aside data-type="warn" data-count="2"><div class="line">注意</div></aside><div class="line">後ろ</div>',
+      '<aside data-type="warn" data-count="2"><div class="csn-line">注意</div></aside><div class="csn-line">後ろ</div>',
     )
   })
 
   it("コンポーネントが渡されなければ、元の行をテキストとして出す", async () => {
     const html = await renderPage('タイトル\n<Missing a="1" />', { format: "csnx" })
-    expect(html).toContain('<div class="line">&lt;Missing a=&quot;1&quot; /&gt;</div>')
+    expect(html).toContain('<div class="csn-line">&lt;Missing a=&quot;1&quot; /&gt;</div>')
   })
 
   it("中身のあるコンポーネントが渡されなければ、開始タグ・中身・閉じタグの行をそのまま出す", async () => {
     const html = await renderPage("タイトル\n<Missing>\n中身\n</Missing>", { format: "csnx" })
     expect(html).toContain(
-      '<div class="line">&lt;Missing&gt;</div><div class="line">中身</div><div class="line">&lt;/Missing&gt;</div>',
+      '<div class="csn-line">&lt;Missing&gt;</div><div class="csn-line">中身</div><div class="csn-line">&lt;/Missing&gt;</div>',
     )
   })
 
@@ -126,13 +126,13 @@ describe(".csnx のコンポーネント", () => {
       { components: { Modal } },
     )
     expect(html).toContain(
-      '<div class="line">modalを表示させるぞ <dialog open=""><img class="image" src="https://example.test/a.png" alt=""/></dialog> 続き</div>',
+      '<div class="csn-line">modalを表示させるぞ <dialog open=""><img class="csn-image" src="https://example.test/a.png" alt=""/></dialog> 続き</div>',
     )
   })
 
   it("行の途中のコンポーネントが渡されなければ、タグもテキストとして出す", async () => {
     const html = await renderPage("タイトル\na <Missing>b</Missing> c", { format: "csnx" })
-    expect(html).toContain('<div class="line">a &lt;Missing&gt;b&lt;/Missing&gt; c</div>')
+    expect(html).toContain('<div class="csn-line">a &lt;Missing&gt;b&lt;/Missing&gt; c</div>')
   })
 
   it("行の途中の閉じていないタグはテキストのまま出し、warnings に積む", async () => {
@@ -141,7 +141,7 @@ describe(".csnx のコンポーネント", () => {
       "<T> が同じ行の中で閉じられていないので、テキストとして出した: 2 行目",
     ])
     const html = await renderPage("タイトル\n型は Array<T> です", { format: "csnx" })
-    expect(html).toContain('<div class="line">型は Array&lt;T&gt; です</div>')
+    expect(html).toContain('<div class="csn-line">型は Array&lt;T&gt; です</div>')
   })
 
   it("行の途中のタグは説明文に入れない", async () => {
@@ -191,22 +191,22 @@ describe("リンクの解決", () => {
 
   it("タイトルで書いたリンクは索引で引く。大文字小文字と _ の違いは無視する", async () => {
     const html = await renderPage("タイトル\n[page_b]", base)
-    expect(html).toContain('<a class="link" href="/blog/page-b">page_b</a>')
+    expect(html).toContain('<a class="csn-link" href="/blog/page-b">page_b</a>')
   })
 
   it("[./notes/b.csnx] のようなパスはファイルを指さず、そう書かれたタイトルとして引く", async () => {
     const html = await renderPage("タイトル\n[./notes/b.csnx]", base)
-    expect(html).toContain('<div class="line">./notes/b.csnx</div>')
+    expect(html).toContain('<div class="csn-line">./notes/b.csnx</div>')
   })
 
   it("索引に無いページと draft のページへのリンクは、既定ではテキストになる", async () => {
     const html = await renderPage("タイトル\n[無いページ] [下書き]", base)
-    expect(html).toContain('<div class="line">無いページ 下書き</div>')
+    expect(html).toContain('<div class="csn-line">無いページ 下書き</div>')
   })
 
   it("unresolved: 'link' なら索引に無くてもリンクにする", async () => {
     const html = await renderPage("タイトル\n[無いページ]", { ...base, unresolved: "link" })
-    expect(html).toContain('<a class="link" href="/blog/無いページ">無いページ</a>')
+    expect(html).toContain('<a class="csn-link" href="/blog/無いページ">無いページ</a>')
   })
 
   it("unresolved: 'warn' ならリンク切れを warnings に積む", async () => {
@@ -228,7 +228,7 @@ describe("リンクの解決", () => {
 
   it("tagUrl を渡すとタグはその URL になる", async () => {
     const html = await renderPage("タイトル\n#日記", { ...base, tagUrl: (tag) => `/tags/${tag}` })
-    expect(html).toContain('<a class="hashtag" href="/tags/日記">#日記</a>')
+    expect(html).toContain('<a class="csn-hashtag" href="/tags/日記">#日記</a>')
   })
 
   it("別プロジェクトへのリンクは既定で scrapbox.io を指す", async () => {
@@ -245,7 +245,7 @@ describe("リンクの解決", () => {
 
   it("索引を渡さなければ、タイトルのリンクはすべてページへのリンクになる", async () => {
     const html = await renderPage("タイトル\n[どこか]", { pageUrl: (page) => `/p/${page.slug}` })
-    expect(html).toContain('<a class="link" href="/p/どこか">どこか</a>')
+    expect(html).toContain('<a class="csn-link" href="/p/どこか">どこか</a>')
   })
 })
 
@@ -256,7 +256,7 @@ describe("rehype プラグイン", () => {
       if (first?.properties) first.properties.lang = "ja"
     }
     const html = await renderPage("タイトル", { rehypePlugins: [addLang] })
-    expect(html).toContain('<div class="page" lang="ja">')
+    expect(html).toContain('<div class="csn-page" lang="ja">')
   })
 })
 
@@ -277,7 +277,7 @@ describe("renderOptions (parser の toHast に渡る描画の設定)", () => {
       },
     })
     expect(html).toContain(
-      '<code class="code-body highlight"><span class="token-ts">const a = 1</span></code>',
+      '<code class="csn-code-body csn-code-highlight"><span class="token-ts">const a = 1</span></code>',
     )
   })
 
@@ -314,7 +314,7 @@ describe("renderOptions (parser の toHast に渡る描画の設定)", () => {
         ],
       },
     })
-    expect(html).toContain('<mark><a class="link" href="/p/link">リンク</a></mark>')
+    expect(html).toContain('<mark><a class="csn-link" href="/p/link">リンク</a></mark>')
   })
 
   it("codeLineNumbers で本体行に行番号が付く", async () => {
@@ -338,7 +338,7 @@ describe("テーブルのセル", () => {
     const result = await compile(source, { index })
     expect(result.metadata.links).toEqual(["B"])
     expect(await renderPage(source, { index })).toContain(
-      '<td><a class="link" href="/b">B</a></td><td>[* 太字]</td>',
+      '<td><a class="csn-link" href="/b">B</a></td><td>[* 太字]</td>',
     )
   })
 
@@ -348,7 +348,7 @@ describe("テーブルのセル", () => {
       renderOptions: { extensions: [tableCellLineBreaks("\\n")] },
     })
     expect(html).toContain(
-      '<td><span class="decoration deco-*"><strong>太字</strong></span><br/>2 行目</td>',
+      '<td><span class="csn-decoration deco-*"><strong>太字</strong></span><br/>2 行目</td>',
     )
   })
 })
