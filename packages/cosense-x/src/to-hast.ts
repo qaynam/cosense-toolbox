@@ -107,7 +107,14 @@ export interface ToHastOptions extends Omit<HastOptions, "pageUrl"> {
  */
 export type RenderOptions = Pick<
   ToHastOptions,
-  "classNames" | "extensions" | "handlers" | "highlight" | "iconImageUrl" | "showPads" | "title"
+  | "classNames"
+  | "classPrefix"
+  | "extensions"
+  | "handlers"
+  | "highlight"
+  | "iconImageUrl"
+  | "showPads"
+  | "title"
 >
 
 const text = (value: string): Text => ({ type: "text", value })
@@ -186,7 +193,6 @@ export const toHastEither = (
       Option.filter((url) => url !== ""),
     )
     const href = resolve(node)
-    const className = [cls.internalLink, cls.icon].filter(Boolean).join(" ")
     // 連打の数だけ出す。要素を共有しないよう、1 つずつ作る。
     return Array.from({ length: node.count }, () => {
       const body: ElementContent = Option.match(src, {
@@ -196,7 +202,8 @@ export const toHastEither = (
       })
       return Option.match(href, {
         onNone: () => body,
-        onSome: (resolved) => element("a", withClass(className, { href: resolved.href }), [body]),
+        onSome: (resolved) =>
+          element("a", withClass(cls.iconLink, { href: resolved.href }), [body]),
       })
     })
   }

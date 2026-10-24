@@ -22,7 +22,7 @@ const routes = (table: Record<string, () => Response>) => {
 const img = (src: string, properties: Record<string, unknown> = {}): Element => ({
   type: "element",
   tagName: "img",
-  properties: { className: ["csn-image"], src, alt: "", ...properties },
+  properties: { className: ["image"], src, alt: "", ...properties },
   children: [],
 })
 
@@ -50,7 +50,7 @@ describe("rehypeGyazoVideos", () => {
     expect(tree.children[0]).toMatchObject({
       tagName: "video",
       properties: {
-        className: ["csn-video"],
+        className: ["video"],
         src: `https://i.gyazo.com/${HASH}.mp4`,
         controls: true,
         loop: true,
@@ -68,7 +68,7 @@ describe("rehypeGyazoVideos", () => {
     )
     expect(tree.children[0]).toMatchObject({
       tagName: "iframe",
-      properties: { className: ["csn-embed"], src: `https://gyazo.com/player/${HASH}` },
+      properties: { className: ["embed"], src: `https://gyazo.com/player/${HASH}` },
     })
   })
 
