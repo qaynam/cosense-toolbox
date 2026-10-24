@@ -15,6 +15,7 @@ import type { PageDetail } from "./types"
  * - `"serverError"`: 5xx
  * - `"network"`: 応答が来なかった (DNS や接続の失敗)
  * - `"decode"`: 2xx だが、本文を読めなかったか、形が合わなかった
+ * - `"invalidUrl"`: `fetchAsset` に渡した URL かリダイレクト先が、http(s) の URL でない。渡した URL なら `status` は `0`
  * - `"unknown"`: どれでもない。`status` と `code` で見分ける
  */
 export type CosenseApiErrorKind =
@@ -29,6 +30,7 @@ export type CosenseApiErrorKind =
   | "serverError"
   | "network"
   | "decode"
+  | "invalidUrl"
   | "unknown"
 
 const KIND_BY_CODE: ReadonlyMap<string, CosenseApiErrorKind> = new Map([
@@ -54,7 +56,7 @@ const kindOf = (status: number, code: string | undefined): CosenseApiErrorKind =
 
 /**
  * Cosense の API から使える応答が返らなかった。2xx 以外の status、辿らないリダイレクト、
- * 2xx だが形の合わない本文のどれか。何が起きたかは `kind` で見分ける。
+ * 2xx だが形の合わない本文、取りに行かない URL のどれか。何が起きたかは `kind` で見分ける。
  *
  * effect の型を使わない素の `Error` にしている。Promise の入口ではこれで reject し、effect の入口では
  * これで失敗する (`_tag` があるので `Effect.catchTag("CosenseApiError", …)` で拾える)。
@@ -62,7 +64,7 @@ const kindOf = (status: number, code: string | undefined): CosenseApiErrorKind =
 export class CosenseApiError extends Error {
   readonly _tag = "CosenseApiError"
   readonly kind: CosenseApiErrorKind
-  /** 受け取った HTTP の status。応答が来なかった (DNS や接続の失敗) ときは `0` */
+  /** 受け取った HTTP の status。応答が来なかった (DNS や接続の失敗) か、要求を送らなかったときは `0` */
   readonly status: number
   /**
    * 応答の本文の `error` か、それが無ければ `name` の値 (`"NotFastForward"` や `"NotLoggedInError"` など)。

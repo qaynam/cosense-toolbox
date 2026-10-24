@@ -35,7 +35,7 @@
     "@types/hast": "^3.0.4",
     "pagefind": "^1.5.2",
     "vitest": "^2.1.8",
-    "wrangler": "^4.20.0"
+    "wrangler": "^4.152.0"
   },
   "private": true
 }
