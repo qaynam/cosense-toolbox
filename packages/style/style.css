@@ -200,6 +200,27 @@
 }
 
 /*
+ * Helpfeel の行 (? 使い方) は、Cosense Web と同じく淡い橙の背景に、記号と中身を橙の濃さで分けて出す。
+ * 書体と大きさはインラインコードと同じ。
+ */
+.page .helpfeel {
+  padding: 3px;
+  border-radius: 4px;
+  font-family: var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 90%;
+  color: var(--cosense-code-text, var(--code-color, #342d9c));
+  background: #fbebdd;
+}
+
+.page .helpfeel .prefix {
+  color: #f17c00;
+}
+
+.page .helpfeel .entry {
+  color: #cc5020;
+}
+
+/*
  * コードブロックは 1 行 = 1 要素なので、背景も行ごとに塗って隣り合う行でひと続きに見せる。
  * 塗るのは行ではなく中の <code>。行の padding より内側から始めることで、
  * ブロック全体がインデントの位置に揃う。
@@ -413,6 +434,12 @@
   height: 1.3em;
   max-width: 100%;
   vertical-align: middle;
+}
+
+/* 大きいアイコン ([[user.icon]]) は、Cosense Web と同じく普通のアイコンの 3 倍の高さで、行の下に揃える。 */
+.page img.icon[data-large] {
+  height: 3.9em;
+  vertical-align: bottom;
 }
 
 .page .formula {

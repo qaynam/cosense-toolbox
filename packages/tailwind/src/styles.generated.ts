@@ -158,6 +158,20 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
+        "body": ".helpfeel",
+        "pseudo": ""
+      },
+      "declarations": {
+        "padding": "3px",
+        "border-radius": "4px",
+        "font-family": "var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace)",
+        "font-size": "90%",
+        "color": "var(--cosense-code-text, var(--code-color, #342d9c))",
+        "background": "#fbebdd"
+      }
+    },
+    {
+      "selector": {
         "body": ".code-block-start",
         "pseudo": ""
       },
@@ -521,6 +535,24 @@ export const styles: CosenseStyles = {
     },
     {
       "selector": {
+        "body": ".helpfeel .prefix",
+        "pseudo": ""
+      },
+      "declarations": {
+        "color": "#f17c00"
+      }
+    },
+    {
+      "selector": {
+        "body": ".helpfeel .entry",
+        "pseudo": ""
+      },
+      "declarations": {
+        "color": "#cc5020"
+      }
+    },
+    {
+      "selector": {
         "body": ".table-block[data-indent]",
         "pseudo": ""
       },
@@ -670,6 +702,16 @@ export const styles: CosenseStyles = {
       },
       "declarations": {
         "background": "rgba(0, 0, 0, 0.06)"
+      }
+    },
+    {
+      "selector": {
+        "body": "img.icon[data-large]",
+        "pseudo": ""
+      },
+      "declarations": {
+        "height": "3.9em",
+        "vertical-align": "bottom"
       }
     },
     {
