@@ -59,6 +59,12 @@ describe("toHtml と同じ構造の HTML になる", () => {
     expect(hastToHtml(toHast(page, options))).toBe(normalize(toHtml(page, options)))
   })
 
+  it("classPrefix も toHtml と同じに効く", () => {
+    const options = { classPrefix: "csn-" }
+    const page = parse(KITCHEN_SINK)
+    expect(hastToHtml(toHast(page, options))).toBe(normalize(toHtml(page, options)))
+  })
+
   it.each(fixtures.tableCell.map((fixture) => fixture.input))("表のセル: %s", (cell) => {
     const page = parse(`タイトル\ntable:表\n ${cell}\t[リンク]`)
     expect(hastToHtml(toHast(page))).toBe(normalize(toHtml(page)))
@@ -85,7 +91,7 @@ describe("リンクの解決", () => {
   it("resolveLink が null を返したリンクはテキストになる", () => {
     const html = render("タイトル\n[a] #b [/p/c]", { resolveLink: () => null })
     expect(html).toBe(
-      '<div class="page"><h1 class="title">タイトル</h1><div class="line">a #b /p/c</div></div>',
+      '<div class="page"><h1 class="line line-title">タイトル</h1><div class="line">a #b /p/c</div></div>',
     )
   })
 
@@ -93,7 +99,7 @@ describe("リンクの解決", () => {
     const html = render("タイトル\n[b]", {
       resolveLink: () => ({ href: "/posts/b", label: "B のタイトル" }),
     })
-    expect(html).toContain('<a class="link" href="/posts/b">B のタイトル</a>')
+    expect(html).toContain('<a class="page-link" href="/posts/b">B のタイトル</a>')
   })
 
   it("script が動く URL を返してもリンクにしない", () => {

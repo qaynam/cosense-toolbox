@@ -57,7 +57,7 @@ Cosense のテーマ変数 (`--page-bg` など) が使える環境では、そ�
 
 <DocHeading level={2} id="details" title="スタイルの注意点" />
 
-すべてのルールは `.page` 以下に限定されています。ただし、表示対象のページ自身が `.page` クラスを使う場合は名前が衝突するため、iframe や Shadow DOM で分離するか、パーサーの `classNames` オプションでクラス名を変えてください。
+パーサーの既定のクラス名は Cosense Web と同じ (`.line`、`.page-link`、`.table-block` など) で、すべてのルールは `.page` 以下に限定されています。ただし、表示するページの CSS が当てるスタイルは出力にも当たります。DaisyUI や Bootstrap などの CSS フレームワークが使う `.link` のようなクラスや、`a` や `table` などの要素名で当てるスタイルです。切り離したい場合は、出力を Shadow DOM か iframe に入れてください。Tailwind CSS を使う場合は、[Tailwind CSS] のプラグインと `classPrefix` で、クラス名に接頭辞を付けて避けることもできます。
 
 コードブロックに行番号を付けるには、パーサーの `codeLineNumbers()` 描画拡張と組み合わせます。詳しくは [HTML への変換] をご覧ください。
 

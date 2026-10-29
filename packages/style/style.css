@@ -13,9 +13,15 @@
  * 変数を自前でルート要素に定義していないのは、そうすると継承で降ってくる
  * 利用者の指定を打ち消してしまうため。
  *
- * すべてのルールが .page の下にスコープされている。toHtml の既定の class 名は
- * 接頭辞を持たず (.line / .title / .code / .table)、そのまま書くと同名の class を
- * 持つページ側の要素まで巻き込むため。
+ * toHtml の既定の class 名は Cosense Web のエディタと同じ (.line / .page-link / .table-block など)。
+ * どのルールも出力の根の .page の子孫として書いているので、ページのほかの場所には当たらない。
+ * 逆に、CSS フレームワークがページ全体に当てる .link / .image などは出力にも当たる。
+ * 切り離すには、出力とこのファイルを一緒に Shadow DOM に入れる。
+ *
+ * 根の .page の下に書くのは、@cosense-toolbox/tailwind のためでもある。
+ * tailwind はこのファイルを読み、.page を利用者の class (既定は cosense) に置き換えて使う。
+ * toHtml の classPrefix で class 名に接頭辞を付けたときに合わせるのも tailwind の役目で、
+ * このファイルは接頭辞の無い名前だけを選ぶ。
  */
 
 /* ---------------------------------------------------------------------------
@@ -39,7 +45,7 @@
 }
 
 /* 本体のタイトルは 25.95px / 42px。基準の 15px に対して 1.73 倍。 */
-.page .title {
+.page .line-title {
   margin: 0 0 0.77em;
   font-size: 1.73em;
   font-weight: 700;
@@ -47,7 +53,8 @@
   color: var(--cosense-title, var(--line-title-color, var(--page-text-color, #4a4a4a)));
 }
 
-.page .line {
+/* タイトルにも Cosense Web と同じく .line が付くので除く。min-height が当たると、空のタイトルが 1 行ぶんの高さを取る。 */
+.page .line:not(.line-title) {
   position: relative;
   min-height: 1em;
   /* 記法の記号が合字にならないように (本体と同じ)。 */
@@ -65,43 +72,43 @@
  * 11 段以上はインデントも中点も付かない。
  */
 .page .line[data-indent="1"],
-.page .table[data-indent="1"] {
+.page .table-block[data-indent="1"] {
   --cosense-depth: 1;
 }
 .page .line[data-indent="2"],
-.page .table[data-indent="2"] {
+.page .table-block[data-indent="2"] {
   --cosense-depth: 2;
 }
 .page .line[data-indent="3"],
-.page .table[data-indent="3"] {
+.page .table-block[data-indent="3"] {
   --cosense-depth: 3;
 }
 .page .line[data-indent="4"],
-.page .table[data-indent="4"] {
+.page .table-block[data-indent="4"] {
   --cosense-depth: 4;
 }
 .page .line[data-indent="5"],
-.page .table[data-indent="5"] {
+.page .table-block[data-indent="5"] {
   --cosense-depth: 5;
 }
 .page .line[data-indent="6"],
-.page .table[data-indent="6"] {
+.page .table-block[data-indent="6"] {
   --cosense-depth: 6;
 }
 .page .line[data-indent="7"],
-.page .table[data-indent="7"] {
+.page .table-block[data-indent="7"] {
   --cosense-depth: 7;
 }
 .page .line[data-indent="8"],
-.page .table[data-indent="8"] {
+.page .table-block[data-indent="8"] {
   --cosense-depth: 8;
 }
 .page .line[data-indent="9"],
-.page .table[data-indent="9"] {
+.page .table-block[data-indent="9"] {
   --cosense-depth: 9;
 }
 .page .line[data-indent="10"],
-.page .table[data-indent="10"] {
+.page .table-block[data-indent="10"] {
   --cosense-depth: 10;
 }
 
@@ -159,15 +166,15 @@
  * リンク
  * ------------------------------------------------------------------------- */
 
-.page .link,
-.page .hashtag {
+.page .page-link,
+.page .link {
   color: var(--cosense-link, var(--page-link-color, #3d72f5));
   text-decoration: none;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
 }
 
-.page .link:hover,
-.page .hashtag:hover {
+.page .page-link:hover,
+.page .link:hover {
   color: var(--cosense-link-hover, var(--page-link-hover-color, #0d4ff3));
 }
 
@@ -178,13 +185,13 @@
 .page .code,
 .page .code-start,
 .page .code-body,
-.page .monospace {
+.page .cli {
   font-family: var(--cosense-code-font, ui-monospace, SFMono-Regular, Menlo, monospace);
   color: var(--cosense-code-text, var(--code-color, #342d9c));
 }
 
 .page .code,
-.page .monospace {
+.page .cli {
   padding: 0 0.2em;
   border-radius: 4px;
   font-size: 90%;
@@ -296,7 +303,7 @@
  * テーブル
  * ------------------------------------------------------------------------- */
 
-.page .table {
+.page .table-block {
   margin: 0;
   border-collapse: collapse;
   caption-side: top;
@@ -306,12 +313,12 @@
  * 字下げした表は、同じ深さの行の本文と同じ位置から始める。
  * 罫線を重ねる表 (border-collapse: collapse) には padding が効かないので、margin で寄せる。
  */
-.page .table[data-indent] {
+.page .table-block[data-indent] {
   margin-left: calc(var(--cosense-indent, 1.5em) * var(--cosense-depth, 0));
 }
 
 /* 表の名前もコードブロックのファイル名と同じ見出しバッジ。 */
-.page .table caption {
+.page .table-block caption {
   padding: 1px 2px;
   text-align: center;
   font-size: 0.9em;
@@ -319,17 +326,17 @@
   background: var(--cosense-badge-bg, #ffcfc6);
 }
 
-.page .table td {
+.page .table-block td {
   padding: 0 2px 0 8px;
   white-space: nowrap;
 }
 
 /* 本体は罫線ではなく列ごとの塗り分けでセルを区切る。 */
-.page .table td:nth-child(odd) {
+.page .table-block td:nth-child(odd) {
   background: rgba(0, 0, 0, 0.04);
 }
 
-.page .table td:nth-child(even) {
+.page .table-block td:nth-child(even) {
   background: rgba(0, 0, 0, 0.06);
 }
 
@@ -395,8 +402,8 @@
 }
 
 /*
- * アイコンは a.icon > img.icon の入れ子。iconImageUrl を渡していないときは img が無く、
- * ユーザー名のテキストリンクとして出る (色は .link から継承する)。
+ * アイコンは Cosense Web と同じ a.link.icon > img.icon の入れ子。iconImageUrl を渡していないときは img が無く、
+ * ユーザー名のテキストリンクとして出る (色はリンクの .link のもの)。
  * 行の真ん中に揃えてから少し上げるのは Cosense Web と同じ。baseline に揃えると行の上へ浮く。
  */
 .page img.icon {
@@ -422,21 +429,21 @@
  * 見出しの倍率は本体と同じ 1.2 の等比。data-size-level は星の数 - 1 なので、
  * 星 1 つ (level 0) は太字のみでサイズを変えない。
  */
-.page .decoration[data-size-level="1"] {
+.page .deco[data-size-level="1"] {
   font-size: 1.2em;
 }
-.page .decoration[data-size-level="2"] {
+.page .deco[data-size-level="2"] {
   font-size: 1.44em;
 }
-.page .decoration[data-size-level="3"] {
+.page .deco[data-size-level="3"] {
   font-size: 1.73em;
 }
-.page .decoration[data-size-level="4"] {
+.page .deco[data-size-level="4"] {
   font-size: 2.07em;
 }
 
 /* 本体は見出しごとに行間を固定していて、比に直すとどの段階もおよそ 1.6 になる。 */
-.page .decoration[data-size-level] {
+.page .deco[data-size-level] {
   display: inline-block;
   line-height: 1.6;
 }

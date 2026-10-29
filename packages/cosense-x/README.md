@@ -14,6 +14,13 @@ Cosense (旧 Scrapbox) の記法で書いたページを、JSX モジュール�
 
 > **beta**：公開 API はまだ変わりうる。
 
+### 1.0.0 の変更
+
+- `renderOptions` に `classPrefix` を渡せるようにした (`@cosense-toolbox/parser` 1.0.0 の `toHast` のオプション)。
+  既定の class 名に付ける接頭辞で、CSS フレームワークの `.link` などとぶつかるときに使う。
+- 出力の既定の class 名は、parser 1.0.0 に合わせて一部が Cosense Web のエディタと同じ名前に変わる (内部リンクは `page-link`、表は `table-block`、タイトルは `line line-title` など)。
+  対応は [parser の README](../parser/README.md#100-の変更) の表のとおり。
+
 ### 0.1.0-beta.10 の変更
 
 - **破壊的変更:** `@cosense-toolbox/cosense-x/fetch` を消した。Cosense の API を呼ぶものは `@cosense-toolbox/api` にまとめた。
@@ -180,15 +187,15 @@ graph.twoHop["posts/react.csn"]
 
 `compile` の主なオプション:
 
-| オプション                                                      | 内容                                                                                                                                                                                           |
-| :-------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `format`                                                        | `'csn'` か `'csnx'`。省くと `filePath` の拡張子で決める                                                                                                                                        |
-| `jsxImportSource`                                               | JSX ランタイムの読み込み元。既定は `'react'`                                                                                                                                                   |
-| `elementAttributeNameCase`                                      | `'react'` なら `className`、`'html'` なら `class`。既定は `jsxImportSource` から決める                                                                                                         |
-| `rehypePlugins`                                                 | hast に当てる rehype プラグイン                                                                                                                                                                |
-| `index` `filePath` `pageUrl` `tagUrl` `projectUrl` `unresolved` | リンクの解決                                                                                                                                                                                   |
-| `renderOptions`                                                 | 描画の設定。parser の `toHast` のオプションがそのまま渡る (`extensions` `handlers` `highlight` `classNames` `showPads` `iconImageUrl`)。加えて `title: false` でタイトル行 (`<h1>`) を出さない |
-| `parseOptions`                                                  | パーサーに渡すオプション (記法の拡張など)                                                                                                                                                      |
+| オプション                                                      | 内容                                                                                                                                                                                                         |
+| :-------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `format`                                                        | `'csn'` か `'csnx'`。省くと `filePath` の拡張子で決める                                                                                                                                                      |
+| `jsxImportSource`                                               | JSX ランタイムの読み込み元。既定は `'react'`                                                                                                                                                                 |
+| `elementAttributeNameCase`                                      | `'react'` なら `className`、`'html'` なら `class`。既定は `jsxImportSource` から決める                                                                                                                       |
+| `rehypePlugins`                                                 | hast に当てる rehype プラグイン                                                                                                                                                                              |
+| `index` `filePath` `pageUrl` `tagUrl` `projectUrl` `unresolved` | リンクの解決                                                                                                                                                                                                 |
+| `renderOptions`                                                 | 描画の設定。parser の `toHast` のオプションがそのまま渡る (`extensions` `handlers` `highlight` `classNames` `classPrefix` `showPads` `iconImageUrl`)。加えて `title: false` でタイトル行 (`<h1>`) を出さない |
+| `parseOptions`                                                  | パーサーに渡すオプション (記法の拡張など)                                                                                                                                                                    |
 
 ### コードブロックの色付け
 

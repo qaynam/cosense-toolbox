@@ -25,17 +25,31 @@ const line = (source: string, options?: Parameters<typeof toHtml>[1]): string =>
   toHtml(parseLine(source), options).replace(/^<div class="line">|<\/div>$/g, "")
 
 describe("インライン記法", () => {
-  it("内部リンクは a になる", () => {
-    expect(line("[リンク]")).toBe('<a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a>')
+  it("内部リンクは、Cosense Web と同じく page-link の a になる", () => {
+    expect(line("[リンク]")).toBe(
+      '<a class="page-link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a>',
+    )
   })
 
-  it("ハッシュタグは # 付きで表示される", () => {
-    expect(line("#tag")).toBe('<a class="hashtag" href="/tag">#tag</a>')
+  it("外部リンクは、Cosense Web の link に外部リンクの class を足した a になる", () => {
+    expect(line("[ラベル https://example.test/]")).toBe(
+      '<a class="link link-external" href="https://example.test/">ラベル</a>',
+    )
+  })
+
+  it("別プロジェクトへのリンクは、内部リンクと同じ page-link に別プロジェクトの class を足した a になる", () => {
+    expect(line("[/proj/page]")).toBe(
+      '<a class="page-link link-project" href="/proj/page">/proj/page</a>',
+    )
+  })
+
+  it("ハッシュタグは、内部リンクと同じ page-link にタグの class を足した、# 付きの a になる", () => {
+    expect(line("#tag")).toBe('<a class="page-link hashtag" href="/tag">#tag</a>')
   })
 
   it("装飾はフラグのぶんだけ要素が入れ子になる", () => {
     expect(line("[*-/_ text]")).toBe(
-      '<span class="decoration deco-* deco-- deco-/ deco-_"><strong><em><u><s>text</s></u></em></strong></span>',
+      '<span class="deco deco-* deco-- deco-/ deco-_"><strong><em><u><s>text</s></u></em></strong></span>',
     )
   })
 
@@ -44,15 +58,15 @@ describe("インライン記法", () => {
   })
 
   it("書かれた装飾記号を deco- の class にする", () => {
-    expect(line("[*-/_ text]")).toContain('class="decoration deco-* deco-- deco-/ deco-_"')
+    expect(line("[*-/_ text]")).toContain('class="deco deco-* deco-- deco-/ deco-_"')
   })
 
   it("deco- の class は属性値としてエスケープする", () => {
-    expect(line("[[太字]]")).toContain('class="decoration deco-*"')
+    expect(line("[[太字]]")).toContain('class="deco deco-*"')
   })
 
   it("装飾の中のリンクも描画される", () => {
-    expect(line("[* [リンク]]")).toContain('<a class="link"')
+    expect(line("[* [リンク]]")).toContain('<a class="page-link"')
   })
 
   it("インラインコードは code になる", () => {
@@ -80,12 +94,22 @@ describe("インライン記法", () => {
   it("連打の数だけ出る", () => {
     expect(line("[user.icon*3]").match(/<a class="link icon"/g)).toHaveLength(3)
   })
+
+  it("アイコンを包むリンクの class は iconLink、画像の class は icon で変えられる", () => {
+    const html = line("[user.icon]", {
+      iconImageUrl: () => "/user.png",
+      classNames: { iconLink: "avatar-link", icon: "avatar" },
+    })
+    expect(html).toBe(
+      '<a class="avatar-link" href="/user"><img class="avatar" src="/user.png" alt="user" title="user"></a>',
+    )
+  })
 })
 
 describe("ブロック", () => {
-  it("1 行目は h1 になる", () => {
+  it("1 行目は、Cosense Web のタイトルの行と同じ class の h1 になる", () => {
     expect(toHtml(parse("タイトル"))).toBe(
-      '<div class="page"><h1 class="title">タイトル</h1></div>',
+      '<div class="page"><h1 class="line line-title">タイトル</h1></div>',
     )
   })
 
@@ -101,15 +125,15 @@ describe("ブロック", () => {
     expect(line("> 引用")).toBe('<blockquote class="quote">引用</blockquote>')
   })
 
-  it("コマンドの行は、記号と空白とコマンドに分けて code に入れる (Cosense Web と同じ)", () => {
+  it("コマンドの行は、Cosense Web と同じく cli の code に、記号と空白とコマンドに分けて入れる", () => {
     expect(line("$ ls -la")).toBe(
-      '<code class="monospace"><span class="prefix">$</span><span class="space"> </span><span class="command">ls -la</span></code>',
+      '<code class="cli"><span class="prefix">$</span><span class="space"> </span><span class="command">ls -la</span></code>',
     )
   })
 
   it("コマンドの中の記法は読まず、文字としてエスケープして出す", () => {
     expect(line("% echo [x] <b>")).toBe(
-      '<code class="monospace"><span class="prefix">%</span><span class="space"> </span><span class="command">echo [x] &lt;b></span></code>',
+      '<code class="cli"><span class="prefix">%</span><span class="space"> </span><span class="command">echo [x] &lt;b></span></code>',
     )
   })
 
@@ -117,7 +141,7 @@ describe("ブロック", () => {
     expect(
       line("$ ls", { classNames: { commandPrefix: "p", commandSpace: "", command: "c" } }),
     ).toBe(
-      '<code class="monospace"><span class="p">$</span><span> </span><span class="c">ls</span></code>',
+      '<code class="cli"><span class="p">$</span><span> </span><span class="c">ls</span></code>',
     )
   })
 
@@ -173,27 +197,27 @@ describe("ブロック", () => {
     expect(html.match(/<code class="code-body">/g)).toHaveLength(2)
   })
 
-  it("テーブルは caption 付きの table になる", () => {
+  it("テーブルは、Cosense Web と同じ table-block の class の、caption 付きの table になる", () => {
     expect(toHtml(parse("t\ntable:名前\n あ\tい"))).toContain(
-      '<table class="table"><caption>名前</caption><tbody><tr><td>あ</td><td>い</td></tr></tbody></table>',
+      '<table class="table-block"><caption>名前</caption><tbody><tr><td>あ</td><td>い</td></tr></tbody></table>',
     )
   })
 
   it("字下げしたテーブルは、行と同じく深さを data 属性で出す", () => {
     expect(toHtml(parse("t\n a\n table:x\n  a\tb\n"))).toContain(
-      '<table class="table" data-indent="1">',
+      '<table class="table-block" data-indent="1">',
     )
   })
 
   it("セルの中のリンクはリンクになり、ほかの記法は書いたまま出す", () => {
     expect(tableHtml("[リンク] [* 太字]")).toContain(
-      '<td><a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> [* 太字]</td>',
+      '<td><a class="page-link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> [* 太字]</td>',
     )
   })
 
   it("拡張 tableCellNotation() で読んだセルは、行と同じく装飾も出す", () => {
     expect(tableHtml("[* 太字]", {}, { extensions: [tableCellNotation()] })).toContain(
-      '<td><span class="decoration deco-*"><strong>太字</strong></span></td>',
+      '<td><span class="deco deco-*"><strong>太字</strong></span></td>',
     )
   })
 })
@@ -293,7 +317,7 @@ describe("エスケープと URL の安全性", () => {
   it("href に script が動く URL が来たら属性ごと落とす", () => {
     // 既定の href は encodeURIComponent するので安全だが、差し替えられた場合も守る。
     expect(line("[リンク]", { pageUrl: () => "javascript:alert(1)" })).toBe(
-      '<a class="link">リンク</a>',
+      '<a class="page-link">リンク</a>',
     )
   })
 
@@ -359,6 +383,30 @@ describe("差し替え", () => {
     expect(html).toContain('<code class="code">')
   })
 
+  it("classPrefix を渡すと、既定の class 名の前に付く", () => {
+    expect(toHtml(parseLine("[リンク]"), { classPrefix: "csn-" })).toBe(
+      '<div class="csn-line"><a class="csn-page-link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a></div>',
+    )
+  })
+
+  it("classPrefix は、2 つの class を持つ既定の名前の両方に付く", () => {
+    expect(line("[https://a.test/]", { classPrefix: "csn-" })).toContain(
+      'class="csn-link csn-link-external"',
+    )
+  })
+
+  it("classPrefix は、classNames で渡した名前には付かない", () => {
+    const html = toHtml(parseLine("`x`"), {
+      classPrefix: "csn-",
+      classNames: { inlineCode: "kbd" },
+    })
+    expect(html).toBe('<div class="csn-line"><code class="kbd">x</code></div>')
+  })
+
+  it("classPrefix は、Cosense Web の userCSS に合わせた記号ごとの deco- には付かない", () => {
+    expect(line("[* x]", { classPrefix: "csn-" })).toContain('class="csn-deco deco-*"')
+  })
+
   it("class 名を空にすると class 属性ごと消える", () => {
     expect(toHtml(parseLine("`code`"), { classNames: { inlineCode: "", line: "" } })).toBe(
       "<div><code>code</code></div>",
@@ -414,7 +462,7 @@ describe("h で組み立てたハンドラ", () => {
       handlers: { decoration: (node, ctx) => boxed(ctx.children(node)) },
     })
     expect(html).toBe(
-      '<div class="line"><div class="box"><a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a></div></div>',
+      '<div class="line"><div class="box"><a class="page-link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a></div></div>',
     )
   })
 })
@@ -457,7 +505,7 @@ describe("スタイルの差し込み", () => {
   it("style に渡した CSS が先頭に付く", () => {
     const html = toHtml(parse("t"), { style: ".line { color: red }" })
     expect(html).toBe(
-      '<style>.line { color: red }</style><div class="page"><h1 class="title">t</h1></div>',
+      '<style>.line { color: red }</style><div class="page"><h1 class="line line-title">t</h1></div>',
     )
   })
 

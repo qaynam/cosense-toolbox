@@ -95,9 +95,11 @@ code:ts
 
 ハイライト関数が返す文字列は HTML として埋め込まれます。信頼できないコードを扱う場合は、戻り値を安全にエスケープしてください。
 
-<DocHeading level={3} id="class-names" title="classNames と showPads" />
+<DocHeading level={3} id="class-names" title="classNames・classPrefix・showPads" />
 
-`classNames` は描画要素の既定 class 名を差し替えます。指定したキーだけが置き換わり、既定名に追加したい場合は `"line my-class"` のように両方を書きます。空文字にすると class 属性を出しません。
+`classNames` は描画要素の既定 class 名を差し替えます。既定の class 名は Cosense Web のエディタと同じです (`line`、内部リンクの `page-link`、表の `table-block` など)。Cosense Web の userCSS で覚えた名前のまま選べます。指定したキーだけが置き換わり、既定名に追加したい場合は `"line my-class"` のように両方を書きます。空文字にすると class 属性を出しません。
+
+`classPrefix` は、既定の class 名すべての前に付ける文字列です。`classPrefix: "csn-"` なら `line` は `csn-line`、`link link-external` は `csn-link csn-link-external` になります。既定の名前は CSS フレームワークの `.link` などとぶつかりうるので、[Tailwind CSS] のプラグインを使うときに、プラグインの `prefix` と同じ値を渡して使います。`classNames` で渡した名前と、装飾の記号ごとの `deco-*` には付きません。
 
 動画は `<video>`、音声は `<audio>`、埋め込みはサービスのプレーヤーの `<iframe>` になり、class 名は `video`、`audio`、`embed` です。プレーヤーの URL が分からない埋め込み (拡張が足したサービス) は、URL への外部リンクとして出します。地図は Google マップへのリンク (class 名は `link link-location`) です。地図そのものを描くには地図のサービスの鍵が要るため、既定ではリンクにしています。
 
@@ -155,9 +157,9 @@ code:ts
 
 <DocHeading level={2} id="output" title="出力の構造" />
 
-ページ全体は `<div class="page">` で包まれます。1行目は `<h1 class="title">`、通常行は `.line`、引用行は `<blockquote>` になります。字下げの深さは `.line[data-indent]` で表します。
+ページ全体は `<div class="page">` で包まれます。1行目は `<h1 class="line line-title">`、通常行は `.line`、引用行は `<blockquote>` になります。字下げの深さは `.line[data-indent]` で表します。class 名は Cosense Web のエディタと同じものを使い、要素は意味に合わせています (タイトルは `<h1>`、表は `<table>`、引用は `<blockquote>`)。
 
-コードブロックの各行はそれぞれ要素になり、表は `<table class="table">` になります。字下げした表にも、行と同じく `data-indent` が付きます。装飾は `.decoration` と記号ごとの `deco-*` class で区別します。
+コードブロックの各行はそれぞれ要素になり、表は `<table class="table-block">` になります。字下げした表にも、行と同じく `data-indent` が付きます。装飾は `.deco` と記号ごとの `deco-*` class で区別します。
 
 <DocHeading level={2} id="safety" title="エスケープと URL の検査" />
 

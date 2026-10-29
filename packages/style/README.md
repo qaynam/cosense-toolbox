@@ -24,8 +24,23 @@ Tailwind CSS を使う場合は、この CSS の代わりに [`@cosense-toolbox/
 
 ### 1.0.0 の変更
 
+- **破壊的変更:** `@cosense-toolbox/parser` 1.0.0 が既定の class 名の一部を Cosense Web のエディタと同じ名前にしたので、ルールのセレクタを合わせた (下の表)。
+  CSS 変数 (`--cosense-*`) の名前は変わらない。
+  - **移行:** parser も 1.0.0 にそろえる。parser の 0.1.0-beta の出力 (`.link` の内部リンク、`.table`、`.title`) には当たらなくなる。
+    このスタイルを上書きするために自分で書いていたセレクタも、表のとおりに書き換える。
+    タイトルにも Cosense Web と同じく `.line` が付くので、行だけに当てるセレクタは `.line:not(.line-title)` と書く。
 - 字下げして書いた表 (`table:名前`) を、同じ深さの行の本文と同じ位置に置くようにした。
   `@cosense-toolbox/parser` 1.0.0 の `toHtml` が表に付ける `data-indent` を見るので、parser も 1.0.0 にそろえる。
+
+セレクタに使う class 名のうち、変わったものの今までと 1.0.0 の対応:
+
+| 今まで                            | 1.0.0                  |
+| :-------------------------------- | :--------------------- |
+| `.title`                          | `.line-title`          |
+| `.monospace`                      | `.cli`                 |
+| `.table`                          | `.table-block`         |
+| `.decoration`                     | `.deco`                |
+| `.link` / `.hashtag` (リンクの色) | `.page-link` / `.link` |
 
 ## 前提
 
@@ -74,7 +89,7 @@ CSS 変数を定義するだけでよい。定義した変数が最優先にな�
 見出しやコードなど em で書いた寸法はすべてこの基準に乗る。
 `--cosense-font-size` を変えれば全体が拡縮する。
 
-アイコンは `a.icon > img.icon` の入れ子。`toHtml` に `iconImageUrl` を渡していないときは
+アイコンは Cosense Web と同じ `a.link.icon > img.icon` の入れ子。`toHtml` に `iconImageUrl` を渡していないときは
 `<img>` が無く、ユーザー名のテキストリンクとして出る。
 
 ## インデントの中点
@@ -82,7 +97,7 @@ CSS 変数を定義するだけでよい。定義した変数が最優先にな�
 Cosense と同じく、字下げの右端に中点を出す。`toHtml` の既定の出力には中点にあたる要素が
 無いので `.line[data-indent]::before` で描いている。
 
-`toHtml(page, { showPads: true })` で Cosense Web と同じ `.indent-mark` / `.pad` / `.dot` を
+`toHtml(page, { showPads: true })` で Cosense Web と同じ形の `.indent-mark` / `.pad` / `.dot` を
 書き出した場合は、擬似要素を止めて要素側のスタイルを使う。どちらでも見た目は同じ。
 
 ## コードブロックの行番号
@@ -92,12 +107,28 @@ Cosense と同じく、字下げの右端に中点を出す。`toHtml` の既定
 
 ## 名前の衝突を避ける
 
-`toHtml` の既定の class 名は接頭辞を持たない (`.line` / `.title` / `.code` / `.table`)。
-この CSS は全ルールを `.page` の下にスコープしてあるので外には漏れないが、
-**ページ側にも `.page` がある場合は競合する**。気になる環境では次のどれかを使う。
+`toHtml` の既定の class 名は Cosense Web のエディタと同じ (`.line` / `.page-link` / `.table-block` など)。
+この CSS は全ルールを `.page` の下に書いてあるので、ページ側の要素には当たらない。
 
-- 出力を iframe か Shadow DOM に入れて完全に切り離す
-- `toHtml(page, { classNames })` で名前を差し替え、CSS も自分で書く
+逆に、ページ側の CSS は出力にも当たる。CSS フレームワークがページ全体に当てる class (DaisyUI の `.link` など) や、要素名で当てるスタイル (`a { … }` や `table { … }`) である。
+切り離したいときは、出力とこの CSS を Shadow DOM に入れる。ページの CSS は中に入らず、この CSS も外に漏れない。
+`--cosense-*` の変数は Shadow DOM の境界を越えて継承するので、色や文字の大きさは外から変えられる。
+
+サーバーで HTML を作るなら、Declarative Shadow DOM で JavaScript 無しに入れられる。`toHtml` の `style` は、渡した CSS を出力の先頭に差し込む。
+
+```ts
+import style from "@cosense-toolbox/style/style.css?raw" // CSS を文字列として読む (Vite などの書き方)
+
+const html = `<article><template shadowrootmode="open">${toHtml(page, { style })}</template></article>`
+```
+
+ブラウザで差し込むときは、`attachShadow` で作った影の根に同じ HTML を入れる (`innerHTML` は `<template shadowrootmode>` を読まない)。
+
+ほかの方法:
+
+- 出力を iframe に入れる。Shadow DOM と同じく切り離せるが、高さを中身に合わせる手間がかかる
+- Tailwind CSS を使うなら、[`@cosense-toolbox/tailwind`](../tailwind) の `prefix` と `toHtml` の `classPrefix` で class 名に接頭辞を付ける
+- `toHtml(page, { classNames })` でぶつかる名前だけを差し替え、その要素の CSS を自分で書く
 - この CSS をカスケードレイヤーに入れて、ページ側の CSS を常に優先させる
 
 ```css

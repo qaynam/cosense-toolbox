@@ -35,7 +35,6 @@ const run = async (
   const tree: Root = { type: "root", children }
   const transform = rehypeGyazoVideos({
     as: options.as ?? "video",
-    classNames: { video: "video", embed: "embed" },
     fetch,
     warn: (message) => options.warnings?.push(message),
   })()

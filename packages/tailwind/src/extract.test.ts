@@ -32,7 +32,7 @@ describe("extractStyles", () => {
       .page .line[data-indent]::before { color: red }
       .page .line:has(> .indent-mark)::before { color: red }
       .page .line.code-block:not(:has(> .code-start))::before { color: red }
-      .page .table td:nth-child(odd) { color: red }
+      .page .table-block td:nth-child(odd) { color: red }
       .page .x:where(.y .z) { color: red }
     `
     // .page を含めた詳細度は、.x:where() が (0,2,0)、:not(:has())::before が (0,4,1)、
@@ -42,7 +42,7 @@ describe("extractStyles", () => {
       ".line.code-block > code",
       ".line[data-indent]::before",
       ".line:has(> .indent-mark)::before",
-      ".table td:nth-child(odd)",
+      ".table-block td:nth-child(odd)",
       ".line.code-block:not(:has(> .code-start))::before",
     ])
   })

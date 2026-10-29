@@ -32,7 +32,7 @@ describe("toHast", () => {
             {
               type: "element",
               tagName: "h1",
-              properties: { className: ["title"] },
+              properties: { className: ["line", "line-title"] },
               children: [{ type: "text", value: "タイトル" }],
             },
           ],
@@ -178,7 +178,7 @@ describe("handlers (置き換え)", () => {
       handlers: { decoration: (node, ctx) => tag("b", ctx.children(node)) },
     })
     expect(html).toBe(
-      '<div class="line"><b><a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> と 太字</b></div>',
+      '<div class="line"><b><a class="page-link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> と 太字</b></div>',
     )
   })
 
@@ -298,7 +298,7 @@ describe("extensions (出力の加工)", () => {
       ],
     })
     expect(html).toContain(
-      '<section><span class="decoration deco-*"><strong>太字</strong></span>decoration</section>',
+      '<section><span class="deco deco-*"><strong>太字</strong></span>deco</section>',
     )
   })
 

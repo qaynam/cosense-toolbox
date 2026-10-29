@@ -1448,7 +1448,7 @@ body.is-app {
   --cosense-line-height: 1.85;
   overflow-wrap: anywhere;
 }
-.doc .page .title {
+.doc .page .line-title {
   margin: 0 0 28px;
   font-size: clamp(28px, 4vw, 38px);
   line-height: 1.25;
@@ -1559,14 +1559,14 @@ body.is-app {
 .doc a:hover {
   text-decoration-color: currentColor;
 }
-/* Cosense のリンクは style の .link が下線を消すので、本文の中で見分けられるように戻す */
-.doc .page a.link {
+/* Cosense のリンクは style の .page-link / .link が下線を消すので、本文の中で見分けられるように戻す */
+.doc .page :is(a.page-link, a.link) {
   text-decoration: underline;
   text-decoration-color: var(--text-faint);
   text-decoration-thickness: 0.08em;
   text-underline-offset: 3px;
 }
-.doc .page a.link:hover {
+.doc .page :is(a.page-link, a.link):hover {
   text-decoration-color: currentColor;
 }
 /* サイトの外へ出るリンク */
@@ -1576,7 +1576,8 @@ body.is-app {
   color: var(--text-faint);
   font-size: 0.85em;
 }
-.doc .page .line {
+/* タイトルにも Cosense Web と同じく .line が付くので、タイトルは除く */
+.doc .page .line:not(.line-title) {
   min-height: 1.85em;
   margin: 0 0 0.75em;
 }
@@ -1587,7 +1588,7 @@ body.is-app {
   height: 0.5em;
   margin: 0;
 }
-.doc .page > :is(.title, h2, h3) + .line:has(> br:only-child),
+.doc .page > :is(.line-title, h2, h3) + .line:has(> br:only-child),
 .doc .page > .line:has(> br:only-child):has(+ :is(h2, h3)) {
   display: none;
 }
@@ -1679,10 +1680,10 @@ body.is-app {
   font-size: 0.9em;
 }
 /* 下の余白だけを足す。左の余白は style.css が字下げした表の深さに使う */
-.doc .page .table {
+.doc .page .table-block {
   margin-bottom: 24px;
 }
-.doc .page .table td {
+.doc .page .table-block td {
   padding: 6px 10px;
 }
 .doc code {

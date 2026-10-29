@@ -149,10 +149,10 @@ try {
   // 記法仕様のページに出てくる記号の装飾で確かめる。
   const checks = [
     ...MODIFIERS.map(({ name, target }) => ({ variant: `cosense-${name}`, target })),
-    { variant: "cosense-deco-[*]", target: ".decoration.deco-\\*" },
-    { variant: "cosense-deco-[-]", target: ".decoration.deco-\\-" },
-    { variant: "cosense-deco-[\\_]", target: ".decoration.deco-_" },
-    { variant: "cosense-deco-[|]", target: ".decoration.deco-\\|" },
+    { variant: "cosense-deco-[*]", target: ".deco.deco-\\*" },
+    { variant: "cosense-deco-[-]", target: ".deco.deco-\\-" },
+    { variant: "cosense-deco-[\\_]", target: ".deco.deco-_" },
+    { variant: "cosense-deco-[|]", target: ".deco.deco-\\|" },
   ]
   for (const modifier of checks) {
     const utility = `${modifier.variant}:[color:${MARK.replaceAll(" ", "")}]`

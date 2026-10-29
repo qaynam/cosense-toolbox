@@ -7,6 +7,13 @@ Cosense (旧 Scrapbox) の記法で書いた `.csn` / `.csnx` を、Astro のペ
 
 > **beta**：公開 API はまだ変わりうる。
 
+### 1.0.0 の変更
+
+- `renderOptions` に `classPrefix` を渡せるようにした (`@cosense-toolbox/parser` 1.0.0 の `toHast` のオプション)。
+  既定の class 名に付ける接頭辞で、CSS フレームワークの `.link` などとぶつかるときに使う。
+- 出力の既定の class 名は、parser 1.0.0 に合わせて一部が Cosense Web のエディタと同じ名前に変わる (内部リンクは `page-link`、表は `table-block`、タイトルは `line line-title` など)。
+  対応は [parser の README](../parser/README.md#100-の変更) の表のとおり。
+
 ### 0.1.0-beta.10 の変更
 
 - Cosense のファイルを取るのに、`@cosense-toolbox/cosense-x/fetch` ではなく `@cosense-toolbox/api` を使うようになった。
@@ -52,7 +59,7 @@ export default defineConfig({
 | `lint`                | ビルドの前にリンク切れを調べる。`{ unresolvedLinks?, frontmatter? }`。省略すると調べない。[下を参照](#リンク切れを調べる)                                                                                               |
 | `publicMedia`         | サイトに置いたファイルを `[:/images/a.png]` で画像・動画・音声として読む (parser の `publicMedia`)。パスの前に `base` が付く。`false` で無効。既定は有効                                                                |
 | `parseOptions`        | パースの設定。parser の `parse` のオプション (`extensions` など) がそのまま渡る                                                                                                                                         |
-| `renderOptions`       | 描画の設定。parser の `toHast` のオプション (`extensions` `handlers` `classNames` `showPads` `iconImageUrl`) と `title` がそのまま渡る。色付けは `syntaxHighlight` で決める                                             |
+| `renderOptions`       | 描画の設定。parser の `toHast` のオプション (`extensions` `handlers` `classNames` `classPrefix` `showPads` `iconImageUrl`) と `title` がそのまま渡る。色付けは `syntaxHighlight` で決める                               |
 | `rehypePlugins`       | `compile` の同名のオプションと同じ                                                                                                                                                                                      |
 | `syntaxHighlight`     | コードブロックの色付け。既定の `'astro'` は `markdown.shikiConfig` に従う。`false` で無効、関数で自前の色付け。[下を参照](#コードブロックの色付け)                                                                      |
 | `assets`              | Cosense 上の画像とファイルを、ビルド時に取ってきてサイトの中に置く。`{ pat?, origin?, links? }`、または `false` で無効。既定は有効                                                                                      |

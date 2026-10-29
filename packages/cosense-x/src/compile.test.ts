@@ -38,8 +38,8 @@ const renderPage = async (
 describe("compile", () => {
   it("React で描画すると toHtml と同じ構造の HTML になる", async () => {
     expect(await renderPage("タイトル\n[* 太字] と [リンク]\n\n code")).toBe(
-      '<div class="page"><h1 class="title">タイトル</h1>' +
-        '<div class="line"><span class="decoration deco-*"><strong>太字</strong></span> と <a class="link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a></div>' +
+      '<div class="page"><h1 class="line line-title">タイトル</h1>' +
+        '<div class="line"><span class="deco deco-*"><strong>太字</strong></span> と <a class="page-link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a></div>' +
         '<div class="line"><br/></div>' +
         '<div class="line" data-indent="1">code</div></div>',
     )
@@ -191,7 +191,7 @@ describe("リンクの解決", () => {
 
   it("タイトルで書いたリンクは索引で引く。大文字小文字と _ の違いは無視する", async () => {
     const html = await renderPage("タイトル\n[page_b]", base)
-    expect(html).toContain('<a class="link" href="/blog/page-b">page_b</a>')
+    expect(html).toContain('<a class="page-link" href="/blog/page-b">page_b</a>')
   })
 
   it("[./notes/b.csnx] のようなパスはファイルを指さず、そう書かれたタイトルとして引く", async () => {
@@ -206,7 +206,7 @@ describe("リンクの解決", () => {
 
   it("unresolved: 'link' なら索引に無くてもリンクにする", async () => {
     const html = await renderPage("タイトル\n[無いページ]", { ...base, unresolved: "link" })
-    expect(html).toContain('<a class="link" href="/blog/無いページ">無いページ</a>')
+    expect(html).toContain('<a class="page-link" href="/blog/無いページ">無いページ</a>')
   })
 
   it("unresolved: 'warn' ならリンク切れを warnings に積む", async () => {
@@ -228,7 +228,7 @@ describe("リンクの解決", () => {
 
   it("tagUrl を渡すとタグはその URL になる", async () => {
     const html = await renderPage("タイトル\n#日記", { ...base, tagUrl: (tag) => `/tags/${tag}` })
-    expect(html).toContain('<a class="hashtag" href="/tags/日記">#日記</a>')
+    expect(html).toContain('<a class="page-link hashtag" href="/tags/日記">#日記</a>')
   })
 
   it("別プロジェクトへのリンクは既定で scrapbox.io を指す", async () => {
@@ -245,7 +245,7 @@ describe("リンクの解決", () => {
 
   it("索引を渡さなければ、タイトルのリンクはすべてページへのリンクになる", async () => {
     const html = await renderPage("タイトル\n[どこか]", { pageUrl: (page) => `/p/${page.slug}` })
-    expect(html).toContain('<a class="link" href="/p/どこか">どこか</a>')
+    expect(html).toContain('<a class="page-link" href="/p/どこか">どこか</a>')
   })
 })
 
@@ -314,7 +314,7 @@ describe("renderOptions (parser の toHast に渡る描画の設定)", () => {
         ],
       },
     })
-    expect(html).toContain('<mark><a class="link" href="/p/link">リンク</a></mark>')
+    expect(html).toContain('<mark><a class="page-link" href="/p/link">リンク</a></mark>')
   })
 
   it("codeLineNumbers で本体行に行番号が付く", async () => {
@@ -329,6 +329,11 @@ describe("renderOptions (parser の toHast に渡る描画の設定)", () => {
     expect(html).not.toContain("<h1")
     expect(html).toContain('<code class="my-code">code</code>')
   })
+
+  it("classPrefix も renderOptions で渡す", async () => {
+    const html = await renderPage(SOURCE, { renderOptions: { classPrefix: "csn-" } })
+    expect(html).toContain('<code class="csn-code">code</code>')
+  })
 })
 
 describe("テーブルのセル", () => {
@@ -338,7 +343,7 @@ describe("テーブルのセル", () => {
     const result = await compile(source, { index })
     expect(result.metadata.links).toEqual(["B"])
     expect(await renderPage(source, { index })).toContain(
-      '<td><a class="link" href="/b">B</a></td><td>[* 太字]</td>',
+      '<td><a class="page-link" href="/b">B</a></td><td>[* 太字]</td>',
     )
   })
 
@@ -348,7 +353,7 @@ describe("テーブルのセル", () => {
       renderOptions: { extensions: [tableCellLineBreaks("\\n")] },
     })
     expect(html).toContain(
-      '<td><span class="decoration deco-*"><strong>太字</strong></span><br/>2 行目</td>',
+      '<td><span class="deco deco-*"><strong>太字</strong></span><br/>2 行目</td>',
     )
   })
 })
