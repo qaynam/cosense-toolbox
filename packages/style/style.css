@@ -15,12 +15,13 @@
  *
  * toHtml の既定の class 名は Cosense Web のエディタと同じ (.line / .page-link / .table-block など)。
  * どのルールも出力の根の .page の子孫として書いているので、ページのほかの場所には当たらない。
- * 逆に、CSS フレームワークがページ全体に当てる .link / .image などが出力に当たってしまうときは、
- * toHtml に classPrefix: "csn-" を渡し、このファイルの代わりに csn.css を読み込む。
- * csn.css は、このファイルの class 名すべてに csn- を付けて作る (bun run generate)。
+ * 逆に、CSS フレームワークがページ全体に当てる .link / .image などは出力にも当たる。
+ * 切り離すには、出力とこのファイルを一緒に Shadow DOM に入れる。
  *
  * 根の .page の下に書くのは、@cosense-toolbox/tailwind のためでもある。
  * tailwind はこのファイルを読み、.page を利用者の class (既定は cosense) に置き換えて使う。
+ * toHtml の classPrefix で class 名に接頭辞を付けたときに合わせるのも tailwind の役目で、
+ * このファイルは接頭辞の無い名前だけを選ぶ。
  */
 
 /* ---------------------------------------------------------------------------

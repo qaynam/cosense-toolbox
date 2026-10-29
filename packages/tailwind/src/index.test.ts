@@ -10,9 +10,9 @@ import { extractStyles } from "./extract"
 import cosense from "./index"
 import { MODIFIERS } from "./modifiers"
 import { styles } from "./styles.generated"
+import { prefixClasses } from "./test-helpers"
 
 const STYLE_CSS = join(import.meta.dirname, "..", "..", "style", "style.css")
-const CSN_CSS = join(import.meta.dirname, "..", "..", "style", "csn.css")
 
 /** `@plugin` で読み込んだときと同じ経路で Tailwind に通し、使った class の CSS を返す。 */
 const build = async (
@@ -68,7 +68,7 @@ const NOT = ':not(:where([class~="not-cosense"],[class~="not-cosense"] *))'
 
 /**
  * `.page .x::before` を、プラグインが出す `.cosense :where(.x):not(…)::before` の形にする。
- * `root` は style.css の根の class (csn.css なら `.csn-page`)。
+ * `root` は style.css の根の class (接頭辞を付けたなら `.csn-page`)。
  */
 const flattened = (selector: string, root = ".page"): string => {
   if (selector === root) return ".cosense"
@@ -140,8 +140,8 @@ describe("cosense プラグイン", () => {
 })
 
 describe("接頭辞", () => {
-  it("prefix に csn- を渡すと、style の csn.css のすべてのルールを .cosense の下に出す", async () => {
-    const expected = rulesOf(await readFile(CSN_CSS, "utf8")).map(
+  it("prefix に csn- を渡すと、class 名に csn- を付けた style.css のすべてのルールを .cosense の下に出す", async () => {
+    const expected = rulesOf(prefixClasses(await readFile(STYLE_CSS, "utf8"), "csn-")).map(
       ([selector, declarations]): [string, string[]] => [
         flattened(selector, ".csn-page"),
         declarations,

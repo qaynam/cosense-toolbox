@@ -11,12 +11,10 @@
   "exports": {
     ".": "./style.css",
     "./style.css": "./style.css",
-    "./csn.css": "./csn.css",
     "./package.json": "./package.json"
   },
   "files": [
     "style.css",
-    "csn.css",
     "README.md",
     "LICENSE"
   ],
@@ -36,16 +34,6 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "generate": "bun scripts/generate.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "lint": "eslint .",
     "format:check": "prettier --check . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore"
-  },
-  "devDependencies": {
-    "postcss": "^8.5.28",
-    "postcss-selector-parser": "^7.1.6",
-    "typescript": "^6.0.0",
-    "vitest": "^2.1.8"
   }
 }

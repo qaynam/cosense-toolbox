@@ -189,9 +189,30 @@ toHtml(page, { classPrefix: "csn-" }) // <div class="csn-line"><a class="csn-pag
 
 modifier の名前 (`cosense-link:` など) は変わらない。
 
+接頭辞は 2 か所に書くので、ずれると出力にスタイルが当たらなくなる。1 つの JavaScript のファイルに置き、両方から読むとよい。
+`@plugin` はプラグインを設定して返す JavaScript のファイルも読める。
+
+```js
+// cosense.config.js
+export const classPrefix = "csn-"
+
+// cosense-tailwind.js
+import cosense from "@cosense-toolbox/tailwind"
+import { classPrefix } from "./cosense.config.js"
+export default cosense({ prefix: classPrefix })
+```
+
+```css
+@plugin "./cosense-tailwind.js";
+```
+
+```ts
+toHtml(page, { classPrefix }) // Astro の統合なら renderOptions: { classPrefix }
+```
+
 ## style.css との違い
 
-- style.css の `.page` を `.cosense` に置き換えている。宣言はすべて同じ。`prefix` を渡すと、セレクタの class 名に接頭辞を付ける (style の `csn.css` と同じ)
+- style.css の `.page` を `.cosense` に置き換えている。宣言はすべて同じ。`prefix` を渡すと、セレクタの class 名に接頭辞を付ける
 - 各ルールのセレクタを `:where()` で包み、どのルールも `.cosense` 1 つぶんの詳細度 (0,1,0) にしている。typography と同じ作り
   - 包むと元の詳細度の差が無くなるので、ルールは元の詳細度の低い順 (同じなら style.css に書いた順) に並べ直して出す。同じ詳細度のルールどうしは後ろに書いたものが勝つので、どの要素でも style.css と同じルールが勝つ
   - modifier のルールは既定のスタイルより後ろに、同じ詳細度で出るので、既定のスタイルに勝つ

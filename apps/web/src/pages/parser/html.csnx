@@ -99,7 +99,7 @@ code:ts
 
 `classNames` は描画要素の既定 class 名を差し替えます。既定の class 名は Cosense Web のエディタと同じです (`line`、内部リンクの `page-link`、表の `table-block` など)。Cosense Web の userCSS で覚えた名前のまま選べます。指定したキーだけが置き換わり、既定名に追加したい場合は `"line my-class"` のように両方を書きます。空文字にすると class 属性を出しません。
 
-`classPrefix` は、既定の class 名すべての前に付ける文字列です。`classPrefix: "csn-"` なら `line` は `csn-line`、`link link-external` は `csn-link csn-link-external` になります。既定の名前は CSS フレームワークの `.link` などとぶつかりうるので、そのときに使います。`classNames` で渡した名前と、装飾の記号ごとの `deco-*` には付きません。既定のスタイルには、`csn-` を付けた `@cosense-toolbox/style/csn.css` もあります。
+`classPrefix` は、既定の class 名すべての前に付ける文字列です。`classPrefix: "csn-"` なら `line` は `csn-line`、`link link-external` は `csn-link csn-link-external` になります。既定の名前は CSS フレームワークの `.link` などとぶつかりうるので、[Tailwind CSS] のプラグインを使うときに、プラグインの `prefix` と同じ値を渡して使います。`classNames` で渡した名前と、装飾の記号ごとの `deco-*` には付きません。
 
 動画は `<video>`、音声は `<audio>`、埋め込みはサービスのプレーヤーの `<iframe>` になり、class 名は `video`、`audio`、`embed` です。プレーヤーの URL が分からない埋め込み (拡張が足したサービス) は、URL への外部リンクとして出します。地図は Google マップへのリンク (class 名は `link link-location`) です。地図そのものを描くには地図のサービスの鍵が要るため、既定ではリンクにしています。
 

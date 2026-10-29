@@ -46,8 +46,8 @@ const outside = (className: string): string =>
 /**
  * セレクタの class 名の前に `prefix` を付ける。
  * style.css と modifier のセレクタは、属性の値に `.` を書かず、`deco-*` も選ばない。
- * そのため `.` で始まる語をすべて class とみなしてよい。style.css のルールについては、style の csn.css
- * (セレクタを構文として読んで付けたもの) と同じになることをテストで確かめている。
+ * そのため `.` で始まる語をすべて class とみなしてよい。style.css のルールについては、セレクタを構文として
+ * 読んで接頭辞を付けたものと同じになることを、テストで確かめている。
  */
 const withPrefix = (selector: string, prefix: string): string =>
   selector.replace(/\.(-?[A-Za-z_][\w-]*)/g, (_, name: string) => `.${prefix}${name}`)

@@ -24,7 +24,8 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
     今までの名前のまま出したいときは、`classNames` に表の「今まで」の名前を渡す。
 - オプションに `classPrefix` を足した。既定の class 名すべての前に付ける文字列で、`"csn-"` なら `line` は `csn-line`、`link link-external` は `csn-link csn-link-external` になる。
   既定の名前は Cosense Web と同じ `link` などなので、DaisyUI の `.link` のような、CSS フレームワークがページ全体に当てる class とぶつかるときに使う。
-  `classNames` で渡した名前と、装飾の記号ごとの `deco-*` には付けない。`@cosense-toolbox/style` は、class 名に `csn-` を付けた `csn.css` も持っている。
+  `classNames` で渡した名前と、装飾の記号ごとの `deco-*` には付けない。
+  `@cosense-toolbox/tailwind` のプラグインの `prefix` に同じ値を渡して使う。`@cosense-toolbox/style` の style.css は接頭辞の無い名前だけに当たるので、style.css でぶつかりを避けるときは出力を Shadow DOM に入れる。
 - `classNames` にキー `iconLink` を足した。アイコンを包む `<a>` の class 名で、既定は Cosense Web と同じ `link icon`。
   今までは `internalLink` と `icon` をつないだ名前だったので、内部リンクの名前を変えるとアイコンのリンクも変わっていた。`icon` は `<img>` だけの class 名になる。
 - `@cosense-toolbox/parser/html` から、hast の型 `Element` / `ElementContent` / `Root` を出すようにした。

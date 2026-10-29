@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { prefixClasses } from "./prefix-classes"
+import { prefixClasses } from "./test-helpers"
 
 describe("prefixClasses", () => {
   it("セレクタの class 名すべての前に接頭辞を付ける", () => {

@@ -1,6 +1,8 @@
 /**
- * prefix-classes.ts — CSS のセレクタの class 名に、接頭辞を付ける。
- * toHtml に `classPrefix` を渡したときの出力に、style.css と同じ見た目を当てるため。
+ * test-helpers.ts — テスト専用 (dist には入らない)。
+ *
+ * プラグインは `prefix` を、セレクタの文字列に正規表現で付けている。その答え合わせのために、
+ * セレクタを構文として読んで接頭辞を付けた style.css を作る。
  */
 import postcss from "postcss"
 import selectorParser from "postcss-selector-parser"

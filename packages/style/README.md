@@ -29,8 +29,6 @@ Tailwind CSS を使う場合は、この CSS の代わりに [`@cosense-toolbox/
   - **移行:** parser も 1.0.0 にそろえる。parser の 0.1.0-beta の出力 (`.link` の内部リンク、`.table`、`.title`) には当たらなくなる。
     このスタイルを上書きするために自分で書いていたセレクタも、表のとおりに書き換える。
     タイトルにも Cosense Web と同じく `.line` が付くので、行だけに当てるセレクタは `.line:not(.line-title)` と書く。
-- class 名に `csn-` を付けた `csn.css` を足した (`@cosense-toolbox/style/csn.css`)。
-  parser の `toHtml` に `classPrefix: "csn-"` を渡したときに、この CSS の代わりに読み込む ([名前の衝突を避ける](#名前の衝突を避ける))。
 - 字下げして書いた表 (`table:名前`) を、同じ深さの行の本文と同じ位置に置くようにした。
   `@cosense-toolbox/parser` 1.0.0 の `toHtml` が表に付ける `data-indent` を見るので、parser も 1.0.0 にそろえる。
 
@@ -112,36 +110,29 @@ Cosense と同じく、字下げの右端に中点を出す。`toHtml` の既定
 `toHtml` の既定の class 名は Cosense Web のエディタと同じ (`.line` / `.page-link` / `.table-block` など)。
 この CSS は全ルールを `.page` の下に書いてあるので、ページ側の要素には当たらない。
 
-逆に、CSS フレームワークがページ全体に当てる class (DaisyUI の `.link` など) は、同じ名前を持つ出力の要素にも当たる。
-そのときは `toHtml` に `classPrefix: "csn-"` を渡し、この CSS の代わりに `csn.css` を読み込む。
-`csn.css` は、この CSS の class 名すべてに `csn-` を付けたもの。装飾の記号ごとの `deco-*` には、`toHtml` と同じく付けない。
+逆に、ページ側の CSS は出力にも当たる。CSS フレームワークがページ全体に当てる class (DaisyUI の `.link` など) や、要素名で当てるスタイル (`a { … }` や `table { … }`) である。
+切り離したいときは、出力とこの CSS を Shadow DOM に入れる。ページの CSS は中に入らず、この CSS も外に漏れない。
+`--cosense-*` の変数は Shadow DOM の境界を越えて継承するので、色や文字の大きさは外から変えられる。
+
+サーバーで HTML を作るなら、Declarative Shadow DOM で JavaScript 無しに入れられる。`toHtml` の `style` は、渡した CSS を出力の先頭に差し込む。
 
 ```ts
-import "@cosense-toolbox/style/csn.css"
+import style from "@cosense-toolbox/style/style.css?raw" // CSS を文字列として読む (Vite などの書き方)
 
-toHtml(page, { classPrefix: "csn-" }) // → '<div class="csn-page"><h1 class="csn-line csn-line-title">…'
+const html = `<article><template shadowrootmode="open">${toHtml(page, { style })}</template></article>`
 ```
 
-`csn-` 以外の接頭辞を使うときは、[`@cosense-toolbox/tailwind`](../tailwind) の `prefix` を使うか、CSS を自分で書く。
+ブラウザで差し込むときは、`attachShadow` で作った影の根に同じ HTML を入れる (`innerHTML` は `<template shadowrootmode>` を読まない)。
 
-ページ側の CSS が要素名で当てるスタイル (`a { … }` や `table { … }`) は、どちらの CSS でも出力に当たる。
-どちらの CSS が勝つかも詳細度で決まる。気になる環境では次のどれかを使う。
+ほかの方法:
 
-- 出力を iframe か Shadow DOM に入れて完全に切り離す
-- `toHtml(page, { classNames })` で名前を差し替え、CSS も自分で書く
+- 出力を iframe に入れる。Shadow DOM と同じく切り離せるが、高さを中身に合わせる手間がかかる
+- Tailwind CSS を使うなら、[`@cosense-toolbox/tailwind`](../tailwind) の `prefix` と `toHtml` の `classPrefix` で class 名に接頭辞を付ける
+- `toHtml(page, { classNames })` でぶつかる名前だけを差し替え、その要素の CSS を自分で書く
 - この CSS をカスケードレイヤーに入れて、ページ側の CSS を常に優先させる
 
 ```css
 @import "@cosense-toolbox/style" layer(cosense);
-```
-
-## 開発
-
-スタイルの正は `style.css`。`csn.css` は、そこから機械的に作ったもの。
-
-```sh
-bun run generate   # style.css を直したら csn.css を作り直す
-bun run test       # 作り直し忘れもここで落ちる
 ```
 
 ## ライセンス

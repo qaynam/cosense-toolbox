@@ -229,6 +229,8 @@ export interface HastRenderOptions {
    * 既定の class 名の前に付ける文字列。`"csn-"` なら `line` は `csn-line`、`link link-external` は
    * `csn-link csn-link-external` になる。既定の名前は Cosense Web と同じ `link` や `image` なので、
    * CSS フレームワークがページ全体に当てる class (DaisyUI の `.link`、Bulma の `.image` など) とぶつかるときに使う。
+   * `@cosense-toolbox/tailwind` の `prefix` に同じ値を渡す。
+   * `@cosense-toolbox/style` の style.css は、接頭辞の無い名前だけに当たる。
    *
    * `classNames` で渡した名前と、装飾の記号ごとの `deco-*` には付けない。
    *
