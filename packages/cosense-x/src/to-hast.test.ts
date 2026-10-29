@@ -1,6 +1,12 @@
 import { parse } from "@cosense-toolbox/parser"
 import { tableCellNotation } from "@cosense-toolbox/parser/extensions"
-import { escapeHtml, tableCellLineBreaks, toHtml } from "@cosense-toolbox/parser/html"
+import {
+  defaultHastHandlers,
+  escapeHtml,
+  type HastHandler,
+  tableCellLineBreaks,
+  toHtml,
+} from "@cosense-toolbox/parser/html"
 import type { Element, Root } from "hast"
 import { fromHtml } from "hast-util-from-html"
 import { toHtml as hastToHtmlRaw } from "hast-util-to-html"
@@ -105,6 +111,40 @@ describe("リンクの解決", () => {
   it("script が動く URL を返してもリンクにしない", () => {
     const html = render("タイトル\n[a]", { resolveLink: () => ({ href: "javascript:alert(1)" }) })
     expect(html).toContain('<div class="line">a</div>')
+  })
+})
+
+describe("handlers から見たリンクの解決 (ctx.options.pageUrl)", () => {
+  /** `ctx.options.pageUrl` が返した URL を `data-url` に出すハンドラ。 */
+  const showPageUrl: HastHandler<"internalLink"> = (node, ctx) => ({
+    type: "element",
+    tagName: "a",
+    properties: { dataUrl: ctx.options.pageUrl(node.target, node) },
+    children: [],
+  })
+
+  it("parser の既定の internalLink に任せると、resolveLink が決めた URL へのリンクになる", () => {
+    const html = render("タイトル\n[b]", {
+      resolveLink: () => ({ href: "/posts/b" }),
+      handlers: { internalLink: defaultHastHandlers.internalLink },
+    })
+    expect(html).toContain('<a class="page-link" href="/posts/b">b</a>')
+  })
+
+  it("resolveLink が null を返したリンクでは空文字を返す", () => {
+    const html = render("タイトル\n[b]", {
+      resolveLink: () => null,
+      handlers: { internalLink: showPageUrl },
+    })
+    expect(html).toContain('<a data-url=""></a>')
+  })
+
+  it("resolveLink が script の動く URL を返したリンクでは空文字を返す", () => {
+    const html = render("タイトル\n[b]", {
+      resolveLink: () => ({ href: "javascript:alert(1)" }),
+      handlers: { internalLink: showPageUrl },
+    })
+    expect(html).toContain('<a data-url=""></a>')
   })
 })
 

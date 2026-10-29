@@ -2,7 +2,11 @@ import { mkdir, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 
 import { tableCellNotation } from "@cosense-toolbox/parser/extensions"
-import { codeLineNumbers, tableCellLineBreaks } from "@cosense-toolbox/parser/html"
+import {
+  codeLineNumbers,
+  defaultHastHandlers,
+  tableCellLineBreaks,
+} from "@cosense-toolbox/parser/html"
 import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
@@ -315,6 +319,14 @@ describe("renderOptions (parser の toHast に渡る描画の設定)", () => {
       },
     })
     expect(html).toContain('<mark><a class="page-link" href="/p/link">リンク</a></mark>')
+  })
+
+  it("handlers から parser の既定の internalLink に任せても、compile が解決した URL へのリンクになる", async () => {
+    const html = await renderPage(SOURCE, {
+      index: createIndex([{ id: "a.csn", title: "リンク", slug: "link" }]),
+      renderOptions: { handlers: { internalLink: defaultHastHandlers.internalLink } },
+    })
+    expect(html).toContain('<a class="page-link" href="/link">リンク</a>')
   })
 
   it("codeLineNumbers で本体行に行番号が付く", async () => {

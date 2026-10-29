@@ -20,9 +20,9 @@ const project = async (files: Record<string, string>): Promise<string> => {
   return root
 }
 
-/** The lint of a project at `root`, whose pages are under `src`. */
+/** The lint of the project at `root`. */
 const lint = (root: string, options: CosenseLintOptions, parseOptions: ParseOptions = {}) =>
-  Effect.runPromise(lintSite(root, join(root, "src"), options, parseOptions))
+  Effect.runPromise(lintSite(root, options, parseOptions))
 
 describe("lintSite", () => {
   it("reports each link to a missing page under src, as a warning by default", async () => {
@@ -45,6 +45,14 @@ describe("lintSite", () => {
     const root = await project({
       "src/content/a.csn": "投稿\n[概要]",
       "src/pages/about.csnx": "概要\n中身",
+    })
+    expect(await lint(root, { unresolvedLinks: "error" })).toEqual({ errors: [], warnings: [] })
+  })
+
+  it("finds pages outside src too, where a collection's glob may read them from", async () => {
+    const root = await project({
+      "src/pages/index.csnx": "トップ\n[記事]",
+      "content/posts/a.csn": "記事\n[トップ]",
     })
     expect(await lint(root, { unresolvedLinks: "error" })).toEqual({ errors: [], warnings: [] })
   })

@@ -12,18 +12,24 @@ const FILES: Record<string, string> = {
   "src/content/posts/notes/c.csnx": "Page C\n<Counter />\n[page_a]",
   "src/content/posts/draft.csn": "---\ndraft: true\n---\n下書き\n[Page A]",
   "src/pages/about.csnx": "About\n[Page A]",
+  "content/notes/d.csn": "Page D\n[Page A]",
   "src/content/posts/readme.md": "# 対象外",
   "node_modules/pkg/x.csn": "対象外",
+}
+
+const projectOf = async (files: Record<string, string>): Promise<string> => {
+  const directory = await mkdtemp(join(tmpdir(), "cosense-astro-"))
+  for (const [path, source] of Object.entries(files)) {
+    await mkdir(dirname(join(directory, path)), { recursive: true })
+    await writeFile(join(directory, path), source)
+  }
+  return directory
 }
 
 let root: string
 
 beforeAll(async () => {
-  root = await mkdtemp(join(tmpdir(), "cosense-astro-"))
-  for (const [path, source] of Object.entries(FILES)) {
-    await mkdir(dirname(join(root, path)), { recursive: true })
-    await writeFile(join(root, path), source)
-  }
+  root = await projectOf(FILES)
 })
 
 afterAll(async () => {
@@ -31,9 +37,10 @@ afterAll(async () => {
 })
 
 describe("scanSite", () => {
-  it("src の下の .csn / .csnx を、ルートからの相対パスを id にして索引に載せる", async () => {
-    const { index } = await scanSite(root, join(root, "src"))
+  it("ルートの下の .csn / .csnx を、ルートからの相対パスを id にして索引に載せる", async () => {
+    const { index } = await scanSite(root)
     expect(Object.keys(index.pages).sort()).toEqual([
+      "content/notes/d.csn",
       "src/content/posts/a.csn",
       "src/content/posts/b.csn",
       "src/content/posts/notes/c.csnx",
@@ -41,17 +48,31 @@ describe("scanSite", () => {
     ])
   })
 
-  it("グラフの逆リンクは、src/pages のページも含む", async () => {
-    const { graph } = await scanSite(root, join(root, "src"))
+  it("グラフの逆リンクは、src の外と src/pages のページも含む", async () => {
+    const { graph } = await scanSite(root)
     expect(graph.backlinks["src/content/posts/a.csn"]).toEqual([
+      "content/notes/d.csn",
       "src/content/posts/notes/c.csnx",
       "src/pages/about.csnx",
     ])
     expect(graph.backlinks["src/content/posts/notes/c.csnx"]).toEqual(["src/content/posts/a.csn"])
   })
 
+  it("LSP と同じく、node_modules・dist・build と . で始まるディレクトリは読まない", async () => {
+    const project = await projectOf({
+      "src/a.csn": "A",
+      "node_modules/pkg/x.csn": "X",
+      "dist/x.csn": "X",
+      "build/x.csn": "X",
+      ".vercel/output/x.csn": "X",
+    })
+    const { index } = await scanSite(project)
+    expect(Object.keys(index.pages)).toEqual(["src/a.csn"])
+    await rm(project, { recursive: true, force: true })
+  })
+
   it("ディレクトリが無ければ空のサイトになる", async () => {
-    const { index } = await scanSite(root, join(root, "missing"))
+    const { index } = await scanSite(join(root, "missing"))
     expect(index.pages).toEqual({})
   })
 })

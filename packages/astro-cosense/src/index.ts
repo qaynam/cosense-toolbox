@@ -31,6 +31,7 @@ import {
   type SyntaxHighlightOption,
 } from "./highlight"
 import { type CosenseLintOptions, type LintResult, lintSite } from "./lint"
+import { defaultPageUrlFor } from "./page-url"
 import { createSiteCache, EXTENSIONS, idOf, isCosenseFile } from "./site"
 import {
   ASSETS_MODULE_ID,
@@ -90,7 +91,7 @@ export interface CosenseIntegrationOptions extends AstroCompileOptions {
    */
   readonly syntaxHighlight?: SyntaxHighlightOption
   /**
-   * ビルドの前に、`srcDir` の下のページのリンク切れを調べる。エディタの診断
+   * ビルドの前に、プロジェクトの下のページのリンク切れを調べる。エディタの診断
    * (`@cosense-toolbox/lsp`) と同じ判定で、`unresolvedLinks: 'error'` ならビルドを止める。
    * 省略すると調べない。
    *
@@ -127,12 +128,7 @@ const reportLint = (
   logger: AstroIntegrationLogger,
 ): Effect.Effect<LintResult> =>
   pipe(
-    lintSite(
-      fileURLToPath(config.root),
-      fileURLToPath(config.srcDir),
-      lint,
-      compileOptions.parseOptions,
-    ),
+    lintSite(fileURLToPath(config.root), lint, compileOptions.parseOptions),
     Effect.tap(({ errors, warnings }) =>
       Effect.all([
         Effect.forEach(warnings, (warning) => Effect.sync(() => logger.warn(warning))),
@@ -274,11 +270,7 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
         ]
         // toHtml などで自分で描画するページが、virtual:cosense-x/assets から使う。
         Object.assign(globalThis, { [Symbol.for(ASSET_STORE_KEY)]: assets })
-        const site = createSiteCache(
-          root,
-          fileURLToPath(config.srcDir),
-          parseOptions === undefined ? {} : { parseOptions },
-        )
+        const site = createSiteCache(root, parseOptions === undefined ? {} : { parseOptions })
 
         addRenderer({
           name: "astro:jsx",
@@ -312,7 +304,11 @@ export default function cosense(options: CosenseIntegrationOptions = {}): AstroI
               vitePluginCosense({
                 root: config.root,
                 site,
-                compile: { ...compileOptions, rehypePlugins },
+                compile: {
+                  ...compileOptions,
+                  pageUrl: compileOptions.pageUrl ?? defaultPageUrlFor(config),
+                  rehypePlugins,
+                },
                 assets,
                 highlighter,
                 components:
