@@ -21,6 +21,10 @@ Cosense (旧 Scrapbox) の記法で書いた `.csn` / `.csnx` を、Astro のペ
   - `pageUrl` を渡しているサイトは変わらない
   - 今までどおり `/{slug}` にしたいときは、`` pageUrl: (page) => `/${encodeURIComponent(page.slug)}` `` を渡す
   - `src/pages` のページの URL をファイルのパスから組み立てていた `pageUrl` は、消せることがある。同じ URL になるかは、ビルドした HTML のリンクを比べて確かめる
+- **破壊的変更:** リンク先を探す索引・リンクグラフ・`lint` が読むページを、`srcDir` の下からプロジェクトのルートの下に広げた。
+  content collection の `glob()` は `base` をルートから解決するので、`src` の外 (`./content` など) に置いた記事もリンク先になる。
+  今までは、そうした記事へのリンクはテキストになり、`lint` はリンク切れと報告していた。
+  `node_modules`・`dist`・`build` と `.` で始まるディレクトリは、`@cosense-toolbox/lsp` と同じく読まない
 - **破壊的変更:** `renderOptions.handlers` / `renderOptions.extensions` の中の `ctx.options.pageUrl` が、この統合が出すのと同じリンク先を返すようになった (cosense-x の変更)。
   今までは parser の既定の `/{title}` を返していた。それが要るハンドラは、`@cosense-toolbox/parser/html` の `defaultPageUrl(title)` を呼ぶ。
 - README の誤りを直した。`renderOptions` が parser の `toHast` にそのまま渡るのではないこと、レイアウトに `file` も渡ること、`pageUrl` の `id` が null になりうることを書いた。
@@ -105,7 +109,7 @@ export default defineConfig({
 
 ## リンク切れを調べる
 
-`lint` を渡すと、ビルドの前と、開発サーバーの起動時・ページを変えたときに、`srcDir` の下の `.csn` / `.csnx` を読み、サイトに無いページへの `[リンク]` を調べる。開発中は `'error'` でも止めず、ログに出すだけにする。
+`lint` を渡すと、ビルドの前と、開発サーバーの起動時・ページを変えたときに、プロジェクトの下の `.csn` / `.csnx` を読み、サイトに無いページへの `[リンク]` を調べる (読む範囲は[仕組み](#仕組み)を参照)。開発中は `'error'` でも止めず、ログに出すだけにする。
 判定はエディタの診断 ([`@cosense-toolbox/lsp`](../lsp)) と `csn-lsp check` と同じ関数で、パースにはこの統合の
 `parseOptions` を使う。エディタで警告されるものと、ビルドで止まるものが一致する。
 
@@ -314,6 +318,9 @@ export const collections = { posts }
 Cosense では 1 行目がタイトルなので、frontmatter に書かなくても `title` がある。
 `slug` が entry の id になる。
 
+`base` は `src` の外 (`./content/posts` など) でもよい。統合はプロジェクトの下のページをすべて読んでリンク先を探すので、どこに置いた記事へも `[タイトル]` でリンクできる。
+記事の URL は利用者が書いたルートで決まるので、[リンク先](#リンク先)のとおり `pageUrl` で返す。
+
 ```astro
 ---
 import { render } from "astro:content"
@@ -340,7 +347,7 @@ layout: ../layouts/Page.astro
 
 ## リンクグラフ
 
-`virtual:cosense-x/graph` から、`src` の下のすべての `.csn` / `.csnx` のリンクグラフを読める。
+`virtual:cosense-x/graph` から、プロジェクトの下のすべての `.csn` / `.csnx` のリンクグラフを読める。
 グラフの id は、content collection の entry の `filePath` と同じ形 (プロジェクトのルートからのパス)。
 
 ```astro
@@ -371,7 +378,9 @@ import Counter from "./Counter.svelte"
 ## 仕組み
 
 - `.csn` / `.csnx` を Vite のプラグインで JS にする。`jsxImportSource` は `astro`
-- リンクの解決には全ページのタイトルが要る。そのため、ビルドの最初に `src` の下を全部読んで索引を作る。dev サーバーでは、どれか 1 ページが変わると索引を作り直して再読み込みする
+- リンクの解決には全ページのタイトルが要る。そのため、ビルドの最初にプロジェクトの下を全部読んで索引を作る。dev サーバーでは、どれか 1 ページが変わると索引を作り直して再読み込みする
+  - `srcDir` ではなくプロジェクトのルートの下を読むのは、content collection の `glob()` が `base` をルートから解決し、`src` の外にも記事を置けるため。ルートの外 (`../shared` など) に置いたページは読まない
+  - `node_modules`・`dist`・`build` と `.` で始まるディレクトリは読まない。飛ばすディレクトリはエディタの診断 (`@cosense-toolbox/lsp`) と同じにしている
 - 描画には `astro:jsx` レンダラを使う。`@astrojs/mdx` と同じものなので、両方入れてもぶつからない
 - ページの拡張子と content collection の形式の登録には、`@astrojs/mdx` も使っている Astro の非公開のフック (`addPageExtension` / `addContentEntryType`) を使っている。Astro の更新で動かなくなる可能性がある
 

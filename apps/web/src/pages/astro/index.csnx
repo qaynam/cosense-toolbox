@@ -57,7 +57,7 @@ code:js
 
 `src/pages` に `.csn` / `.csnx` を置くと、ファイルの場所がそのまま URL になります。レイアウトを使うページは、先頭の frontmatter で Astro の `.astro` ファイルを指定します。
 
-`pageUrl` を省くと、`src/pages` のページへの `[リンク]` はそのページの URL を、それ以外のページへのリンクは `/{slug}` を指します。どちらもサイトの `base` の下の URL です。
+`pageUrl` を省くと、`src/pages` のページへの `[リンク]` はそのページの URL を、それ以外のページ (content collection の記事など) へのリンクは `/{slug}` を指します。どちらもサイトの `base` の下の URL です。記事を `/posts/{slug}/` などのルートで出す場合は、`pageUrl` でその URL を返してください。
 
 code:csnx
  ---
@@ -67,6 +67,8 @@ code:csnx
  本文を Cosense 記法で書きます。
 
 記事として管理する場合は、`astro:content` の glob loader で `.csn` / `.csnx` を読み込みます。記事の `title`、`slug`、`tags` などは、frontmatter と本文から得られます。
+
+glob loader の `base` は、`src` の外 (`./content/posts` など) でもかまいません。統合はプロジェクトの下の `.csn` / `.csnx` をすべて読んでリンク先を探すので、どこに置いた記事へも `[記事のタイトル]` でリンクできます。
 
 リンクグラフは `virtual:cosense-x/graph` から参照できます。ブログの一覧、関連記事、タグページを組み立てる例は [Astro ブログの実例] にあります。
 

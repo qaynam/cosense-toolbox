@@ -203,6 +203,11 @@ describe("pageUrl を渡さないときのリンク先", () => {
     expect(await transformInSite("投稿\n[post]")).toContain('href: "/post"')
   })
 
+  it("src の外のページ (glob の base を ./content にした content collection など) へも /{slug} にする", async () => {
+    const root = await project({ "content/posts/post.csn": "post" })
+    expect(await transformWithIntegration(root, "投稿\n[post]")).toContain('href: "/post"')
+  })
+
   it("src/pages のページへの URL の前に base を付ける", async () => {
     expect(await transformInSite("投稿\n[B]", { base: "/docs" })).toContain('href: "/docs/a/b/"')
   })

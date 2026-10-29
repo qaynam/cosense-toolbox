@@ -39,19 +39,16 @@ const messageOf =
     `${relative(root, path).split(sep).join("/")}:${line}:${column} ${message}`
 
 /**
- * `srcDir` の下の `.csn` / `.csnx` を読み、リンク切れを調べる。
+ * プロジェクトのルートの下の `.csn` / `.csnx` を読み、リンク切れを調べる。
  * パースにはサイトの `parseOptions` を使うので、独自の装飾記法もビルドと同じに読む。
  */
 export const lintSite = (
   root: string,
-  srcDir: string,
   { unresolvedLinks = "warning", frontmatter = true }: CosenseLintOptions,
   parseOptions: ParseOptions = {},
 ): Effect.Effect<LintResult> =>
   Effect.map(
-    Effect.promise(() =>
-      checkSite({ roots: [srcDir], unresolvedLinks, parseOptions, frontmatter }),
-    ),
+    Effect.promise(() => checkSite({ roots: [root], unresolvedLinks, parseOptions, frontmatter })),
     (reports) => {
       const [warnings, errors] = Arr.partition(reports, ({ level }) => level === "error")
       return {

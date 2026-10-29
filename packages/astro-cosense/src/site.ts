@@ -3,6 +3,9 @@
  *
  * リンクの解決には全ページのタイトルが要るので、1 ファイルずつのコンパイルの前にまとめて読む。
  * パースは軽いので、全ページを先読みしても問題にならない。
+ *
+ * `srcDir` ではなくプロジェクトのルートの下を読む。content collection の `glob()` は `base` を
+ * ルートから解決するので、記事を `src` の外 (`./content` など) に置ける。
  */
 import { readdir, readFile } from "node:fs/promises"
 import { join, relative, sep } from "node:path"
@@ -30,28 +33,31 @@ export interface Site {
   readonly graph: Graph
 }
 
-const SKIP_DIRECTORIES = new Set(["node_modules", ".astro", "dist"])
+// lint は LSP の `checkSite` で読むので、飛ばすディレクトリを LSP とそろえる。ずれると、
+// ビルドでは解決するリンクを lint が切れていると言う (その逆も起きる)。
+const SKIP_DIRECTORIES = new Set(["node_modules", "dist", "build"])
 
-/** `directory` の下の `.csn` / `.csnx`。読めないディレクトリ (まだ無い src/content など) は空とみなす。 */
+const isSkipped = (name: string): boolean => name.startsWith(".") || SKIP_DIRECTORIES.has(name)
+
+/** `directory` の下の `.csn` / `.csnx`。読めないディレクトリは空とみなす。 */
 const listFiles = async (directory: string): Promise<string[]> => {
   const entries = await readdir(directory, { withFileTypes: true }).catch(() => [])
   const nested = await Promise.all(
     entries.map(async (entry) => {
       const path = join(directory, entry.name)
-      if (entry.isDirectory()) return SKIP_DIRECTORIES.has(entry.name) ? [] : listFiles(path)
+      if (entry.isDirectory()) return isSkipped(entry.name) ? [] : listFiles(path)
       return entry.isFile() && isCosenseFile(entry.name) ? [path] : []
     }),
   )
   return nested.flat().sort()
 }
 
-/** `directory` の下を読んで、索引とグラフを作る。id は `root` からの相対パス。 */
+/** `root` の下を読んで、索引とグラフを作る。id は `root` からの相対パス。 */
 export const scanSite = async (
   root: string,
-  directory: string,
   options: Pick<ReadOptions, "parseOptions"> = {},
 ): Promise<Site> => {
-  const files = await listFiles(directory)
+  const files = await listFiles(root)
   const sources = await Promise.all(
     files.map(async (file) => ({ id: idOf(root, file), source: await readFile(file, "utf8") })),
   )
@@ -79,7 +85,6 @@ export interface SiteCache {
 
 export const createSiteCache = (
   root: string,
-  directory: string,
   options: Pick<ReadOptions, "parseOptions"> = {},
 ): SiteCache => {
   // dev サーバーでファイルが変わるたびに捨てて読み直すので、ここだけは状態を持つ。
@@ -87,7 +92,7 @@ export const createSiteCache = (
   let site: Promise<Site> | undefined
   return {
     get: () => {
-      site ??= scanSite(root, directory, options)
+      site ??= scanSite(root, options)
       return site
     },
     reset: () => {
