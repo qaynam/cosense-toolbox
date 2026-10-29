@@ -79,6 +79,8 @@ export interface HtmlClassNames {
   readonly line?: string
   /** 引用行の `<blockquote>` */
   readonly quote?: string
+  /** 引用の行で、行の要素に `line` と並べて付ける class */
+  readonly quoteLine?: string
   /** コマンドの行 (`$ ls`) の `<code>` */
   readonly monospace?: string
   /** コマンドの行の先頭の `$` / `%` */
@@ -98,6 +100,12 @@ export interface HtmlClassNames {
   /** ハイライタを通した本体に追加で付く class */
   readonly codeHighlight?: string
   readonly table?: string
+  /** 表の名前の `<caption>` */
+  readonly tableName?: string
+  /** 表の `<tr>` */
+  readonly tableRow?: string
+  /** 表の `<td>` */
+  readonly tableCell?: string
   /** `showPads` のときだけ出る、インデントぶんの余白と中点をまとめる要素 */
   readonly indentMark?: string
   /** インデント 1 段ぶんの余白 */
@@ -110,9 +118,13 @@ export interface HtmlClassNames {
   readonly hashtag?: string
   readonly inlineCode?: string
   readonly image?: string
+  /** 大きい画像 (`[[画像 URL]]`) の `<img>` に、`image` と並べて付ける class */
+  readonly largeImage?: string
   readonly video?: string
   /** 音声の `<audio>` とラベルを包む要素 */
   readonly audio?: string
+  /** 音声の `<audio>` */
+  readonly audioPlayer?: string
   /** 埋め込みの `<iframe>` */
   readonly embed?: string
   /** 地図 (`[N35,E139]`) の、Google マップへのリンク */
@@ -139,6 +151,7 @@ export const defaultClassNames: HtmlClassNames = {
   title: "line line-title",
   line: "line",
   quote: "quote",
+  quoteLine: "quote-line",
   monospace: "cli",
   commandPrefix: "prefix",
   commandSpace: "space",
@@ -149,6 +162,9 @@ export const defaultClassNames: HtmlClassNames = {
   codeBody: "code-body",
   codeHighlight: "highlight",
   table: "table-block",
+  tableName: "table-block-start",
+  tableRow: "table-block-row",
+  tableCell: "cell",
   indentMark: "indent-mark",
   pad: "pad",
   dot: "dot",
@@ -158,8 +174,10 @@ export const defaultClassNames: HtmlClassNames = {
   hashtag: "page-link hashtag",
   inlineCode: "code",
   image: "image",
+  largeImage: "strong-image",
   video: "video",
   audio: "audio",
+  audioPlayer: "audio-player",
   embed: "embed",
   location: "link link-location",
   iconLink: "link icon",
@@ -641,10 +659,13 @@ export const defaultHastHandlers = {
     const inner = quoted.length === 0 ? [element("br", {})] : quoted
     const mark = ctx.options.showPads && node.indent > 0 ? [indentMark(node.indent, cls)] : []
     return [
-      element("div", withClass(cls.line, { dataIndent: positive(node.indent) }), [
-        ...mark,
-        ...inner,
-      ]),
+      element(
+        "div",
+        withClass(joinClasses(cls.line, node.quote ? cls.quoteLine : undefined), {
+          dataIndent: positive(node.indent),
+        }),
+        [...mark, ...inner],
+      ),
     ]
   },
 
@@ -652,7 +673,9 @@ export const defaultHastHandlers = {
   codeLine: (node) => [text(node.value)],
 
   table: (node, ctx) => {
-    const caption = node.name === "" ? [] : [element("caption", {}, [text(node.name)])]
+    const cls = ctx.options.classNames
+    const caption =
+      node.name === "" ? [] : [element("caption", withClass(cls.tableName), [text(node.name)])]
     return [
       element(
         "table",
@@ -661,9 +684,13 @@ export const defaultHastHandlers = {
       ),
     ]
   },
-  tableRow: (node, ctx) => [element("tr", {}, ctx.children(node))],
+  tableRow: (node, ctx) => [
+    element("tr", withClass(ctx.options.classNames.tableRow), ctx.children(node)),
+  ],
   // Cosense のテーブルにヘッダ行の概念は無いので、1 行目も含めてすべて td。
-  tableCell: (node, ctx) => [element("td", {}, ctx.children(node))],
+  tableCell: (node, ctx) => [
+    element("td", withClass(ctx.options.classNames.tableCell), ctx.children(node)),
+  ],
 
   text: (node) => [text(node.value)],
 
@@ -691,10 +718,11 @@ export const defaultHastHandlers = {
   image: (node, ctx) => {
     // Gyazo のページ URL のように、書かれたままでは <img> に入らない URL をここで直す。
     // AST はソースの文字列を保つ約束なので、表示用への変換は描画側の責任になる。
+    const cls = ctx.options.classNames
     const src = Option.getOrUndefined(nonEmpty(safeSrc(imageSrcOf(node))))
     const img = element(
       "img",
-      withClass(ctx.options.classNames.image, {
+      withClass(joinClasses(cls.image, node.large ? cls.largeImage : undefined), {
         src,
         alt: "",
         dataLarge: node.large ? "true" : undefined,
@@ -720,11 +748,14 @@ export const defaultHastHandlers = {
 
   audio: (node, ctx) => [
     element("span", withClass(ctx.options.classNames.audio), [
-      element("audio", {
-        src: Option.getOrUndefined(nonEmpty(safeSrc(node.src))),
-        controls: true,
-        preload: "metadata",
-      }),
+      element(
+        "audio",
+        withClass(ctx.options.classNames.audioPlayer, {
+          src: Option.getOrUndefined(nonEmpty(safeSrc(node.src))),
+          controls: true,
+          preload: "metadata",
+        }),
+      ),
       ...(node.label === undefined ? [] : [text(node.label)]),
     ]),
   ],

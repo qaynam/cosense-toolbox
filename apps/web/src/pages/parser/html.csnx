@@ -159,7 +159,7 @@ code:ts
 
 ページ全体は `<div class="page">` で包まれます。1行目は `<h1 class="line line-title">`、通常行は `.line`、引用行は `<blockquote>` になります。字下げの深さは `.line[data-indent]` で表します。class 名は Cosense Web のエディタと同じものを使い、要素は意味に合わせています (タイトルは `<h1>`、表は `<table>`、引用は `<blockquote>`)。
 
-コードブロックの各行はそれぞれ要素になり、表は `<table class="table-block">` になります。字下げした表にも、行と同じく `data-indent` が付きます。装飾は `.deco` と記号ごとの `deco-*` class で区別します。
+コードブロックの各行はそれぞれ要素になり、表は `<table class="table-block">` になります。字下げした表にも、行と同じく `data-indent` が付きます。引用の行には `quote-line`、表の名前・行・セルには `table-block-start` / `table-block-row` / `cell`、大きい画像には `strong-image`、音声の `<audio>` には `audio-player` が付きます (どれも Cosense Web と同じ名前)。装飾は `.deco` と記号ごとの `deco-*` class で区別します。
 
 <DocHeading level={2} id="safety" title="エスケープと URL の検査" />
 

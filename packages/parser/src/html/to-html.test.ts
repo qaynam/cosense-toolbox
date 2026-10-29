@@ -121,8 +121,10 @@ describe("ブロック", () => {
     expect(toHtml(parse("t\n  字下げ"))).toContain('<div class="line" data-indent="2">')
   })
 
-  it("引用は blockquote になる", () => {
-    expect(line("> 引用")).toBe('<blockquote class="quote">引用</blockquote>')
+  it("引用は blockquote になり、行には Cosense Web と同じ quote-line が付く", () => {
+    expect(toHtml(parseLine("> 引用"))).toBe(
+      '<div class="line quote-line"><blockquote class="quote">引用</blockquote></div>',
+    )
   })
 
   it("コマンドの行は、Cosense Web と同じく cli の code に、記号と空白とコマンドに分けて入れる", () => {
@@ -197,9 +199,29 @@ describe("ブロック", () => {
     expect(html.match(/<code class="code-body">/g)).toHaveLength(2)
   })
 
-  it("テーブルは、Cosense Web と同じ table-block の class の、caption 付きの table になる", () => {
+  it("テーブルは、Cosense Web と同じ class (table-block / table-block-start / table-block-row / cell) の、caption 付きの table になる", () => {
     expect(toHtml(parse("t\ntable:名前\n あ\tい"))).toContain(
-      '<table class="table-block"><caption>名前</caption><tbody><tr><td>あ</td><td>い</td></tr></tbody></table>',
+      '<table class="table-block"><caption class="table-block-start">名前</caption><tbody><tr class="table-block-row"><td class="cell">あ</td><td class="cell">い</td></tr></tbody></table>',
+    )
+  })
+
+  it("表の名前・行・セルの class 名は classNames で変えられる", () => {
+    expect(
+      toHtml(parse("t\ntable:名前\n あ"), {
+        classNames: { tableName: "", tableRow: "r", tableCell: "c" },
+      }),
+    ).toContain('<caption>名前</caption><tbody><tr class="r"><td class="c">あ</td></tr>')
+  })
+
+  it("引用の行・大きい画像・音声に足した class 名も classNames で変えられる", () => {
+    const classNames = { quoteLine: "q", largeImage: "", audioPlayer: "player" }
+    expect(
+      toHtml(parseLine("> [[https://x.test/a.png]] [https://x.test/a.mp3]"), { classNames }),
+    ).toBe(
+      '<div class="line q"><blockquote class="quote">' +
+        '<img class="image" src="https://x.test/a.png" alt="" data-large="true"> ' +
+        '<span class="audio"><audio class="player" src="https://x.test/a.mp3" controls preload="metadata"></audio></span>' +
+        "</blockquote></div>",
     )
   })
 
@@ -211,13 +233,13 @@ describe("ブロック", () => {
 
   it("セルの中のリンクはリンクになり、ほかの記法は書いたまま出す", () => {
     expect(tableHtml("[リンク] [* 太字]")).toContain(
-      '<td><a class="page-link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> [* 太字]</td>',
+      '<td class="cell"><a class="page-link" href="/%E3%83%AA%E3%83%B3%E3%82%AF">リンク</a> [* 太字]</td>',
     )
   })
 
   it("拡張 tableCellNotation() で読んだセルは、行と同じく装飾も出す", () => {
     expect(tableHtml("[* 太字]", {}, { extensions: [tableCellNotation()] })).toContain(
-      '<td><span class="deco deco-*"><strong>太字</strong></span></td>',
+      '<td class="cell"><span class="deco deco-*"><strong>太字</strong></span></td>',
     )
   })
 })
@@ -229,6 +251,12 @@ describe("画像", () => {
     // AST 側は書かれたままで、変換されるのは HTML の src だけ。
     expect(parseLine(source).children[0]).toMatchObject({ src: `https://gyazo.com/${hash}` })
     expect(line(source)).toBe(`<img class="image" src="https://gyazo.com/${hash}/raw" alt="">`)
+  })
+
+  it("大きい画像には、Cosense Web と同じ strong-image の class も付く", () => {
+    expect(line("[[https://x.test/a.png]]")).toBe(
+      '<img class="image strong-image" src="https://x.test/a.png" alt="" data-large="true">',
+    )
   })
 
   it("リンク付き画像は a で包む", () => {
@@ -257,15 +285,15 @@ describe("動画・音声・埋め込み", () => {
     )
   })
 
-  it("音声は操作できる audio になる", () => {
+  it("音声は操作できる audio になり、Cosense Web と同じ audio-player の class が付く", () => {
     expect(line("[https://x.test/a.mp3]")).toBe(
-      '<span class="audio"><audio src="https://x.test/a.mp3" controls preload="metadata"></audio></span>',
+      '<span class="audio"><audio class="audio-player" src="https://x.test/a.mp3" controls preload="metadata"></audio></span>',
     )
   })
 
   it("音声のラベルは audio の後ろに出す", () => {
     expect(line("[https://x.test/a.mp3 BGM]")).toBe(
-      '<span class="audio"><audio src="https://x.test/a.mp3" controls preload="metadata"></audio>BGM</span>',
+      '<span class="audio"><audio class="audio-player" src="https://x.test/a.mp3" controls preload="metadata"></audio>BGM</span>',
     )
   })
 
