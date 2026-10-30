@@ -72,6 +72,12 @@ export type * from "../types"
  * 失敗は `CosenseApiError` で reject する。
  */
 export interface CosenseApi {
+  /**
+   * 自分 (PAT の持ち主)。
+   *
+   * PAT が無くても reject しない。Cosense はゲストとして 200 で `{ "isGuest": true }` を返し、これを
+   * `id` などが空の `Me` にして返す。PAT が使えるかを確かめるなら、`id` が空でないかも見る。
+   */
   readonly getMe: () => Promise<Me>
   readonly listProjects: () => Promise<readonly ProjectSummary[]>
   /**
@@ -113,7 +119,12 @@ export interface CosenseProjectApi {
   readonly getPage: (title: string) => Promise<PageDetail | null>
   /** ページの本文をテキストのまま返す。1 行目がタイトル。無いページは `null`。 */
   readonly getPageText: (title: string) => Promise<string | null>
-  /** 関連ページ。1 hop と 2 hop を並べて取り、それぞれ続きのページも辿る。 */
+  /**
+   * 関連ページ。1 hop と 2 hop を並べて取り、それぞれ続きのページも辿る。
+   *
+   * 続きが無くなるまで要求する。件数では止めず、途中までを返すことはない。Cosense が示す続きの位置が
+   * 前に辿ったところへ戻ったら、終わらないので `CosenseApiError` で reject する。
+   */
   readonly getRelatedPages: (title: string) => Promise<RelatedPages>
   /** ページの Infobox だけを読む。`getPage` の結果にも同じものが入っている。 */
   readonly getInfobox: (pageId: string) => Promise<Infobox>
@@ -127,7 +138,10 @@ export interface CosenseProjectApi {
    * テキストにする。
    */
   readonly exportForAi: (title: string, options?: ExportForAiOptions) => Promise<string>
-  /** 本文を全文検索する。pageRank の順に 100 件まで。 */
+  /**
+   * 本文を全文検索する。pageRank の順に、最初の 100 件だけを返す。101 件目からは取れない。
+   * 結果の `count` は見つかったページの数で、`pages` の数より多いことがある。
+   */
   readonly searchFullText: (query: string) => Promise<SearchResult>
   /** タイトルのベクトル検索。使えないプロジェクトでは、失敗にせず空の結果を返す。 */
   readonly searchVector: (query: string) => Promise<VectorResult>
@@ -197,6 +211,9 @@ export interface CosenseProjectApi {
    * Cosense は同じタイトルを断らず、後ろに番号を付けて作る。そのため先に確かめるが、確かめてから
    * 作るまでのあいだにほかの人が同じタイトルで作ると、番号の付いたタイトルで作ることがある
    * (結果の `title`)。
+   *
+   * 1 行目が空か空白だけなら、何も送らずに `TypeError` で reject する。Cosense Web は前後の空白を
+   * 除いてタイトルにするので、1 行目がタイトルにならない。
    */
   readonly createPage: (lines: readonly string[]) => Promise<CreatePageResult>
 }

@@ -25,7 +25,11 @@ Cosense (旧 Scrapbox) の API を呼びます。ページの中身や本文を�
 - 定義ページの表 (文芸的データベース) を返す `getLiterateDatabase` を足した。
 - `fetchAsset` は、渡した URL もリダイレクト先も http(s) でなければ取りに行かず、`kind: "invalidUrl"` の `CosenseApiError` で失敗するようにした。これまでは `file:` の URL も `file:` へのリダイレクトも取りに行き、Bun では手元のファイルを読んでいた。URL として読めない文字列では、`CosenseApiError` でない例外になっていた。
 - `listTitles` (これまでの `searchTitles`) が 20 万件で黙って途中までを返していたのを直した。件数で止めずに最後まで取り、Cosense が示す続きの位置が前に辿ったところへ戻ったときは `CosenseApiError` で失敗する。
+- `getRelatedPages` (これまでの `relatedPages`) が、1 つの hop で 10 万件を超えると黙って途中までを返していたのを直した。`listTitles` と同じく件数で止めずに最後まで取り、続きの位置が前に辿ったところへ戻ったときは `CosenseApiError` で失敗する。`getLiterateDatabase` の 1 hop も同じ。
 - プロジェクト名を、どの要求でもエンコードしてパスに入れるようにした。これまでは `getProject` (これまでの `projectDetail`) などの一部だけで、ほかは `a/../b` のような名前だと、PAT を付けたまま別のパスへ送っていた。
+- `createPage` は、1 行目が空か空白だけなら、何も送らずに `TypeError` で reject するようにした (effect の入口では defect)。これまでは空のタイトルで同じタイトルのページを探してから、ページを作ろうとしていた。
+- `getMe()` (これまでの `me()`) は PAT が無くても失敗せず、`id` などが空の `Me` を返すことを、README と doc に書いた。動きは変えていない。これまでの README の例は、PAT が無いと `unauthorized` で失敗するように読めた。
+- `searchFullText` は pageRank の順に最初の 100 件だけを返し、結果の `count` は見つかったページの数 (`pages` の数より多いことがある) であることを、README と doc に書いた。動きは変えていない。
 - Promise の入口で、Cloudflare Workers (workerd) が、`catch` した失敗も未処理の reject として報告していたのを直した。
 - effect の入口の `httpClientOf` で、effect を中断すると (`Effect.timeout` など)、送っている要求も止めるようにした。これまでは中断しても fetch が続いていた。
 
@@ -66,10 +70,10 @@ const { pages } = await project.searchFullText("検索する言葉")
 import { CosenseApiError } from "@cosense-toolbox/api"
 
 try {
-  await api.getMe()
+  await project.getPage("title")
 } catch (error) {
   if (!(error instanceof CosenseApiError)) throw error
-  if (error.kind === "unauthorized") console.error("PAT が無いか、違う")
+  if (error.kind === "unauthorized") console.error("非公開プロジェクトで、PAT が無いか、違う")
   else console.error(error.kind, error.status, error.code, error.message)
 }
 ```
@@ -106,7 +110,7 @@ try {
 
 | 関数              | 返すもの                                                                                         |
 | :---------------- | :----------------------------------------------------------------------------------------------- |
-| `getMe()`         | 自分 (PAT の持ち主)                                                                              |
+| `getMe()`         | 自分 (PAT の持ち主)。PAT が無くても失敗しない。下の「`getMe()` は PAT が無くても失敗しない」     |
 | `listProjects()`  | 自分の入っているプロジェクト                                                                     |
 | `fetchAsset(url)` | Cosense 上のファイル (`/files/…` やアイコン) の中身と Content-Type。下の「Cosense 上のファイル」 |
 | `project(name)`   | プロジェクト `name` の中のものを呼ぶ関数 (下の表)。`name` に渡した名前を持つ                     |
@@ -124,7 +128,7 @@ try {
 | `getInfobox(pageId)`                                | ページの Infobox。`getPage` の結果にも入っている。下の「Infobox」                         |
 | `getLiterateDatabase(title)`                        | 定義ページの表 (文芸的データベース)。定義ページでなければ `null`                          |
 | `exportForAi(title, { hop?, search? })`             | 「AI 用にエクスポート」のテキスト。ページと `hop` (既定は 1) 以内のリンク先               |
-| `searchFullText(query)`                             | 本文の全文検索。pageRank の順に 100 件まで                                                |
+| `searchFullText(query)`                             | 本文の全文検索。pageRank の順に最初の 100 件だけ (`count` は見つかった数)                 |
 | `searchVector(query)`                               | タイトルのベクトル検索。使えないプロジェクトでは空の結果                                  |
 | `listTitles()`                                      | すべてのページのタイトルと、そこから出ているリンク                                        |
 | `listSnapshots(pageId)`                             | ページの履歴。新しい順に、最新の 100 件まで                                               |
@@ -208,6 +212,7 @@ try {
 
 - 同じタイトルかは、Cosense と同じく大文字と小文字、空白と `_` を区別せずに比べる。名前を変えたページの古いタイトルは、もうあるものとしない。
 - Cosense 自体は同じタイトルを断らず、後ろに番号を付けて作る。`createPage` は先に確かめるが、確かめてから作るまでのあいだにほかの人が同じタイトルで作ると、番号の付いたタイトルで作ることがある。作ったタイトルは結果の `title` で分かる。
+- 1 行目が空か空白だけなら、何も送らずに `TypeError` で reject する (effect の入口では defect)。Cosense Web は前後の空白を除いてタイトルにするので、1 行目がタイトルにならない。
 - 続けて書き換えるときは、`getPage` で読んでから `updatePage` に渡す (行の id と `commitId` が要るため)。
 
 ### タイトルを変える
@@ -321,6 +326,15 @@ const { data, contentType } = await api.fetchAsset("https://scrapbox.io/files/xx
 
 ## 気をつけること
 
+### `getMe()` は PAT が無くても失敗しない
+
+PAT を渡さないと、Cosense は 401 ではなく 200 で、ゲストとして `{ "isGuest": true }` だけを返す。`getMe()` はこれを、`id` や `name` が空の `Me` にして返す。`Me` には `isGuest` を入れていないので、ゲストかは `id` が空かで見分ける。PAT が使えるかを確かめるなら、reject しないことに加えて、`id` が空でないかも見る。
+
+```ts
+const me = await api.getMe()
+if (me.id === "") console.error("ゲストとして答えられた")
+```
+
 ### `origin` には origin だけを渡す
 
 `origin` は `https://scrapbox.io` のような http(s) の origin で、後ろの `/` は付けても付けなくてもよい。URL として読めない文字列や、http(s) でないもの、パスやクエリの付いたものを渡すと、`createCosenseApi` は作るときに `TypeError` を投げる (`isCosenseAssetUrl` と `cosenseIconUrl` も同じ)。
@@ -339,6 +353,14 @@ scrapbox.io は、要求の本文が 100 KiB (102,400 バイト) を超えると
 ### `listTitles` は何度も要求することがある
 
 Cosense は 1 回に 10000 件までしか返さないので、大きいプロジェクトでは続きが無くなるまで順に取る。件数の上限は設けず、途中までを返すことはない。Cosense が示す続きの位置が前に辿ったところへ戻ったら、終わらないので `CosenseApiError` で失敗する。
+
+### `getRelatedPages` も続きを最後まで辿る
+
+関連ページも、1 hop と 2 hop のそれぞれで、続きが無くなるまで順に取る。Cosense Web は 1 つの hop で 10 万件までしか取らないが、`getRelatedPages` は件数の上限を設けず、途中までを返すことはない。続きの位置が前に辿ったところへ戻ったときは、`listTitles` と同じく `CosenseApiError` で失敗する。`getLiterateDatabase` が取る 1 hop も同じ。
+
+### `searchFullText` は最初の 100 件だけを返す
+
+`searchFullText` は、pageRank の順に最初の 100 件だけを `pages` に入れて返す。101 件目からは取れない (`limit` や `skip` は渡せない)。結果の `count` は見つかったページの数なので、100 を超えることがある。`count` が `pages` の数より多ければ、言葉を足して絞る。
 
 ## effect で使う
 
