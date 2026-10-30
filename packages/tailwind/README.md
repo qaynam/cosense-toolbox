@@ -21,6 +21,11 @@ Tailwind を使う場合は、`style.css` を別途読み込む必要はあり�
 - **不具合の修正:** `cosense-icon:` を、アイコンの画像 (`img.icon`) だけに当てるようにした。
   今までは `.icon` を選んでいて、画像とそれを包むリンクの両方に当たっていた。`p-1` や `m-1` のような余白の utility は、リンクと画像の両方に付いて 2 重になっていた。
   `iconImageUrl` を渡さずにユーザー名のリンクとして出すアイコンには当たらない。リンクのほうは `cosense-link:` で選ぶ。
+- **不具合の修正:** `require` で読むときの型 (`index.d.cts`) を、実際に返るものに合わせた。
+  `require("@cosense-toolbox/tailwind")` はプラグインそのものを返す (`module.exports = cosense`) が、型は `{ default: … }` の形になっていた。
+  そのため、CommonJS の TypeScript で `import cosense = require("@cosense-toolbox/tailwind")` と書くと、`cosense()` が型エラーになっていた。
+  型は `export = cosense` になり、`require` で読んだものをそのまま呼べる。
+  `CosenseTailwindOptions` は ESM の型にだけある。CommonJS で名前が要るときは `NonNullable<Parameters<typeof cosense>[0]>` と書く。
 - 字下げして書いた表 (`table:名前`) を、同じ深さの行の本文と同じ位置に置くようにした (`@cosense-toolbox/style` と同じ)。
   `@cosense-toolbox/parser` 1.0.0 の `toHtml` が表に付ける `data-indent` を見るので、parser も 1.0.0 にそろえる。
 - **不具合の修正:** オプションの例の `classname: article;` を `className: article;` に直した。
