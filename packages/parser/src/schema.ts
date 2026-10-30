@@ -142,6 +142,7 @@ export const IconNodeSchema: Schema.Schema<IconNode> = Schema.Struct({
   type: Schema.Literal("icon"),
   user: Schema.String,
   count: Schema.Number,
+  large: Schema.optionalWith(Schema.Boolean, { exact: true }),
   ...withPosition,
 })
 
@@ -231,6 +232,7 @@ export const LineBlockSchema: Schema.Schema<LineBlock> = Schema.Struct({
   indent: Schema.Number,
   quote: Schema.Boolean,
   monospace: Schema.Boolean,
+  helpfeel: Schema.Boolean,
   children: Schema.Array(InlineNodeSchema),
   ...withPosition,
 })

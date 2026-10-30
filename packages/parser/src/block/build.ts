@@ -60,8 +60,8 @@ const titleBlock = (line: SourceLine): TitleBlock => ({
 })
 
 /**
- * コマンドの行 (`$ ls`) は、Cosense Web と同じく記法を読まず、書いたままの文字 1 つにする。
- * コピーして端末に貼るための行なので、`[x]` も `#tag` もそのまま残す。
+ * コマンドの行 (`$ ls`) と Helpfeel の行 (`? 使い方`) は、Cosense Web と同じく記法を読まず、書いたままの文字 1 つにする。
+ * コマンドはコピーして端末に貼るための行なので、`[x]` も `#tag` もそのまま残す。
  */
 const lineBlock = (line: SourceLine, role: ContentLine, tokenize: TokenizeLine): LineBlock => {
   const content = line.text.slice(role.contentOffset)
@@ -75,9 +75,11 @@ const lineBlock = (line: SourceLine, role: ContentLine, tokenize: TokenizeLine):
     indent: role.indent,
     quote: role.quote,
     monospace: role.monospace,
-    children: role.monospace
-      ? [{ type: "text", value: content, position: spanAt(origin, 0, content.length) }]
-      : tokenize(content, origin),
+    helpfeel: role.helpfeel,
+    children:
+      role.monospace || role.helpfeel
+        ? [{ type: "text", value: content, position: spanAt(origin, 0, content.length) }]
+        : tokenize(content, origin),
     position: wholeLine(line),
   }
 }
@@ -89,9 +91,17 @@ const codeLine = (line: SourceLine, headerIndent: number): CodeLine => ({
   position: wholeLine(line),
 })
 
-const tableCells = (line: SourceLine, tokenize: TokenizeLine): readonly TableCell[] => {
+/**
+ * 見出しより 1 文字深いところからがセル (Cosense Web と同じ)。それより先の空白やタブはセルの中身なので、
+ * ` \ta` は空のセルと `a` になる。
+ */
+const tableCells = (
+  line: SourceLine,
+  headerIndent: number,
+  tokenize: TokenizeLine,
+): readonly TableCell[] => {
   const origin = lineOrigin(line)
-  const indent = indentOf(line.text)
+  const indent = headerIndent + 1
   const values = line.text.slice(indent).split("\t")
   return values.map((value, index) => {
     // 前にあるセルと、その区切りのタブ 1 文字ずつのぶんだけ右から始まる。
@@ -105,9 +115,9 @@ const tableCells = (line: SourceLine, tokenize: TokenizeLine): readonly TableCel
   })
 }
 
-const tableRow = (line: SourceLine, tokenize: TokenizeLine): TableRow => ({
+const tableRow = (line: SourceLine, headerIndent: number, tokenize: TokenizeLine): TableRow => ({
   type: "tableRow",
-  cells: tableCells(line, tokenize),
+  cells: tableCells(line, headerIndent, tokenize),
   position: wholeLine(line),
 })
 
@@ -150,7 +160,7 @@ const tableBlock = (
   type: "table",
   name,
   indent,
-  rows: body.map((line) => tableRow(line, tokenize)),
+  rows: body.map((line) => tableRow(line, indent, tokenize)),
   position: blockPosition(header, body),
 })
 
@@ -218,6 +228,7 @@ export const buildLineBlock = (line: SourceLine, tokenize: TokenizeLine): LineBl
           indent: role.indent,
           quote: false,
           monospace: false,
+          helpfeel: false,
           contentOffset: role.indent,
         },
     tokenize,

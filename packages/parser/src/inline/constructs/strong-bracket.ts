@@ -4,15 +4,16 @@ import { isImageUrl } from "../../core/image-url"
 import { isVideoUrl } from "../../core/media-url"
 import { shiftOrigin } from "../../core/position"
 import type { InlineNodeInit } from "../../types"
+import { iconOf } from "../bracket-rules/icon"
 import type { InternalConstruct, ScanContext } from "../internal-types"
 import type { ConstructMatch } from "../types"
 import { opensCodeSpan } from "./inline-code"
 
 /**
- * 大きい画像と動画の `[[URL]]`。URL は `]` を含まないので、最初の `]]` で閉じる。
+ * 大きい画像・動画・アイコンの `[[...]]`。中身は `]` を含まないので、最初の `]]` で閉じる。
  * `[[画像 URL]]]` は大きい画像と `]` になる (Cosense Web と同じ)。
  */
-const LARGE_MEDIA = /^\[\[([^\]]+)\]\]/
+const LARGE = /^\[\[([^\]]+)\]\]/
 
 /**
  * Cosense Web の strong の規則そのもの。深さは数えない。
@@ -36,7 +37,7 @@ const matchOf = (node: InlineNodeInit, inner: string): ConstructMatch => ({
 /** URL が画像なら大きい画像、動画なら大きい動画。 */
 const largeMediaAt = (source: string, index: number): Option.Option<ConstructMatch> =>
   pipe(
-    innerAt(LARGE_MEDIA, source, index),
+    innerAt(LARGE, source, index),
     Option.flatMap((url) =>
       pipe(
         Match.value(url).pipe(
@@ -52,6 +53,15 @@ const largeMediaAt = (source: string, index: number): Option.Option<ConstructMat
         ),
         Option.map((node) => matchOf(node, url)),
       ),
+    ),
+  )
+
+/** `[[user.icon]]` は大きいアイコン (Cosense Web の強調のアイコン)。連打も読む。 */
+const largeIconAt = (source: string, index: number): Option.Option<ConstructMatch> =>
+  pipe(
+    innerAt(LARGE, source, index),
+    Option.flatMap((inner) =>
+      Option.map(iconOf(inner), (icon) => matchOf({ ...icon, large: true }, inner)),
     ),
   )
 
@@ -76,14 +86,15 @@ const boldAt = (source: string, index: number, ctx: ScanContext): Option.Option<
 
 /**
  * `[[...]]` — Cosense Web の strong。中身が画像 URL なら大きい画像、動画 URL なら大きい動画、
- * そうでなければ太字 (規則は {@link STRONG})。`[[a] b]` のように `]]` で閉じないものは
- * bracketConstruct が読む。
+ * `user.icon` なら大きいアイコン、そうでなければ太字 (規則は {@link STRONG})。
+ * `[[a] b]` のように `]]` で閉じないものは bracketConstruct が読む。
  *
  * 音声や埋め込みの URL は大きくならず、太字の中の外部リンクになる (Cosense Web と同じ)。
  */
 export const strongBracketConstruct: InternalConstruct = (source, index, ctx) =>
   pipe(
     largeMediaAt(source, index),
+    Option.orElse(() => largeIconAt(source, index)),
     Option.orElse(() => boldAt(source, index, ctx)),
     // 中でインラインコードが始まるなら記法にならない。Cosense Web はコードを先に読む
     Option.filter(({ length }) => !opensCodeSpan(source, index + 1, index + length - 2)),

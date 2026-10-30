@@ -36,6 +36,7 @@ const KITCHEN_SINK = [
   "  [https://example.test ラベル] [/proj/page] [user.icon*2]",
   "> 引用 [https://gyazo.com/503a911fea542532aa5aba0a88eb7b60]",
   "$ echo 等幅",
+  "? 使い方 [リンク]",
   "[https://example.test https://x.test/a.png] [[https://x.test/b.png]]",
   "",
   "code:hello.js",
@@ -86,9 +87,9 @@ describe("toHtml と同じ構造の HTML になる", () => {
     expect(html).toContain("<br>")
   })
 
-  it("iconImageUrl も toHtml と同じに効く", () => {
+  it("iconImageUrl も、大きいアイコンを含めて toHtml と同じに効く", () => {
     const options = { iconImageUrl: () => "https://x.test/icon.png" }
-    const page = parse("タイトル\n[user.icon]")
+    const page = parse("タイトル\n[user.icon] [[user.icon]]")
     expect(hastToHtml(toHast(page, options))).toBe(normalize(toHtml(page, options)))
   })
 })

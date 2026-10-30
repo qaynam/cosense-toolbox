@@ -292,6 +292,7 @@ const lineOf = (
   indent,
   quote: false,
   monospace: false,
+  helpfeel: false,
   children,
   position,
 })

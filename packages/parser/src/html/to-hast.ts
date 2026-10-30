@@ -87,6 +87,12 @@ export interface HtmlClassNames {
   readonly commandSpace?: string
   /** コマンドの行の、空白の後のコマンド */
   readonly command?: string
+  /** Helpfeel の行 (`? 使い方`) の `<code>` */
+  readonly helpfeel?: string
+  /** Helpfeel の行の先頭の `?` */
+  readonly helpfeelPrefix?: string
+  /** Helpfeel の行の、`?` と空白の後の中身 */
+  readonly helpfeelEntry?: string
   /** コードブロックに属する行 (ヘッダ行と本体行の両方) */
   readonly codeBlock?: string
   /** ヘッダ行の `<code>` */
@@ -143,6 +149,9 @@ export const defaultClassNames: HtmlClassNames = {
   commandPrefix: "prefix",
   commandSpace: "space",
   command: "command",
+  helpfeel: "helpfeel",
+  helpfeelPrefix: "prefix",
+  helpfeelEntry: "entry",
   codeBlock: "code-block",
   codeStart: "code-start",
   codeFilename: "code-block-start",
@@ -446,22 +455,52 @@ const onlyChildOf = (children: readonly ElementContent[]): Option.Option<Element
     Option.flatMapNullable((meaningful) => meaningful[0]),
   )
 
+/** 行の中身が書いたままの文字 1 つなら、その文字。 */
+const writtenTextOf = (node: LineBlock): Option.Option<string> =>
+  pipe(
+    Option.liftPredicate(node.children, (children) => children.length === 1),
+    Option.flatMapNullable(([child]) => child),
+    Option.filter((child): child is TextNode => child.type === "text"),
+    Option.map(({ value }) => value),
+  )
+
 /**
  * コマンドの行 (`$ ls`) を、Cosense Web と同じく記号・空白・コマンドの 3 つの要素に分ける。
  * 記号とコマンドを別に選べるので、記号を薄くしたり、コマンドだけをコピーさせたりできる。
  * パーサーはコマンドの行を書いたままの文字 1 つにするので、そうでなければ (拡張が置き換えたなど) 分けない。
  */
 const commandParts = (node: LineBlock, cls: HtmlClassNames): Option.Option<ElementContent[]> =>
-  pipe(
-    Option.liftPredicate(node.children, (children) => children.length === 1),
-    Option.flatMapNullable(([child]) => child),
-    Option.filter((child): child is TextNode => child.type === "text"),
-    Option.map(({ value }) => [
-      element("span", withClass(cls.commandPrefix), [text(value.slice(0, 1))]),
-      element("span", withClass(cls.commandSpace), [text(value.slice(1, 2))]),
-      element("span", withClass(cls.command), [text(value.slice(2))]),
-    ]),
-  )
+  Option.map(writtenTextOf(node), (value) => [
+    element("span", withClass(cls.commandPrefix), [text(value.slice(0, 1))]),
+    element("span", withClass(cls.commandSpace), [text(value.slice(1, 2))]),
+    element("span", withClass(cls.command), [text(value.slice(2))]),
+  ])
+
+/**
+ * Helpfeel の行 (`? 使い方`) を、Cosense Web と同じく記号と中身の要素に分ける。記号の後の空白は要素にしない。
+ * コマンドの行と同じく、書いたままの文字 1 つでなければ分けない。
+ */
+const helpfeelParts = (node: LineBlock, cls: HtmlClassNames): Option.Option<ElementContent[]> =>
+  Option.map(writtenTextOf(node), (value) => [
+    element("span", withClass(cls.helpfeelPrefix), [text(value.slice(0, 1))]),
+    text(value.slice(1, 2)),
+    element("span", withClass(cls.helpfeelEntry), [text(value.slice(2))]),
+  ])
+
+/** 記法を読まない行 (コマンドと Helpfeel) は `<code>` に入れる。 */
+const lineContentOf = (node: LineBlock, ctx: HastContext): ElementContent[] => {
+  const cls = ctx.options.classNames
+  const coded = (className: string | undefined, parts: Option.Option<ElementContent[]>) => [
+    element(
+      "code",
+      withClass(className),
+      Option.getOrElse(parts, () => ctx.children(node)),
+    ),
+  ]
+  if (node.monospace) return coded(cls.monospace, commandParts(node, cls))
+  if (node.helpfeel) return coded(cls.helpfeel, helpfeelParts(node, cls))
+  return ctx.children(node)
+}
 
 const elementNamed =
   (tagName: string) =>
@@ -627,15 +666,7 @@ export const defaultHastHandlers = {
 
   line: (node, ctx) => {
     const cls = ctx.options.classNames
-    const styled = node.monospace
-      ? [
-          element(
-            "code",
-            withClass(cls.monospace),
-            Option.getOrElse(commandParts(node, cls), () => ctx.children(node)),
-          ),
-        ]
-      : ctx.children(node)
+    const styled = lineContentOf(node, ctx)
     const quoted = node.quote ? [element("blockquote", withClass(cls.quote), styled)] : styled
     // 空行も 1 行分の高さを保つ。Cosense では空行が段落の区切りとして意味を持つ。
     const inner = quoted.length === 0 ? [element("br", {})] : quoted
@@ -779,7 +810,15 @@ export const defaultHastHandlers = {
       const body: ElementContent = Option.match(src, {
         onNone: () => text(node.user),
         onSome: (url) =>
-          element("img", withClass(cls.icon, { src: url, alt: node.user, title: node.user })),
+          element(
+            "img",
+            withClass(cls.icon, {
+              src: url,
+              alt: node.user,
+              title: node.user,
+              dataLarge: node.large ? "true" : undefined,
+            }),
+          ),
       })
       return element("a", withClass(cls.iconLink, { href }), [body])
     })

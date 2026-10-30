@@ -143,8 +143,8 @@ export const detectCompletion = (
 
 /**
  * Whether the cursor is where Cosense reads no notation, so a bracket or a `#` is only text:
- * inside code, or on a command line (`$ ls`). The cursor must be strictly between the
- * backticks (not touching them) to count as inside an inline span.
+ * inside code, or on a command line (`$ ls`) or a Helpfeel line (`? how to`). The cursor must
+ * be strictly between the backticks (not touching them) to count as inside an inline span.
  */
 const readsNoNotation = (
   text: string,
@@ -166,7 +166,8 @@ const readsNoNotation = (
     ) ||
     Arr.some(
       collect(page, "line"),
-      ({ monospace, position }) => monospace && position.start.line === line,
+      ({ monospace, helpfeel, position }) =>
+        (monospace || helpfeel) && position.start.line === line,
     )
   )
 }
