@@ -13,6 +13,10 @@
 csn-lsp --stdio
 ```
 
+エディターとのやりとりの方法は `--stdio` のほか、`--node-ipc` / `--socket=<port>` / `--pipe=<name>` も使えます。
+どれも無いとサーバーは起動できないため、使い方を標準エラーに出して終了コード `2` で終わります。
+`csn-lsp --help` で使い方を、`csn-lsp --version` でバージョンを出します。
+
 - 色付け (semantic tokens)
 - `[` の中と `#` の後での、ページの題名の補完。候補の選び方と並べ方は Cosense Web と同じで、まだ無いページへのリンクも候補に出す
 - `[ページ名]` からそのページのファイルへの定義ジャンプ
@@ -47,22 +51,29 @@ URL のまま残したいときは、次のどれかにすると提案されま�
 
 ## check
 
-エディター上の診断と同じ判定で、指定したディレクトリ内のページリンクを検査します。CI での利用を想定しています。
+エディター上の診断と同じ判定で、指定したディレクトリ内のページリンクとサイトのファイルを検査します。CI での利用を想定しています。
 
 ```sh
 csn-lsp check src/content src/pages
 # src/content/posts/a.csn:5:3 error リンク先のページが見つからない: [無いページ]
+# src/content/posts/a.csn:8:1 error ファイルが見つからない: /images/a.png
 ```
 
 - 引数に指定したディレクトリ以下の `.csn` / `.csnx` を読みます。省略した場合は、カレントディレクトリを対象にします。
 - ページ名は各ファイルの 1 行目から取得します。照合では大文字・小文字と空白・`_` の違いを無視します。
 - `[! 注意]` のような文字装飾は Cosense Web と同じ規則で判定し、リンクとして扱いません。
-- エラーが1件以上ある場合は終了コード `1`、エラーがない場合は `0`、オプションが不正な場合は `2` を返します。
+- カレントディレクトリの下で `public` を持つディレクトリを、サイトとして探します。エディターがワークスペースの下で探すのと同じです。
+  サイトのページの `[:/images/a.png]` は `public/images/a.png` のファイルとして扱い、ファイルが無ければ報告します。
+  サイトの外のページでは、Cosense Web と同じくページへのリンクとして扱います。
+- ファイルはディレクトリごとに名前の順に読み、報告はファイルの中で書かれた順に並べます。
+- エラーが1件以上ある場合は終了コード `1`、エラーがない場合は `0` を返します。
+  オプションやその値が不正な場合は、何が不正かと使い方を標準エラーに出して `2` を返します。
 
-| オプション                   | 内容                                                 | 既定    |
-| :--------------------------- | :--------------------------------------------------- | :------ |
-| `--unresolved-links <level>` | `off` / `hint` / `information` / `warning` / `error` | `error` |
-| `--no-frontmatter`           | 1 行目の `---` を frontmatter ではなく題名として読む |         |
+| オプション                   | 内容                                                                                                           | 既定    |
+| :--------------------------- | :------------------------------------------------------------------------------------------------------------- | :------ |
+| `--unresolved-links <level>` | 存在しないページへのリンクと、無いファイルの報告の重大度。`off` / `hint` / `information` / `warning` / `error` | `error` |
+| `--no-frontmatter`           | 1 行目の `---` を frontmatter ではなく題名として読む                                                           |         |
+| `-h`, `--help`               | 使い方を標準出力に出して、終了コード `0` で終わる                                                              |         |
 
 `check` はリンク切れを見つけたらビルドを止めるため、重大度の既定値を `error` にしています。報告だけにしたい場合は `--unresolved-links warning` を指定してください (終了コードは `0` になります)。
 
@@ -70,6 +81,25 @@ csn-lsp check src/content src/pages
 
 エディタのプラグインなどから、部品として使える。中は effect で書いているが、使う側が effect を知らなくてよいように、
 見つからないものは `null`、時間のかかるものは `Promise` で返す。
+
+### 1.0.0 の変更
+
+- **破壊的変更:** `csn-lsp` を引数なしで、または知らないサブコマンド (`csn-lsp chekc` など) で実行すると、使い方を標準エラーに出して終了コード `2` で終わるようになった。
+  これまでは何も出さずに `0` で終わっていた。`--stdio` / `--node-ipc` / `--socket` / `--pipe` を付けた起動 (エディタのプラグインからの起動) は今までどおり
+- `csn-lsp --help` (`-h`) と `csn-lsp --version` を足した。どちらも標準出力に出して、終了コード `0` で終わる
+- サーバーが起動できないとき (`--socket=abc` など) や、実行中に予期しないエラーが起きたときは、エラーを標準エラーに出して終了コード `1` で終わるようになった。
+  これまでは何も出さずに `0` で終わっていた
+- **破壊的変更:** `csn-lsp check --unresolved-links` に知らない値 (`eror` など) を渡すと、何が不正かと使い方を標準エラーに出して終了コード `2` で終わるようになった。
+  これまでは `warning` として扱い、`0` で終わっていた
+- `csn-lsp check --help` は、使い方を標準出力に出して終了コード `0` で終わるようになった (これまでは標準エラーに出して `2`)。
+  不正なオプションでは、使い方の前に何が不正かを出す
+- `csn-lsp check` が、エディタと同じくサイトのファイルを読むようになった。カレントディレクトリの下で `public` を持つディレクトリをサイトとし、
+  サイトのページの `[:/images/a.png]` をページへのリンクではなく `public/images/a.png` のファイルとして扱う
+  - ファイルがあれば報告しない。これまでは `リンク先のページが見つからない` と報告していた
+  - ファイルが無ければ `ファイルが見つからない: /images/a.png` と報告する。重大度は `--unresolved-links` に従う。報告の文言が変わるので、出力を読むスクリプトは注意する
+- ページのファイルを、ファイルシステムが返す順ではなく、ディレクトリごとに名前の順に読むようになった。`csn-lsp check` と `checkSite` の報告と、サーバーが読むページの順が、OS によらず同じになる。
+  `csn-lsp check` の報告は、ファイルの中で書かれた順に並ぶ
+- README の誤りを直した。`Asearch` はどのサブパスからも公開していないので、モジュールの説明から外した。`@cosense-toolbox/lsp/check` の説明を足した
 
 ### 0.1.0-beta.9 の変更
 
@@ -99,7 +129,6 @@ csn-lsp check src/content src/pages
     見つかったものが少なければ、3 文字以上の入力で 1 文字違いの題名を足す。編集中のページと、入力と同じ題名は出さない
   - `mergeVectorPages(ranked, pages, index, query)`: ベクトル検索の結果のうち近いものを、Cosense Web と同じく上位 6 件の中に混ぜる
   - `iconKeys(text)`: ページが使っているアイコン。`rankCandidates` の `icons` に渡すと、そのアイコンのページが先頭に来る
-  - `Asearch(pattern)`: 1〜3 文字違いまでを許す、あいまいな文字列の照合
 - `@cosense-toolbox/lsp/media`: サイトのファイル (`[:/images/a.png]`、parser の `publicMedia`) を扱う
   - `mediaFilesIn(root)`: ディレクトリの下の画像・動画・音声を、サイトの中のパス (`/images/a.png`) で返す (`Promise`)
   - `mediaCompletionItems(files, detection, line)`: `[:/` の中で、入力を含むパスのファイルを候補にする
@@ -109,3 +138,11 @@ csn-lsp check src/content src/pages
     別のプロジェクトなら `project`、`[ページ#<行 ID>]` なら `lineId` が付く
   - 外部リンクと画像は `kind: "url"`。リンク付きの画像は、画像ではなくリンクの URL
   - `range` は記法全体の範囲 (UTF-16)。行き先をファイルや Web のページに解決するのは、呼び出し側の仕事
+- `@cosense-toolbox/lsp/check`: `csn-lsp check` の検査を、関数として使う
+  - `checkSite(options)`: `roots` の下の `.csn` / `.csnx` を読み、存在しないページへのリンクを `Report` の配列で返す (`Promise`)。
+    `options` (`CheckSiteOptions`) は `roots` / `unresolvedLinks` (`off` / `hint` / `information` / `warning` / `error`) / `parseOptions?` / `frontmatter?`
+  - `checkSite` はサイトを探さない。`[:/…]` は、`parseOptions` に parser の `publicMedia` があればファイル、無ければページへのリンクとして読む
+  - `Report` は `path` / `line` / `column` (1 から数える) / `level` (`ReportLevel`: `error` / `warning` / `information` / `hint`) / `message`
+  - `runCheck(args, cwd)`: `csn-lsp check <args>` を `cwd` で実行したときの出力と終了コード (`CheckResult`: `output` / `exitCode`) を返す (`Promise`)。
+    サイトも `csn-lsp check` と同じく `cwd` の下で探す。reject はしない (不正なオプションは `exitCode: 2`)
+  - `USAGE`: `csn-lsp check --help` が出す使い方
