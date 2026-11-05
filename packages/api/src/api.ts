@@ -62,6 +62,12 @@ type Call<A> = Effect.Effect<A, CosenseApiError, HttpClient>
 
 /** {@link createCosenseApi} が返すもの。プロジェクトの中のものは `project(name)` から呼ぶ。 */
 export interface CosenseApi {
+  /**
+   * 自分 (PAT の持ち主)。
+   *
+   * PAT が無くても失敗しない。Cosense はゲストとして 200 で `{ "isGuest": true }` を返し、これを
+   * `id` などが空の `Me` にして返す。PAT が使えるかを確かめるなら、`id` が空でないかも見る。
+   */
   readonly getMe: () => Call<Me>
   readonly listProjects: () => Call<readonly ProjectSummary[]>
   /**
@@ -100,7 +106,12 @@ export interface CosenseProjectApi {
   readonly getPage: (title: string) => Call<Option.Option<PageDetail>>
   /** ページの本文をテキストのまま返す。1 行目がタイトル。無いページは `none`。 */
   readonly getPageText: (title: string) => Call<Option.Option<string>>
-  /** 関連ページ。1 hop と 2 hop を並べて取り、それぞれ続きのページも辿る。 */
+  /**
+   * 関連ページ。1 hop と 2 hop を並べて取り、それぞれ続きのページも辿る。
+   *
+   * 続きが無くなるまで要求する。件数では止めず、途中までを返すことはない。Cosense が示す続きの位置が
+   * 前に辿ったところへ戻ったら、終わらないので `CosenseApiError` で失敗する。
+   */
   readonly getRelatedPages: (title: string) => Call<RelatedPages>
   /** ページの Infobox だけを読む。`getPage` の結果にも同じものが入っている。 */
   readonly getInfobox: (pageId: string) => Call<Infobox>
@@ -114,7 +125,10 @@ export interface CosenseProjectApi {
    * テキストにする。
    */
   readonly exportForAi: (title: string, options?: ExportForAiOptions) => Call<string>
-  /** 本文を全文検索する。pageRank の順に 100 件まで。 */
+  /**
+   * 本文を全文検索する。pageRank の順に、最初の 100 件だけを返す。101 件目からは取れない。
+   * 結果の `count` は見つかったページの数で、`pages` の数より多いことがある。
+   */
   readonly searchFullText: (query: string) => Call<SearchResult>
   /** タイトルのベクトル検索。使えないプロジェクトでは、失敗にせず空の結果を返す。 */
   readonly searchVector: (query: string) => Call<VectorResult>
@@ -183,6 +197,9 @@ export interface CosenseProjectApi {
    * Cosense は同じタイトルを断らず、後ろに番号を付けて作る。そのため先に確かめるが、確かめてから
    * 作るまでのあいだにほかの人が同じタイトルで作ると、番号の付いたタイトルで作ることがある
    * (結果の `title`)。
+   *
+   * 1 行目が空か空白だけなら、何も送らずに `TypeError` で止める。Cosense Web は前後の空白を除いて
+   * タイトルにするので、1 行目がタイトルにならない。渡し方の誤りなので、失敗の型には入れずに defect にする。
    */
   readonly createPage: (
     lines: readonly string[],
@@ -213,8 +230,6 @@ const projectSegmentOf = (name: string): string => {
 const NOT_FOUND = 404
 const VECTOR_SEARCH_DISABLED = 490
 const FULL_TEXT_SEARCH_LIMIT = 100
-/** 関連ページを 1 つの hop で何件まで辿るか。Cosense Web がページ送りをやめる数 */
-const RELATED_LIMIT = 100_000
 /** `search/titles` が 1 回に返す最大の件数 */
 const TITLES_PER_PAGE = 10_000
 /** 同じ origin へのリダイレクトを何回まで辿るか */
@@ -409,39 +424,57 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
   const get = <A, I>(path: string, schema: Schema.Schema<A, I>): Call<A> =>
     Effect.flatMap(request(path), decode(schema))
 
-  // 1 つの hop のページを、続きが無くなるか RELATED_LIMIT に届くまで順に取る。
-  // 最初の要求にはクエリを付けない (サーバーは最初のページを返す)。
+  // 1 つの hop のページを、続きが無くなるまで順に取る。最初の要求にはクエリを付けない (サーバーは
+  // 最初のページを返す)。件数の上限で止めると黙って途中までになるので、上限は設けない。続きの位置が
+  // 前に辿ったところへ戻ったときだけ、終わらないので失敗にする。
   const allOf = <A extends { readonly pagination: { hasNext: boolean; nextId: string | null } }, I>(
     base: string,
     hop: "links1hop" | "links2hop",
     schema: Schema.Schema<A, I>,
-    count: (response: A) => number,
   ): Call<A[]> =>
     pipe(
       Effect.iterate(
-        { responses: [] as A[], nextId: Option.none<string>(), total: 0, done: false },
+        {
+          responses: [] as A[],
+          nextId: Option.none<string>(),
+          followed: new Set<string>() as ReadonlySet<string>,
+          done: false,
+        },
         {
           while: (state) => !state.done,
           body: (state) =>
-            Effect.map(
-              get(
+            Effect.flatMap(
+              request(
                 Option.match(state.nextId, {
                   onNone: () => `${base}/${hop}`,
                   onSome: (nextId) => `${base}/${hop}?nextId=${encodeURIComponent(nextId)}`,
                 }),
-                schema,
               ),
-              (response) => {
-                const total = state.total + count(response)
-                const nextId = Option.fromNullable(response.pagination.nextId)
-                return {
-                  responses: [...state.responses, response],
-                  nextId,
-                  total,
-                  done:
-                    !response.pagination.hasNext || Option.isNone(nextId) || total >= RELATED_LIMIT,
-                }
-              },
+              (response) =>
+                Effect.flatMap(decode(schema)(response), (data) => {
+                  const followed = Option.match(state.nextId, {
+                    onNone: () => state.followed,
+                    onSome: (id) => new Set([...state.followed, id]),
+                  })
+                  const nextId = pipe(
+                    Option.fromNullable(data.pagination.nextId),
+                    Option.filter(() => data.pagination.hasNext),
+                  )
+                  if (Option.isSome(nextId) && followed.has(nextId.value)) {
+                    return Effect.fail(
+                      new CosenseApiError({
+                        status: response.status,
+                        message: `${hop} went back to a position it had already returned (nextId: ${nextId.value})`,
+                      }),
+                    )
+                  }
+                  return Effect.succeed({
+                    responses: [...state.responses, data],
+                    nextId,
+                    followed,
+                    done: Option.isNone(nextId),
+                  })
+                }),
             ),
         },
       ),
@@ -523,14 +556,8 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
       `/api/pages/v2/${segment}/${encodeTitleForUrl(title)}`
 
     const links1hopOf = (title: string): Call<RelatedPage[]> =>
-      Effect.map(
-        allOf(
-          relatedBaseOf(title),
-          "links1hop",
-          Links1HopResponseSchema,
-          (response) => response.links1hop.length,
-        ),
-        (responses) => responses.flatMap((response) => response.links1hop),
+      Effect.map(allOf(relatedBaseOf(title), "links1hop", Links1HopResponseSchema), (responses) =>
+        responses.flatMap((response) => response.links1hop),
       )
 
     // 抜き出しを止めた定義ページの一覧 (`infoboxDisableLinks`) に、足す (`"add"`) と止まり、除く (`"remove"`) と戻る。
@@ -688,18 +715,8 @@ export const createCosenseApi = (config: CosenseApiConfig = {}): CosenseApi => {
         return Effect.map(
           Effect.all(
             [
-              allOf(
-                base,
-                "links1hop",
-                Links1HopResponseSchema,
-                (response) => response.links1hop.length,
-              ),
-              allOf(
-                base,
-                "links2hop",
-                Links2HopResponseSchema,
-                (response) => response.links2hop.length,
-              ),
+              allOf(base, "links1hop", Links1HopResponseSchema),
+              allOf(base, "links2hop", Links2HopResponseSchema),
             ],
             { concurrency: "unbounded" },
           ),

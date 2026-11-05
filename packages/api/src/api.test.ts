@@ -1,4 +1,4 @@
-import { Effect, Either, Layer, Option } from "effect"
+import { Cause, Effect, Either, Layer, Option } from "effect"
 import { describe, expect, it } from "vitest"
 
 import { createCosenseApi } from "./api"
@@ -41,6 +41,15 @@ const runFailure = <A, E>(
   effect: Effect.Effect<A, E, HttpClient>,
   layer: Layer.Layer<HttpClient>,
 ): Promise<E> => Effect.runPromise(Effect.flip(Effect.provide(effect, layer)))
+
+/** effect を走らせ、失敗の型に入れずに止めたもの (defect) を返す。defect でなければ `undefined`。 */
+const runDefect = <A, E>(
+  effect: Effect.Effect<A, E, HttpClient>,
+  layer: Layer.Layer<HttpClient>,
+): Promise<unknown> =>
+  Effect.runPromise(Effect.flip(Effect.sandbox(Effect.provide(effect, layer)))).then((cause) =>
+    Option.getOrUndefined(Cause.dieOption(cause)),
+  )
 
 const headersOf = (call: Call | undefined): Record<string, string> =>
   call?.init.headers as Record<string, string>
@@ -164,6 +173,16 @@ describe("読み取り", () => {
       id: "u1",
       name: "taro",
       displayName: "Taro",
+      pageFilters: [],
+    })
+  })
+
+  it("getMe() は、PAT が無くゲストとして答えられても (isGuest) 失敗せず、id の空の Me を返す", async () => {
+    const { layer } = testHttpClient(() => json({ isGuest: true }))
+    expect(await run(createCosenseApi().getMe(), layer)).toEqual({
+      id: "",
+      name: "",
+      displayName: "",
       pageFilters: [],
     })
   })
@@ -410,6 +429,60 @@ describe("getRelatedPages", () => {
     expect(result.synonyms).toEqual([["Taro", "taro_yamada"]])
     expect(calls.map((call) => call.url)).toContain(
       "https://scrapbox.io/api/pages/v2/myproject/My_Page/links2hop?nextId=cursor%201",
+    )
+  })
+
+  /** 関連ページの応答。`count` 件のページと、続きの位置 (`nextId`) を持つ。 */
+  const relatedPage = (
+    hop: "links1hop" | "links2hop",
+    count: number,
+    nextId: string | null,
+  ): Response =>
+    json({
+      [hop]: Array.from({ length: count }, (_, i) => ({ id: String(i), title: `t${i}` })),
+      pagination: { hasNext: nextId !== null, nextId },
+    })
+
+  it("件数で切らずに、10 万件を超えても続きを最後まで辿る", async () => {
+    const { layer } = testHttpClient((url) => {
+      if (url.endsWith("/links1hop")) return relatedPage("links1hop", 100_000, "second")
+      if (url.includes("/links1hop?")) return relatedPage("links1hop", 7, null)
+      return relatedPage("links2hop", 0, null)
+    })
+    const result = await run(myproject.getRelatedPages("My Page"), layer)
+    expect(result.links1hop).toHaveLength(100_007)
+  })
+
+  it("hasNext が false なら、nextId があっても続きを取らない", async () => {
+    const { layer, calls } = testHttpClient((url) =>
+      url.endsWith("/links1hop")
+        ? json({ links1hop: [{ id: "a" }], pagination: { hasNext: false, nextId: "ignored" } })
+        : relatedPage("links2hop", 1, null),
+    )
+    await run(myproject.getRelatedPages("My Page"), layer)
+    expect(calls).toHaveLength(2)
+  })
+
+  it("同じ nextId を返し続けるサーバーでは、途中までを返さずに失敗する", async () => {
+    const { layer } = testHttpClient((url) =>
+      url.includes("/links2hop")
+        ? relatedPage("links2hop", 1, "again")
+        : relatedPage("links1hop", 1, null),
+    )
+    const failure = await runFailure(myproject.getRelatedPages("My Page"), layer)
+    expect(failure).toBeInstanceOf(CosenseApiError)
+    expect(failure).toMatchObject({ status: 200 })
+  })
+
+  it("nextId が前に辿った位置に戻っても、途中までを返さずに失敗する", async () => {
+    const { layer } = testHttpClient((url) => {
+      if (url.endsWith("/links2hop")) return relatedPage("links2hop", 1, "a")
+      if (url.endsWith("?nextId=a")) return relatedPage("links2hop", 1, "b")
+      if (url.endsWith("?nextId=b")) return relatedPage("links2hop", 1, "a")
+      return relatedPage("links1hop", 1, null)
+    })
+    expect(await runFailure(myproject.getRelatedPages("My Page"), layer)).toBeInstanceOf(
+      CosenseApiError,
     )
   })
 
@@ -670,6 +743,11 @@ describe("検索", () => {
     expect(calls[0]?.url).toBe(
       "https://scrapbox.io/api/pages/myproject/search/query?q=hello+world&skip=0&limit=100&sort=pageRank&field=lines",
     )
+  })
+
+  it("searchFullText() の count は、返した pages の数ではなく、見つかったページの数のまま返す", async () => {
+    const { layer } = testHttpClient(() => json({ count: 250, pages: [{ id: "a", title: "A" }] }))
+    expect((await run(myproject.searchFullText("hello"), layer)).count).toBe(250)
   })
 
   it("searchVector() は、ベクトル検索が無効なプロジェクト (490) なら空の結果を返す", async () => {
@@ -1397,6 +1475,22 @@ describe("createPage", () => {
     })
     const failure = await runFailure(myproject.createPage(["New page", "本文"]), layer)
     expect(failure).toMatchObject({ status: 409, code: "DuplicateTitle" })
+  })
+
+  it.each([
+    ["行が無い", []],
+    ["1 行目が空", ["", "本文"]],
+    ["1 行目が空白だけ", ["  ", "本文"]],
+    ["1 行目が全角の空白だけ", ["\u3000", "本文"]],
+  ])("%s なら、タイトルが無いので TypeError で止める (失敗の型には入れない)", async (_, lines) => {
+    const { layer } = server({})
+    expect(await runDefect(myproject.createPage(lines), layer)).toBeInstanceOf(TypeError)
+  })
+
+  it("タイトルが無ければ、同じタイトルのページを探しもせず、何も送らない", async () => {
+    const { layer, steps } = server({})
+    await runDefect(myproject.createPage(["", "本文"]), layer)
+    expect(steps()).toEqual([])
   })
 
   it("ほかの理由で断られたら、読み直さずにそのエラーで止める", async () => {
