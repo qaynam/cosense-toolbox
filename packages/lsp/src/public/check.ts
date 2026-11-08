@@ -17,10 +17,16 @@ export * from "../check"
 /**
  * Every link to a missing page under `roots`, file by file in the order they were read.
  * The judgement is the editor's own, so what an editor flags is what is reported here.
+ *
+ * It does not look for sites: `[:/…]` is read as `parseOptions` read it, a link unless they
+ * hold the parser's `publicMedia`. `runCheck` looks for them, as `csn-lsp check` does.
  */
 export const checkSite = (options: CheckSiteOptions): Promise<ReadonlyArray<Report>> =>
   Effect.runPromise(checkSiteEffect(options))
 
-/** Runs a check as `args` asks, from `cwd`. Never rejects: a bad option is exit code 2. */
+/**
+ * Runs a check as `args` asks, from `cwd`, as `csn-lsp check` does. Never rejects: `--help`
+ * is the usage with exit code 0, and a bad option exit code 2.
+ */
 export const runCheck = (args: ReadonlyArray<string>, cwd: string): Promise<CheckResult> =>
   Effect.runPromise(runCheckEffect(args, cwd))

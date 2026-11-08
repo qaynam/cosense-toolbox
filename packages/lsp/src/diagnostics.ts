@@ -20,13 +20,17 @@ export type Severity = (typeof SEVERITIES)[number]
 
 const SeveritySchema = Schema.Literal(...SEVERITIES)
 
+/** The severity a setting names, or None for one that names none. */
+export const decodeSeverity = (setting: unknown): Option.Option<Severity> =>
+  Schema.decodeUnknownOption(SeveritySchema)(setting)
+
 /**
  * The severity a setting names, or `fallback` for one that is missing or unknown. For links
  * to missing pages that is `warning`: the build warns about the same links by default
  * (`unresolved: "warn"`).
  */
 export const severityOf = (setting: unknown, fallback: Severity = "warning"): Severity =>
-  Option.getOrElse(Schema.decodeUnknownOption(SeveritySchema)(setting), () => fallback)
+  Option.getOrElse(decodeSeverity(setting), () => fallback)
 
 /** The LSP's severity for a setting, or None for `off`. */
 export const lspSeverity = (severity: Severity): Option.Option<DiagnosticSeverity> =>

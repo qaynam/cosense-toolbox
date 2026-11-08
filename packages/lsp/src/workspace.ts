@@ -32,7 +32,7 @@ export interface Page {
 
 export interface Index {
   /**
-   * Every page file, in the order the roots and their directories list them. A link to a
+   * Every page file, root by root, and under each, depth-first by name. A link to a
    * page is not a page: only a file is, since only a file has a first line to be its title.
    */
   readonly pages: ReadonlyArray<Page>
@@ -57,10 +57,17 @@ const SKIP_DIRECTORIES: ReadonlyArray<string> = [
   ".cache",
 ]
 
-/** A directory's entries. One that cannot be read holds nothing, rather than failing the walk. */
+const byName = Order.mapInput(Order.string, (entry: Dirent) => entry.name)
+
+/**
+ * A directory's entries, by name: the order the file system lists them in differs between
+ * file systems, and the pages are reported in this order. One that cannot be read holds
+ * nothing, rather than failing the walk.
+ */
 const entriesOf = (directory: string): Effect.Effect<ReadonlyArray<Dirent>> =>
   pipe(
     Effect.tryPromise(() => readdir(directory, { withFileTypes: true })),
+    Effect.map(Arr.sort(byName)),
     Effect.orElseSucceed(() => []),
   )
 
@@ -82,7 +89,7 @@ const filesAt = (directory: string, entry: Dirent): Effect.Effect<ReadonlyArray<
     Match.orElse(() => Effect.succeed([])),
   )
 
-/** Every page file under `directory`, depth-first, in the order the directory lists them. */
+/** Every page file under `directory`, depth-first by name. */
 const pageFiles = (directory: string): Effect.Effect<ReadonlyArray<string>> =>
   pipe(
     entriesOf(directory),

@@ -85,6 +85,26 @@ describe("readIndex", () => {
     expect(page?.updated).toBe(changed.getTime())
   })
 
+  it("reads each directory's pages and directories in the order of their names, depth first", async () => {
+    const root = await workspace({
+      "notes/b.csn": "notes/b",
+      "c.csn": "c",
+      "apps/web/a.csn": "apps/web/a",
+      "b.csn": "b",
+      "notes/a.csn": "notes/a",
+      "a.csn": "a",
+    })
+    const { pages } = await Effect.runPromise(readIndex([root]))
+    expect(pages.map((page) => page.title)).toEqual([
+      "a",
+      "apps/web/a",
+      "b",
+      "c",
+      "notes/a",
+      "notes/b",
+    ])
+  })
+
   it("reads .csnx as well as .csn", async () => {
     expect(await titles({ "a.csnx": "コンポーネントのページ\n<Modal />" })).toEqual([
       "コンポーネントのページ",
