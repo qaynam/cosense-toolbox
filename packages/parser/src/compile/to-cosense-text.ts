@@ -9,6 +9,7 @@
  *
  * AST は書きかたの違いを持たないので、同じ意味の記法は決まった 1 つの書きかたで出す
  * (`[[a]]` は `[* a]`、`[URL ラベル]` は `[ラベル URL]`、全角空白やタブの字下げは半角空白)。
+ * ただし、ラベルを前に置くと読み直したときに別のものになるときは `[URL ラベル]` で出す (`withLabel`)。
  * 書かれたとおりの文字が欲しいときは、元のテキストから `rawTextOf` で切り出す。
  */
 import { Option, pipe } from "effect"
@@ -95,9 +96,27 @@ const locationOf = (node: LocationNode): string =>
     ...(node.zoom === undefined ? [] : [`Z${node.zoom}`]),
   ].join(",")
 
-/** URL の前にラベルを置いた `[ラベル URL]`。ラベルが無いか URL と同じなら `[URL]`。 */
+/**
+ * 角括弧の先頭に置くと、ラベルではなく別の記法として読まれるラベル。
+ * `$` で始まると数式、装飾の記号の並びの後が空白か終わりだと装飾になる (`[! URL]` は `!` の装飾)。
+ * 記号の一覧は inline/bracket-rules/decoration.ts と同じ。compile/ はパーサーを import しないので写して持つ。
+ */
+const LEADING_NOTATION_RE = /^(?:\$|[!"#%&'()*+,\-./{|}<>_~=]+(?:\s|$))/
+
+/** 角括弧の中に URL が並ぶと、前にあるほうがリンク先として読まれる。 */
+const URL_RE = /https?:\/\//i
+
+/** 角括弧の先頭に置くと、読み直したときにラベルとして読まれないラベルか。 */
+const misreadInFront = (label: string): boolean =>
+  LEADING_NOTATION_RE.test(label) || URL_RE.test(label)
+
+/** 対象の前にラベルを置いた `[ラベル 対象]`。前に置けないラベルだけ、後ろに置いた `[対象 ラベル]` にする。 */
+const withLabel = (label: string, target: string): string =>
+  misreadInFront(label) ? `[${target} ${label}]` : `[${label} ${target}]`
+
+/** ラベル付きの URL。ラベルが無いか URL と同じなら `[URL]`。 */
 const labeled = (label: string | undefined, url: string): string =>
-  label === undefined || label === "" || label === url ? `[${url}]` : `[${label} ${url}]`
+  label === undefined || label === "" || label === url ? `[${url}]` : withLabel(label, url)
 
 /** 画像と動画。大きい表示は `[[URL]]`、リンク付きは `[リンク先 URL]`。 */
 const mediaOf = (node: ImageNode | VideoNode): string =>
@@ -147,7 +166,7 @@ export const defaultCosenseTextHandlers = {
   audio: (node) => labeled(node.label, node.src),
   embed: (node) => `[${node.url}]`,
   location: (node) =>
-    node.label === undefined ? `[${locationOf(node)}]` : `[${node.label} ${locationOf(node)}]`,
+    node.label === undefined ? `[${locationOf(node)}]` : withLabel(node.label, locationOf(node)),
   decoration: (node, ctx) => `[${markersOf(node)} ${ctx.children(node).join("")}]`,
 } satisfies CosenseTextHandlers
 

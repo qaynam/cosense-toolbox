@@ -47,6 +47,26 @@ describe("リンク", () => {
     expect(line("[https://example.com 例]")).toBe("[例 https://example.com]")
   })
 
+  it("ラベルが装飾の記号だけの外部リンクは、装飾と読まれないよう URL を前に置く", () => {
+    expect(line("[!https://x.test/a]")).toBe("[https://x.test/a !]")
+  })
+
+  it("ラベルが装飾の記号と空白で始まる外部リンクも、URL を前に置く", () => {
+    expect(line("[https://x.test/a ! b]")).toBe("[https://x.test/a ! b]")
+  })
+
+  it("ラベルが装飾の記号で始まっても、記号の直後が空白でなければ、ラベルを前に置く", () => {
+    expect(line("[https://x.test/a !b]")).toBe("[!b https://x.test/a]")
+  })
+
+  it("ラベルが $ で始まる外部リンクは、数式と読まれないよう URL を前に置く", () => {
+    expect(line("[https://x.test/a $]")).toBe("[https://x.test/a $]")
+  })
+
+  it("ラベルが URL の外部リンクは、前の URL がリンク先になるので、リンク先を前に置く", () => {
+    expect(line("[https://x.test/a https://y.test/b]")).toBe("[https://x.test/a https://y.test/b]")
+  })
+
   it("URL だけの外部リンクは、括弧で囲んだ [URL]", () => {
     expect(line("https://example.com")).toBe("[https://example.com]")
   })
@@ -121,6 +141,10 @@ describe("そのほかのインライン記法", () => {
     expect(line("[https://example.com/a.mp3 曲]")).toBe("[曲 https://example.com/a.mp3]")
   })
 
+  it("ラベルが装飾の記号だけの音声は、装飾と読まれないよう URL を前に置く", () => {
+    expect(line("[https://x.test/a.mp3 !]")).toBe("[https://x.test/a.mp3 !]")
+  })
+
   it("埋め込みは、書かれた URL を括弧で囲む", () => {
     expect(line("[https://www.youtube.com/watch?v=abc]")).toBe(
       "[https://www.youtube.com/watch?v=abc]",
@@ -129,6 +153,10 @@ describe("そのほかのインライン記法", () => {
 
   it("地図は、ラベルと緯度・経度・ズームを [ラベル N緯度,E経度,Zズーム] にする", () => {
     expect(line("[東京駅 N35.68,E139.76,Z14]")).toBe("[東京駅 N35.68,E139.76,Z14]")
+  })
+
+  it("ラベルが装飾の記号だけの地図は、装飾と読まれないよう座標を前に置く", () => {
+    expect(line("[N35.68,E139.76 !]")).toBe("[N35.68,E139.76 !]")
   })
 
   it("南緯と西経は、S と W に正の数を付ける", () => {
