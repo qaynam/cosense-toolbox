@@ -292,6 +292,7 @@ describe("Cosense の AST", () => {
       indent: 0,
       quote: false,
       monospace: false,
+      helpfeel: false,
       children: [{ type: "text", value: "[ページ] と #tag" }],
     })
   })
@@ -302,6 +303,7 @@ describe("Cosense の AST", () => {
       indent: 0,
       quote: false,
       monospace: false,
+      helpfeel: false,
       children: [
         { type: "text", value: "<b>" },
         { type: "text", value: "a" },
@@ -316,6 +318,7 @@ describe("Cosense の AST", () => {
       indent: 0,
       quote: false,
       monospace: false,
+      helpfeel: false,
       children: [
         {
           type: "decoration",

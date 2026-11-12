@@ -1,5 +1,6 @@
 import { Option } from "effect"
 
+import type { InlineNodeInit } from "../../types"
 import type { InternalBracketRule } from "../internal-types"
 
 const ICON_RE = /^(.+)\.icon(?:\*(\d+))?$/
@@ -7,8 +8,8 @@ const ICON_RE = /^(.+)\.icon(?:\*(\d+))?$/
 const MIN_COUNT = 1
 const MAX_COUNT = 20
 
-/** `[user.icon]` と連打 `[user.icon*5]`。個数は 1..20 に収める (描画の暴走を防ぐため)。 */
-export const iconRule: InternalBracketRule = (inner) => {
+/** `user.icon` と連打 `user.icon*5` を読む。個数は 1..20 に収める (描画の暴走を防ぐため)。 */
+export const iconOf = (inner: string): Option.Option<Extract<InlineNodeInit, { type: "icon" }>> => {
   const match = inner.match(ICON_RE)
   if (!match) return Option.none()
 
@@ -17,3 +18,6 @@ export const iconRule: InternalBracketRule = (inner) => {
 
   return Option.some({ type: "icon", user: match[1] ?? "", count })
 }
+
+/** `[user.icon]` と連打 `[user.icon*5]`。 */
+export const iconRule: InternalBracketRule = (inner) => iconOf(inner)

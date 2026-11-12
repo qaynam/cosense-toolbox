@@ -17,6 +17,8 @@ const QUOTE_RE = /^>\s?/
  * 引用の行 (`> $ x`) はコマンドにならない。
  */
 const COMMAND_RE = /^[$%] ./
+/** Helpfeel 記法の行。コマンドの行と同じく、`?` と空白の後に何かあるときだけ (Cosense Web と同じ)。 */
+const HELPFEEL_RE = /^\? ./
 
 export interface CodeHeaderLine {
   readonly _tag: "codeHeader"
@@ -35,6 +37,7 @@ export interface ContentLine {
   readonly indent: number
   readonly quote: boolean
   readonly monospace: boolean
+  readonly helpfeel: boolean
   /** 行の先頭から数えて、インライン記法の解析を始める位置 (インデントと引用記号の分だけ進む) */
   readonly contentOffset: number
 }
@@ -62,6 +65,7 @@ const content = (rest: string, indent: number): LineRole => {
     indent,
     quote: quoteMark !== "",
     monospace: quoteMark === "" && COMMAND_RE.test(rest),
+    helpfeel: HELPFEEL_RE.test(rest),
     contentOffset: indent + quoteMark.length,
   }
 }

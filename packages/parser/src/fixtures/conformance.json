@@ -1022,6 +1022,42 @@
       ]
     },
     {
+      "description": "[[user.icon]] は大きいアイコン (Cosense Web の強調のアイコン)",
+      "input": "[[takker.icon]]",
+      "expected": [
+        {
+          "type": "icon",
+          "user": "takker",
+          "count": 1,
+          "large": true
+        }
+      ]
+    },
+    {
+      "description": "[[user.icon*N]] は連打数を持つ大きいアイコン",
+      "input": "[[a.icon*2]]",
+      "expected": [
+        {
+          "type": "icon",
+          "user": "a",
+          "count": 2,
+          "large": true
+        }
+      ]
+    },
+    {
+      "description": "[[/project/user.icon]] も大きいアイコン",
+      "input": "[[/icons/a.icon]]",
+      "expected": [
+        {
+          "type": "icon",
+          "user": "/icons/a",
+          "count": 1,
+          "large": true
+        }
+      ]
+    },
+    {
       "description": "角括弧つきの動画 URL は動画",
       "input": "[https://x.com/a.mp4]",
       "expected": [

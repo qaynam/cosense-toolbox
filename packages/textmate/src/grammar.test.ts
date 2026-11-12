@@ -431,6 +431,10 @@ describe("[[ ]]", () => {
     expect(scopesOf("T\n[[強調]]", "[[強調]]")).toEqual([SCOPES.bold])
   })
 
+  it("[[user.icon]] はアイコンになる (Cosense Web の強調のアイコン)", () => {
+    expect(scopesOf("T\n[[user.icon*2]]", "[[user.icon*2]]")).toEqual([SCOPES.icon])
+  })
+
   it("[[画像 URL]] は画像になる", () => {
     expect(scopesOf(`T\n[[${IMAGE}]]`, `[[${IMAGE}]]`)).toEqual([SCOPES.image])
   })

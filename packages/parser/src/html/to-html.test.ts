@@ -91,6 +91,12 @@ describe("インライン記法", () => {
     )
   })
 
+  it("大きいアイコン ([[user.icon]]) の画像には data-large が付く", () => {
+    expect(line("[[user.icon]]", { iconImageUrl: () => "/user.png" })).toBe(
+      '<a class="link icon" href="/user"><img class="icon" src="/user.png" alt="user" title="user" data-large="true"></a>',
+    )
+  })
+
   it("連打の数だけ出る", () => {
     expect(line("[user.icon*3]").match(/<a class="link icon"/g)).toHaveLength(3)
   })
@@ -143,6 +149,18 @@ describe("ブロック", () => {
     ).toBe(
       '<code class="cli"><span class="p">$</span><span> </span><span class="c">ls</span></code>',
     )
+  })
+
+  it("helpfeel の行は、Cosense Web と同じく記号と中身に分けて code に入れる", () => {
+    expect(line("? [リンク] と <b>")).toBe(
+      '<code class="helpfeel"><span class="prefix">?</span> <span class="entry">[リンク] と &lt;b></span></code>',
+    )
+  })
+
+  it("helpfeel の部品の class 名は classNames で変えられる", () => {
+    expect(
+      line("? 使い方", { classNames: { helpfeel: "h", helpfeelPrefix: "", helpfeelEntry: "e" } }),
+    ).toBe('<code class="h"><span>?</span> <span class="e">使い方</span></code>')
   })
 
   it("コードブロックは 1 行ずつの要素になる", () => {
@@ -207,6 +225,10 @@ describe("ブロック", () => {
     expect(toHtml(parse("t\n a\n table:x\n  a\tb\n"))).toContain(
       '<table class="table-block" data-indent="1">',
     )
+  })
+
+  it("先頭のセルが空の行は、空の td を残す", () => {
+    expect(tableHtml("\ta")).toContain("<tr><td></td><td>a</td></tr>")
   })
 
   it("セルの中のリンクはリンクになり、ほかの記法は書いたまま出す", () => {

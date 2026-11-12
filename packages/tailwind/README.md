@@ -25,6 +25,7 @@ Tailwind を使う場合は、`style.css` を別途読み込む必要はあり�
   `@cosense-toolbox/parser` 1.0.0 の `toHtml` が表に付ける `data-indent` を見るので、parser も 1.0.0 にそろえる。
 - **不具合の修正:** オプションの例の `classname: article;` を `className: article;` に直した。
   プラグインは `className` だけを読むので、例のとおりに書くと class 名が `cosense` のまま変わらなかった。
+- Helpfeel の行 (`? 使い方`) と大きいアイコン (`[[user.icon]]`) に、`@cosense-toolbox/style` と同じ見た目を付けた。どちらも parser 1.0.0 から出る。
 
 対象を変えた modifier の、今までと 1.0.0 の対応:
 

@@ -158,12 +158,14 @@ export interface LocationNode extends NodeBase {
   readonly label?: string
 }
 
-/** `[user.icon]` / `[user.icon*N]`。 */
+/** `[user.icon]` / `[user.icon*N]`。`[[user.icon]]` は大きいアイコン (Cosense Web の強調のアイコン)。 */
 export interface IconNode extends NodeBase {
   readonly type: "icon"
   readonly user: string
   /** 連打の個数 (1..20)。記法上省略されていても 1 が入る */
   readonly count: number
+  /** `[[...]]` で囲まれた大きい表示 */
+  readonly large?: boolean
 }
 
 /** `[$ 数式]`。中身は解釈せず生のまま返す (KaTeX 等に渡す想定)。 */
@@ -293,6 +295,11 @@ export interface LineBlock extends NodeBase {
    * (`children` は書いたままの文字の `text` 1 つ)
    */
   readonly monospace: boolean
+  /**
+   * 字下げの後が `?` と空白の Helpfeel 記法の行。Cosense Web と同じく中の記法は読まない
+   * (`children` は書いたままの文字の `text` 1 つ)。検索の言い換えの展開は解釈しない
+   */
+  readonly helpfeel: boolean
   /** 空行では空配列 */
   readonly children: readonly InlineNode[]
 }

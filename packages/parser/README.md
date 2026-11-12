@@ -28,6 +28,14 @@ Cosense (旧 Scrapbox) の記法を、位置情報つきの AST に変換する�
   `@cosense-toolbox/tailwind` のプラグインの `prefix` に同じ値を渡して使う。`@cosense-toolbox/style` の style.css は接頭辞の無い名前だけに当たるので、style.css でぶつかりを避けるときは出力を Shadow DOM に入れる。
 - `classNames` にキー `iconLink` を足した。アイコンを包む `<a>` の class 名で、既定は Cosense Web と同じ `link icon`。
   今までは `internalLink` と `icon` をつないだ名前だったので、内部リンクの名前を変えるとアイコンのリンクも変わっていた。`icon` は `<img>` だけの class 名になる。
+- **不具合の修正:** `[[user.icon]]` を、Cosense Web と同じく大きいアイコン (強調のアイコン) として読むようにした。
+  今までは `user.icon` という太字の文字になっていた。アイコンのノードに `large: true` が付き、`toHtml` はアイコンの画像に `data-large` を付ける。連打 (`[[user.icon*2]]`) と別プロジェクトのアイコンも同じ。
+- **不具合の修正:** 表の行は、見出しより 1 文字深いところからをセルとして読むようにした (Cosense Web と同じ)。
+  今までは行頭の空白とタブをすべて字下げとみなしていたので、先頭のセルが空の行 (` \ta`) の空のセルが消え、`  a\tb` の 2 つめの空白も落ちていた。
+- **破壊的変更:** Helpfeel 記法 (`? 使い方`) の行を読むようにした。行のノードに `helpfeel` が付く (`monospace` と同じく必ずある真偽値)。
+  Cosense Web と同じく、中の記法は読まず書いたままの文字 1 つにする。検索の言い換えの展開は解釈しない。
+  `toHtml` は `<code class="helpfeel"><span class="prefix">?</span> <span class="entry">使い方</span></code>` を出す。class 名は `classNames` の `helpfeel` / `helpfeelPrefix` / `helpfeelEntry` で変えられる。
+  - **移行:** 行のノードを自分で組み立てているところは、`helpfeel: false` を足す。
 - `@cosense-toolbox/parser/html` から、hast の型 `Element` / `ElementContent` / `Root` を出すようにした。
   `handlers` や `extensions` の型を、`@types/hast` を別に入れずに書ける。
   hast の要素は、[hastscript](https://github.com/syntax-tree/hastscript) 9 (hast 3) を入れて `h` で組み立てると、

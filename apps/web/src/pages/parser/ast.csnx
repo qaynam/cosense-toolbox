@@ -35,7 +35,7 @@ code:text
  ├─ TitleBlock   1 行目。value と、書いたままの文字の children
  ├─ CodeBlock    code:filename と CodeLine[]
  ├─ TableBlock   TableRow[] → TableCell[]
- └─ LineBlock    indent / quote / monospace / InlineNode[]
+ └─ LineBlock    indent / quote / monospace / helpfeel / InlineNode[]
 
 <DocHeading level={2} id="inline" title="インラインノード" />
 

@@ -31,6 +31,8 @@ Tailwind CSS を使う場合は、この CSS の代わりに [`@cosense-toolbox/
     タイトルにも Cosense Web と同じく `.line` が付くので、行だけに当てるセレクタは `.line:not(.line-title)` と書く。
 - 字下げして書いた表 (`table:名前`) を、同じ深さの行の本文と同じ位置に置くようにした。
   `@cosense-toolbox/parser` 1.0.0 の `toHtml` が表に付ける `data-indent` を見るので、parser も 1.0.0 にそろえる。
+- `@cosense-toolbox/parser` 1.0.0 が読むようになった Helpfeel の行 (`? 使い方`) と大きいアイコン (`[[user.icon]]`) に、Cosense Web と同じ見た目を付けた。
+  Helpfeel の行は淡い橙の背景で、記号と中身を橙の濃さで分ける。大きいアイコンは普通のアイコンの 3 倍の高さ。
 
 セレクタに使う class 名のうち、変わったものの今までと 1.0.0 の対応:
 

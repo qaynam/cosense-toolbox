@@ -122,6 +122,11 @@ describe("detectCompletionInDocument", () => {
     expect(Option.isNone(detectCompletionInDocument(text, { line: 2, character: 11 }))).toBe(true)
   })
 
+  it("says nothing on a Helpfeel line, which Cosense shows as it is written", () => {
+    const text = "タイトル\n? 使い方 [ページ]"
+    expect(Option.isNone(detectCompletionInDocument(text, { line: 1, character: 8 }))).toBe(true)
+  })
+
   it("answers on a line that only starts like a command", () => {
     const text = "タイトル\n$記号 [ページ]"
     expect(found(detectCompletionInDocument(text, { line: 1, character: 6 }))?.kind).toBe("link")

@@ -139,6 +139,29 @@ describe("行", () => {
     expect(blockAt(body("> $ ls"), 0, "line").monospace).toBe(false)
   })
 
+  it("行頭が ? と空白の行は helpfeel になる (Cosense Web と同じ)", () => {
+    expect(blockAt(body("? 使い方"), 0, "line").helpfeel).toBe(true)
+    expect(blockAt(body("使い方"), 0, "line").helpfeel).toBe(false)
+  })
+
+  it("helpfeel の行は記法を読まず、書いたままの文字 1 つになる (Cosense Web と同じ)", () => {
+    expect(stripPositions(blockAt(body("? [リンク] と `x`"), 0, "line").children)).toEqual([
+      { type: "text", value: "? [リンク] と `x`" },
+    ])
+  })
+
+  it("字下げした行も、字下げの後が ? と空白なら helpfeel になる", () => {
+    expect(blockAt(body("  ? 使い方"), 0, "line").helpfeel).toBe(true)
+  })
+
+  it("? の後に空白が無ければ、helpfeel にならない", () => {
+    expect(blockAt(body("?使い方"), 0, "line").helpfeel).toBe(false)
+  })
+
+  it("? と空白の後に何も無ければ、helpfeel にならない", () => {
+    expect(blockAt(body("? "), 0, "line").helpfeel).toBe(false)
+  })
+
   it("空行は子を持たない行になる", () => {
     const line = blockAt(body(""), 0, "line")
     expect(line.children).toEqual([])
@@ -203,6 +226,31 @@ describe("table: ブロック", () => {
       ["a", "b"],
       ["c", "d"],
     ])
+  })
+
+  it("先頭のセルが空の行は、空のセルを残す (Cosense Web と同じ)", () => {
+    const table = blockAt(body("table:t", " \ta"), 0, "table")
+    expect(table.rows.map((r) => r.cells.map((c) => c.value))).toEqual([["", "a"]])
+  })
+
+  it("見出しより 1 文字だけを字下げとして読み、続く空白は最初のセルの中身になる", () => {
+    const table = blockAt(body("table:t", "  a\tb"), 0, "table")
+    expect(table.rows.map((r) => r.cells.map((c) => c.value))).toEqual([[" a", "b"]])
+  })
+
+  it("行頭のタブも、字下げの 1 文字として数える", () => {
+    const table = blockAt(body("table:t", "\ta\tb"), 0, "table")
+    expect(table.rows.map((r) => r.cells.map((c) => c.value))).toEqual([["a", "b"]])
+  })
+
+  it("字下げした表では、見出しの字下げより 1 文字深いところからがセル", () => {
+    const table = blockAt(body(" table:t", "  \ta"), 0, "table")
+    expect(table.rows.map((r) => r.cells.map((c) => c.value))).toEqual([["", "a"]])
+  })
+
+  it("空のセルの位置は、字下げの 1 文字の直後になる", () => {
+    const table = blockAt(body("table:t", " \ta"), 0, "table")
+    expect(table.rows[0]?.cells.map((c) => c.position.start.column)).toEqual([1, 2])
   })
 
   it("本体が無くてもテーブルになる", () => {
