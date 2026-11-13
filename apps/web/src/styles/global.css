@@ -833,7 +833,11 @@ body.is-app {
   overflow: auto;
   padding: 22px;
 }
-/* 出力はテーマビルダーのプレビューと同じく、Cosense の既定の白い紙に置く */
+/* 描画は枠に入れず、欄そのものを Cosense の既定の白い紙にする */
+.playground-stage-paper {
+  padding: 0;
+  background: #fefefe;
+}
 .playground-page {
   /* style.css は Cosense のテーマ変数を読み、変数は Shadow DOM の中へも継承される。
      サイトの --code-bg (暗い色) が同じ名前なので、style.css の既定の色に戻す */
@@ -845,13 +849,7 @@ body.is-app {
   --page-link-hover-color: initial;
   --page-text-color: initial;
   --quote-bg-color: initial;
-  max-width: 900px;
-  margin: 0 auto;
   padding: 24px 32px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: #fefefe;
-  box-shadow: 0 10px 44px rgba(0, 0, 0, 0.28);
 }
 /* 長い行で枠の外へはみ出さないよう、枠を中身の幅まで広げて、外側の欄ごと横に送る */
 .playground-code {
