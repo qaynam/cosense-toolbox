@@ -37,12 +37,13 @@ Starlight は使わず、手書き CSS の Astro サイトとして構成する�
 - `src/lib/docs.ts` … サイドバー、検索対象、前後ページの順序を管理する
 - `src/lib/site.ts` … サイト定数（いまは GitHub URL だけ）
 - `src/lib/tools.ts` … トップに並べる道具の一覧
+- `src/pages/playground.astro` … プレイグラウンド（下の節を参照）
 
 ## 現状
 
 実装済み：
 
-- ドキュメントトップ、各パッケージガイド、テーマビルダー、アイコン作成
+- ドキュメントトップ、各パッケージガイド、テーマビルダー、アイコン作成、プレイグラウンド
 - **ライトモード**：ヘッダのトグルで切替（`is:inline`で描画前にテーマ確定、localStorage永続）
 
 ## テーマビルダー（`/builder`）
@@ -54,6 +55,17 @@ Cosenseの色をポチポチ変えて、疑似Cosense画面で即プレビュー
 - 操作対象トークンは `src/lib/theme-tokens.ts`（既定値は blue テーマ基準）。`src/pages/builder.astro` が UI＋クライアントロジック（color input → 生成CSSを iframe へ `postMessage`、出力表示、コピー、記事/一覧切替、リセット）
 - **プレビューの実体**は `public/builder/` の静的ファイル：`cosense.css`（=index.css）＋ `preview-article.html` / `preview-list.html`（`src/styles/knowledge/` のDOMから個人userCSS/script/linkを除去し、`<html data-project-theme=blue>`＋`<link cosense.css>`＋`<style id="user">`＋postMessageリスナーで包んだもの）
 - **これらは生成物**。元(`src/styles/knowledge/`)を変えたら `bun run scripts/build-preview.mjs` で再生成する
+
+## プレイグラウンド（`/playground`）
+
+左に Cosense の記法を書くと、右にその場で描画・HTML・AST を出す画面。テーマビルダーと同じ全画面の枠 (`Base` の `app`) を使う。
+
+- 出すのは `parse` → `toHtml` を**既定のオプションのまま**通したものと、`@cosense-toolbox/style`。サイトの描画の拡張 (`codeLanguage` など) は使わない。ライブラリを入れた人が最初に得るものを見せるため
+- 描画は Shadow DOM に入れる (style の README が勧める切り離し方)。style.css が読む Cosense のテーマ変数は Shadow DOM の中へも継承されるので、`.playground-page` で初期値に戻している。サイトの `--code-bg` が同じ名前で、そのままだとコードが暗い地になる
+- 書いた内容は、縮めて URL の `#code=` に置く。リンクを送ると同じ内容で開き、サーバーには何も送らない。例のままなら `#code=` を付けない
+- エディターは textarea。Tab / Shift+Tab で字下げ・字上げ、Enter で今の行と同じ深さの行を足す (Cosense Web と同じ)。Esc の後の Tab だけは次の項目へ移る。書き換えは `execCommand("insertText")` で行い、⌘Z で戻せるようにしている
+- 純粋な部分 (URL の `#code=` との行き来、HTML の整形、字下げと改行) は `src/lib/playground.ts` にあり、`playground.test.ts` でテストする
+- ヘッダのリンクは、収まらない幅 (760px 以下) では外す。トップのカードとパーサーのページからも行ける
 
 ## アイコン作成（`/icon`）
 

@@ -1,0 +1,334 @@
+---
+import Base from "../layouts/Base.astro"
+
+// リンクに記法が無いときに出す例。主な記法をひととおり並べる
+const sample = [
+  "Cosense プレイグラウンド",
+  "左に Cosense の記法を書くと、右にその場で HTML にして見せます。",
+  "",
+  "[* 文字の飾り]",
+  " [* 太字]、[/ 斜体]、[- 打ち消し]、[** 大きな文字]、`コード`",
+  "",
+  "[* リンク]",
+  " [ページのリンク] と #ハッシュタグ",
+  " [外部のリンク https://example.com]",
+  " https://example.com",
+  "",
+  "[* 字下げ]",
+  " 1 段目",
+  "  2 段目",
+  "   3 段目",
+  "",
+  "> 行の頭に > を書くと引用になります",
+  "",
+  "code:hello.js",
+  " const greet = (name) => `Hello, ${name}!`",
+  ' console.log(greet("Cosense"))',
+  "",
+  "table:記法の例",
+  " 記法\t書きかた",
+  " 太字\t[* 文字]",
+  " リンク\t[ページの名前]",
+].join("\n")
+---
+
+<Base
+  title="プレイグラウンド"
+  description="Cosense の記法を書くと、その場で HTML にして見せる画面。出力の HTML と AST も見られる。"
+  app
+>
+  <div class="playground">
+    <section class="playground-pane playground-input" aria-labelledby="playground-input-title">
+      <div class="playground-bar">
+        <h1 class="playground-title" id="playground-input-title">
+          Cosense の記法
+        </h1>
+        <div class="playground-actions">
+          <button class="btn" type="button" data-playground-reset>
+            例に戻す
+          </button>
+          <button class="btn" type="button" data-playground-share>
+            <span class="label">リンクをコピー</span>
+          </button>
+        </div>
+      </div>
+      <textarea
+        class="playground-editor"
+        data-playground-editor
+        aria-labelledby="playground-input-title"
+        aria-describedby="playground-keys"
+        spellcheck="false"
+        autocomplete="off"
+        autocapitalize="off"
+      >{sample}</textarea>
+      <p class="playground-keys" id="playground-keys">
+        <kbd>Tab</kbd> で字下げ、<kbd>Shift</kbd>+<kbd>Tab</kbd> で字上げ。<kbd>Esc</kbd> の後の
+        <kbd>Tab</kbd> で次の項目へ移ります。
+      </p>
+    </section>
+
+    <section class="playground-pane playground-output" aria-label="出力">
+      <div class="playground-bar">
+        <div class="seg" role="tablist" aria-label="出力の形">
+          <button
+            class="seg-btn is-active"
+            type="button"
+            role="tab"
+            id="playground-tab-preview"
+            aria-selected="true"
+            aria-controls="playground-view-preview"
+            data-playground-tab="preview"
+          >
+            プレビュー
+          </button>
+          <button
+            class="seg-btn"
+            type="button"
+            role="tab"
+            id="playground-tab-html"
+            aria-selected="false"
+            aria-controls="playground-view-html"
+            data-playground-tab="html"
+          >
+            HTML
+          </button>
+          <button
+            class="seg-btn"
+            type="button"
+            role="tab"
+            id="playground-tab-ast"
+            aria-selected="false"
+            aria-controls="playground-view-ast"
+            data-playground-tab="ast"
+          >
+            AST
+          </button>
+        </div>
+        <span class="playground-hint" data-playground-hint>
+          <code>parse</code> → <code>toHtml</code> (既定のオプション) +{" "}
+          <code>@cosense-toolbox/style</code>
+        </span>
+        <button class="btn" type="button" data-copy="" data-playground-copy hidden>
+          <span class="label">コピー</span>
+        </button>
+      </div>
+
+      <div
+        class="playground-stage"
+        id="playground-view-preview"
+        role="tabpanel"
+        aria-labelledby="playground-tab-preview"
+        data-playground-view="preview"
+      >
+        <div class="playground-page" data-playground-preview></div>
+      </div>
+      <div
+        class="playground-stage"
+        id="playground-view-html"
+        role="tabpanel"
+        aria-labelledby="playground-tab-html"
+        data-playground-view="html"
+        hidden
+      >
+        <pre class="playground-code"><code data-playground-output="html"></code></pre>
+      </div>
+      <div
+        class="playground-stage"
+        id="playground-view-ast"
+        role="tabpanel"
+        aria-labelledby="playground-tab-ast"
+        data-playground-view="ast"
+        hidden
+      >
+        <pre class="playground-code"><code data-playground-output="ast"></code></pre>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    import { parse } from "@cosense-toolbox/parser"
+    import { toHast, toHtml } from "@cosense-toolbox/parser/html"
+    import style from "@cosense-toolbox/style/style.css?raw"
+    import { Option } from "effect"
+
+    import {
+      breakLine,
+      formatHtml,
+      indentLines,
+      type LineEdit,
+      sourceFromHash,
+      sourceToHash,
+    } from "../lib/playground"
+
+    type View = "preview" | "html" | "ast"
+
+    const editor = document.querySelector<HTMLTextAreaElement>("[data-playground-editor]")!
+    const previewHost = document.querySelector<HTMLElement>("[data-playground-preview]")!
+    const tabs = document.querySelectorAll<HTMLButtonElement>("[data-playground-tab]")
+    const views = document.querySelectorAll<HTMLElement>("[data-playground-view]")
+    const outputs = {
+      html: document.querySelector<HTMLElement>('[data-playground-output="html"]')!,
+      ast: document.querySelector<HTMLElement>('[data-playground-output="ast"]')!,
+    }
+    const copyButton = document.querySelector<HTMLButtonElement>("[data-playground-copy]")!
+    const hint = document.querySelector<HTMLElement>("[data-playground-hint]")!
+    const shareButton = document.querySelector<HTMLButtonElement>("[data-playground-share]")!
+
+    // サイトの CSS (global.css) を出力に当てず、style.css だけで見せるため Shadow DOM に入れる。
+    // style は書くたびに入れ直さず、最初に 1 度だけ置く
+    const shadow = previewHost.attachShadow({ mode: "open" })
+    const styleElement = document.createElement("style")
+    styleElement.textContent = style
+    const pageContainer = document.createElement("div")
+    shadow.append(styleElement, pageContainer)
+
+    let view: View = "preview"
+
+    // 見えている形だけを作る。3 つとも作ると、長いページでは打つたびに AST の JSON まで組むことになる
+    const render = () => {
+      const page = parse(editor.value)
+      if (view === "preview") {
+        pageContainer.innerHTML = toHtml(page)
+        return
+      }
+      const output = view === "html" ? formatHtml(toHast(page)) : JSON.stringify(page, null, 2)
+      outputs[view].textContent = output
+      copyButton.dataset.copy = output
+    }
+
+    let renderFrame = 0
+    const scheduleRender = () => {
+      cancelAnimationFrame(renderFrame)
+      renderFrame = requestAnimationFrame(render)
+    }
+
+    // 例のまま #code= を付けると、何も書いていない人のアドレスバーにも長い符号が出てしまう
+    const writeHash = async () => {
+      const url =
+        editor.value === editor.defaultValue
+          ? location.pathname + location.search
+          : await sourceToHash(editor.value)
+      // Safari は短い間に何度も replaceState を呼ぶと例外を投げる。URL が古いままでも書いた内容は消えない
+      try {
+        history.replaceState(null, "", url)
+      } catch {}
+    }
+
+    let hashTimer: ReturnType<typeof setTimeout> | undefined
+    const scheduleHash = () => {
+      clearTimeout(hashTimer)
+      hashTimer = setTimeout(writeHash, 500)
+    }
+
+    const showView = (next: View) => {
+      view = next
+      for (const tab of tabs) {
+        const selected = tab.dataset.playgroundTab === next
+        tab.classList.toggle("is-active", selected)
+        tab.setAttribute("aria-selected", String(selected))
+      }
+      for (const panel of views) panel.hidden = panel.dataset.playgroundView !== next
+      copyButton.hidden = next === "preview"
+      hint.hidden = next !== "preview"
+      render()
+    }
+
+    // execCommand は ⌘Z で元に戻せる。setRangeText で書き換えると、元に戻す履歴に残らない
+    const replaceText = (from: number, to: number, insert: string) => {
+      editor.focus()
+      editor.setSelectionRange(from, to)
+      if (!document.execCommand("insertText", false, insert)) {
+        editor.setRangeText(insert, from, to)
+        editor.dispatchEvent(new Event("input"))
+      }
+    }
+
+    const applyEdit = ({ from, to, insert, selection }: LineEdit) => {
+      replaceText(from, to, insert)
+      editor.setSelectionRange(selection.start, selection.end)
+    }
+
+    // 日本語入力を確定する Enter も keydown で届く。Safari は確定の直後に、isComposing が false で
+    // keyCode が 229 の keydown を送るので、keyCode も見る
+    const isImeKey = (event: KeyboardEvent) => event.isComposing || event.keyCode === 229
+
+    // Tab を字下げに使うと、キーボードだけでは欄から出られなくなる。Esc の直後の Tab だけは次の項目へ移す
+    let tabLeavesEditor = false
+
+    editor.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        tabLeavesEditor = true
+        return
+      }
+      if (event.key !== "Tab" && event.key !== "Shift") tabLeavesEditor = false
+      if (isImeKey(event) || event.altKey || event.ctrlKey || event.metaKey) return
+      const selection = { start: editor.selectionStart, end: editor.selectionEnd }
+      // Shift+Enter は横取りしない。字下げを引き継がずに改行したいときの逃げ道にする
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault()
+        applyEdit(breakLine(editor.value, selection))
+        return
+      }
+      if (event.key === "Tab" && !tabLeavesEditor) {
+        event.preventDefault()
+        Option.map(
+          indentLines(editor.value, selection, event.shiftKey ? "outdent" : "indent"),
+          applyEdit,
+        )
+      }
+    })
+    editor.addEventListener("focus", () => {
+      tabLeavesEditor = false
+    })
+    editor.addEventListener("input", () => {
+      scheduleRender()
+      scheduleHash()
+    })
+
+    for (const tab of tabs) {
+      tab.addEventListener("click", () => showView(tab.dataset.playgroundTab as View))
+    }
+
+    document.querySelector("[data-playground-reset]")!.addEventListener("click", () => {
+      replaceText(0, editor.value.length, editor.defaultValue)
+      editor.setSelectionRange(0, 0)
+      editor.scrollTop = 0
+    })
+
+    shareButton.addEventListener("click", async () => {
+      clearTimeout(hashTimer)
+      await writeHash()
+      try {
+        await navigator.clipboard.writeText(location.href)
+      } catch {
+        return
+      }
+      const label = shareButton.querySelector<HTMLElement>(".label")!
+      shareButton.classList.add("copied")
+      label.textContent = "コピー済み ✓"
+      setTimeout(() => {
+        shareButton.classList.remove("copied")
+        label.textContent = "リンクをコピー"
+      }, 1400)
+    })
+
+    // ページのリンクの行き先 (/タイトル) はこのサイトには無いので、外部のリンクだけを新しいタブで開く
+    shadow.addEventListener("click", (event) => {
+      const anchor = (event.target as Element).closest("a[href]")
+      if (anchor === null) return
+      event.preventDefault()
+      const href = anchor.getAttribute("href") ?? ""
+      if (/^https?:\/\//.test(href)) window.open(href, "_blank", "noopener")
+    })
+
+    const loadFromHash = async () => {
+      const restored = await sourceFromHash(location.hash)
+      if (Option.isSome(restored)) editor.value = restored.value
+      render()
+    }
+
+    // 別のリンクをアドレスバーに貼ったときも、その記法を読む
+    window.addEventListener("hashchange", loadFromHash)
+    void loadFromHash()
+  </script>
+</Base>
