@@ -112,6 +112,13 @@ export const TOOL_GROUPS: ToolGroup[] = [
     label: "道具",
     tools: [
       {
+        href: "/playground/",
+        title: "プレイグラウンド",
+        description: "Cosense 記法を書きながら、描画と HTML と AST をその場で確かめる。",
+        icon: "▶",
+        accent: "orange",
+      },
+      {
         href: "/builder/",
         title: "テーマ作成",
         description: "色を変えながら疑似 Cosense 画面で確かめて、userCSS を書き出す。",
