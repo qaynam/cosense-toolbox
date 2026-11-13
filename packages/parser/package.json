@@ -82,7 +82,7 @@
   "scripts": {
     "build": "tsdown",
     "check:public-types": "bun ../../tools/public-types/src/check.ts --allow schema",
-    "dev": "tsdown --watch",
+    "dev": "tsdown --watch --no-clean",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

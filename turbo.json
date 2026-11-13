@@ -12,7 +12,10 @@
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/tools/public-types/src/**"],
       "outputs": []
     },
+    // 依存先の dist がそろってから始める。各パッケージの dev が tsdown --watch --no-clean なのは、
+    // watch の始めに dist を空にすると、同時に始まる astro dev が設定を読めずに落ちるため
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
