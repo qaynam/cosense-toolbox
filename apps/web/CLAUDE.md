@@ -63,7 +63,7 @@ Cosenseの色をポチポチ変えて、疑似Cosense画面で即プレビュー
 - 出すのは `parse` → `toHtml` を**既定のオプションのまま**通したものと、`@cosense-toolbox/style`。サイトの描画の拡張 (`codeLanguage` など) は使わない。ライブラリを入れた人が最初に得るものを見せるため
 - 描画は Shadow DOM に入れる (style の README が勧める切り離し方)。style.css が読む Cosense のテーマ変数は Shadow DOM の中へも継承されるので、`.playground-page` で初期値に戻している。サイトの `--code-bg` が同じ名前で、そのままだとコードが暗い地になる
 - 書いた内容は、縮めて URL の `#code=` に置く。リンクを送ると同じ内容で開き、サーバーには何も送らない。例のままなら `#code=` を付けない
-- エディターは textarea。Tab / Shift+Tab で字下げ・字上げ、Enter で今の行と同じ深さの行を足す (Cosense Web と同じ)。Esc の後の Tab だけは次の項目へ移る。書き換えは `execCommand("insertText")` で行い、⌘Z で戻せるようにしている
+- エディターは textarea。Shift+Tab で字上げ、Enter で今の行と同じ深さの行を足す (Cosense Web と同じ)。Tab で字下げするのは、カーソルが行頭 (字下げの空白の中を含む) にあるときと、選択が行をまたぐときだけ。行の途中ではタブを入れる (表のセルの区切りに使う)。Esc の後の Tab だけは次の項目へ移る。書き換えは `execCommand("insertText")` で行い、⌘Z で戻せるようにしている
 - 純粋な部分 (URL の `#code=` との行き来、HTML の整形、字下げと改行) は `src/lib/playground.ts` にあり、`playground.test.ts` でテストする
 - ヘッダのリンクは、収まらない幅 (760px 以下) では外す。トップのカードとパーサーのページからも行ける
 

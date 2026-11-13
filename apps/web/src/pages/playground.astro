@@ -62,8 +62,8 @@ const sample = [
         autocapitalize="off"
       >{sample}</textarea>
       <p class="playground-keys" id="playground-keys">
-        <kbd>Tab</kbd> で字下げ、<kbd>Shift</kbd>+<kbd>Tab</kbd> で字上げ。<kbd>Esc</kbd> の後の
-        <kbd>Tab</kbd> で次の項目へ移ります。
+        行頭の <kbd>Tab</kbd> で字下げ、<kbd>Shift</kbd>+<kbd>Tab</kbd> で字上げ。
+        <kbd>Esc</kbd> の後の <kbd>Tab</kbd> で次の項目へ移ります。
       </p>
     </section>
 
@@ -155,6 +155,7 @@ const sample = [
       breakLine,
       formatHtml,
       indentLines,
+      indentOrInsertTab,
       type LineEdit,
       sourceFromHash,
       sourceToHash,
@@ -271,10 +272,8 @@ const sample = [
       }
       if (event.key === "Tab" && !tabLeavesEditor) {
         event.preventDefault()
-        Option.map(
-          indentLines(editor.value, selection, event.shiftKey ? "outdent" : "indent"),
-          applyEdit,
-        )
+        if (event.shiftKey) Option.map(indentLines(editor.value, selection, "outdent"), applyEdit)
+        else applyEdit(indentOrInsertTab(editor.value, selection))
       }
     })
     editor.addEventListener("focus", () => {

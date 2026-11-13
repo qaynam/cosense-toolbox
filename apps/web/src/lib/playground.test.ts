@@ -2,7 +2,14 @@ import { Option } from "effect"
 import type { ElementContent, Properties, Root } from "hast"
 import { describe, expect, it } from "vitest"
 
-import { breakLine, formatHtml, indentLines, sourceFromHash, sourceToHash } from "./playground"
+import {
+  breakLine,
+  formatHtml,
+  indentLines,
+  indentOrInsertTab,
+  sourceFromHash,
+  sourceToHash,
+} from "./playground"
 
 const element = (
   tagName: string,
@@ -155,6 +162,53 @@ describe("indentLines", () => {
 
     it("取れる空白が無ければ、何も変えない", () => {
       expect(indentLines("ab", { start: 1, end: 1 }, "outdent")).toEqual(Option.none())
+    })
+  })
+})
+
+describe("indentOrInsertTab", () => {
+  it("カーソルが行の頭にあれば、行を字下げする", () => {
+    expect(indentOrInsertTab("ab\ncd", { start: 3, end: 3 })).toEqual({
+      from: 3,
+      to: 5,
+      insert: " cd",
+      selection: { start: 4, end: 4 },
+    })
+  })
+
+  it("カーソルの前が字下げの空白だけなら、行の頭と同じく字下げする", () => {
+    expect(indentOrInsertTab(" ab", { start: 1, end: 1 })).toEqual({
+      from: 0,
+      to: 3,
+      insert: "  ab",
+      selection: { start: 2, end: 2 },
+    })
+  })
+
+  it("カーソルが行の途中にあれば、字下げせずにタブを入れる", () => {
+    expect(indentOrInsertTab("ab\ncd", { start: 4, end: 4 })).toEqual({
+      from: 4,
+      to: 4,
+      insert: "\t",
+      selection: { start: 5, end: 5 },
+    })
+  })
+
+  it("行の途中の選択は、タブに置き換える", () => {
+    expect(indentOrInsertTab("abcd", { start: 1, end: 3 })).toEqual({
+      from: 1,
+      to: 3,
+      insert: "\t",
+      selection: { start: 2, end: 2 },
+    })
+  })
+
+  it("選択が行をまたぐなら、行の途中から始まっていても、触れている行を字下げする", () => {
+    expect(indentOrInsertTab("ab\ncd", { start: 1, end: 4 })).toEqual({
+      from: 0,
+      to: 5,
+      insert: " ab\n cd",
+      selection: { start: 2, end: 6 },
     })
   })
 })

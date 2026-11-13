@@ -144,18 +144,8 @@ const lineEndOf = (text: string, position: number): number => {
 
 const isIndent = (char: string | undefined): boolean => char === " " || char === "\t"
 
-/**
- * 選択が触れている行を、Cosense Web の Tab / Shift+Tab と同じく 1 段ずつ字下げ・字上げする。
- * 1 段は行頭の空白 1 つで、字上げではタブも 1 段として取る。
- *
- * 選択が次の行の頭で終わるときは、その行に触れていないものとする (行を選んだときの選択はそうなるため)。
- * 字上げで取れる空白が 1 つも無いときは `Option.none()` を返す。
- */
-export const indentLines = (
-  text: string,
-  selection: Selection,
-  direction: "indent" | "outdent",
-): Option.Option<LineEdit> => {
+// 選択が次の行の頭で終わるときは、その行に触れていないものとする (行を選んだときの選択はそうなるため)
+const touchedLines = (text: string, selection: Selection) => {
   const from = lineStartOf(text, selection.start)
   const endsAtNextLineStart =
     selection.end > from && selection.end === lineStartOf(text, selection.end)
@@ -164,20 +154,38 @@ export const indentLines = (
   const lineStarts = lines.map(
     (_, index) => from + lines.slice(0, index).reduce((sum, line) => sum + line.length + 1, 0),
   )
+  return { from, to, lines, lineStarts }
+}
 
-  if (direction === "indent") {
-    const shift = (position: number) => lineStarts.filter((start) => start <= position).length
-    return Option.some({
-      from,
-      to,
-      insert: lines.map((line) => ` ${line}`).join("\n"),
-      selection: {
-        start: selection.start + shift(selection.start),
-        end: selection.end + shift(selection.end),
-      },
-    })
+const indentTouchedLines = (text: string, selection: Selection): LineEdit => {
+  const { from, to, lines, lineStarts } = touchedLines(text, selection)
+  const shift = (position: number) => lineStarts.filter((start) => start <= position).length
+  return {
+    from,
+    to,
+    insert: lines.map((line) => ` ${line}`).join("\n"),
+    selection: {
+      start: selection.start + shift(selection.start),
+      end: selection.end + shift(selection.end),
+    },
   }
+}
 
+/**
+ * 選択が触れている行を、Cosense Web の Tab / Shift+Tab と同じく 1 段ずつ字下げ・字上げする。
+ * 1 段は行頭の空白 1 つで、字上げではタブも 1 段として取る。
+ *
+ * 選択が次の行の頭で終わるときは、その行に触れていないものとする。
+ * 字上げで取れる空白が 1 つも無いときは `Option.none()` を返す。
+ */
+export const indentLines = (
+  text: string,
+  selection: Selection,
+  direction: "indent" | "outdent",
+): Option.Option<LineEdit> => {
+  if (direction === "indent") return Option.some(indentTouchedLines(text, selection))
+
+  const { from, to, lines, lineStarts } = touchedLines(text, selection)
   const removed = lineStarts.filter((start) => isIndent(text[start]))
   if (removed.length === 0) return Option.none()
   // 取った空白より後ろの位置だけを詰める。行頭にあるカーソルを、前の行へ押し出さないため
@@ -191,6 +199,26 @@ export const indentLines = (
       end: selection.end - shift(selection.end),
     },
   })
+}
+
+/**
+ * Tab を押したときの編集。カーソルが行の頭 (字下げの空白の中を含む) にあるときと、選択が行を
+ * またぐときだけ、{@link indentLines} と同じく行を字下げする。それ以外は、選択をタブに置き換える。
+ * 表のセルはタブで区切るので、行の途中のタブは表を書くのに使える。
+ */
+export const indentOrInsertTab = (text: string, selection: Selection): LineEdit => {
+  const beforeSelection = text.slice(lineStartOf(text, selection.start), selection.start)
+  const spansLines = text.slice(selection.start, selection.end).includes("\n")
+  if (spansLines || [...beforeSelection].every(isIndent)) {
+    return indentTouchedLines(text, selection)
+  }
+  const caret = selection.start + 1
+  return {
+    from: selection.start,
+    to: selection.end,
+    insert: "\t",
+    selection: { start: caret, end: caret },
+  }
 }
 
 /**
