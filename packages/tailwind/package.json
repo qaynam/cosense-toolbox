@@ -34,7 +34,7 @@
     "compare": "bun scripts/compare.ts",
     "build": "tsdown",
     "check:public-types": "bun ../../tools/public-types/src/check.ts",
-    "dev": "tsdown --watch",
+    "dev": "tsdown --watch --no-clean",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "prepublishOnly": "bun run build",
